@@ -1,0 +1,22 @@
+# Media & artifacts
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.safetensors
+*.pth
+*.log
+logs/
+work_frames/
+upscale_frames/
+upscale_frames_2k/
+preview/
+tools/
+__pycache__/
+*.pyc
+tests/
+hist.json
+oi.json
+ceo_mindread_ep01/0[1-9]_*/
+ceo_mindread_ep01/09_final/
+ceo_mindread_ep01/logs/

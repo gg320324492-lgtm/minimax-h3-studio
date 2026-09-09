@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:huggingface.co)",
+      "Bash(powershell.exe -Command \"Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM, DriverVersion | Format-List\")",
+      "Bash(powershell.exe -Command \"Get-CimInstance Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors | Format-List; Get-CimInstance Win32_OperatingSystem | Select-Object Caption, OSArchitecture, Version, TotalVisibleMemorySize, FreePhysicalMemory | Format-List\")",
+      "Bash(powershell.exe -Command 'Get-PSDrive -PSProvider FileSystem | Select-Object Name, @{N='\\\\''FreeGB'\\\\'';E={[math]::Round\\($_.Free/1GB,2\\)}}, @{N='\\\\''UsedGB'\\\\'';E={[math]::Round\\($_.Used/1GB,2\\)}}, @{N='\\\\''TotalGB'\\\\'';E={[math]::Round\\(\\($_.Free+$_.Used\\)/1GB,2\\)}} | Format-Table -AutoSize')",
+      "Bash(where python *)",
+      "Bash(python -c \"import torch; print\\('torch:', torch.__version__, 'cuda:', torch.cuda.is_available\\(\\), 'devices:', torch.cuda.device_count\\(\\)\\)\")",
+      "Bash(where nvcc *)",
+      "Bash(nvidia-smi --version)",
+      "Bash(taskkill //F //IM python.exe //T)",
+      "Bash(nvidia-smi --query-gpu=memory.used --format=csv,noheader)"
+    ]
+  }
+}
