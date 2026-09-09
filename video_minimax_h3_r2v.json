@@ -412,7 +412,7 @@
       ],
       "widgets_values_named": {
         "scheduler": "simple",
-        "steps": 20,
+        "steps": 8,
         "denoise": 1
       }
     },

@@ -1,0 +1,103 @@
+{
+  "project": "ceo_mindread_ep01",
+  "created_at": "2026-09-03 02:41:41",
+  "selections": {
+    "S01": {
+      "file": "04_video_selected\\S01.mp4",
+      "fps": 24.0,
+      "frames": 124,
+      "duration_s": 5.166667,
+      "target_s": 4.5,
+      "source_take": "S01_T01"
+    },
+    "S02": {
+      "file": "04_video_selected\\S02.mp4",
+      "fps": 24.0,
+      "frames": 141,
+      "duration_s": 5.875,
+      "target_s": 5.2,
+      "source_take": "S02_T01"
+    },
+    "S03A": {
+      "file": "04_video_selected\\S03A.mp4",
+      "fps": 24.0,
+      "frames": 56,
+      "duration_s": 2.333333,
+      "target_s": 1.6,
+      "source_take": "S03A_T01"
+    },
+    "S03B": {
+      "file": "04_video_selected\\S03B.mp4",
+      "fps": 24.0,
+      "frames": 56,
+      "duration_s": 2.333333,
+      "target_s": 1.6,
+      "source_take": "S03B_T01"
+    },
+    "S03C": {
+      "file": "04_video_selected\\S03C.mp4",
+      "fps": 24.0,
+      "frames": 56,
+      "duration_s": 2.333333,
+      "target_s": 1.6,
+      "source_take": "S03C_T01"
+    },
+    "S04": {
+      "file": "04_video_selected\\S04.mp4",
+      "fps": 24.0,
+      "frames": 192,
+      "duration_s": 8.0,
+      "target_s": 4.5,
+      "source_take": "S04_T01"
+    },
+    "S05A": {
+      "file": "04_video_selected\\S05A.mp4",
+      "fps": 24.0,
+      "frames": 22,
+      "duration_s": 0.916667,
+      "target_s": 0.9,
+      "source_take": "S05A_T01"
+    },
+    "S05B": {
+      "file": "04_video_selected\\S05B.mp4",
+      "fps": 24.0,
+      "frames": 192,
+      "duration_s": 8.0,
+      "target_s": 3.8,
+      "source_take": "S05B_T01"
+    },
+    "S06": {
+      "file": "04_video_selected\\S06.mp4",
+      "fps": 24.0,
+      "frames": 226,
+      "duration_s": 9.416667,
+      "target_s": 5.2,
+      "source_take": "S06_T01"
+    },
+    "S07": {
+      "file": "04_video_selected\\S07.mp4",
+      "fps": 24.0,
+      "frames": 192,
+      "duration_s": 8.0,
+      "target_s": 3.8,
+      "source_take": "S07_T01"
+    },
+    "S08": {
+      "file": "04_video_selected\\S08.mp4",
+      "fps": 24.0,
+      "frames": 141,
+      "duration_s": 5.875,
+      "target_s": 3.8,
+      "source_take": "S08_T01"
+    },
+    "S09": {
+      "file": "04_video_selected\\S09.mp4",
+      "fps": 24.0,
+      "frames": 56,
+      "duration_s": 2.333333,
+      "target_s": 2.3,
+      "source_take": "S09_T01"
+    }
+  },
+  "total_duration_s": 60.583333
+}
