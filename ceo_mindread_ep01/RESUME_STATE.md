@@ -39,3 +39,13 @@
 - 项目: `E:\Minimax-H3\ceo_mindread_ep01\`
 - 交付: `C:\Users\pc\Desktop\MiniMax-H3-Outputs\EP01_CEO_Mindread\09_final\`
 - 计划文件: `C:\Users\pc\.claude\plans\sharded-scribbling-nygaard.md`
+
+---
+
+## 完整重跑记录 (2026-09-10)
+
+- 8-step 配置全管线重跑成功: 生成 89.3 min(含 S01/S02 误跑 20 步; 纯 8 步约 72 min, 原版 157.3 min)
+- 后期链一键化: `scripts/run_post_chain.sh` (选片→时间线→超分→Lanczos→混音→字幕→交付→QA)
+- QA 14/14 PASS, 60.58s / -14.5 LUFS / -1.8 dBTP, 与原版指标一致
+- 旧版(20-step)完整归档: `_archive_20260910_rerun/`
+- 注意: workflow 的 steps 必须同时改 `widgets_values` 和 `widgets_values_named`(后者优先级更高)
