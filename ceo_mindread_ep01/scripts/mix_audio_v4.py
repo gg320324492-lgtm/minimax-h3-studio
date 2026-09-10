@@ -78,10 +78,12 @@ def main():
             chain = f'volume=0.75,lowpass=f=4000'
         else:
             chain = f'volume=1.0'
+        # trim FIRST, reset pts, THEN delay: adelay must be last or the
+        # pts reset drops the leading silence (all events pile up at t=0)
         parts.append(
             f'[{idx}:a]{chain},aformat=channel_layouts=stereo,'
-            f'adelay={delay_ms}|{delay_ms},atrim=0:duration={dur_s},'
-            f'asetpts=PTS-STARTPTS[sp_{e["id"]}];'
+            f'atrim=0:duration={dur_s},asetpts=PTS-STARTPTS,'
+            f'adelay={delay_ms}|{delay_ms}[sp_{e["id"]}];'
         )
         speech_labels.append(f'[sp_{e["id"]}]')
 
@@ -95,8 +97,8 @@ def main():
         dur_s = max(0.1, e['end'] - e['start'])
         parts.append(
             f'[{idx}:a]volume={e.get("volume", 0.8)},aformat=channel_layouts=stereo,'
-            f'adelay={delay_ms}|{delay_ms},atrim=0:duration={dur_s},'
-            f'asetpts=PTS-STARTPTS[sfx_{e["id"]}];'
+            f'atrim=0:duration={dur_s},asetpts=PTS-STARTPTS,'
+            f'adelay={delay_ms}|{delay_ms}[sfx_{e["id"]}];'
         )
         sfx_labels.append(f'[sfx_{e["id"]}]')
 
@@ -162,6 +164,37 @@ def main():
         print('STDERR:', r.stderr.decode()[:2000])
         sys.exit(1)
     log(f'DONE: {OUTPUT} ({OUTPUT.stat().st_size/1024/1024:.1f}MB)')
+
+    # ---- Loudness verification loop: one-pass loudnorm can miss by 1-3 LU;
+    # measure and apply a static gain correction until inside +-0.5 LU. ----
+    for attempt in range(3):
+        r = subprocess.run(['ffmpeg', '-hide_banner', '-i', str(OUTPUT),
+                            '-map', '0:a', '-af', 'loudnorm=print_format=summary',
+                            '-f', 'null', '-'], capture_output=True)
+        integrated = None
+        for line in r.stderr.decode(errors='ignore').split('\n'):
+            if 'Input Integrated' in line:
+                integrated = float(line.split(':')[1].replace('LUFS', '').strip())
+        if integrated is None:
+            log('WARN: could not measure loudness, skipping correction')
+            return
+        log(f'  measured integrated: {integrated:.2f} LUFS')
+        if -14.5 <= integrated <= -13.5:
+            log(f'  loudness OK')
+            return
+        gain = -14.0 - integrated
+        fix_out = OUTPUT.with_suffix('.fix.mp4')
+        r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(OUTPUT),
+                            '-map', '0:v', '-map', '0:a',
+                            '-c:v', 'copy',
+                            '-af', f'volume={gain:.2f}dB,alimiter=limit=0.97',
+                            '-c:a', 'aac', '-b:a', '320k', '-ar', '48000',
+                            str(fix_out)], capture_output=True)
+        if r.returncode != 0:
+            print('STDERR:', r.stderr.decode()[:2000])
+            sys.exit(1)
+        fix_out.replace(OUTPUT)
+        log(f'  applied {gain:+.2f}dB correction -> {OUTPUT.name}')
 
 
 if __name__ == '__main__':

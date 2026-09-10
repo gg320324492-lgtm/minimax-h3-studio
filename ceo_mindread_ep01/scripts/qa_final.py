@@ -51,6 +51,9 @@ def main():
     check('sample rate', int(as_['sample_rate']) == 48000, as_['sample_rate'])
     check('channels STEREO', int(as_['channels']) == 2, f"channels={as_['channels']}")
     check('duration 55-62s', 55 <= dur <= 62, f'{dur:.2f}s')
+    adur = float(as_.get('duration', 0))
+    check('audio covers video (>=95%)', adur >= 0.95 * dur,
+          f'audio {adur:.2f}s / video {dur:.2f}s')
 
     # ---- 2. Loudness ----
     print('\n[2] Loudness (EBU R128)')
