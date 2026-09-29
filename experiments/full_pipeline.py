@@ -1,0 +1,121 @@
+"""Full pipeline: extract -> upscale -> combine (no -shortest, AAC re-encode)."""
+import sys
+import torch
+import numpy as np
+import subprocess
+import shutil
+import time
+from pathlib import Path
+from PIL import Image
+from basicsr.archs.rrdbnet_arch import RRDBNet
+
+import _deprecated
+_deprecated.warn(
+    'full_pipeline.py',
+    ['hardcodes 24fps -> non-24fps input is silently time-stretched',
+     'encodes twice (720p->1440p->1080p) = 2nd-generation lossy pass'],
+    'python sr_pipeline_v2.py IN OUT --model x2plus '
+    '--out-width 1080 --out-height 1920',
+)
+
+if len(sys.argv) < 3:
+    print('Usage: full_pipeline.py <input.mp4> <output.mp4> [scale=2]')
+    sys.exit(1)
+
+INPUT_VIDEO = Path(sys.argv[1])
+OUTPUT_VIDEO = Path(sys.argv[2])
+SCALE = int(sys.argv[3]) if len(sys.argv) > 3 else 2
+TMP_BASE = Path(sys.argv[4]) if len(sys.argv) > 4 else r'E:\Minimax-H3\work_frames\full_pipe'
+
+FRAMES_DIR = TMP_BASE / 'in'
+UPSCALED_DIR = TMP_BASE / 'up'
+TILE_SIZE = 384
+TILE_OVERLAP = 32
+
+def main():
+    for d in [FRAMES_DIR, UPSCALED_DIR]:
+        d.mkdir(parents=True, exist_ok=True)
+        for f in d.glob('*.png'): f.unlink()
+
+    print(f'=== {INPUT_VIDEO.name} -> {OUTPUT_VIDEO.name} ({SCALE}x) ===')
+
+    # 1) Extract frames (use -vsync 0 + r 24 to preserve all)
+    t0 = time.time()
+    subprocess.run([
+        'ffmpeg', '-y', '-loglevel', 'error', '-i', str(INPUT_VIDEO),
+        '-vsync', '0', '-r', '24',
+        str(FRAMES_DIR / 'frame_%04d.png')
+    ], check=True)
+    # Rename to 0-indexed for image2 demuxer
+    frames = sorted(FRAMES_DIR.glob('*.png'))
+    for i, f in enumerate(frames):
+        target = FRAMES_DIR / f'frame_{i:04d}.png'
+        if str(f) != str(target):
+            f.rename(target)
+    frames = sorted(FRAMES_DIR.glob('*.png'))
+    print(f'[1/3] extracted {len(frames)} frames in {time.time()-t0:.1f}s')
+
+    # 2) Upscale
+    t0 = time.time()
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=SCALE)
+    sd = torch.load(r'E:\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth',
+                    map_location='cpu', weights_only=False)
+    if 'params_ema' in sd: sd = sd['params_ema']
+    model.load_state_dict(sd, strict=True)
+    model.eval().cuda()
+    print(f'[2/3] model loaded, upscaling {SCALE}x...')
+
+    out_w = out_h = None
+    for idx, fp in enumerate(frames):
+        img = Image.open(fp).convert('RGB')
+        in_w, in_h = img.size
+        if out_w is None:
+            out_w, out_h = in_w * SCALE, in_h * SCALE
+            print(f'  in {in_w}x{in_h} -> out {out_w}x{out_h}')
+        tiles = []; coords = []
+        for y in range(0, in_h, TILE_SIZE - TILE_OVERLAP):
+            for x in range(0, in_w, TILE_SIZE - TILE_OVERLAP):
+                xe = min(x + TILE_SIZE, in_w); ye = min(y + TILE_SIZE, in_h)
+                tiles.append(np.asarray(img.crop((x, y, xe, ye))))
+                coords.append((x, y))
+        tensors = []; orig_sizes = []
+        for tile in tiles:
+            h, w, _ = tile.shape
+            orig_sizes.append((h, w))
+            ph = TILE_SIZE - h; pw = TILE_SIZE - w
+            if ph or pw:
+                tile = np.pad(tile, ((0, ph), (0, pw), (0, 0)), mode='reflect')
+            t = torch.from_numpy(np.ascontiguousarray(tile)).permute(2, 0, 1).float() / 255.0
+            tensors.append(t)
+        batched = torch.stack(tensors).cuda()
+        with torch.no_grad():
+            outs = model(batched)
+        outs = outs.clamp(0, 1).cpu().numpy()
+        canvas = np.zeros((out_h, out_w, 3), dtype=np.float32)
+        weight = np.zeros((out_h, out_w, 1), dtype=np.float32)
+        for tile_out, (ox, oy), (oh, ow) in zip(outs, coords, orig_sizes):
+            tile_out = tile_out.transpose(1, 2, 0)
+            canvas[oy*SCALE:oy*SCALE + oh*SCALE, ox*SCALE:ox*SCALE + ow*SCALE] += tile_out[:oh*SCALE, :ow*SCALE]
+            weight[oy*SCALE:oy*SCALE + oh*SCALE, ox*SCALE:ox*SCALE + ow*SCALE] += 1
+        canvas = canvas / np.maximum(weight, 1e-6)
+        canvas = (canvas * 255.0).clip(0, 255).astype(np.uint8)
+        Image.fromarray(canvas).save(UPSCALED_DIR / fp.name)
+    print(f'[2/3] done in {time.time()-t0:.1f}s')
+
+    # 3) Combine - NO -shortest, re-encode audio
+    t0 = time.time()
+    subprocess.run([
+        'ffmpeg', '-y', '-loglevel', 'error',
+        '-framerate', '24',
+        '-i', str(UPSCALED_DIR / 'frame_%04d.png'),
+        '-i', str(INPUT_VIDEO),
+        '-map', '0:v:0', '-map', '1:a:0',
+        '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
+        '-crf', '18', '-c:a', 'aac', '-b:a', '128k',
+        str(OUTPUT_VIDEO)
+    ], check=True)
+    print(f'[3/3] combined in {time.time()-t0:.1f}s')
+    print(f'  saved: {OUTPUT_VIDEO}')
+
+if __name__ == '__main__':
+    main()
