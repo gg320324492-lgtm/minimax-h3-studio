@@ -99,16 +99,18 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 6.1 | **母带自动化**：master_audio.py（WAV 中转 loudnorm + 自动增益/限幅迭代 + 校验），集成 `render_with_remotion.py --master` | ⬜ | |
-| 6.2 | **BassPump 离线包络**：make_audio_assets 输出 pump_envelope.json（numpy 频段能量→24fps 帧），模板改查表，淘汰 visualizeAudio（渲染时间从 24.9s 回到 ~14s） | ⬜ | |
-| 6.3 | **report QA 门禁**：qa_report.py（分辨率/fps/编码/yuv420p/响度 −16..−12 LUFS/TP ≤−0.5/时长对齐 props），集成渲染流程 | ⬜ | |
-| 6.4 | **卡拉OK并入正式流程**：render_with_remotion.py --karaoke 自动跑 word_timestamps（不再手工旁挂文件） | ⬜ | |
-| 6.5 | **数字字体验证**：Bahnschrift（Windows 自带 DIN 类窄体）headless 渲染实测；资产投放口说明（assets/README：真实 BGM/SFX 替换规范+manifest 审计字段） | ⬜ | |
-| 6.6 | **听感样张**：BGM+SFX 按成片时间戳混一条独立音频预览，供人耳验收合成音频质量 | ⬜ | |
-| 6.7 | **契约同步自检**：check-contract 脚本（schema 重导出 diff + demo props 过 Python jsonschema smoke） | ⬜ | |
-| 6.8 | **代码清理**：未用参数/死代码、out/ 临时产物、渲染残留 | ⬜ | |
-| 6.9 | **Git 整理提交**：分主题 commits（docs / studio / python 管线） | ⬜ | |
-| 6.10 | **文档收尾**：studio/README 快速上手 + 进度文档终版 | ⬜ | |
+| 6.1 | **母带自动化** | ✅ | `master_audio.py`：WAV 中转 loudnorm + 最多 2 轮自动增益/限幅收敛（跨盘 move/缓冲文件名两个 bug 修复）；集成 `--master`。实测 v4：pass1 −18.8 → 2 轮 → **−14.5/−0.9 OK** |
+| 6.2 | **BassPump 离线包络** | ✅ | `pump_envelope.json`（20-150Hz STFT 按帧归一化）；**全屏 pump 是渲染 ×2.5 的元凶**（背景每帧重光栅化）→ 改为只缩放内容层；19.4s（v3 36.8s → 降 47%） |
+| 6.3 | **report QA 门禁** | ✅ | `qa_report.py` 10 项（规格/时长/响度区间/TP）；**首跑即抓到 96kHz 采样率 bug**（loudnorm 缺 -ar 48000）——门禁价值立现 |
+| 6.4 | **卡拉OK并入正式流程** | ✅ | `render_with_remotion.py --karaoke`：转录→注入→staging→渲染一条命令（EP01 实测 14/19 匹配，61s 出片） |
+| 6.5 | **字体验证 + 资产说明** | ✅ | Bahnschrift 全家族在列（Windows 自带 DIN 类，数字排版达标，headless 可用）；`public/audio/README.md`（真实素材替换规范+许可审计 manifest） |
+| 6.6 | **听感样张** | ✅ | `out/audio_preview.m4a`（BGM+SFX 按成片时间戳预混）——**等人耳验收，这是剩余最大未知数** |
+| 6.7 | **契约同步自检** | ✅ | `check_contract.py`：schema 重导出 git diff + 全部 props jsonschema smoke；发现并修复按文件名猜 schema 的配对错误（改为按内容路由） |
+| 6.8 | **代码清理** | ✅ | phase0 废弃 job、out/ 临时帧/旧渲染清理；基准文档引用的 ep01_bt709.mp4 一并清理（已被 v3/v4 取代） |
+| 6.9 | **Git 整理提交** | ✅ | 4 个主题 commit：Docs / Skills / Studio / Pipeline（既有无关改动保持未提交，未混入）；push 需先建远端 |
+| 6.10 | **文档收尾** | ✅ | studio/README.md 快速上手 + 本表终版 + 记忆同步 |
+
+**Phase 6 收尾结论**：收尾前盘点的 12 项未解决问题/缺口/阻力中——母带不收敛（✅ 自动化）、BassPump 性能（✅ 包络化+作用域收窄）、report 无 QA（✅ 10 项门禁）、卡拉OK旁挂（✅ 并入流程）、契约漂移风险（✅ 自检脚本）已关闭；**素材通道（网络）与合成音频听感验证是仅剩的两项外部依赖项**，前者等网络条件，后者等用户听感结论（样张已备）。Phase 6 完成后项目处于"可日常交付"状态。
 
 ---
 
@@ -136,6 +138,8 @@
 - 2026-09-29：**Phase 2 完成**。三模板家族成型（drama-vertical / psa-wide / story-animation = TimelinePlayer × 格式 × 样式集）；帧内转场（fade/flash）、碰撞修复、overlays、CoverCard 封面全部验证通过。EP01 v4 QA 16/16；piyao 109s@1080p 52.9s；liaozhai 75.75s@2K 60.2s。架构核心：`TimelinePlayer`（titlecard?→shots→endcard? 确定性装配）。下一步：Phase 3（report/daily-brief 纯程序化模板、词级卡拉OK字幕、Agent Skills 模板工厂）。
 - 2026-09-29：**Phase 3 完成——四阶段全部落地**。模式 B 打通（ReportVertical 数据报告模板，29.9s 素材 13.1s 渲染，零 GPU）；词级卡拉OK（ASR 词面只当对齐标尺、文字用原文、相似度守卫拒错配）；心声打字机；官方 12 skills + 项目技能 minimax-video-templates（配方卡/铁律/六项入库门禁）。剩余可选项：Phase 4（常驻渲染服务/Player 预览 UI/批量队列）。
 - 2026-09-29：**Phase 4 确认搁置**（暂无批量生产计划）。项目状态 = 交付完成，日常使用即：改 timeline/数据 → render_with_remotion.py / render.mjs 出片。
+- 2026-09-30：**Phase 5 完成**（动效张力提升：三路调研 + ReportVertical v3 + 全合成音频管线 + 母带链定稿）。
+- 2026-09-30：**Phase 6 完成（全面收尾）**。母带自动化、BassPump 包络化（渲染 36.8s→19.4s）、report QA 10 项门禁（首跑抓到 96kHz bug）、--karaoke 一条命令全链路、Bahnschrift 数字字体确认、听感样张、契约自检、out/ 清理、**4 个主题 commit 入库（Docs/Skills/Studio/Pipeline）**、studio/README。**剩余两项外部依赖：真实素材投放（网络恢复/手动下载）、合成音频听感结论（样张 out/audio_preview.m4a）。**
 - 变更记录（2026-09-29 Phase 0/1 详见上文与 git 历史）：
   - Phase 0 启动与完成（渲染基准、bt709 修复）
   - Phase 1 完成（EP01_v3 新链 QA 16/16，A/B 对齐）
