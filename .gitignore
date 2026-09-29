@@ -20,3 +20,11 @@ oi.json
 ceo_mindread_ep01/0[1-9]_*/
 ceo_mindread_ep01/09_final/
 ceo_mindread_ep01/logs/
+
+# Remotion studio
+studio/node_modules/
+studio/public/jobs/
+studio/out/
+studio/.remotion/
+studio/.remotion/
+/.remotion/
