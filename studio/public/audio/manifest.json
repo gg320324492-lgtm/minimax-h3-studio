@@ -1,0 +1,48 @@
+{
+  "generated": "2026-09-30",
+  "note": "all files commercial-use, no attribution required; do not redistribute standalone",
+  "files": [
+    {
+      "file": "bgm_main.m4a",
+      "source": "Mixkit \"Digital Clouds\" (mixkit.co/free-stock-music/tag/technology)",
+      "license": "Mixkit Stock Music Free License",
+      "terms": "no attribution; no standalone redistribution"
+    },
+    {
+      "file": "sfx_whoosh.m4a",
+      "source": "Mixkit #1492 \"Cinematic whoosh fast transition\"",
+      "license": "Mixkit Sound Effects Free License",
+      "terms": "no attribution"
+    },
+    {
+      "file": "sfx_impact.m4a",
+      "source": "Mixkit #1143 \"Cinematic whoosh deep impact\"",
+      "license": "Mixkit Sound Effects Free License",
+      "terms": "no attribution"
+    },
+    {
+      "file": "sfx_coin.m4a",
+      "source": "Mixkit #216 \"Arcade game jump coin\"",
+      "license": "Mixkit Sound Effects Free License",
+      "terms": "no attribution"
+    },
+    {
+      "file": "sfx_pop.m4a",
+      "source": "Kenney Interface Sounds click_001 (kenney.nl)",
+      "license": "CC0",
+      "terms": "no restrictions"
+    },
+    {
+      "file": "sfx_ding.m4a",
+      "source": "Kenney Interface Sounds confirmation_001 (kenney.nl)",
+      "license": "CC0",
+      "terms": "no restrictions"
+    },
+    {
+      "file": "sfx_riser.m4a",
+      "source": "synthesized (make_audio_assets.py) \u2014 kept, no real riser imported",
+      "license": "studio-original",
+      "terms": "-"
+    }
+  ]
+}
