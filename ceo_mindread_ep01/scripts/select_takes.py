@@ -8,6 +8,19 @@ Strategy:
 This is rough assembly - no audio, no transitions yet.
 Final assembly with audio happens in `final_assembly.py`.
 """
+
+
+# --- ffmpeg binary resolution -------------------------------------------------
+# PATH `ffmpeg` on this machine is GNU Octave's bundled 4.2.11, not a normal
+# install, so every encode silently depended on a third-party app. Resolve via
+# ffmpeg_env (repo-bundled 7.1.1 by default; MINIMAX_FFMPEG_LEGACY=1 to pin the
+# legacy PATH binary for byte-comparable re-runs).
+import sys as _sys, os as _os  # noqa: E402
+if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
+_prepend_ffmpeg()
+# -----------------------------------------------------------------------------
 import json
 import shutil
 import subprocess
@@ -16,6 +29,14 @@ import time
 from pathlib import Path
 
 PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+
+# Quality of the 720p picture lock. The lock is an INTERMEDIATE, not a
+# deliverable: it is the source every later stage reads (upscale -> audio ->
+# subtitles), so loss here propagates into the master. It used to be encoded at
+# crf 18, i.e. a second lossy generation on top of the ComfyUI takes, for no
+# benefit -- nothing ships the lock. crf 12 is near-visually-lossless at ~2x the
+# file size of an intermediate nobody distributes. Override with EP01_LOCK_CRF.
+LOCK_CRF = str(_os.environ.get('EP01_LOCK_CRF', '12'))
 
 
 def log(msg):
@@ -122,7 +143,7 @@ def main():
         'ffmpeg', '-y', '-loglevel', 'error',
         '-f', 'concat', '-safe', '0',
         '-i', str(concat_list),
-        '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
+        '-c:v', 'libx264', '-preset', 'slow', '-crf', LOCK_CRF,
         '-pix_fmt', 'yuv420p',
         str(rough_cut)
     ]

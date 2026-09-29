@@ -13,6 +13,19 @@ SFX Strategy:
 - Electric buzz: high sine with vibrato
 - Reverse whoosh: filtered noise rising
 """
+
+
+# --- ffmpeg binary resolution -------------------------------------------------
+# PATH `ffmpeg` on this machine is GNU Octave's bundled 4.2.11, not a normal
+# install, so every encode silently depended on a third-party app. Resolve via
+# ffmpeg_env (repo-bundled 7.1.1 by default; MINIMAX_FFMPEG_LEGACY=1 to pin the
+# legacy PATH binary for byte-comparable re-runs).
+import sys as _sys, os as _os  # noqa: E402
+if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
+_prepend_ffmpeg()
+# -----------------------------------------------------------------------------
 import os
 import subprocess
 from pathlib import Path

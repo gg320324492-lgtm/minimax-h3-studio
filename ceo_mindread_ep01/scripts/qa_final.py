@@ -8,13 +8,34 @@ Checks:
   5. Seed manifest: every generated shot has a recorded seed matching length
 Writes: 09_final/qa_report.md (PASS/FAIL per check)
 """
+
+
+# --- ffmpeg binary resolution -------------------------------------------------
+# PATH `ffmpeg` on this machine is GNU Octave's bundled 4.2.11, not a normal
+# install, so every encode silently depended on a third-party app. Resolve via
+# ffmpeg_env (repo-bundled 7.1.1 by default; MINIMAX_FFMPEG_LEGACY=1 to pin the
+# legacy PATH binary for byte-comparable re-runs).
+import sys as _sys, os as _os  # noqa: E402
+if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
+_prepend_ffmpeg()
+# -----------------------------------------------------------------------------
 import json
 import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import FFMPEG, FFPROBE  # noqa: E402  (see ffmpeg_env: bare `ffmpeg`
+#                                          resolves to Octave's bundled 4.2.11 here)
+
 PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
-FINAL = PROJECT / '09_final'
+# Respect the same override as finalize.py, otherwise a re-run that writes to a
+# tagged directory would have its QA gate silently validate the OLD delivery.
+FINAL = Path(_os.environ.get('EP01_FINAL_DIR', str(PROJECT / '09_final')))
+if not FINAL.is_absolute():
+    FINAL = PROJECT / FINAL
 VIDEO = FINAL / 'EP01_DOUYIN_FINAL.mp4'
 
 results = []
@@ -35,12 +56,22 @@ def main():
 
     # ---- 1. Container specs ----
     print('[1] Container specs')
-    r = subprocess.check_output(['ffprobe', '-v', 'error', '-show_format', '-show_streams',
+    r = subprocess.check_output([FFPROBE, '-v', 'error', '-show_format', '-show_streams',
                                  '-of', 'json', str(VIDEO)]).decode()
     d = json.loads(r)
     fmt = d['format']
-    vs = [s for s in d['streams'] if s['codec_type'] == 'video'][0]
-    as_ = [s for s in d['streams'] if s['codec_type'] == 'audio'][0]
+    vs = [s for s in d['streams'] if s['codec_type'] == 'video']
+    as_ = [s for s in d['streams'] if s['codec_type'] == 'audio']
+    if not vs:
+        print('ERROR: no video stream in the delivered file')
+        sys.exit(1)
+    if not as_:
+        # Previously an unguarded [0] here raised IndexError, so the QA gate
+        # crashed instead of reporting a FAIL. A missing audio track is a FAIL.
+        check('audio stream present', False, 'no audio stream found')
+        print('\n=== RESULT: FAIL (no audio stream) ===')
+        sys.exit(1)
+    vs, as_ = vs[0], as_[0]
     dur = float(fmt['duration'])
 
     check('resolution', vs['width'] == 1080 and vs['height'] == 1920, f"{vs['width']}x{vs['height']}")
@@ -57,7 +88,7 @@ def main():
 
     # ---- 2. Loudness ----
     print('\n[2] Loudness (EBU R128)')
-    r = subprocess.run(['ffmpeg', '-hide_banner', '-i', str(VIDEO),
+    r = subprocess.run([FFMPEG, '-hide_banner', '-i', str(VIDEO),
                         '-af', 'loudnorm=print_format=summary', '-f', 'null', '-'],
                        capture_output=True)
     err = r.stderr.decode(errors='ignore')
@@ -109,17 +140,27 @@ def main():
     sm = json.loads((PROJECT / '00_project/seed_manifest.json').read_text(encoding='utf-8'))
     manifest = json.loads((PROJECT / '00_project/shot_manifest.json').read_text(encoding='utf-8'))
     missing = []
+    mismatched = []
     for sid, sel in manifest['selections'].items():
         if sid == 'S05A':
-            continue  # kept from v2
+            continue  # carried over from the v2 round; no length recorded at gen time
         take = sel.get('source_take', f'{sid}_T01')
         tk = take.split('_T')[1] if '_T' in take else '01'
         key = f'seed_T{tk}'
         if sid not in sm.get('shots', {}) or key not in sm['shots'][sid]:
             missing.append(f'{sid}:{key}')
-        elif sm['shots'][sid].get('length_frames') != sel.get('frames'):
-            pass  # S05A handled above; lengths recorded at gen time
-    check('all shots have recorded seeds', not missing, ', '.join(missing) if missing else 'complete')
+        else:
+            # This branch used to be a bare `pass`, so the check advertised in the
+            # module docstring ("seed matching length") was never actually
+            # evaluated -- a real mismatch would still have reported PASS.
+            recorded = sm['shots'][sid].get('length_frames')
+            if recorded != sel.get('frames'):
+                mismatched.append(
+                    f'{sid}:{key} recorded={recorded} vs selection={sel.get("frames")}')
+    check('all shots have recorded seeds', not missing,
+          ', '.join(missing) if missing else 'complete')
+    check('recorded length matches selection', not mismatched,
+          ', '.join(mismatched) if mismatched else 'consistent')
 
     # ---- Summary ----
     passed = sum(1 for _, ok, _ in results if ok)
