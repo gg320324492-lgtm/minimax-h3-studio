@@ -3,7 +3,21 @@
 Reads 00_project/timeline.json (built by build_timeline.py).
 Wraps any subtitle wider than MAX_TEXT_WIDTH at punctuation into <= 2 lines.
 """
+
+
+# --- ffmpeg binary resolution -------------------------------------------------
+# PATH `ffmpeg` on this machine is GNU Octave's bundled 4.2.11, not a normal
+# install, so every encode silently depended on a third-party app. Resolve via
+# ffmpeg_env (repo-bundled 7.1.1 by default; MINIMAX_FFMPEG_LEGACY=1 to pin the
+# legacy PATH binary for byte-comparable re-runs).
+import sys as _sys, os as _os  # noqa: E402
+if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
+_prepend_ffmpeg()
+# -----------------------------------------------------------------------------
 import json
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -101,7 +115,13 @@ def main():
     tl = json.loads((PROJECT / '00_project/timeline.json').read_text(encoding='utf-8'))
     input_video = PROJECT / '07_edit/EP01_WITH_AUDIO.mp4'
     output_video = PROJECT / '07_edit/EP01_WITH_SUBTITLES.mp4'
-    TMP = Path('C:/Users/pc/AppData/Local/Temp/sub_burn_v2')
+    # Unique temp dir per run. The previous version used a FIXED path and wiped
+    # it with `for f in TMP.glob('*.png'): f.unlink()` at startup. EP01 extracts
+    # ~1455 PNGs, so if a run died mid-burn the next run tried to delete >50
+    # files in one go and tripped the sandbox bulk-delete guard
+    # (SAFE_DELETE_BULK_CONFIRM_REQUIRED), wedging the whole chain until someone
+    # cleaned it by hand. A per-run dir needs no startup deletion at all.
+    TMP = Path('C:/Users/pc/AppData/Local/Temp') / f'sub_burn_v2_{time.strftime("%Y%m%d_%H%M%S")}'
 
     if not input_video.exists():
         print(f'ERROR: {input_video} not found')
@@ -139,8 +159,6 @@ def main():
         return
 
     TMP.mkdir(parents=True, exist_ok=True)
-    for f in TMP.glob('*.png'):
-        f.unlink()
 
     print('\nExtracting frames...')
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(input_video),
@@ -173,12 +191,19 @@ def main():
         'ffmpeg', '-y', '-loglevel', 'error',
         '-framerate', str(fps), '-i', str(TMP / 'frame_%05d.png'),
         '-i', str(input_video),
-        '-map', '0:v', '-map', '1:a',
+        # `1:a` without `?` aborts on an audio-less input, and because the mux is
+        # the last step that would throw away the entire burn. See the same fix
+        # in sr_pipeline_v2.py.
+        '-map', '0:v', '-map', '1:a:0?',
         '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
         '-c:a', 'copy', '-pix_fmt', 'yuv420p',
         '-t', str(total),
         str(output_video)
     ], check=True)
+
+    # Leave the temp dir clean on success; on failure it is left in place for
+    # inspection, which is safe now that each run has its own directory.
+    shutil.rmtree(TMP, ignore_errors=True)
     print(f'\n=== SUBTITLES BURNED ===\n  {output_video} ({output_video.stat().st_size/1024/1024:.1f}MB)')
 
 

@@ -9,6 +9,19 @@ Signal chain:
   4. bgm: aloop -> atrim -> volume -> sidechaincompress(key=speech)
   5. final = amix(bgm_ducked, speech, sfx) -> loudnorm(-14 LUFS) -> aformat 48k stereo
 """
+
+
+# --- ffmpeg binary resolution -------------------------------------------------
+# PATH `ffmpeg` on this machine is GNU Octave's bundled 4.2.11, not a normal
+# install, so every encode silently depended on a third-party app. Resolve via
+# ffmpeg_env (repo-bundled 7.1.1 by default; MINIMAX_FFMPEG_LEGACY=1 to pin the
+# legacy PATH binary for byte-comparable re-runs).
+import sys as _sys, os as _os  # noqa: E402
+if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
+_prepend_ffmpeg()
+# -----------------------------------------------------------------------------
 import json
 import subprocess
 import sys
@@ -27,10 +40,17 @@ def main():
     tl = json.loads((PROJECT / '00_project/timeline.json').read_text(encoding='utf-8'))
     total = tl['total_duration']
 
-    master = PROJECT / '07_edit/EP01_PICTURE_MASTER_1080P.mp4'
+    # Which picture master to mix onto. Defaults to the delivered master, but
+    # the post chain overrides this (EP01_MASTER=<path>) so a v2 remaster can be
+    # carried through the rest of the chain WITHOUT renaming or overwriting the
+    # delivered file. Without this override, changing the upscale output name
+    # would silently leave the later stages mixing audio onto the OLD master.
+    master = Path(_os.environ.get(
+        'EP01_MASTER', str(PROJECT / '07_edit' / 'EP01_PICTURE_MASTER_1080P.mp4')))
     if not master.exists():
         log(f'ERROR: {master} not found')
         sys.exit(1)
+    log(f'picture master: {master.name}')
 
     # ---- Collect input files (video + bgm + unique event files) ----
     inputs = ['-i', str(master)]          # index 0

@@ -2,6 +2,19 @@
 
 v3: reads real seed_manifest.json (gen-time recorded), writes fresh render_report.
 """
+
+
+# --- ffmpeg binary resolution -------------------------------------------------
+# PATH `ffmpeg` on this machine is GNU Octave's bundled 4.2.11, not a normal
+# install, so every encode silently depended on a third-party app. Resolve via
+# ffmpeg_env (repo-bundled 7.1.1 by default; MINIMAX_FFMPEG_LEGACY=1 to pin the
+# legacy PATH binary for byte-comparable re-runs).
+import sys as _sys, os as _os  # noqa: E402
+if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3')
+from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
+_prepend_ffmpeg()
+# -----------------------------------------------------------------------------
 import json
 import shutil
 import subprocess
@@ -10,8 +23,16 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
-FINAL_DIR = PROJECT / '09_final'
-DESKTOP = Path(r'C:\Users\pc\Desktop\MiniMax-H3-Outputs\EP01_CEO_Mindread\09_final')
+# Both output roots are overridable so a re-run does not destroy an existing
+# delivery. Project convention is that originals are kept and revisions are
+# written alongside; run_post_chain.sh points these at a tagged directory unless
+# PROMOTE=1 is set.
+FINAL_DIR = Path(_os.environ.get('EP01_FINAL_DIR', str(PROJECT / '09_final')))
+if not FINAL_DIR.is_absolute():
+    FINAL_DIR = PROJECT / FINAL_DIR
+DESKTOP = Path(_os.environ.get(
+    'EP01_DESKTOP_DIR',
+    r'C:\Users\pc\Desktop\MiniMax-H3-Outputs\EP01_CEO_Mindread\09_final'))
 FINAL_DIR.mkdir(parents=True, exist_ok=True)
 
 
