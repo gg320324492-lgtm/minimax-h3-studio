@@ -22,7 +22,7 @@
 | 0.10 | 并发扫描 | ✅ | c8=40.0s / **c16=38.8s 最优** / c24=42.8s 退化；32 线程默认(=16)即最优 |
 | 0.11 | NVENC vs x264 A/B | ✅ | NVENC 37.3s 仅快 1.5s，但 Main profile + 文件翻倍（110MB）→ **定稿 x264 crf18** |
 | 0.12 | 输出规格 QA 检查 | ✅（发现并修复一坑） | jpeg 默认输出 yuvj420p 挂 QA → **`colorSpace:'bt709'` 修复**，yuv420p+tv+bt709 全过，无速度损耗；另：Node API 不读 remotion.config.ts；videoBitrate 是 "14M" 字符串且与 crf 互斥；hw 取值是 "disable" |
-| 0.13 | 撰写基准报告 | ✅ | [studio/BENCHMARK_20260929.md](studio/BENCHMARK_20260929.md) |
+| 0.13 | 撰写基准报告 | ✅ | [studio/BENCHMARK_20260929.md](../studio/BENCHMARK_20260929.md) |
 | 0.14 | Phase 0 收尾（文档+记忆） | ✅ | 记忆已更新 |
 
 **Phase 0 验收**：全部达成。渲染基准 38.8s/60.58s 成片；最优并发 16；编码配置 x264 crf18+jpeg+bt709；
@@ -115,6 +115,20 @@
 
 ---
 
+## Phase 7 — 全项目体系化整理（2026-09-30）　状态：✅ 完成
+
+> 目标：遍历全项目，建立目录规范与体系文档。原则：**生产引用面不动**（ffmpeg_env.py / sr_pipeline_v2.py 留守根级——被 5+ 生产文件引用），一次性实验脚本归档，文档归位，补齐根 README。
+
+| # | 任务 | 状态 | 结论/数据 |
+|---|---|---|---|
+| 7.1 | 遍历盘点 + 引用面分析 | ✅ | 根级 29 个一次性实验脚本、6 份散落文档、3 个 workflow JSON、2 个空目录；引用面：ffmpeg_env/sr_pipeline（生产锁死）、workflow JSON（liaozhai/piyao 各 1 行常量）、outputs_paths（无外部引用） |
+| 7.2 | 目录迁移：experiments/（实验脚本+分析残留）、docs/（6 份报告）、workflows/（H3 workflow + 归档备份） | ✅ | 29 脚本+2 dump → experiments；6 md → docs；r2v/t2v → workflows，backup → archive；根目录从 ~40 文件收敛到 4 系统文件+README | |
+| 7.3 | 引用更新：liaozhai/piyao workflow 常量、SKILL.md 路径、gitignore 补 .agents/.workbuddy-ai/.zcodeignore | ✅ | 2 个 Path 常量 + SKILL.md 文档路径 + 8 行忽略规则（外部工具目录/acestep-env/生成音频/嵌入仓库） | |
+| 7.4 | 根 README.md 体系文档（五层架构/项目模板规范/约定表/命令速查/仓库地图） | ✅ | README.md：五层架构图 + 仓库地图 + 项目模板规范 + 7 条铁律 + 命令速查 + 文档索引 + 许可注意 | |
+| 7.5 | 提交推送 + 记忆同步 | ✅ | commit b3f553d（110 文件，git mv 保历史）已推 GitHub；**补齐关键遗漏：ffmpeg_env/sr_pipeline 此前从未入库** | |
+
+---
+
 ## Phase 5 — 动效张力提升（2026-09-30）　状态：✅ 完成
 
 > 目标：参照抖音爆款数据/知识类视频的动效语言，把 Remotion 模板的动效、配乐、数据展示视觉张力提升一轮。
@@ -135,11 +149,12 @@
 ## 变更记录
 
 - 2026-09-29：Phase 0 启动。进度文档建立。
-- 2026-09-29：**Phase 0 完成**（约 20 分钟）。基准：60.58s 成片 38.8s 渲染（1.55× 实时）；定稿配置 x264 crf18 + jpeg + colorSpace bt709 + 并发 16；关键坑修复：jpeg 默认 yuvj420p 挂 QA，bt709 修复且零损耗。详见 [studio/BENCHMARK_20260929.md](studio/BENCHMARK_20260929.md)。下一步：Phase 1（timeline v2 zod 契约 → build_timeline.py v2 → drama-vertical 正式模板 → EP01_v3 过 QA）。
+- 2026-09-29：**Phase 0 完成**（约 20 分钟）。基准：60.58s 成片 38.8s 渲染（1.55× 实时）；定稿配置 x264 crf18 + jpeg + colorSpace bt709 + 并发 16；关键坑修复：jpeg 默认 yuvj420p 挂 QA，bt709 修复且零损耗。详见 [studio/BENCHMARK_20260929.md](../studio/BENCHMARK_20260929.md)。下一步：Phase 1（timeline v2 zod 契约 → build_timeline.py v2 → drama-vertical 正式模板 → EP01_v3 过 QA）。
 - 2026-09-29：**Phase 2 完成**。三模板家族成型（drama-vertical / psa-wide / story-animation = TimelinePlayer × 格式 × 样式集）；帧内转场（fade/flash）、碰撞修复、overlays、CoverCard 封面全部验证通过。EP01 v4 QA 16/16；piyao 109s@1080p 52.9s；liaozhai 75.75s@2K 60.2s。架构核心：`TimelinePlayer`（titlecard?→shots→endcard? 确定性装配）。下一步：Phase 3（report/daily-brief 纯程序化模板、词级卡拉OK字幕、Agent Skills 模板工厂）。
 - 2026-09-29：**Phase 3 完成——四阶段全部落地**。模式 B 打通（ReportVertical 数据报告模板，29.9s 素材 13.1s 渲染，零 GPU）；词级卡拉OK（ASR 词面只当对齐标尺、文字用原文、相似度守卫拒错配）；心声打字机；官方 12 skills + 项目技能 minimax-video-templates（配方卡/铁律/六项入库门禁）。剩余可选项：Phase 4（常驻渲染服务/Player 预览 UI/批量队列）。
 - 2026-09-29：**Phase 4 确认搁置**（暂无批量生产计划）。项目状态 = 交付完成，日常使用即：改 timeline/数据 → render_with_remotion.py / render.mjs 出片。
 - 2026-09-30：**Phase 5 完成**（动效张力提升：三路调研 + ReportVertical v3 + 全合成音频管线 + 母带链定稿）。
+- 2026-09-30：**Phase 7 完成（体系化整理）**：experiments/docs/workflows 三分类落地，ffmpeg_env+sr_pipeline 首次入库，liaozhai/piyao/third_lantern 三项目入库（含排除规则），根 README 体系文档，引用面全更新并验证。
 - 2026-09-30：**Phase 6 完成（全面收尾）**。母带自动化、BassPump 包络化（渲染 36.8s→19.4s）、report QA 10 项门禁（首跑抓到 96kHz bug）、--karaoke 一条命令全链路、Bahnschrift 数字字体确认、听感样张、契约自检、out/ 清理、**4 个主题 commit 入库（Docs/Skills/Studio/Pipeline）**、studio/README。**剩余两项外部依赖：真实素材投放（网络恢复/手动下载）、合成音频听感结论（样张 out/audio_preview.m4a）。**
 - 变更记录（2026-09-29 Phase 0/1 详见上文与 git 历史）：
   - Phase 0 启动与完成（渲染基准、bt709 修复）

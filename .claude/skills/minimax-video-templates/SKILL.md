@@ -8,7 +8,7 @@ metadata:
 # MiniMax-H3 视频工作室 · Remotion 模板工厂
 
 把"新视频需求"变成"确定性成片"的完整路径。架构与基准数据见
-`REMOTION_INTEGRATION_PLAN_20260929.md` / `studio/BENCHMARK_20260929.md`，进度见 `REMOTION_INTEGRATION_PROGRESS.md`。
+`docs/REMOTION_INTEGRATION_PLAN_20260929.md` / `studio/BENCHMARK_20260929.md`，进度见 `docs/REMOTION_INTEGRATION_PROGRESS.md`。
 
 ## 模板配方卡（需求 → 模板 → 命令）
 
