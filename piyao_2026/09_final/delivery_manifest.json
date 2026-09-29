@@ -1,0 +1,119 @@
+{
+  "project": "piyao_2026",
+  "title": "它只是换了一个地名",
+  "theme": "“豫”你一起 同心护网",
+  "delivered_at": "2026-09-22 15:16:15",
+  "file": "它只是换了一个地名_参赛版_1080P.mp4",
+  "duration_s": 109.292,
+  "resolution": "1920x1080",
+  "fps": 24,
+  "audio": "AAC 48kHz stereo, loudnorm -14 LUFS",
+  "ai_label": "本内容经AI技术辅助生成（角标持续显示 + 片尾卡）",
+  "shots": {
+    "FIRE": {
+      "seed": 2026092201,
+      "length_frames": 175,
+      "mode": "t2v",
+      "source": "piyao_h3_00001_.mp4",
+      "recorded_at": "12:22:50"
+    },
+    "S01": {
+      "seed": 2026092202,
+      "length_frames": 158,
+      "mode": "t2v",
+      "source": "piyao_h3_00002_.mp4",
+      "recorded_at": "12:24:30"
+    },
+    "S12": {
+      "seed": 2026092203,
+      "length_frames": 226,
+      "mode": "t2v",
+      "source": "piyao_h3_00003_.mp4",
+      "recorded_at": "12:27:00"
+    },
+    "S02": {
+      "seed": 2026092204,
+      "length_frames": 192,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00104_.mp4",
+      "recorded_at": "12:29:16"
+    },
+    "S03": {
+      "seed": 2026092205,
+      "length_frames": 158,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00105_.mp4",
+      "recorded_at": "12:31:01"
+    },
+    "S04": {
+      "seed": 2026092206,
+      "length_frames": 192,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00106_.mp4",
+      "recorded_at": "12:33:06"
+    },
+    "S07": {
+      "seed": 2026092209,
+      "length_frames": 141,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00107_.mp4",
+      "recorded_at": "12:34:41"
+    },
+    "S08": {
+      "seed": 2026092210,
+      "length_frames": 175,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00108_.mp4",
+      "recorded_at": "12:36:36"
+    },
+    "S09": {
+      "seed": 2026092211,
+      "length_frames": 175,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00109_.mp4",
+      "recorded_at": "12:41:52"
+    },
+    "S13": {
+      "seed": 2026092214,
+      "length_frames": 175,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00110_.mp4",
+      "recorded_at": "12:43:47"
+    },
+    "S14": {
+      "seed": 2026092215,
+      "length_frames": 175,
+      "mode": "r2v",
+      "source": "MiniMax_H3_00111_.mp4",
+      "recorded_at": "12:45:42"
+    },
+    "S05": {
+      "seed": 2026092207,
+      "length_frames": 192,
+      "mode": "t2v",
+      "source": "piyao_h3_00004_.mp4",
+      "recorded_at": "12:47:52"
+    },
+    "S06": {
+      "seed": 2026092208,
+      "length_frames": 175,
+      "mode": "t2v",
+      "source": "piyao_h3_00005_.mp4",
+      "recorded_at": "12:50:52"
+    },
+    "S10": {
+      "seed": 2026092212,
+      "length_frames": 175,
+      "mode": "t2v",
+      "source": "piyao_h3_00006_.mp4",
+      "recorded_at": "12:52:42"
+    },
+    "S11": {
+      "seed": 2026092213,
+      "length_frames": 158,
+      "mode": "t2v",
+      "source": "piyao_h3_00007_.mp4",
+      "recorded_at": "12:54:23"
+    }
+  }
+}

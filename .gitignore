@@ -27,3 +27,17 @@ studio/public/jobs/
 studio/out/
 studio/.remotion/
 /.remotion/
+
+# External AI tool dirs / misc
+.agents/
+.workbuddy-ai/
+.zcodeignore
+.rresearch/
+
+# Project-local generated envs & audio (regenerable)
+**/acestep-env/
+liaozhai_demo/05_audio/
+piyao_2026/05_audio/
+third_lantern/05_audio/
+experiments/oi.json
+liaozhai_demo/ACE-Step-1.5/
