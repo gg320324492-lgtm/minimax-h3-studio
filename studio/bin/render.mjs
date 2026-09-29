@@ -1,0 +1,89 @@
+#!/usr/bin/env node
+// 渲染桥：Python 管线 → 本脚本 → Remotion 渲染。
+// 用法：
+//   node bin/render.mjs --comp DramaVertical --props <props.json> --out <out.mp4>
+//       [--codec h264] [--crf 18] [--bitrate 8M|14000K] [--hw disable|if-possible|required]
+//       [--concurrency 8]
+// bundle 在单次进程内复用；批量产能升级为常驻服务是 Phase 4 事项。
+
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {bundle} from '@remotion/bundler';
+import {renderMedia, selectComposition} from '@remotion/renderer';
+
+const argv = process.argv.slice(2);
+const get = (key, fallback) => {
+  const i = argv.indexOf(`--${key}`);
+  if (i >= 0 && i + 1 < argv.length) {
+    return argv[i + 1];
+  }
+  return fallback;
+};
+const requireArg = (key) => {
+  const v = get(key);
+  if (!v) {
+    console.error(`Missing required --${key}`);
+    process.exit(2);
+  }
+  return v;
+};
+
+const comp = requireArg('comp');
+const propsPath = requireArg('props');
+const out = requireArg('out');
+const codec = get('codec', 'h264');
+const crf = get('crf') ? Number(get('crf')) : undefined;
+const bitrate = get('bitrate'); // 字符串，形如 "8M" / "14000K"
+const hw = get('hw', 'disable');
+const concurrency = get('concurrency') ? Number(get('concurrency')) : undefined;
+
+const entryPoint = fileURLToPath(new URL('../src/index.ts', import.meta.url));
+
+const t0 = Date.now();
+console.log(`[render.mjs] bundling…`);
+const serveUrl = await bundle({
+  entryPoint,
+  onProgress: (p) => {
+    if (p % 25 === 0) {
+      console.log(`[render.mjs] bundle ${p}%`);
+    }
+  },
+});
+console.log(`[render.mjs] bundle done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+const inputProps = JSON.parse(fs.readFileSync(path.resolve(propsPath), 'utf8'));
+
+const t1 = Date.now();
+const composition = await selectComposition({serveUrl, id: comp, inputProps});
+console.log(
+  `[render.mjs] composition ${composition.width}x${composition.height}@${composition.fps} ` +
+    `${composition.durationInFrames}f, metadata in ${((Date.now() - t1) / 1000).toFixed(1)}s`
+);
+
+await renderMedia({
+  composition,
+  serveUrl,
+  codec,
+  inputProps,
+  outputLocation: path.resolve(out),
+  // Node API 不读 remotion.config.ts（仅 CLI 生效），必须显式传：
+  // jpeg 截帧默认产出 yuvj420p（full range），qa_final.py 要求 yuv420p。
+  pixelFormat: get('pixelfmt', 'yuv420p'),
+  imageFormat: get('imageformat', 'jpeg'),
+  // bt709 是 Phase 0 实测定稿：jpeg 截帧下把输出转为 yuv420p/tv range（否则 yuvj420p 挂 QA），
+  // 速度无损耗。基准数据见 BENCHMARK_20260929.md。
+  colorSpace: get('colorspace', 'bt709'),
+  ...(crf !== undefined ? {crf} : {}),
+  ...(bitrate !== undefined ? {videoBitrate: bitrate} : {}),
+  hardwareAcceleration: hw,
+  ...(concurrency !== undefined ? {concurrency} : {}),
+  onProgress: ({progress}) => {
+    const pct = Math.floor(progress * 100);
+    if (pct % 10 === 0) {
+      console.log(`[render.mjs] render ${pct}%`);
+    }
+  },
+});
+
+console.log(`[render.mjs] DONE ${out} in ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
