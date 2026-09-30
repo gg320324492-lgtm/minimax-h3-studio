@@ -10,8 +10,8 @@ This fails loudly when reality and the manifest disagree:
   * forbidden / superseded entries must not also be in production
 
 Run:
-  E:/ComfyUI/venv/Scripts/python.exe tests/test_manifest_freshness.py
-  E:/ComfyUI/venv/Scripts/python.exe tests/test_manifest_freshness.py --fix-hint
+  python -m pytest tests/test_manifest_freshness.py -q
+  python tests/test_manifest_freshness.py   # 也可以脱离 pytest 单独跑
 """
 
 from __future__ import annotations
@@ -20,7 +20,8 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(r'E:\Minimax-H3')
+# Portable: derive from this file so a clone can live anywhere on disk.
+ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'pipeline_manifest.yaml'
 
 BUCKETS = ('experimental_approved', 'benchmark_only', 'forbidden', 'superseded',
