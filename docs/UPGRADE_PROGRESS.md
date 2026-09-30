@@ -37,7 +37,7 @@
 
 ---
 
-## P2 — H3 Atomic Shot + Prompt Compiler　状态：✅ 完成（数据填充待人工）
+## P2 — H3 Atomic Shot + Prompt Compiler　状态：✅ 完成（ShotSpec 字段待人工补全）
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
@@ -49,11 +49,7 @@
 
 **P2 遗留（需人工）**：`00_project/shot_specs.json` 的结构化字段（subject/action/environment/camera/lighting/style）为空位——拆分与镜头语言是创作决策，不从文本猜测。补全后跑 `prompt_compiler.py` 即可产出编译好的 prompt JSON 供 `gen_keyframes_v3.py` 使用。
 
-| # | 任务 | 状态 | 结论/数据 |
-|---|---|---|---|
-| 2.1 | `ShotSpec` schema（purpose/subject/environment/camera/motion/lighting/duration/reference/negative） | ⬜ | |
-| 2.2 | Prompt Compiler（ShotSpec→H3 prompt，记录 version/seed/workflow/LoRA/steps） | ⬜ | |
-| 2.3 | Shot 级重试（单镜头重生成，不重跑整集） | ⬜ | |
+**P2 未做**：shot 级重试（单镜头重生成不重跑整集）——依赖 ShotSpec 填完后的 shot 状态记录，随 P13 Scene Cache 一起做更合理。
 
 ---
 
