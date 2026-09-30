@@ -42,3 +42,12 @@ third_lantern/05_audio/
 experiments/oi.json
 liaozhai_demo/ACE-Step-1.5/
 ceo_mindread_ep01/_archive_prev2/
+
+# Licensed real audio (local-only; Mixkit terms discourage raw redistribution)
+studio/public/audio/bgm_main.m4a
+studio/public/audio/sfx_whoosh.m4a
+studio/public/audio/sfx_impact.m4a
+studio/public/audio/sfx_coin.m4a
+
+# Vendor-installed agent skills (reinstall: npx skills add remotion-dev/skills)
+.claude/skills/remotion-*
