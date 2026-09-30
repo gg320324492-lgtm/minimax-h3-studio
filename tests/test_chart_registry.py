@@ -182,7 +182,7 @@ def test_every_declared_option_has_a_b_measurement():
     spec.loader.exec_module(matrix)
 
     declared = _declared_option_keys()
-    measured = {dotted.rsplit('.', 1)[-1] for _, _, dotted, _ in matrix.MATRIX}
+    measured = {dotted.rsplit('.', 1)[-1] for _, _, dotted, _v, _k in matrix.MATRIX}
     missing = sorted(declared - measured)
     assert not missing, (
         f'declared chart options with no A/B evidence: {missing}. Run '

@@ -256,3 +256,33 @@ export const declutter = (positions: readonly number[], heights: readonly number
   }
   return out;
 };
+
+
+// ── bar geometry ────────────────────────────────────────────────────────────
+
+/**
+ * A bar's box while it is growing.
+ *
+ * Anchored at the BASELINE, not at the bar's own top. Getting this wrong looks
+ * correct on a settled frame and wrong on every frame of the entrance: with
+ * `top` pinned to the full-height top edge, the bar hangs DOWN from there and
+ * only reaches the baseline at full height, so it appears to sink in rather
+ * than rise. Four settled-frame renders never showed it; measuring the gold
+ * bar's extent across the entrance did, in one pass.
+ *
+ * `valueY` and `baselineY` are the pixel positions the frame's scale produced
+ * (smaller y is higher on screen).
+ */
+export const barBox = (
+  valueY: number,
+  baselineY: number,
+  progress: number
+): {top: number; height: number} => {
+  const p = progress < 0 ? 0 : progress > 1 ? 1 : progress;
+  const full = Math.abs(baselineY - valueY);
+  const height = full * p;
+  // above the baseline -> grow upward; below -> grow downward
+  return valueY <= baselineY
+    ? {top: baselineY - height, height}
+    : {top: baselineY, height};
+};

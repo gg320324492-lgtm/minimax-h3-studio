@@ -36,35 +36,51 @@ GRAPH = ROOT / 'pipeline' / 'examples' / 'charts_demo.json'
 # reports zero and looks like a finding. Each scene is 150 frames and its marks
 # have finished entering well before the end, so the frame below is the last
 # quarter of the scene.
-MATRIX: list[tuple[int, int, str, object]] = [
+#: How a row must be measured, which decides its frame. Recorded here rather than
+#: left in a reviewer's head, because getting it wrong produces a zero that reads
+#: exactly like a finding — which is how a live option got reported dead once, and
+#: how a live matrix row nearly got called a bug.
+#:
+#:   SETTLED  — the marks have fully arrived and the subject fills the frame. Every
+#:              option about how a mark LOOKS or is emphasised. On a
+#:              mid-entrance frame these change nothing, by construction.
+#:   ENTERING — the marks are still arriving and the frame is mostly empty. The only
+#:              place an option about TIMING can show itself. On a settled frame
+#:              these are identically zero, and "identically zero" is exactly what
+#:              a dead option looks like, too.
+SETTLED = 'settled'
+ENTERING = 'entering'
+
+
+MATRIX: list[tuple[int, int, str, object, str]] = [
     # bar — scene 0, frames 0..150
-    (0, 120, 'scenes.0.content.chart.emphasisIndex', 0),
-    (0, 120, 'scenes.0.content.chart.valueFormat', 'int'),
-    (0, 120, 'scenes.0.content.chart.showGrid', False),
-    (0, 120, 'scenes.0.content.chart.barWidthRatio', 0.9),
-    (0, 120, 'scenes.0.content.chart.showAxis', False),
-    (0, 120, 'scenes.0.content.chart.axisLabel', 'RENAMED UNIT'),
+    (0, 120, 'scenes.0.content.chart.emphasisIndex', 0, SETTLED),
+    (0, 120, 'scenes.0.content.chart.valueFormat', 'int', SETTLED),
+    (0, 120, 'scenes.0.content.chart.showGrid', False, SETTLED),
+    (0, 120, 'scenes.0.content.chart.barWidthRatio', 0.9, SETTLED),
+    (0, 120, 'scenes.0.content.chart.showAxis', False, SETTLED),
+    (0, 120, 'scenes.0.content.chart.axisLabel', 'RENAMED UNIT', SETTLED),
     # line — scene 1, frames 150..300
-    (1, 270, 'scenes.1.content.chart.showArea', False),
-    (1, 270, 'scenes.1.content.chart.curve', 'step'),
-    (1, 270, 'scenes.1.content.chart.strokeWidth', 1),
-    (1, 270, 'scenes.1.content.chart.showValues', True),
+    (1, 270, 'scenes.1.content.chart.showArea', False, SETTLED),
+    (1, 270, 'scenes.1.content.chart.curve', 'step', SETTLED),
+    (1, 270, 'scenes.1.content.chart.strokeWidth', 1, SETTLED),
+    (1, 270, 'scenes.1.content.chart.showValues', True, SETTLED),
     # bubble — scene 4, frames 600..750
-    (4, 720, 'scenes.4.content.chart.sizeBy', 'none'),
-    (4, 720, 'scenes.4.content.chart.showValues', False),
+    (4, 720, 'scenes.4.content.chart.sizeBy', 'none', SETTLED),
+    (4, 720, 'scenes.4.content.chart.showValues', False, SETTLED),
     # slope — scene 3, frames 450..600
-    (3, 570, 'scenes.3.content.chart.showEndLabels', False),
-    (3, 570, 'scenes.3.content.chart.emphasisIndex', 0),
+    (3, 570, 'scenes.3.content.chart.showEndLabels', False, SETTLED),
+    (3, 570, 'scenes.3.content.chart.emphasisIndex', 0, SETTLED),
     # heatmap — scene 5, frames 750..900
-    (5, 870, 'scenes.5.content.chart.showCellValues', False),
-    (5, 870, 'scenes.5.content.chart.emphasisIndex', 0),
+    (5, 870, 'scenes.5.content.chart.showCellValues', False, SETTLED),
+    (5, 870, 'scenes.5.content.chart.emphasisIndex', 0, SETTLED),
     # rank — scene 6, frames 900..1050
-    (6, 1020, 'scenes.6.content.chart.showRankDelta', False),
-    (6, 1020, 'scenes.6.content.chart.emphasisIndex', 0),
+    (6, 1020, 'scenes.6.content.chart.showRankDelta', False, SETTLED),
+    (6, 1020, 'scenes.6.content.chart.emphasisIndex', 0, SETTLED),
     # volume — scene 7, frames 1050..1200
-    (7, 1170, 'scenes.7.content.chart.emphasisIndex', 5),
+    (7, 1170, 'scenes.7.content.chart.emphasisIndex', 5, SETTLED),
     # sparkline — scene 8, frames 1200..1350
-    (8, 1320, 'scenes.8.content.chart.strokeWidth', 2),
+    (8, 1320, 'scenes.8.content.chart.strokeWidth', 2, SETTLED),
     # ── motion options, measured MID-ENTRANCE ────────────────────────────────
     # These change nothing on a settled frame, because by then every mark has
     # finished arriving. Measuring them on frame 120 and calling the result a
@@ -72,9 +88,15 @@ MATRIX: list[tuple[int, int, str, object]] = [
     # the guard now refuses — so the frame here is chosen INSIDE the animation.
     # enterFrames 34 + stagger 2*4 puts the bar scene's last bar arriving around
     # frame 44, so 25 is mid-flight for all five.
-    (0, 25, 'scenes.0.content.chart.staggerFrames', 30),
-    (0, 25, 'scenes.0.content.chart.enterFrames', 90),
-    (4, 720, 'scenes.4.content.chart.deemphasis', 1.0),
+    (0, 25, 'scenes.0.content.chart.staggerFrames', 30, ENTERING),
+    # enterFrames is CAPPED at the scene's intro share (34%), so it can only be
+    # measured where the cap is not what binds. On a 150-frame scene the cap is 51
+    # and both 34 and 90 clamp to 51 — the option is genuinely inert there. That is
+    # correct behaviour and a useless measurement, so it is measured on scene 9,
+    # which is 600 frames: cap 204, so 34 and 120 give different entrances.
+    (9, 1440, 'scenes.9.content.chart.enterFrames', 120, ENTERING),
+    (9, 1440, 'scenes.9.content.chart.staggerFrames', 40, ENTERING),
+    (4, 720, 'scenes.4.content.chart.deemphasis', 1.0, SETTLED),
 ]
 
 
@@ -87,10 +109,19 @@ def main() -> int:
     import json
     doc = json.loads(GRAPH.read_text(encoding='utf-8'))
     scratch = Path(args.scratch)
+    # The absolute frame span of each scene. `--frame` is absolute, and a scene-
+    # local frame written here measures a different scene entirely — which produced
+    # a confident zero, in this very table.
+    SCENE_SPANS: dict[int, tuple[int, int]] = {}
+    cursor = 0
+    for _i, _sc in enumerate(doc['scenes']):
+        _n = int(_sc["durationInFrames"])
+        SCENE_SPANS[_i] = (cursor, cursor + _n)
+        cursor += _n
 
     rows: list[dict] = []
     inert: list[str] = []
-    for scene, frame, dotted, value in MATRIX:
+    for scene, frame, dotted, value, kind in MATRIX:
         current, err = ab_field.check_value(doc, dotted, json.dumps(value))
         assert err is None, f'{dotted}: {err}'
         res = ab_field.ab_field(GRAPH, dotted, current, frame, scratch)
@@ -106,6 +137,8 @@ def main() -> int:
         sc = doc['scenes'][scene]
         rows.append({
             'option': option,
+            'kind': kind,
+            'span': SCENE_SPANS.get(scene, ('?', '?')),
             'scene': scene,
             'scene_type': sc['type'],
             'chart_type': (sc.get('content', {}).get('chart', {}) or {}).get('type'),
@@ -138,12 +171,13 @@ def main() -> int:
         '    --set <path>=<now> --frame <frame> --out out/ab',
         '```',
         '',
-        '| option | scene / chart type | path | was -> now | frame | ink | changed px | % | region | verdict |',
-        '|---|---|---|---|---:|---:|---:|---:|---|---|',
+        '| option | measured | scene | scene frames | chart type | path | was -> now | frame | ink | px | % | region | verdict |',
+        '|---|---|---|---|---|---|---|---:|---:|---:|---:|---|---|',
     ]
     for r in rows:
         lines.append(
-            f'| `{r["option"]}` | {r["scene"]} {r["scene_type"]} / `{r["chart_type"]}` '
+            f'| `{r["option"]}` | `{r["kind"]}` | {r["scene"]} {r["scene_type"]} '
+            f'| `{r["span"]}` | `{r["chart_type"]}` '
             f'| `{r["path"]}` | `{r["was"]}` -> `{r["now"]}` | {r["frame"]} '
             f'| {r["ink"]:.1f}% | {r["changed"]} | {r["pct"]:.2f} | {r["box"]} | {r["verdict"]} |'
         )

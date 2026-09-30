@@ -330,3 +330,13 @@
   - **(b) `_set_path` 区分「新建叶子」和「新建容器」**：规则是**只有最后一段可以不存在**。设置图谱从未提过的字段是合法的（那正是 A/B 一个没人设过的选项的方式）；凭空造三层之上的容器是笔误，**直接拒绝而不是测量**。方括号语法单独报错并给出正确写法。**BAD PATH（调用错误，exit 2）与 INERT（关于代码的论断，exit 1）是两种不同的词** —— 报告一个笔误用「字段没接线」的措辞，就是让笔误变成账本里的一行发现。
   - **过程中我自己写错两次**：`_descend` 在 `create=False` 时没抛错，裸 KeyError 逃出了我新加的 PathError；以及测试断言 `main()` 抛 SystemExit，而它其实是 return 2。两处都记在提交里。
   - 复测：**106 passed**、注册表 0 问题、**A/B 矩阵 23/23 全活且报告带溯源**、tsc 干净。
+- 2026-09-30：**P7.2 统一 chart 生命周期**（`charts/lifecycle.ts`）+ **用测量抓到一个自 P7.1 就存在的柱状图入场缺陷**。
+  - **九个标记各自一套入场，是设计缺陷而非执行遗漏**：`Bar` 用 `land` 弹簧长、`PathMark` 用 dash offset 画、`Slope` 从左往右伸、`Heatmap` 缩放格子 —— 同一个「到达」发生了九种。**统一为纯函数 `lifecycleAt(frame, duration, count, opts)`**，五阶段 `intro / settle / highlight / focus / exit` **按场景时长的比例而非固定帧数**，所以 90 帧和 600 帧都读得对；**入场长度封顶**为 `min(场景的 34%, 标记实际所需)`，否则 40 帧场景会在没画完时就切掉。`emphasis` 是**阶段**的属性而非第二套动画：intro 升起 → settle 到位 → highlight/focus **保持不动**。<br>`lifecycle.check.ts` 60+ 项，含三条渲染里看不出的：阶段在任意时长上无缝无重叠、封顶确实生效、**stagger 必须让最后一根比第一根晚到**（同步的 stagger 不是 stagger）。
+  - **`types.tsx` 现在零 Remotion import**：九个标记是 frame 上下文的纯函数，时钟只有一个来源。迁移后 `useCurrentFrame` / `useVideoConfig` / `spring` / `interpolate` 全部失去最后一个读者，**删掉了而不是留着误导后来的人**；文件高度改由 frame 提供。
+  - **测量抓到一个四次稳定帧渲染都没暴露的缺陷**：柱子**从顶端往下长**而不是从基线往上长。`top: min(y, zeroY)` 是常数、height 增长，柱子从顶端垂下、**只在满高时恰好落回基线** —— 稳定帧看着完全正确，入场中间帧全错。**自 P7.1 就在，我之前渲的四帧全是稳定帧。**<br>修法是把柱形几何抽成纯函数 `barBox(valueY, baselineY, progress)` 放进 `scale.ts`，9 条检查钉住：零进度贴在基线上、满高到自己的顶、单调上升、**底边从不动**。`VolumeBars` 同一缺陷一起修。<br>**判据是黄金区域上下边随帧的变化**：修前 top 恒 187、bottom 从 268 漂到 909；修后 top 从 828→510→320→202 上升而 **bottom 恒定 909**。
+  - **A/B 矩阵 24/24，报告带完整溯源**（`option / measured / scene / scene frames / chart type / path / was→now / frame / ink / px / % / region / verdict`）。这一轮三个数字全是我「考错对象却得到格式正确的答案」：<br>① **`enterFrames` 被封顶**：150 帧场景封顶 51，`34` 和 `90` 都夹到 51 —— 该时长下选项确实无效（**正确行为、无用测量**）。加 `c10_bar_long`（600 帧，封顶 204）专供测运动项。<br>② **`--frame` 是绝对帧号**：第 10 场在 1350..1950，我写 90 落进第 1 场。<br>③ 报告加 `scene frames` 列正是为了让这类错误**一眼可见**；**`measured` 列写进报告头部** —— 运动项只能在低 ink 帧测、静态项只能在高 ink 帧测，**同一张矩阵两类选项取帧规则相反**，不写明将来有人拿稳定帧测运动项会得到一个「看起来像结论的零」。
+  - **过程中的工具失误，如实记**：本轮**六次**补丁因文件是 CRLF 而**静默匹配失败**（`
+` 对不上 `
+`），还有一次替换脚本在写盘前异常退出 —— 所以我说「已应用」的东西实际从未落盘。**我在一个报告工具上重复了同一类静默失败**，最后改成「先定位所有索引、一次算完、写一次」。静默的失败比明确的失败危险，这是老教训的新实例。
+  - 复测：**106 passed**、tsc 干净、三份可执行 check 全过（projection / scale / lifecycle）、**A/B 24/24 exit 0**、完整渲出 `out/charts_demo.mp4`（1950 帧 32.5s，`yuv420p(tv, bt709)`）。
+  - **未做**：P7.3（annotation 避让 / 数字格式 / theme / stagger / emphasis 收口）；矩阵接进 `tests/` 成为 CI 项（复验官建议 P8 收尾做）。
