@@ -1,8 +1,9 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import {useVideoConfig} from 'remotion';
+import {useCurrentFrame, useVideoConfig} from 'remotion';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {formatValue, linear, niceTicks, type Extent} from './scale';
+import {lifecycleAt, type Lifecycle} from './lifecycle';
 import {option, type ChartOptions, type ChartType} from './options';
 
 /**
@@ -42,6 +43,20 @@ export type Frame = {
   unit: string;
   /** design px per unit, for callers that need to convert (radius, offsets) */
   s: number;
+  /**
+   * The composition's height in px, so a mark can bound its own layout.
+   *
+   * Provided here rather than read with `useVideoConfig` in each mark: after
+   * the lifecycle moved the clock, `useCurrentFrame` had no remaining reader in
+   * types.tsx at all, and the one thing that still wanted a hook is a number.
+   */
+  height: number;
+  /**
+   * The shared lifecycle (P7.2). Every mark animates from this and from nothing
+   * else — before it, each of the nine grew on its own spring and the same
+   * "arrive" happened nine ways in one film.
+   */
+  life: Lifecycle;
 };
 
 const FrameContext = createContext<Frame | null>(null);
@@ -77,6 +92,15 @@ export type ChartFrameProps = {
    * cosmetic problem, it is a wrong chart.
    */
   xAt?: (i: number, count: number) => number;
+  /**
+   * The SCENE's own length, not the composition's.
+   *
+   * `useVideoConfig().durationInFrames` is the whole film, so a 150-frame scene
+   * in an 1800-frame composition would be handed a timeline eighteen times too
+   * long and would still be in its intro when it cut. This is the number the
+   * lifecycle is built from.
+   */
+  sceneDurationInFrames: number;
   /** marks, drawn inside the plot box */
   children: React.ReactNode;
 };
@@ -88,7 +112,8 @@ const gutterFor = (labels: readonly string[], s: number): number => {
 };
 
 export const ChartFrame: React.FC<ChartFrameProps> = ({
-  chart, options, values, zeroBased = true, xLabels, rowLabels, xAt, children,
+  chart, options, values, zeroBased = true, xLabels, rowLabels, xAt,
+  sceneDurationInFrames, children,
 }) => {
   const {PALETTE, SPACE, TYPE} = useDesign();
   const comp = useVideoConfig();
@@ -160,6 +185,23 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
     [domain, plot.y, plot.h]
   );
 
+  const life = useMemo(
+    () => lifecycleAt({
+      frame: useCurrentFrame(),
+      durationInFrames: sceneDurationInFrames,
+      count: Math.max(values.length, 1),
+      emphasisIndex: option(chart, 'emphasisIndex', options),
+      opts: {
+        enterFrames: option(chart, 'enterFrames', options),
+        staggerFrames: option(chart, 'staggerFrames', options),
+      },
+    }),
+    // values.length is a count, not an identity: the lifecycle only needs how
+    // many marks there are, and recomputing on every array identity would make
+    // a new timeline for every render
+    [chart, options, sceneDurationInFrames, values.length]
+  );
+
   const frame: Frame = useMemo(() => ({
     chart,
     opts: {
@@ -177,13 +219,13 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
       sizeBy: option(chart, 'sizeBy', options),
       showEndLabels: option(chart, 'showEndLabels', options),
     } as ChartOptions,
-    plot, yOf, domain, ticks, s,
+    plot, yOf, domain, ticks, s, height: comp.height, life,
     valueText: (v: number) => {
       const f = formatValue(v, opts.valueFormat);
       return f.unit ? `${f.text}${f.unit}` : f.text;
     },
     unit,
-  }), [chart, options, opts, plot, yOf, domain, ticks, s, values, unit]);
+  }), [chart, options, opts, plot, yOf, domain, ticks, s, comp.height, life, values, unit]);
 
   return (
     <FrameContext.Provider value={frame}>

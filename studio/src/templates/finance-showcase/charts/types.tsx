@@ -1,9 +1,9 @@
 import React, {useMemo} from 'react';
-import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {useFrame, type Frame} from './ChartFrame';
-import {areaPath, band, declutter, linePath, type Extent, type Point} from './scale';
+import {enterFor as lifecycleEnterFor, staggerPosition} from './lifecycle';
+import {areaPath, band, barBox, declutter, linePath, type Extent, type Point} from './scale';
 import {option, type ChartType} from './options';
 
 /**
@@ -27,15 +27,17 @@ export type Series = {
   sizes?: number[];
 };
 
-const grow = (frame: number, delay: number, fps: number, frames: number, springName = 'land'): number => {
-  if (frames < 1) return 1;
-  return spring({
-    frame: frame - delay,
-    fps,
-    config: {damping: 200, stiffness: springName === 'land' ? 100 : 160},
-    durationInFrames: frames,
-  });
-};
+/**
+ * A mark's entrance, from the SHARED lifecycle.
+ *
+ * Every mark used to call its own `grow()` with its own spring config and its
+ * own reading of `enterFrames`. Nine marks, nine entrances, one film — the same
+ * "arrive" happened nine ways, and two marks that looked identical in a graph
+ * could land a third of a second apart. There is now exactly one timeline
+ * (charts/lifecycle.ts) and this is the only place a mark's stagger is applied.
+ */
+const enterFor = (f: Frame, index: number): number =>
+  lifecycleEnterFor(f.life, index, f.opts.staggerFrames);
 
 /** The colour a mark wears: accent when emphasised, muted otherwise. */
 const useMarkPaint = () => {
@@ -57,8 +59,6 @@ const useMarkPaint = () => {
 export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labels}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const {PALETTE, SPACE, TYPE} = useDesign();
   const s = f.s;
   const b = useMemo(() => band(series.values.length, [f.plot.x, f.plot.x + f.plot.w], 0.28), [series.values.length, f.plot]);
@@ -69,17 +69,20 @@ export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labe
     series.values.map((v) => f.yOf(v) - labelH * 0.9),
     series.values.map(() => labelH),
     0,
-    comp.height
+    f.height
   );
 
   return (
     <>
       {series.values.map((v, i) => {
-        const p = grow(frame, i * f.opts.staggerFrames, comp.fps, f.opts.enterFrames);
+        const p = enterFor(f, i);
         const emphasised = f.opts.emphasisIndex === i;
         const y = f.yOf(v);
-        const top = Math.min(y, zeroY);
-        const h = Math.abs(zeroY - y) * p;
+        // Anchored at the BASELINE — see barBox. Pinning `top` to the full-height
+        // top edge makes the bar hang DOWN from there and only meet the baseline
+        // at full height, so it appears to sink in rather than rise. That is
+        // invisible on a settled frame and wrong on every frame of the entrance.
+        const {top, height: h} = barBox(y, zeroY, p);
         return (
           <div key={i}>
             <div
@@ -92,6 +95,7 @@ export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labe
                 background: emphasised ? paint.accent : paint.muted,
                 borderRadius: `${6 * s}px ${6 * s}px 0 0`,
                 boxShadow: emphasised ? `${0} ${18 * s}px ${44 * s}px ${PALETTE.accentDim}` : 'none',
+                opacity: f.life.presence,
               }}
             />
             {f.opts.showValues ? (
@@ -123,8 +127,6 @@ export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labe
 const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withArea}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const s = f.s;
   const n = series.values.length;
 
@@ -139,7 +141,8 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
 
   // draw-on: the path reveals by dash offset rather than by redrawing per frame,
   // so the curve shape is identical on every frame of the animation
-  const p = grow(frame, 0, comp.fps, f.opts.enterFrames + n * f.opts.staggerFrames, 'reveal');
+  // the whole line draws on with the shared entrance, not a second animation
+  const p = enterFor(f, 0);
   const d = linePath(pts, f.opts.curve);
   const approx = useMemo(() => {
     let len = 0;
@@ -165,7 +168,11 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
               <stop offset="100%" stopColor={paint.accent} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <path d={areaPath(pts, f.yOf(Math.max(0, f.domain[0])), f.opts.curve)} fill={`url(#area-${f.chart})`} />
+          <path
+            d={areaPath(pts, f.yOf(Math.max(0, f.domain[0])), f.opts.curve)}
+            fill={`url(#area-${f.chart})`}
+            opacity={f.life.presence}
+          />
         </svg>
       ) : null}
 
@@ -182,6 +189,7 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
           strokeLinejoin="round"
           strokeDasharray={approx}
           strokeDashoffset={approx * (1 - p)}
+          opacity={f.life.presence}
         />
       </svg>
 
@@ -213,7 +221,7 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
                 fontVariantNumeric: 'tabular-nums',
                 fontSize: 22 * s,
                 color: emphasised < 0 || emphasised === i ? paint.ink : paint.inkFaint,
-                opacity: interpolate(p, [0, 1], [0, 1], {extrapolateRight: 'clamp'}),
+                opacity: f.life.presence,
               }}
             >
               {f.valueText(series.values[i])}
@@ -249,8 +257,6 @@ export const Slope: React.FC<{before: number[]; after: number[]; labels: string[
 }) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const s = f.s;
   const n = Math.min(before.length, after.length);
   const left = f.plot.x;
@@ -265,7 +271,7 @@ export const Slope: React.FC<{before: number[]; after: number[]; labels: string[
   return (
     <>
       {Array.from({length: n}, (_, i) => {
-        const p = grow(frame, i * f.opts.staggerFrames, comp.fps, f.opts.enterFrames);
+        const p = enterFor(f, i);
         const y0 = y(before[i]);
         const y1 = y(after[i]);
         const emphasised = f.opts.emphasisIndex === i;
@@ -278,12 +284,13 @@ export const Slope: React.FC<{before: number[]; after: number[]; labels: string[
                 stroke={emphasised ? paint.accent : paint.muted}
                 strokeWidth={(emphasised ? 5 : 3) * s}
                 strokeLinecap="round"
+                opacity={f.life.presence}
               />
             </svg>
-            <div style={{position: 'absolute', left: left - 10 * s, top: y0 - 11 * s, width: 20 * s, textAlign: 'center'}}>
+            <div style={{position: 'absolute', left: left - 10 * s, top: y0 - 11 * s, width: 20 * s, textAlign: 'center', opacity: f.life.presence}}>
               <Dot color={emphasised ? paint.accent : paint.muted} s={s} />
             </div>
-            <div style={{position: 'absolute', left: right - 10 * s, top: y1 - 11 * s, width: 20 * s, textAlign: 'center'}}>
+            <div style={{position: 'absolute', left: right - 10 * s, top: y1 - 11 * s, width: 20 * s, textAlign: 'center', opacity: f.life.presence}}>
               <Dot color={emphasised ? paint.accent : paint.muted} s={s} />
             </div>
             {f.opts.showEndLabels ? (
@@ -329,8 +336,6 @@ const Dot: React.FC<{color: string; s: number}> = ({color, s}) => (
 export const Bubble: React.FC<{series: Series; labels?: string[]}> = ({series, labels}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const s = f.s;
   const sizeBy = option('bubble', 'sizeBy', f.opts);
   const sizes = series.sizes ?? series.values;
@@ -344,7 +349,7 @@ export const Bubble: React.FC<{series: Series; labels?: string[]}> = ({series, l
   return (
     <>
       {series.values.map((v, i) => {
-        const p = grow(frame, i * f.opts.staggerFrames, comp.fps, f.opts.enterFrames);
+        const p = enterFor(f, i);
         const r = sizeBy === 'none' ? 26 * s : (16 + 46 * (sizes[i] / maxSize)) * s;
         const cx = f.plot.x + cw * (i % cols) + cw / 2;
         const cy = f.plot.y + ch * Math.floor(i / cols) + ch / 2 - f.plot.h * 0.28 * v / 100;
@@ -358,7 +363,7 @@ export const Bubble: React.FC<{series: Series; labels?: string[]}> = ({series, l
                 width: r * 2, height: r * 2,
                 borderRadius: '50%',
                 background: emphasised ? paint.accent : paint.muted,
-                opacity: emphasised ? 0.95 : f.opts.deemphasis,
+                opacity: (emphasised ? 0.95 : f.opts.deemphasis) * f.life.presence,
                 transform: `scale(${p})`,
                 boxShadow: emphasised ? `0 0 ${r * 1.4}px ${paint.accent}` : 'none',
               }}
@@ -384,8 +389,6 @@ export const Heatmap: React.FC<{
 }> = ({rows, rowLabels, colLabels}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const s = f.s;
   const flat = rows.flat();
   const max = Math.max(...flat.map(Math.abs), 1e-6);
@@ -398,7 +401,7 @@ export const Heatmap: React.FC<{
       {rows.map((row, r) => (
         <React.Fragment key={r}>
           {row.map((v, c) => {
-            const p = grow(frame, (r * colLabels.length + c) * f.opts.staggerFrames, comp.fps, f.opts.enterFrames);
+            const p = enterFor(f, r * colLabels.length + c);
             const t = Math.abs(v) / max;
             const emphasised = f.opts.emphasisIndex === r * colLabels.length + c;
             return (
@@ -415,6 +418,7 @@ export const Heatmap: React.FC<{
                     : `rgba(245,242,234,${(0.05 + t * 0.34).toFixed(3)})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transform: `scale(${p})`,
+                  opacity: f.life.presence,
                 }}
               >
                 {f.opts.showCellValues ? (
@@ -462,8 +466,6 @@ export const Heatmap: React.FC<{
 export const RankTable: React.FC<{items: {label: string; value: number; previous?: number}[]}> = ({items}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const s = f.s;
   const {SPACE} = useDesign();
   const max = Math.max(...items.map((i) => Math.abs(i.value)), 1e-6);
@@ -477,7 +479,7 @@ export const RankTable: React.FC<{items: {label: string; value: number; previous
   return (
     <>
       {items.map((it, i) => {
-        const p = grow(frame, i * f.opts.staggerFrames, comp.fps, f.opts.enterFrames);
+        const p = enterFor(f, i);
         const emphasised = f.opts.emphasisIndex === i;
         const w = (Math.abs(it.value) / max) * (f.plot.w - labelW - 150 * s) * p;
         const delta = it.previous ? (it.value - it.previous) / Math.abs(it.previous) : 0;
@@ -489,6 +491,7 @@ export const RankTable: React.FC<{items: {label: string; value: number; previous
               left: f.plot.x, top: stackTop + i * rowH,
               width: f.plot.w, height: rowH - 8 * s,
               display: 'flex', alignItems: 'center',
+              opacity: f.life.presence,
             }}
           >
             <div style={{width: labelW - SPACE.md * s, fontFamily: FONT_SANS, fontSize: 24 * s, color: emphasised ? paint.ink : paint.inkMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
@@ -545,8 +548,6 @@ export const Sparkline: React.FC<{values: number[]; width?: number; height?: num
 export const VolumeBars: React.FC<{values: number[]; baseline?: number}> = ({values, baseline}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
   const s = f.s;
   const max = Math.max(...values.map(Math.abs), 1e-6);
   const b = band(values.length, [f.plot.x, f.plot.x + f.plot.w], 0.12);
@@ -556,7 +557,7 @@ export const VolumeBars: React.FC<{values: number[]; baseline?: number}> = ({val
   return (
     <>
       {values.map((v, i) => {
-        const p = grow(frame, i * f.opts.staggerFrames, comp.fps, f.opts.enterFrames);
+        const p = enterFor(f, i);
         const y = f.yOf(zero + v * p);
         const zeroY = f.yOf(zero);
         const emphasised = f.opts.emphasisIndex === i;
@@ -566,11 +567,13 @@ export const VolumeBars: React.FC<{values: number[]; baseline?: number}> = ({val
             style={{
               position: 'absolute',
               left: b.at(i) - w / 2,
-              top: Math.min(y, zeroY),
+              // baseline-anchored, same as Bar — see barBox
+              top: barBox(y, zeroY, 1).top,
               width: w,
-              height: Math.max(0, Math.abs(zeroY - y)),
+              height: barBox(y, zeroY, 1).height,
               background: emphasised ? paint.accent : paint.muted,
               borderRadius: `${3 * s}px ${3 * s}px 0 0`,
+              opacity: f.life.presence,
             }}
           />
         );

@@ -149,6 +149,7 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
         zeroBased={zeroBased}
         xLabels={type === 'bar' || type === 'bubble' || type === 'volume' ? spec.labels : undefined}
         rowLabels={type === 'heatmap' ? spec.rowLabels : undefined}
+        sceneDurationInFrames={scene.durationInFrames}
         xAt={xAt}
       >
         {type === 'bar' ? <Bar series={{values}} labels={spec.labels} /> : null}

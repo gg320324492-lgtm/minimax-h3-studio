@@ -14,7 +14,7 @@
  */
 
 import {
-  areaPath, band, declutter, domainFor, extent, formatValue, linePath,
+  areaPath, band, barBox, declutter, domainFor, extent, formatValue, linePath,
   linear, niceTicks, trimZeros, type Point,
 } from './scale';
 
@@ -150,6 +150,33 @@ console.log('scale: label declutter');
     JSON.stringify(atEnd));
   check('an empty list is fine', JSON.stringify(declutter([], [])) === '[]');
   check('a single label is fine', JSON.stringify(declutter([500], [20])) === '[500]');
+}
+
+console.log('scale: a growing bar is anchored at the BASELINE');
+{
+  // A bar's top edge is ABOVE its baseline (smaller y) and it must rise toward
+  // it. Pinning `top` to the full-height edge instead makes the bar hang down and
+  // only touch the baseline at full height: right on a settled frame, wrong on
+  // every frame of the entrance. Four settled renders never showed it; measuring
+  // the gold bar's extent across the entrance did, in one pass.
+  const base = 900;
+  const topEdge = 180;
+  const at = (pr: number) => barBox(topEdge, base, pr);
+  check('at zero progress the bar has no height', at(0).height === 0);
+  check('at zero progress it sits ON the baseline', near(at(0).top, base), String(at(0).top));
+  check('at full progress it reaches its own top', near(at(1).top, topEdge) && near(at(1).height, base - topEdge));
+  check('it rises monotonically', [0, 0.25, 0.5, 0.75, 1].every((pr, i, a) =>
+    i === 0 || (at(pr).top <= at(a[i - 1]).top + 1e-9 && at(pr).height >= at(a[i - 1]).height - 1e-9)));
+  check('the bottom edge never moves', [0, 0.3, 0.7, 1].every((pr) =>
+    near(at(pr).top + at(pr).height, base, 1e-9)));
+  // the shape that shipped: constant top, growing downward
+  check('the shipped bug differs from the correct box',
+    [0, 0.5, 1].some((pr) => topEdge !== at(pr).top));
+  const below = barBox(1000, base, 0.5);
+  check('a negative bar hangs from the baseline', near(below.top, base) && below.height > 0,
+    JSON.stringify(below));
+  check('progress is clamped', barBox(topEdge, base, -3).height === 0 && barBox(topEdge, base, 9).height > 0);
+  check('a zero-height bar is well defined', barBox(base, base, 0.5).height === 0);
 }
 
 if (failures) {
