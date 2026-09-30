@@ -1,5 +1,11 @@
 # 音频资产投放口（替换合成素材的规范）
 
+> **公开仓库说明**：Mixkit 许可不允许原始音频文件的独立再分发，因此 4 个 Mixkit
+> 派生文件（`bgm_main.m4a`、`sfx_whoosh/impact/coin.m4a`）**只在本地、不入库**。
+> 仓库内自带的是合成兜底版（`bgm_synth_126.m4a` + `make_audio_assets.py`）与
+> CC0 的 Kenney 音效。新克隆机器：跑一遍 `make_audio_assets.py` 或按本 README
+> 自行获取授权素材，再执行 `import_real_assets.py` 完成替换。
+
 `studio/scripts/make_audio_assets.py` 合成的 BGM/音效是**无网络的兜底方案**，听感有天花板。
 拿到更好的真实素材时，按下面的规范替换（渲染端不用改代码，只换文件）：
 
