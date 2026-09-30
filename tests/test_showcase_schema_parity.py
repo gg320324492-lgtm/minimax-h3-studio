@@ -242,18 +242,34 @@ def test_style_bible_field_name_is_identical_on_both_sides():
     assert not py.exists()
 
 
-def test_scenes_do_not_import_static_tokens_directly():
-    """A scene must read design through context. Importing the token module
-    directly is what made the graph's style bible decorative."""
+def test_scenes_do_not_import_design_values_directly():
+    """Scenes must read palette/type/motion through the style bible context.
+
+    Fonts and the design-height scale stay a static import on purpose — they are
+    not graph-overridable — so the check is for the design VALUES, not for any
+    import from the tokens module.
+    """
+    design_values = ('PALETTE', 'TYPE', 'MOTION', 'SPACE', 'RADIUS', 'SHADOW', 'DEPTH')
     scene_dir = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes'
     offenders = []
     for f in sorted(scene_dir.glob('*.tsx')):
-        src = f.read_text(encoding='utf-8')
-        for line in src.splitlines():
+        for line in f.read_text(encoding='utf-8').splitlines():
             if line.startswith('import') and 'design/tokens' in line:
-                offenders.append(f.name)
+                imported = [n.strip().split(' as ')[0]
+                            for n in line.split('{', 1)[-1].split('}', 1)[0].split(',')]
+                bad = [n for n in imported if n in design_values]
+                if bad:
+                    offenders.append(f'{f.name}: {bad}')
     assert not offenders, (
-        f'scenes import static tokens instead of the style bible: {offenders}')
+        f'scenes import design values instead of using the style bible: {offenders}')
+
+
+def test_every_scene_uses_the_style_bible_hook():
+    scene_dir = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes'
+    for f in sorted(scene_dir.glob('*.tsx')):
+        src = f.read_text(encoding='utf-8')
+        assert 'useDesign()' in src, f'{f.name} never reads the style bible'
+        assert 'design/styleBible' in src, f'{f.name} does not import the style bible' 
 
 
 def test_main_template_provides_the_style_bible():
