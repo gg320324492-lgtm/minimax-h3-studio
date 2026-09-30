@@ -175,6 +175,14 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
 
   const windows = ((scene.content ?? {}).windows ?? []) as Win[];
 
+  // composition lives in the graph (P6): every value has a default so an
+  // older graph still renders, but a new graph can retune it without TS edits
+  const spreadX = Number(layout.spreadX ?? 250) * s;
+  const spreadZ = Number(layout.spreadZ ?? 110) * s;
+  const perWindowRot = Number(layout.perWindowRotateY ?? 7);
+  const winW = Number(layout.windowWidth ?? layout.width ?? 520) * s;
+          const winH = Number(layout.windowHeight ?? layout.height ?? 400) * s;
+
   return (
     <CameraRig camera={scene.camera} motion={motion} durationInFrames={scene.durationInFrames}>
       <div style={{position: 'absolute', inset: 0, transformStyle: 'preserve-3d'}}>
@@ -189,10 +197,8 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
           // depth plane + a slight counter-rotation so the stack reads as
           // three dimensional rather than as a flat row
           const z = (i - 1) * 180 * s;
-          const rot = (1 - i) * 7;
-          const winW = Number(layout.width ?? 520) * s;
-          const winH = Number(layout.height ?? 400) * s;
-          return (
+          const rot = (1 - i) * perWindowRot;
+                  return (
             <div
               key={w.title}
               style={{
@@ -201,7 +207,7 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
                 top: '50%',
                 // centre the plane; without this the windows hang off the
                 // right edge because left:50% is the window's own origin
-                transform: `translate(-50%, -50%) translateZ(${(i - (windows.length - 1) / 2) * 110 * s}px) translateX(${(i - (windows.length - 1) / 2) * 250 * s}px)`,
+                transform: `translate(-50%, -50%) translateZ(${(i - (windows.length - 1) / 2) * spreadZ}px) translateX(${(i - (windows.length - 1) / 2) * spreadX}px)`,
                 transformStyle: 'preserve-3d',
               }}
             >

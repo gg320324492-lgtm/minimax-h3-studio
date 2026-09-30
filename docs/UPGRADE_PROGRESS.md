@@ -133,6 +133,8 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
+| 6.1 | **双图谱治理**（复验提出） | ✅ | 新增 `studio/scripts/stage_showcase.py`：图谱 → `public/jobs/<job>/` 的**唯一**合法通道，附 `.staged-from.json` 指纹边车（对语义内容哈希，忽略键序/缩进）。**规则确立：CLI 渲染一律 `--props` 指向入库源图谱；暂存副本只为 Remotion Studio 存在（需 HTTP 提供 props）**。漂移可检测（源改了/副本被手改都会报 DRIFT） |
+| 6.2 | per-window 构图参数上图谱 | ⚠️ **生效但未完全居中** | 图谱 `layout` 新增 `spreadX/spreadZ/perWindowRotateY/windowWidth/windowHeight`，组件读它们（保留默认值兼容旧图谱）。**产物可核验**：`git diff pipeline/` 有真实 diff，渲染用**入库源图谱**。实测 spreadX 250→190 + perWindowRot 7→4 生效，窗口簇明显收紧、层次更均匀。**但光学重心仍偏右**：近端窗口因 translateZ 更大而被透视放大，光学重心 ≠ 几何中心，需用 X 间距补偿 Z 间距——未做，不记为已修 |
 | 6.0 | Browser Stack 居中尝试 | ❌ **无效（改错对象）** | 复验指出整簇偏右源自图谱 camera 取向，修法应在图谱。**实际做的是改渲染用的暂存副本 `studio/public/jobs/showcase_demo.json`（该目录被 gitignore），而源图谱 `pipeline/examples/showcase_demo.json` 从未改动** —— 因此从提交产物看等于没做，`0d59c11` 仅含 docs 一个文件。**自述的「重渲确认生效」不成立**。复验官独立实测证明声明式控制链本身成立：只改图谱 `rotateY −9→−40` 会改变 1.25% 像素、变化区域精确落在三个窗口上；但相机这条路本就不是居中正解（横向铺开由组件内每窗口自己的 rotateY(−7/0/+7) 与 translateX(250·s) 主导）。**归入 6.x：把 per-window 参数提升到图谱层** |
 
 | # | 任务 | 状态 | 结论/数据 |
