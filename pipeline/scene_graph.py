@@ -49,10 +49,17 @@ class ResolvedScene:
     startFrame: int
     durationInFrames: int
     raw: dict[str, Any] = field(default_factory=dict)
+    #: what the graph asked for; in beat mode the resolved duration is authoritative
+    requested_frames: int = 0
 
     @property
     def endFrame(self) -> int:
         return self.startFrame + self.durationInFrames
+
+    @property
+    def adjusted(self) -> bool:
+        """True when beat quantisation changed the requested length."""
+        return self.requested_frames != self.durationInFrames
 
     @property
     def generative(self) -> bool:
@@ -75,54 +82,50 @@ class Showcase:
         return sum(int(s['durationInFrames']) for s in self.scenes)
 
     def resolve(self, beat_snap: bool = False) -> list[ResolvedScene]:
-        """Assign start frames (and, in beat mode, the rendered duration).
+        """Assign start frames.
 
-        With beat_snap, timing is accumulated in BEAT space and converted to
-        frames once. Two earlier attempts failed and are worth recording:
+        Without beat_snap this is a plain back-to-back timeline.
 
-        * Snapping each start iteratively: a beat is 28.5714 frames at 60 fps /
-          126 BPM, so "nearest beat" often lands BEFORE the previous scene ends.
-          The no-overlap clamp then pushes the start forward and every scene
-          donates ~0.43 frames to the next — measured 3.86 frames (64 ms) of
-          monotonic drift over 10 eight-beat scenes.
-        * Snapping the start but keeping `durationInFrames` verbatim: same
-          failure. 229 frames is 8.015 beats, so the scene overruns the grid and
-          the next start is pushed out again.
+        With beat_snap, timing lives in BEAT space and is converted to frames
+        exactly once per boundary. Both boundaries of a scene come from the
+        same rounding of the same beat grid, so:
 
-        What works: in beat mode a scene occupies a WHOLE number of beats, so
-        `durationInFrames` is read as a request and rounded to the nearest
-        whole-beat frame count. Starts are then exact multiples of the beat
-        (rounded once), and no clamp is ever needed. Error stays under half a
-        frame per scene and does not accumulate.
+          * continuity is structural — start[i+1] == end[i] by construction,
+            so neither an overlap nor a gap can be expressed;
+          * drift is bounded by half a frame per boundary and never
+            accumulates, because the beat cursor is an exact count.
 
-        The trade: a rendered scene may differ from `durationInFrames` by up to
-        half a beat, because a fractional beat cannot be honoured exactly by
-        integer frames. That is the price of staying on the grid, and it is
-        bounded — unlike the drift it replaces.
+        Three earlier versions failed, and the pattern is worth keeping in
+        mind: picking start-rounding and duration-rounding independently gives
+        round(a) + round(b) != round(a + b), so every combination leaves a
+        one-frame defect on one side or the other — snapping starts iteratively
+        overlapped (0.43 frames per scene, 3.86 over ten), and flooring the
+        duration instead turned that overlap into a gap. The fix is not a
+        better rounding mode; it is deriving each scene's end from the next
+        scene's start instead of computing both.
+
+        `durationInFrames` in the input is therefore a REQUEST. The resolved
+        duration is authoritative and may differ by up to half a beat; ask for
+        whole-beat durations to keep the difference predictable.
         """
         beat_frames = (60.0 / self.bpm) * self.fps
         out: list[ResolvedScene] = []
-        cursor_frames = 0
-        cursor_beats = 0.0
+        beat_cursor = 0.0
+        frame_cursor = 0
         for s in self.scenes:
             requested = int(s['durationInFrames'])
-            # whole beats, kept as an exact count so the beat cursor stays
-            # drift-free — advancing by dur/beat_frames would re-introduce the
-            # 0.015-beat residue this is meant to remove
-            beats = float(max(1, round(requested / beat_frames))) if beat_snap else 0.0
             if beat_snap:
-                # floor, never round: 8 beats is 228.57 frames, and a rounded
-                # 229-frame scene would overrun its own beat span and overlap
-                # the next scene by a frame
-                dur = int(beats * beat_frames)
-                start = int(round(cursor_beats * beat_frames))
+                beats = float(max(1, round(requested / beat_frames)))
+                start = int(round(beat_cursor * beat_frames))
+                end = int(round((beat_cursor + beats) * beat_frames))
+                beat_cursor += beats
             else:
-                dur = requested
-                start = cursor_frames
+                start = frame_cursor
+                end = frame_cursor + requested
             out.append(ResolvedScene(id=s['id'], type=s['type'], startFrame=start,
-                                     durationInFrames=dur, raw=s))
-            cursor_frames = start + dur
-            cursor_beats += beats
+                                     durationInFrames=end - start, raw=s,
+                                     requested_frames=requested))
+            frame_cursor = end
         return out
 
     def beat_distance_frames(self, frame: int) -> float:
@@ -283,8 +286,15 @@ def main() -> int:
     if args.resolve:
         print()
         for s in sc.resolve(beat_snap=args.beat_snap):
+            mark = ' *' if s.adjusted else '  '
             print(f'  {s.id:22s} {s.type:16s} {s.startFrame:5d} +{s.durationInFrames:4d} '
-                  f'[{s.startFrame / sc.fps:6.2f}s]')
+                  f'[{s.startFrame / sc.fps:6.2f}s]{mark}')
+        if args.beat_snap:
+            res = sc.resolve(beat_snap=True)
+            adj = [s for s in res if s.adjusted]
+            print(f'\n  * = beat quantisation adjusted the length '
+                  f'({len(adj)}/{len(res)} scenes); declared total '
+                  f'{sc.totalFrames}f -> resolved {res[-1].endFrame}f')
     return 0
 
 
