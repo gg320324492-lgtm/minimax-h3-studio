@@ -134,15 +134,18 @@
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
 | 6.1 | **双图谱治理**（复验提出） | ✅ | 新增 `studio/scripts/stage_showcase.py`：图谱 → `public/jobs/<job>/` 的**唯一**合法通道，附 `.staged-from.json` 指纹边车（对语义内容哈希，忽略键序/缩进）。**规则确立：CLI 渲染一律 `--props` 指向入库源图谱；暂存副本只为 Remotion Studio 存在（需 HTTP 提供 props）**。漂移可检测（源改了/副本被手改都会报 DRIFT） |
-| 6.2 | per-window 构图参数上图谱 | ⚠️ **生效但未完全居中** | 图谱 `layout` 新增 `spreadX/spreadZ/perWindowRotateY/windowWidth/windowHeight`，组件读它们（保留默认值兼容旧图谱）。**产物可核验**：`git diff pipeline/` 有真实 diff，渲染用**入库源图谱**。实测 spreadX 250→190 + perWindowRot 7→4 生效，窗口簇明显收紧、层次更均匀。**但光学重心仍偏右**：近端窗口因 translateZ 更大而被透视放大，光学重心 ≠ 几何中心，需用 X 间距补偿 Z 间距——未做，不记为已修 |
+| 6.2 | per-window 构图参数上图谱 | ✅ | 图谱 `layout` 新增 `spreadX/spreadZ/perWindowRotateY/windowWidth/windowHeight/equalOnScreen`，组件读它们（保留默认值兼容旧图谱）。**产物可核验**：`git diff pipeline/` 有真实 diff，渲染用**入库源图谱**。参数确实生效（窗口簇收紧、扇形可见）。**归因更正：原记录的「光学重心偏右 = 近端窗口被透视放大」不是主因** —— 见 6.2b，真正的缺陷有三个，见下 |
+| 6.2b | Browser Stack 真正居中 | ✅ **已修，量到像素** | 上一条的归因是错的。量渲染帧后发现三个缺陷：<br>**① `translate(-50%,-50%)` 是空操作** —— 包裹层唯一子元素是 `position:absolute`，自身塌成 0×0，百分比解析为 0，每个窗口以**左上角**挂在画面中心向右下生长，整簇落在右下象限。源码里那句「without this the windows hang off the right edge」描述的正是此现象，**修复写了但从未生效**，源码读不出来。<br>**② 改为屏幕空间排版、逐帧反解 CSS**（`cssXForScreenX` 按**绝对**深度解 x —— 相机自己的 translateZ 会改变每个窗口的深度；`screenScaleFor` 按物体自身平面解 scale）。居中从此是布局的结构性质，不是调出来的数。<br>**③ `screenScaleFor` 返回了放大系数而不是它的逆** `P/(P−z)` 而非 `(P−z)/P` —— 正是它自己注释里警告的错。一行分数、两种写法只差方向，源码读不出来。**靠隔离实验定位**（旋转与相机归零后仍 +33px，推翻了"旋转导致"的假设）。<br>**实测**（`studio/scripts/measure_frame.py`，新工具；表面色剪影 bbox，渲染自入库源图谱）：静止位姿 **+1.5px**；隔离态（无旋转无相机）**−0.5px** 且宽度精确 = 190×2+520 = 900；相机推进中 +15.0→+10.0→+1.5px **收敛**；从交付 mp4 抽帧 **+3.0px**。推进中的偏移是相机在动，不是漂移。<br>**取舍已显式化**：精确居中要求把每个窗口反缩放到图谱要求的**屏幕**尺寸，于是近端不再画得更大，景深变弱。另一读法（真透视尺寸、近端明显更大）也渲了也量了：**+30.0px**，观感更像景深。两者**互斥**（透视下「中心对称」与「剪影对称」不可兼得），故 `layout.equalOnScreen` 在图谱里显式二选一，默认精确居中。<br>**防线**：`projection.check.ts`（tsx 可执行）断言 `cssXForScreenX` 是 `projectX` 的逆（75 组）且 `screenScaleFor` **抵消**投影（14 组）。**变异测试通过**：把分数改回 `P/(P−z)` 后 6 条转红。已接进 `pytest tests/`（无 node 则 skip），**60 passed** |
+| 6.3 | 四场构图目检 | ✅ | 按复验口径逐场抽帧目检。s01 KPI Hero：设计上的左对齐（`align:left`/`padX:120`），非缺陷；s02 Browser Stack：见 6.2b；s04 Calendar：静止位姿 −0.5px。<br>**s03 DataColumns 发现真缺陷并已修**：说明文字「accounts opened」**必然**落在柱场内 —— 柱场占 y 323–843，标题块（数字 222px + 说明 53px）落 y 99–398 —— 好不好看取决于 columnSeed 抽到高柱还是矮柱，**是只能靠运气对的布局**。改为常规流纵向排布（标题在上、柱场在下），**重叠变得无法表示**。代价是柱子不再从数字背后穿过。<br>**未修、留待判断**：s03 相机 `rotateX:[12,2]` 把竖柱剪切成斜的。数据图的竖柱本应竖直，但轻微倾斜也可读作景深 —— 属艺术判断，未擅自改图谱 |
+| 6.4 | Camera 状态单一实现 | ✅ | 相机状态原本只有 `CameraRig` 内部知道；要参与布局就得在场景里复制一份推进/缓动逻辑，两份会各自漂移。改为共享的纯函数 `cameraStateAt` / `useCameraState`，投影数学独立成零依赖的 `common/projection.ts`（这样测试能 import 真代码而不是副本）。有测试锁住「场景不得自建 perspective 变换」 |
 | 6.0 | Browser Stack 居中尝试 | ❌ **无效（改错对象）** | 复验指出整簇偏右源自图谱 camera 取向，修法应在图谱。**实际做的是改渲染用的暂存副本 `studio/public/jobs/showcase_demo.json`（该目录被 gitignore），而源图谱 `pipeline/examples/showcase_demo.json` 从未改动** —— 因此从提交产物看等于没做，`0d59c11` 仅含 docs 一个文件。**自述的「重渲确认生效」不成立**。复验官独立实测证明声明式控制链本身成立：只改图谱 `rotateY −9→−40` 会改变 1.25% 像素、变化区域精确落在三个窗口上；但相机这条路本就不是居中正解（横向铺开由组件内每窗口自己的 rotateY(−7/0/+7) 与 translateX(250·s) 主导）。**归入 6.x：把 per-window 参数提升到图谱层** |
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 6.1 | Palette tokens（background/surface/ink/accent/positive/negative/grid/border）+ premium-dark/light 主题 | ⬜ | 黑+米白+金/橙 |
-| 6.2 | Typography roles（displayXL…annotation + numericDisplay/numericTable，全 tabular-nums） | ⬜ | |
-| 6.3 | Spacing 尺度（4…96） | ⬜ | |
-| 6.4 | Depth 层级（z0…zHero） | ⬜ | |
+| 6.5 | Palette tokens + premium-dark/light 主题 | 🔄 部分 | `PALETTE` 已存在并已接进 StyleBible（6.0 之前的 P4/P5 完成）。本轮新增 `column` / `columnBright`（此前是三处内联 `rgba(245,242,234,α)` 字面量，同一根柱在两个场景是两种颜色）、`DEPTH_CUE` 深度渐变。**premium-light 双主题仍未做** |
+| 6.6 | Typography roles（displayXL…annotation + numeric，全 tabular-nums） | ⬜ | `TYPE` 9 个角色已存在并接进 StyleBible。**缺 numericDisplay / numericTable 两个数字专用角色**（KpiHero 用 `kpiXL/kpiL` 兼代） |
+| 6.7 | Spacing 尺度 | ⬜ | `SPACE` 已存在并接进 StyleBible。**尺度本身仍是 8/16/24/40/64/104/168，与总任务书要求的 4…96 步长不一致**，未统一 |
+| 6.8 | Depth 层级 | ⬜ | `DEPTH` translateZ 阶梯已存在；**但四个场景没有一个真正用 `DEPTH` token**（各自算自己的 z） |
 
 ---
 
@@ -265,3 +268,10 @@
   - **已知边界一（样本量薄）**：真实数据仅 9 对，其中真重复仅 1 例（n=1）。后续每积累多 take 镜头应重测该分布。
   - **已知边界二（语义已收窄）**：0.5 只抓「逐像素完全相同」，不再抓「近重复」。若将来出现「同 seed + 非确定性采样器」的重跑（距离小但非零）会漏检。已写入 `rank_takes.py` 阈值注释。
 - 2026-09-30：**P1 完成**。TakeRanker 上线：9 项客观指标 + 像素级冗余检测 + 人工 override 最高优先 + fail-closed。EP01 实测：S05A 自动改选(闪烁缺陷 take 被淘汰)、S06_T02 判定同 seed 冗余(像素差 0.0)。select_takes 全 12 镜头走自动排名，QA 16/16 PASS。**边界认知：客观指标只能淘汰坏的，无法在「都好」里挑出更好的——S06 两 take 全指标相同，VLM critic 留作增量。**
+- 2026-09-30：**P6.2 完成 —— Browser Stack 真正居中**（commit `5be9a46`）。60 passed，tsc 干净，完整渲出 `out/showcase_p6_centred.mp4`（1920×1080@60，`yuv420p(tv, bt709)`，过 `qa_final` 严格 pix_fmt）。
+  - **上一条的归因是错的，已更正**：原记录「光学重心偏右 = 近端窗口被透视放大」只是三个缺陷之一，而且是次要的那个。量像素后才发现真正的缺陷①大得多。
+  - **过程失败（第四次同类，但这次是「读源码代替量像素」）**：上一轮我判「参数已生效」的标准是**读代码确认组件读了这些参数**，不是**量渲染结果**。这个标准是无效的 —— 本轮三个缺陷全部能通过读源码发现「代码看起来对」：①注释写得像已修、②新写的反解数学读起来完全合理、③一行分数方向写反。**新规则：构图/排版类改动，验收标准只能是像素测量，不能是「代码读起来对」**。已落成工具：`studio/bin/still.mjs`（单帧渲染）+ `studio/scripts/measure_frame.py`（剪影/内容 bbox）。
+  - **隔离实验推翻了自己的假设**：先归因于 `perWindowRotateY` 的 3D 旋转，把旋转与相机全归零重渲 —— 仍 +33px，假设被证伪。手算才发现是 `screenScaleFor` 把分数写反了。**先证伪再修，比先修再验便宜**。
+  - **取舍已显式化而非隐式**：精确居中 ↔ 真透视尺寸在数学上互斥（透视下中心对称与剪影对称不可兼得，已推导）。做成图谱里的 `equalOnScreen` 显式二选一，两种都渲了都量了（+1.5px / +30.0px），默认精确居中。**没有偷偷选一个然后声称只有一个是对的**。
+  - **方法论边界（新发现）**：`measure_frame.py` 的表面色剪影判据**只在无损 still 上可信**。同一帧从 h264 mp4 抽出来，Calendar 的剪影从 −0.5px 变成 −34px，而内容 bbox 仍是 0.0px —— 压缩噪声推过了颜色阈值。以后量交付视频一律用内容判据，量 still 才用剪影判据。
+  - **顺手修的真缺陷**：`test_real_binary_still_prepends` 用 `os.environ['PATH'] = ...` 裸赋值且从不还原，**把被清空的 PATH 泄漏给整个测试会话**。此前没暴露只因没有别的测试需要 node。这是本项目第一次出现「一个测试污染另一个测试」。
