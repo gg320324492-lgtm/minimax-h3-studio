@@ -88,7 +88,7 @@ def main() -> int:
     doc = json.loads(GRAPH.read_text(encoding='utf-8'))
     scratch = Path(args.scratch)
 
-    rows: list[tuple[str, int, float, str, str]] = []
+    rows: list[dict] = []
     inert: list[str] = []
     for scene, frame, dotted, value in MATRIX:
         current, err = ab_field.check_value(doc, dotted, json.dumps(value))
@@ -99,22 +99,56 @@ def main() -> int:
         verdict = 'LIVE' if res['changed'] else 'INERT'
         if not res['changed']:
             inert.append(f'{dotted} (frame {frame}, ink {ink:.2f}%)')
-        print(f'  {verdict:5s} {option:16s} {res["changed"]:7d} px  frame {frame}', flush=True)
-        rows.append((option, res['changed'], res['pct'], str(res['box']), verdict))
+        # Provenance, because a number nobody can re-run is a rumour. The review
+        # could not reproduce a row of this table and had no way to tell WHICH
+        # chart it had measured — every number here carries its graph, its exact
+        # dotted path, its frame, and which scene and chart type that is.
+        sc = doc['scenes'][scene]
+        rows.append({
+            'option': option,
+            'scene': scene,
+            'scene_type': sc['type'],
+            'chart_type': (sc.get('content', {}).get('chart', {}) or {}).get('type'),
+            'path': dotted,
+            'was': ab_field._get_path(doc, dotted)[1],
+            'now': current,
+            'frame': frame,
+            'ink': ink,
+            'changed': res['changed'],
+            'pct': res['pct'],
+            'box': res['box'],
+            'verdict': verdict,
+        })
+        print(f'  {verdict:5s} {sc["type"]:14s} {option:16s} {res["changed"]:7d} px  frame {frame}',
+              flush=True)
 
     lines = [
         '# P7.1 chart option A/B evidence',
         '',
-        'Each row: one option changed on a frame where the subject is on screen,',
-        'the graph rendered twice, the pixels differenced. A row of zeros is a',
-        'declared option nobody reads — the failure the registry check cannot see.',
+        'Each row: one option changed on a frame where the subject is on screen, the',
+        'graph rendered twice, the pixels differenced. A row of zeros is a declared',
+        'option nobody reads — the failure the registry check cannot see, because the',
+        'name IS in the file, on the wrong component.',
         '',
-        '| option | changed px | % | region | verdict |',
-        '|---|---:|---:|---|---|',
+        '**Every row is independently re-runnable.** The exact command is given, so a',
+        'number here can be checked rather than believed:',
+        '',
+        '```',
+        'python studio/scripts/ab_field.py --props pipeline/examples/charts_demo.json \\',
+        '    --set <path>=<now> --frame <frame> --out out/ab',
+        '```',
+        '',
+        '| option | scene / chart type | path | was -> now | frame | ink | changed px | % | region | verdict |',
+        '|---|---|---|---|---:|---:|---:|---:|---|---|',
     ]
-    for option, changed, pct, box, verdict in rows:
-        lines.append(f'| `{option}` | {changed} | {pct:.2f} | {box} | {verdict} |')
-    lines += ['', f'**{len(rows) - len(inert)} of {len(rows)} options are live.**', '']
+    for r in rows:
+        lines.append(
+            f'| `{r["option"]}` | {r["scene"]} {r["scene_type"]} / `{r["chart_type"]}` '
+            f'| `{r["path"]}` | `{r["was"]}` -> `{r["now"]}` | {r["frame"]} '
+            f'| {r["ink"]:.1f}% | {r["changed"]} | {r["pct"]:.2f} | {r["box"]} | {r["verdict"]} |'
+        )
+    lines += ['', f'**{len(rows) - len(inert)} of {len(rows)} options are live.**',
+              f'Generated from `{GRAPH.name}` at {len(doc["scenes"])} scenes.', '']
     if inert:
         lines.append('Inert (declared, changes nothing on screen):')
         lines += [f'- `{i}`' for i in inert]
