@@ -4,6 +4,7 @@ import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
+import {Reveal, Stagger} from '../common/primitives';
 
 /**
  * Scene 3 — Big Number + Column Field (reference film ~32s)
@@ -34,7 +35,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
   const valueIn = spring({
     frame,
     fps: comp.fps,
-    config: {damping: 16, stiffness: 120},
+    config: MOTION.springs.hero,
     durationInFrames: Math.round(0.9 * comp.fps),
   });
 
@@ -61,7 +62,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
             const grow = spring({
               frame: frame - at * 3,
               fps: comp.fps,
-              config: {damping: 20, stiffness: 100},
+              config: MOTION.springs.land,
             });
             const isTall = i % 5 === 0;
             return (
@@ -152,7 +153,7 @@ export const CalendarGrid: React.FC<{scene: Scene}> = ({scene}) => {
   const monthIn = spring({
     frame,
     fps: comp.fps,
-    config: {damping: 200},
+    config: MOTION.springs.settle,
     durationInFrames: Math.round(MOTION.enterSeconds * comp.fps),
   });
 
@@ -195,7 +196,7 @@ export const CalendarGrid: React.FC<{scene: Scene}> = ({scene}) => {
             const local = spring({
               frame: frame - i * stagger * comp.fps,
               fps: comp.fps,
-              config: {damping: 22, stiffness: 160},
+              config: MOTION.springs.reveal,
             });
             const alpha = 0.05 + v * 0.16;
             return (

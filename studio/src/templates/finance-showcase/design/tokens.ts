@@ -76,11 +76,65 @@ export const SHADOW = {
   glowAccent: '0 0 64px rgba(232, 196, 100, 0.28)',
 } as const;
 
-/** Motion presets. Premium = long, eased, spatial; energetic = short and punchy. */
+/**
+ * Motion presets (P5).
+ *
+ * Named by INTENT, not by physics. A scene asks for "settle" or "reveal"; it
+ * never picks damping and stiffness itself. That is the whole point: before this
+ * table, `damping: 200` appeared three times and `20/100` twice across three
+ * scenes, each hand-tuned, and two entrances that should have felt identical
+ * did not.
+ *
+ * Profiles sit on top of the same primitives, so `premium` and `energetic` are a
+ * duration/easing choice rather than a different vocabulary.
+ */
 export type MotionProfile = 'premium' | 'energetic' | 'cinematic' | 'minimal';
 
+export const SPRINGS = {
+  /** deliberate, no overshoot — the default for anything that must feel calm */
+  settle: {damping: 200, stiffness: 120},
+  /** small confident pop (badges, chips, icons) */
+  pop: {damping: 14, stiffness: 200},
+  /** a large object arriving: lands and sits down, tiny overshoot */
+  land: {damping: 20, stiffness: 100},
+  /** data marks appearing in sequence — quick, unobtrusive */
+  reveal: {damping: 22, stiffness: 160},
+  /** expressive settle for hero moments (used sparingly) */
+  hero: {damping: 16, stiffness: 120},
+  /** scale/position hand-off, no spring character at all */
+  linear: {damping: 200, stiffness: 200},
+} as const;
+
+export type SpringName = keyof typeof SPRINGS;
+
 export const MOTION = {
-  /** standard entrances share these so nothing feels hand-tuned differently */
+  springs: SPRINGS,
+
+  /** durations in seconds, at 24fps-equivalent authoring */
+  durations: {
+    micro: 0.28,
+    standard: 0.52,
+    enter: 0.72,
+    settle: 1.15,
+    reveal: 0.9,
+    hero: 1.4,
+    cameraSlow: 2.6,
+    cameraFast: 0.55,
+  },
+
+  /**
+   * Per-profile overrides. Premium spends frames and never bounces; energetic
+   * is short and pops once. This is what makes the two templates feel like
+   * different languages without two vocabularies.
+   */
+  profiles: {
+    premium: {stagger: 0.035, spring: 'settle', ease: [0.16, 1, 0.3, 1] as [number, number, number, number]},
+    energetic: {stagger: 0.02, spring: 'pop', ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number]},
+    cinematic: {stagger: 0.06, spring: 'hero', ease: [0.65, 0, 0.35, 1] as [number, number, number, number]},
+    minimal: {stagger: 0.05, spring: 'linear', ease: [0.25, 1, 0.5, 1] as [number, number, number, number]},
+  },
+
+  /** legacy fields kept so older call sites still resolve */
   enterSeconds: 0.72,
   enterEase: [0.16, 1, 0.3, 1] as [number, number, number, number],
   settleSeconds: 1.15,
@@ -88,6 +142,9 @@ export const MOTION = {
   premiumCameraSeconds: 2.6,
   energeticCameraSeconds: 0.55,
 } as const;
+
+export const profileOf = (name: MotionProfile = 'premium') =>
+  MOTION.profiles[name] ?? MOTION.profiles.premium;
 
 /** Design height the type scale is authored against. */
 export const DESIGN_HEIGHT = 1080;

@@ -102,7 +102,17 @@
 
 ---
 
-## P5 — Motion Design Foundation　状态：⬜
+## P5 — Motion Design Foundation　状态：✅ 完成（动效收敛 + 转场实现）
+
+| # | 任务 | 状态 | 结论/数据 |
+|---|---|---|---|
+| 5.1 | 集中 motionTokens（按语义命名） | ✅ | `design/tokens.ts`：SPRINGS 六个意图命名（settle/pop/land/reveal/hero/linear）+ durations + **四个 profile**（premium/energetic/cinematic/minimal，各自 stagger/spring/ease）。**不再按物理参数命名**——场景问「settle」而不是「damping:200」 |
+| 5.2 | Motion primitives | ✅ | `common/primitives.tsx`：Reveal（标准入场）/ Stagger（错峰）/ MaskReveal（遮罩上移）/ SpecularSweep（光扫）/ VignettePulse（暗角脉冲） |
+| 5.3 | 转场实现（兑现契约字段） | ✅ | `SceneEnter`：fade / mask-wipe / depth-push / dissolve，**全部帧内**——不消耗相邻场景的时间，因为那会把下游字幕/音频/节拍整体移位（ffmpeg 时代的铁律）。`transitionIn` 字段终于有人读了 |
+| 5.4 | 场景动效收敛 | ✅ | 三个场景的 7 处手写 spring 全部换成语义 token；**修掉一个遮蔽 bug**：prop 名叫 `spring` 会盖掉 remotion 的 `spring()` 函数，导致 `spring({...})` 变成调用字符串（TS 报 "not callable" 才暴露），已改名 `springName` |
+| 5.5 | 测试 | ✅ | 5 条：无手写 spring 物理 / token 按意图命名 / 转场必须帧内 / primitives 不得遮蔽 spring / 每个 scene 必须用 style bible + motion |
+
+**P5 遗留**：charts 组件集（P7）、Design System 正式化（P6）、scene 转场只实现了 in 未实现 out、reveal 原语尚未接入四个场景（已可用未全用）。
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|

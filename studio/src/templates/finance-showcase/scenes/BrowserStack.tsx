@@ -4,6 +4,7 @@ import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
+import {Stagger} from '../common/primitives';
 
 /**
  * Scene 2 — Browser Stack (reference film ~26-30s)
@@ -182,7 +183,7 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
           const enter = spring({
             frame: frame - at,
             fps: comp.fps,
-            config: {damping: 200},
+            config: MOTION.springs.settle,
             durationInFrames: Math.round(MOTION.enterSeconds * comp.fps),
           });
           // depth plane + a slight counter-rotation so the stack reads as
