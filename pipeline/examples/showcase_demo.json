@@ -72,7 +72,12 @@
       "durationInFrames": 229,
       "layout": {
         "gap": 40,
-        "radius": 14
+        "radius": 14,
+        "spreadX": 190,
+        "spreadZ": 90,
+        "perWindowRotateY": 4,
+        "windowWidth": 520,
+        "windowHeight": 400
       },
       "camera": {
         "perspective": 1400,
