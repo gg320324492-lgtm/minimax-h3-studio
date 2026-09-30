@@ -1,11 +1,12 @@
 import React, {useMemo} from 'react';
-import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
-import {ShowcaseSchema, resolveScenes, type Scene, type Showcase} from '../../schemas/showcase-v1';
+import {AbsoluteFill, Audio, Sequence, staticFile} from 'remotion';
+import {ShowcaseSchema, resolveScenes, describeIssues, type Scene, type Showcase} from '../../schemas/showcase-v1';
+import {resolveShowcaseMeta} from '../../schemas/showcaseMeta';
 import {KpiHero} from './scenes/KpiHero';
 import {BrowserStack} from './scenes/BrowserStack';
 import {CalendarGrid, DataColumns} from './scenes/DataColumns';
 import {ChartScene} from './charts/Chart';
-import {PALETTE, scaleFrom} from './design/tokens';
+import {PALETTE} from './design/tokens';
 import {StyleBibleProvider, useDesign} from './design/styleBible';
 import {SceneEnter} from './common/primitives';
 import {EnsureFonts} from '../common/EnsureFonts';
@@ -82,10 +83,16 @@ const Backdrop: React.FC<{theme?: string}> = ({theme}) => {
 };
 
 export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps) => {
-  const doc = ShowcaseSchema.parse(rawProps) as Showcase;
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
-  const s = scaleFrom(comp.height);
+  // `.parse`, not `safeParse`: this component cannot render a graph it does not
+  // understand, so the failure has to be loud. What was wrong before was not the
+  // throw — it was that the throw reached Remotion as a bare `ZodError` with no
+  // message, no path and no offending value, so the only thing an operator saw
+  // was a stack trace through the component. The issues are named here.
+  const parsed = ShowcaseSchema.safeParse(rawProps);
+  if (!parsed.success) {
+    throw new Error(`showcase-v1: the graph does not match the schema.\n${describeIssues(parsed.error)}`);
+  }
+  const doc = parsed.data as Showcase;
 
   const resolved = useMemo(() => resolveScenes(doc, false), [doc]);
 
@@ -139,26 +146,33 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
  *    ({props, defaultProps, abortSignal, compositionId, isRendering}), not the
  *    props themselves. Destructuring `props` out of it is mandatory; passing
  *    the object straight into a schema silently fails every time.
- *  - It also runs once with defaultProps before real props arrive, so this
- *    must not throw on an empty or partial document.
+ *  - It also runs once with defaultProps before real props arrive, so this must
+ *    not throw on an empty document. That constraint is real, and it is also
+ *    exactly what the previous version used to excuse the fallback below.
+ *
+ * The fallback returned `{width: 1920, height: 1080, fps: 60, durationInFrames: 1}`
+ * for ANY unparseable graph, which turned every possible authoring mistake into
+ * one indistinguishable answer. Measured, with four different defects —
+ * `format.width` as a string, a scene id that fails the id regex, a scene type
+ * outside the enum, `fps` over the schema cap — all four produced exactly
+ * `1920x1080@60 1 frames` and no mention of the cause.
+ *
+ * That is worse than an error, because the error it replaced was addressed to the
+ * wrong thing. The caller saw `RangeError: Cannot use frame 515: Duration of
+ * composition is 1` — a complaint about the FRAME NUMBER, on a graph whose
+ * actual fault was a string where a number belonged. Two steps in, asking for a
+ * legal frame, the render failed again with a bare `ZodError` carrying a stack
+ * and no message.
+ *
+ * So: no props yet is a legitimate question with a default answer, and props
+ * that are present and wrong are a defect that must be named. `resolveShowcaseMeta`
+ * is the decision, kept out of this file so a check can reach it without
+ * react or remotion in the way.
  */
 type MetaArgs = {props?: unknown; defaultProps?: unknown};
 
-export const showcaseMeta = (args: MetaArgs) => {
-  const raw = (args && typeof args === 'object' && 'props' in args ? args.props : args);
-  const parsed = ShowcaseSchema.safeParse(raw);
-  if (!parsed.success) {
-    return {width: 1920, height: 1080, fps: 60, durationInFrames: 1};
-  }
-  const doc = parsed.data as Showcase;
-  const total = doc.scenes.reduce((sum, sc) => sum + sc.durationInFrames, 0);
-  return {
-    width: doc.format.width,
-    height: doc.format.height,
-    fps: doc.format.fps,
-    durationInFrames: Math.max(1, total),
-  };
-};
+export const showcaseMeta = (args: MetaArgs) =>
+  resolveShowcaseMeta(args && typeof args === 'object' && 'props' in args ? args.props : args);
 
 /** A valid starter graph so the Studio opens on something renderable. */
 export const SHOWCASE_DEFAULTS = {

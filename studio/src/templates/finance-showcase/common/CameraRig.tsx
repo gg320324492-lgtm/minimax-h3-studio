@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import {AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Camera, Motion} from '../../../schemas/showcase-v1';
-import {MOTION} from '../design/tokens';
+import {cameraMoveFrames, scaleFor} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 
 /**
@@ -16,7 +16,7 @@ import {useDesign} from '../design/styleBible';
  * timing. Driving both from one clock is what makes motion feel amateur.
  *
  * All channels accept a number (constant) or [from, to] (interpolated over the
- * scene). Values are px/deg at design height 1080 and scale with the format.
+ * scene). Values are px/deg on the design frame and scale with `scaleFor`.
  */
 
 const track = (
@@ -73,35 +73,29 @@ export type CameraState = {
   t: number;
 };
 
-const rampOf = (preset: string, dur: number, fps: number) => {
-  const seconds =
-    preset === 'energetic'
-      ? MOTION.energeticCameraSeconds
-      : preset === 'minimal'
-        ? 0
-        : MOTION.premiumCameraSeconds;
-  return Math.max(1, (seconds * fps) / Math.max(dur, 1));
-};
-
 /**
  * Evaluate the camera at `frame`. Pure: CameraRig and any scene that needs the
  * camera's position both call this with the same arguments and cannot disagree.
+ *
+ * `size` is an object rather than three positional numbers because two of them
+ * are dimensions that a transposition would type-check: `cameraStateAt(camera,
+ * motion, frame, height, width, ...)` scales everything by the wrong axis and
+ * returns a number. The old call passed a bare `height`, which is how the rig
+ * ended up scaling by height alone.
  */
 export const cameraStateAt = (
   camera: Camera | undefined,
   motion: Motion | undefined,
   frame: number,
-  height: number,
-  durationInFrames: number,
-  fps: number
+  size: {width: number; height: number; fps: number; durationInFrames: number}
 ): CameraState => {
-  const s = height / 1080;
-  const dur = durationInFrames > 1 ? durationInFrames : 1;
-  const t = Math.min(frame / (dur - 1), 1);
-  // the move is authored as if it continues past the scene, so the ramp can
-  // exceed the scene length — that is what makes it feel like a real move
-  const ramp = rampOf(motion?.preset ?? 'premium', dur, fps);
-  const ct = Math.min(t / ramp, 1);
+  const s = scaleFor(size.width, size.height);
+  // The move is authored as if it continues past the scene, so `ct` is allowed
+  // to still be moving when the scene ends — that is what makes it feel like a
+  // real move rather than a timed tween. `cameraMoveFrames` owns the conversion
+  // from the profile's seconds to frames, and it is deliberately not a fraction
+  // of this scene: see the note there on what the old clamp actually did.
+  const ct = Math.min(frame / cameraMoveFrames(motion?.preset ?? 'premium', size.durationInFrames, size.fps), 1);
   return {
     perspective: (camera?.perspective ?? 0) * s,
     translateX: track(camera?.translateX, ct, 0) * s,
@@ -123,14 +117,12 @@ export const useCameraState = (
 ): CameraState => {
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
-  return cameraStateAt(
-    camera,
-    motion,
-    frame,
-    comp.height,
-    durationInFrames ?? comp.durationInFrames,
-    comp.fps
-  );
+  return cameraStateAt(camera, motion, frame, {
+    width: comp.width,
+    height: comp.height,
+    fps: comp.fps,
+    durationInFrames: durationInFrames ?? comp.durationInFrames,
+  });
 };
 
 export type CameraRigProps = {

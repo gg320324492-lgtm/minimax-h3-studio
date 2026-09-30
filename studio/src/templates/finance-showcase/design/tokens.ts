@@ -4,8 +4,10 @@
  * Two rules make this a system rather than a pile of per-scene constants:
  *   1. One place decides what "premium" looks like. A scene never invents a
  *      colour or a font size; it asks for a role.
- *   2. Everything scales from the design height, so a 1080p and a 4K render of
- *      the same graph are the same picture.
+ *   2. Everything scales from the design FRAME, so a 1080p and a 4K render of
+ *      the same graph are the same picture. The scale is `scaleFor` below and
+ *      reads both axes — see the note there for why the height alone is not
+ *      enough.
  *
  * The reference language (premium fintech product film): near-black, warm
  * off-white ink, one gold accent, and colour used only where it carries
@@ -168,7 +170,84 @@ export const MOTION = {
 export const profileOf = (name: MotionProfile = 'premium') =>
   MOTION.profiles[name] ?? MOTION.profiles.premium;
 
-/** Design height the type scale is authored against. */
+/**
+ * The design frame the token scale is authored against.
+ *
+ * Both numbers exist because the scale depends on BOTH, and the missing half is
+ * what produced the P8 defect: `DESIGN_HEIGHT` was here alone, so the only
+ * scaler available was `height / 1080` and nothing in the template could ask
+ * how wide the frame is. At 1080x1920 that returns 1.7778 and the layout keeps
+ * a 1920-wide design frame's worth of horizontal geometry inside a 1080-wide
+ * one — measured, not suspected: on the demo graph's dashboard scene it put 18
+ * columns where 12 fit and cut ~357px off each edge.
+ */
 export const DESIGN_HEIGHT = 1080;
+export const DESIGN_WIDTH = 1920;
 
-export const scaleFrom = (height: number) => height / DESIGN_HEIGHT;
+/**
+ * The single scaler: fit the design frame into the render frame.
+ *
+ * `min` of the two ratios, i.e. CONTAIN. Type and spacing are authored at the
+ * design frame, so a frame that is proportionally larger on one axis gets the
+ * scale that keeps the other axis inside it — never the scale that fills the
+ * taller axis and overruns the narrower one.
+ *
+ * Note what this deliberately does NOT do: adapt the layout to the new aspect
+ * ratio. A 1080x1920 render of a wide graph is a wide composition letterboxed
+ * into a portrait frame, with the design frame's own proportions intact and its
+ * content centred, rather than a portrait composition. Reflowing the layout is
+ * a different and much larger decision (per-scene horizontal geometry), and
+ * getting it wrong is how a vertical render ends up cropped instead of small.
+ *
+ * 1920x1080 -> 1 and 3840x2160 -> 2, both exactly, which is why this change is
+ * invisible to every existing 16:9 render.
+ */
+export const scaleFor = (width: number, height: number): number =>
+  Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT);
+
+/**
+ * How many frames the camera move takes, for a given scene and fps.
+ *
+ * A motion DURATION is a wall-clock quantity, so it converts through fps the
+ * way every other duration in this template does (`secs * comp.fps`). The form
+ * it replaces was `Math.max(1, seconds * fps / sceneFrames)`, used as a ramp
+ * against normalised scene time — and the `Math.max` is the whole story.
+ *
+ * That clamp can only raise the ramp, and it raised it to exactly 1 for every
+ * scene longer than the nominal move: 2.6s is 156 frames at 60fps, and the demo
+ * graph's scenes are 229. So the ramp was 1, the camera moved across the WHOLE
+ * scene, and `premiumCameraSeconds` was multiplied out and then discarded. The
+ * function was correct as written and meant nothing, which is the same shape of
+ * failure as a declared chart option nothing reads.
+ *
+ * The fps dependence that hid inside it was real but narrow — it only bit scenes
+ * shorter than the nominal duration, where the ramp could exceed 1 and the move
+ * overran the scene by an amount that moved when fps moved.
+ *
+ * Making the token live CHANGES existing 16:9 renders, and deliberately: a
+ * premium move now completes at frame 156 of a 229-frame scene instead of
+ * drifting to the last one, which is what `premiumCameraSeconds: 2.6` and the two
+ * comments in CameraRig have always said the camera did.
+ *
+ * `minimal` is the one profile expressed in scene time rather than seconds — it
+ * means "the move lasts the whole scene", which is a statement about the scene
+ * and so is deliberately the scene's own length.
+ */
+export const cameraMoveFrames = (
+  preset: string | undefined,
+  sceneFrames: number,
+  fps: number
+): number => {
+  if (preset === 'minimal') return Math.max(1, sceneFrames);
+  const seconds = preset === 'energetic' ? MOTION.energeticCameraSeconds : MOTION.premiumCameraSeconds;
+  // NOT clamped, and NOT rounded.
+  //
+  // Clamping: `Math.max(1, ...)` is what made the token inert — it turns a
+  // fractional frame count into a whole scene. Rounding: this value is a divisor
+  // (progress is `frame / moveFrames`), so a half frame costs nothing, while
+  // rounding makes the move a frame too long at half the frame rate — energetic
+  // is 0.55s, which is 16.5 frames at 30fps, and `Math.round` turns that into 17.
+  // Both would reintroduce, in the ramp, the fps-dependence the conversion exists
+  // to remove.
+  return Math.max(1, seconds * fps);
+};

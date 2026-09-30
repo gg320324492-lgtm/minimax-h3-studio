@@ -160,12 +160,12 @@
 
 ---
 
-## P8 — Format 数据驱动　状态：⬜
+## P8 — Format 数据驱动　状态：🔄 进行中
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 8.1 | `calculateMetadata` 返回 width/height/fps/durationInFrames | ⬜ | |
-| 8.2 | 验证 1920×1080@60 / 1080×1920@60 / 3840×2160@60 | ⬜ | |
+| 8.1 | `calculateMetadata` 返回 width/height/fps/durationInFrames | ✅ | **代码 P6 起就已存在，但「返回 format」不等于「按 format 渲」** —— 审计才把这两件事分开。`showcaseMeta`（`FinanceShowcaseWide.tsx`）四项全返回、`Root.tsx:63` 已接上，`render.mjs` 走 `selectComposition` 所以 format 确实来自图谱。**但布局是高度驱动的**：`scaleFrom(height) = height/1080`，**全库没有任何东西读帧宽**。于是竖版一渲就横向溢出（见 8.2）。<br>**修法**：`scaleFrom` **删除**（不留别名 —— 「一个只认高度的缩放器存在」本身就是病因），换成 `scaleFor(width, height) = min(w/1920, h/1080)`（contain），补上缺失的 `DESIGN_WIDTH`。**11 处生产调用点**全改（含 `styleBible.useScale()` 与 `primitives.tsx` 三处内联的 `comp.height/1080`）。<br>**附带**：判据抽成纯模块 `schemas/showcaseMeta.ts`（只依赖 zod，因此可测），组件里只剩两行包装 —— 原判据在 React 组件内部，**「图谱写坏会怎样」这个问题在不渲一帧的前提下无法提出**。<br>16:9 不变性**实测**：`orig` vs `scaleonly` @f343 = **0 px 逐位相同**（`min(1,1)=1`）。 |
+| 8.2 | 验证 1920×1080@60 / 1080×1920@60 / 3840×2160@60 | ✅ **但验证本身抓出三个缺陷** | **实测数据（复验重测，判据 = 内容像素 `max channel > 30`；背景渐变 ≤18、内容 ≥49，两侧留足余量）**：<br>**① 竖版横向溢出（已修）**。`scaleFrom(1920)=1.7778` 而帧只有 1080 宽。修前三帧**全部 `x 0-1079` 双向裁切**；修后 **v515 x 255-824（边距 L255 R255）、v343 x 231-857、v259 x 255-844，全部干净**。<br>**② 静默回退（已修）**。`safeParse` 失败时旧代码返回 `1920×1080@60 / 1 帧` —— 图谱写坏时渲染器**不报错**，交出一段别的东西。`broken.json`（`width: "1920"`）现在抛：`showcase-v1: this graph does not match the schema, so its render format cannot be trusted.` + `format.width: Invalid input: expected number, received string`。**旧代码在帧 515 报的是 `Cannot use frame 515: Duration of composition is 1` —— 在怪帧号，而不是在怪图谱。**<br>**③ `Math.max` 方向错误，token 在所有已交付场景里都是死的（已修）**。HEAD 的 `rampOf` 结尾是 `Math.max(1, seconds*fps/sceneFrames)`：`229 帧 ÷ (2.6s×60fps=156) = 0.68`，而 **`Math.max(1, 0.68) = 1`** —— clamp 只往上抬，于是**任何长于标称时长的场景，ramp 都被抬成 1.0，相机动机跑满整场**，`premiumCameraSeconds: 2.6` 被乘出来然后丢掉。藏在其下的 fps 依赖是真的，但只在**短于**标称时长的场景上显形，所以之前没被发现。改为 `cameraMoveFrames = seconds*fps`（绝对帧数，**不取整**：energetic 0.55s 在 30fps 是 16.5 帧，`Math.round` 会变 17，等于把刚要修掉的 fps 依赖装回去）→ premium 在 229 帧场景第 **156** 帧到位、后 72 帧静止，与 token 声明和 `CameraRig` 两处注释一致。<br>**施工方主动更正了自己上一轮的判断**（原文称「60fps 只差不到一帧」，是把 `Math.max` 的方向写反了）—— 这条更正比原结论有价值，已留在变更记录。 |
 
 ---
 
@@ -390,3 +390,27 @@
   - **两条新增 A/B 行单独查**：两条都是极端值（一端 287px、一端 2,073,383px = 100% 帧），**越是极端越要查是不是「测错了对象」**。结论：地板为 0，287px 是真信号（独立重渲复现 325px，同一区域）；`theme` 行 100% 是因为换主题必然重画整帧背景 —— **该行只证明「主题到达了场景」，不证明「色阶跟了主题」**；另按单元格与底色亮度差直接量色阶方向：暗底 **+108…+493（变亮）**、亮底 **−87…−399（变暗）**，**单向**，与声称一致。
   - **遗留空隙（不阻塞，已记入 7.3 行尾注）**：`declutterByY` 的**调用点**若被改回 `declutter`（函数本身不动），**110 条测试全绿、三份 check 全过**。守卫只证明纯函数对，不证明九个标记真的调它 —— 与 `showArea` 同型。留给 P8 的 A/B 矩阵 CI 化时一并处理。
   - **复验这一侧也犯了一次静默失败，如实记**：第一次变异改 `options.ts`，但 `FIELD_READERS` 实际在 `ab_field.py` 里 —— replace **匹配 0 处**、`git diff` 为空、注册表照样 exit 0。**我差点把「守卫没反应」当成结论**；改对文件才转红。**这是账本里那个老教训的第三次实例，且发生在复验一侧** —— 变异测试自身的失败模式，与它要检验的缺陷是同一种。
+- 2026-10-01：**P8 开工 —— 先审计 8.1/8.2 的现状**（照 P7.3 的规矩：先测量再动代码）。审计从「竖版和 4K 到底渲不渲得出来」开始，结论是：**仓库里两个示例图谱都是 1920×1080@60，竖版与 4K 从来没有被渲过一帧**。
+  - **探针（入库，可复现）**：`studio/scripts/make_format_probes.py` 读 `pipeline/examples/showcase_demo.json`，**只替换 `format` 三个数**，产出 `hd / vertical / uhd / fps30 / broken` 五份到 `out/p8_probes/`。`broken.json` 的 `width` 是字符串（schema 要求 integer）。**基线图谱本体逐字节不动** —— 它是交叉验证的对照。
+  - **审计的判据**：内容 bbox 与边距，**像素阈值不落在背景渐变的动态范围里**。这一点本项目吃过亏（`measure_frame v2` 用绝对阈值，亮色背景动态范围 > 阈值 → 整片误判）：背景渐变最大通道 ≤18、内容（卡片/柱/字）≥49，故取 `max channel > 30`，两侧都留足余量。
+
+- 2026-10-01：**P8 三条缺陷已修 + 复验裁定：通过**（复验官独立重测，未采信施工方自述；三条修复全部复现，三条新守卫实测能红，**116 passed** / tsc 0 / `showcase_demo.json` 与 HEAD 逐字节相同）。
+  - **A 竖版横向溢出坐实**：修前 v515 / v343 / v259 **三帧全部 `x 0-1079` 双向裁切**；修后 **v515 x 255-824（边距 L255 R255）、v343 x 231-857、v259 x 255-844**。**16:9 不变性精确复现**：`orig` vs `scaleonly` @f343 = **0 px 逐位相同**。`scaleFrom` 全库无残留，`/1080` 只剩 `scaleFor` 自己那行。
+  - **B 误导性回退坐实**：新模块 `schemas/showcaseMeta.ts` 只依赖 zod，抛错并指名 `format.width`；`isAbsent` 判据从「有没有 `scenes` 数组」改成「有没有声明 showcase-v1 任一顶层字段」（第一版用 `scenes` 做判据时，**护栏当场抓出一个真洞**：带 `format` 无 `scenes` 的图谱会静默拿默认值，而它是一个缺必填字段的图谱）。**变异复核**：判据退回 `!('scenes' in doc)` → `showcaseMeta.check` 转红。
+  - **C 相机 ramp 坐实，施工方主动更正自己上一轮**：HEAD 的 `Math.max(1, seconds*fps/sceneFrames)` 对 229 帧场景算出 `max(1, 156/229) = max(1, 0.68) = 1` —— **clamp 只往上抬，ramp 恒为 1.0，`premiumCameraSeconds: 2.6` 在所有已交付场景里都是死的**。施工方上一轮报告称「60fps 只差不到一帧」，**是把 `Math.max` 的方向写反了**，本轮自行更正并给出 `git stash` 对照（原作者码与审计期渲染 **0 px 差异**，环境可证稳定）。**复验用变异复核**：把 `(seconds*fps)/sceneFrames` 注回去 → `test_camera_ramp_is_not_a_fraction_of_the_scene` 与 `scale.check` 双双转红。
+  - **像素数字必须带阈值 —— 复验侧发现的一个记账规范问题**：施工方报 ramp 在 f343 变化 `70071 px`、f515 `8733 px`；复验在 **tol>0** 下量到 **228308 px / 26784 px（3.26x / 3.07x）**，把阈值提到 **tol>6** 才落到 `70955 / 9370`，与其同量级。**方向、符号、0 px 对照全部一致，因此不是假账 —— 但「多少像素变了」不带判据就无法复现**，与本项目「工具给错数字」是同一个洞。**此后报像素数一律写清阈值。**
+  - **守卫三件**（新增 `scale.check.ts` / `showcaseMeta.check.ts`，均无 react/remotion 依赖；`tests/test_p8_format_scale.py` 6 条跑它们 + 源码级断言）：
+
+    | 守卫 | 复验注入的变异 | 结果 |
+    |---|---|---|
+    | `scaleFor` 两轴 | 退回 `height/DESIGN_HEIGHT` | 2 failed（含 `test_scale_is_asked_for_both_axes`） |
+    | ramp 非场景分数 | 注回 `(seconds*fps)/sceneFrames` | 2 failed（含 `test_camera_ramp_is_not_a_fraction_of_the_scene`） |
+    | 图谱判据 | 退回「有没有 scenes」 | 1 failed（`showcaseMeta.check`） |
+
+    全部还原，终态工作树与施工方版本逐字节相同、**116 passed**、tsc 0。**另有两条源码级断言**「没有任何文件再除以 1080」与「每个 `scaleFor` 调用方都传两个轴」—— 这一层把 P7.3 遗留的「函数对、调用方可以不调它」那类洞在 tokens 侧堵住了，**但九个标记的调用点仍未覆盖**。
+  - **复验这一侧也犯了两次错，都在测量环节，如实记**：
+    1. **搜索范围不足就下结论**：只 `Get-ChildItem out/p8` 一个目录就断言「所有渲染产物都早于修复 90 分钟、不存在产物」，实际产物在 `out/p8_fix/` 与 `out/p8_det/`。**差点凭不完整的搜索发出「记为已修但无产物」的指控** —— 那正是本项目抓到过三次的假账形态。
+    2. **阈值落在渐变内部**：像素判据取 18，而 4K 下背景渐变自身动态范围就是 19，于是左右边缘被误判为裁切，**差点反过来指控已经修好的东西是坏的**。**与账本里 `measure_frame v2` 那条旧教训同型，复验侧重犯一遍。** 改成 `max channel > 30` 后与施工方数字吻合。
+    **两条合起来是一件事：验证者给的数字和施工方给的数字，会以同样的方式错。**
+  - **未做（明确留后）**：**chart 场景（`charts_demo.json`）未做像素验证** —— `ChartFrame.tsx` 换了缩放器调用，而 P7.3 的整条证据链（柱标签 −9/−10px、slope 21px、A/B 26/26、成片 1950 帧）**全部建立在 1920×1080 单档上**；缩放器是共享的，`min(2,2)=2` 的算术成立，**但 P7.3 的像素数字在 4K 下一个都没验过**。连同 P7.3 遗留的 `declutterByY` 调用点守卫与 A/B 矩阵进 `tests/`，**一并放在 P8 收尾**。
+  - **另有人工项在册未动**：P6 遗留 6.7 `SPACE` 尺度（仍 8…168 而非规定的 4…96）/ 6.8 `DEPTH` 四场无一使用；`shot_specs.json` 创作字段；音频听感。

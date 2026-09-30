@@ -193,3 +193,22 @@ export const resolveScenes = (doc: Showcase, beatSnap = false): ResolvedScene[] 
 
 export const totalFrames = (doc: Showcase): number =>
   doc.scenes.reduce((sum, s) => sum + s.durationInFrames, 0);
+
+/**
+ * Render a schema failure as something an author can act on.
+ *
+ * A raw `ZodError` is the worst possible report for a graph-authoring mistake:
+ * its `.message` is a JSON blob and Remotion prints only the stack, so what
+ * reached the operator was `ZodError` and a call trace through the component.
+ * Each issue becomes `path: message` — `format.width: Invalid input: expected
+ * number, received string` — which names the field and what it got.
+ */
+export const describeIssues = (error: {
+  issues: ReadonlyArray<{path: ReadonlyArray<PropertyKey>; message: string}>;
+}): string =>
+  error.issues
+    .map((i) => {
+      const at = i.path.length ? i.path.map(String).join('.') : '(document root)';
+      return `  ${at}: ${i.message}`;
+    })
+    .join('\n');
