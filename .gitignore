@@ -14,7 +14,7 @@ preview/
 tools/
 __pycache__/
 *.pyc
-tests/
+# tests/ 已解除忽略并入库（P0 复验：零回归网不可再丢）
 hist.json
 oi.json
 ceo_mindread_ep01/0[1-9]_*/
@@ -67,11 +67,12 @@ workflows/
 # prompt 型生产脚本（含全部 prompt/种子硬编码）
 ceo_mindread_ep01/scripts/build_timeline.py
 ceo_mindread_ep01/scripts/_archive/
-ceo_mindread_ep01/scripts/gen_keyframes*.py
+# gen_keyframes_v3 的 prompt/种子已抽到 00_project/h3_generation.json（本地私有），
+# 脚本本体入库以保住 P0.3 的 wait_for_prompt 修复。旧版仍在 _archive/。
 ceo_mindread_ep01/scripts/gen_office.py
-ceo_mindread_ep01/scripts/gen_reference_sheets.py
+
 ceo_mindread_ep01/scripts/gen_references.py
-ceo_mindread_ep01/scripts/gen_tts_kokoro.py
+
 liaozhai_demo/scripts/gen_clips.py
 liaozhai_demo/scripts/build_timeline.py
 piyao_2026/scripts/gen_clips.py
@@ -82,3 +83,6 @@ third_lantern/scripts/build_timeline.py
 ceo_mindread_ep01/_archive_*/
 ceo_mindread_ep01/00_project/environment_report.md
 config/local.yaml
+ceo_mindread_ep01/00_project/h3_generation.json
+tests/__pycache__/
+.pytest_cache/
