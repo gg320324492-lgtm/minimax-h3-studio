@@ -47,8 +47,8 @@ def main() -> int:
                     help='e.g. 04_video_selected_sr — use <SID>_1080.mp4 SR outputs')
     ap.add_argument('--audio', default=None,
                     help='project-relative premixed audio; auto-discovered if omitted')
-    ap.add_argument('--fit', default='auto', choices=['auto', 'cover', 'fill', 'contain'],
-                    help='片段适配：auto=按源/目标比例自动选（默认，比例一致用 fill 否则 cover）')
+    ap.add_argument('--fit', default='auto', choices=['auto', 'cover', 'fill'],
+                    help='片段适配：auto=按源/目标比例自动选（默认，SR 直出用 fill，原始片用 cover）')
     args = ap.parse_args()
 
     proj = ROOT / args.project_dir
