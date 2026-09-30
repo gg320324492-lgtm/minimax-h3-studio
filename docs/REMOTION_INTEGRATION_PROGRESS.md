@@ -115,7 +115,7 @@
 
 ---
 
-## Phase 7 — 全项目体系化整理（2026-09-30）　状态：✅ 完成
+## Phase 7 — 全项目体系化整理（2026-09-30）　状态：✅ 已封版
 
 > 目标：遍历全项目，建立目录规范与体系文档。原则：**生产引用面不动**（ffmpeg_env.py / sr_pipeline_v2.py 留守根级——被 5+ 生产文件引用），一次性实验脚本归档，文档归位，补齐根 README。
 
@@ -173,3 +173,34 @@
 - 保留：`logs/`（活跃管线日志）、`09_final*/` 现行交付。
 - 2026-09-30：**仓库转公开**（隐私/凭据/IP 四类审计通过）。出库：4 个 Mixkit 派生音频（本地保留，gitignore）+ 12 个 vendor 技能目录（可重装）。当前公开内容 = 模板代码 + 契约 + 文档 + CC0/自研音频；H3 prompt/种子/剧本按用户决策一并公开。
 - 2026-09-30：**仓库转公开前完成历史净化**（用户决策：prompt/种子/剧本/timeline 只留本地）。git filter-repo 从全部历史清除 37 个敏感文件（workflows JSON、各项目 seed_manifest/story/dialogue/shots/timeline、prompt 型生成脚本）；本地文件备份于 `E:/H3_local_private/repo_backup/` 并已恢复为 gitignore 的未跟踪状态；强制推送重写后的历史（999088a），远端树验证 0 敏感路径。同轮：仓库转 PUBLIC + About/topics（remotion/comfyui/text-to-video/ai-video/douyin/real-esrgan）。
+
+---
+
+## ✅ 阶段封版（2026-09-30）
+
+**范围**：Phase 0–7 全部（Remotion 融合落地 → EP01 迁移 → 三模板家族 → 数据报告/卡拉OK/模板工厂 → 动效张力提升 → 全面收尾 → 体系化整理 + 全历史净化 + 转公开）。
+
+**交付物清单**
+- 合成层：`studio/`（TimelinePlayer × 三时间线模板 + ReportVertical 数据模板 + CoverCard，zod 双契约）
+- 管线桥：`build_timeline.py` v1/v2 双出、逐片段 SR、staging、一键渲染（`--karaoke/--master/--qa`）
+- 质量链：qa_final 16 项、qa_report 10 项、check_contract 契约自检
+- 音频链：合成兜底 + 真实素材导入（librosa 拍网格/包络）、母带自动化（−14 LUFS 自动收敛）
+- 文档：README（体系首页）+ 6 份报告 + 本进度总账
+
+**运行基线（RTX 5090 / 32 线程）**
+| 场景 | 耗时 |
+|---|---|
+| EP01 60.6s 短剧新链 | 渲染 ~61s，qa_final 16/16 |
+| 横屏 109s@1080p | 52.9s（2.1× 实时） |
+| 横屏 75.8s@2K | 60.2s |
+| 数据报告 28s | 14.1s（2× 实时），母带一轮过，qa 10/10 |
+| 逐片段超分 | ~3.5 fps，VRAM 3.6GB |
+
+**仓库状态**：公开 `gg320324492-lgtm/minimax-h3-studio`；历史已净化（37 敏感文件全历史清除）；本地生产内容（prompt/种子/剧本/timeline/生成脚本/Mixkit 音频）gitignore + 备份于 `E:/H3_local_private/`。
+
+**已知遗留（供下阶段参考）**
+1. 合成 BGM 兜底版质量有天花板（真实素材已可经代理获取并导入）
+2. drama 模板未接电影感 LUT/辉光（`@remotion/effects` + `--gl=angle` 未实测）
+3. v4 动效候选：冻结-爆发、百分比环、odometer、赛跑图、15/30/60s 档位、循环结尾、pushCut 迁移
+4. 动效无自动质检（仅目检 + 响度量化）
+5. 报告/数据模板无 LLM 自动填数据入口（现为手工 JSON）
