@@ -28,6 +28,25 @@ const requireArg = (key) => {
   }
   return v;
 };
+// Hand-rolled flag parsing is why `--frames` where `--frame` was meant used to
+// fall through to a default instead of complaining. Unknown flags are now an
+// error, because a typo that silently selects a different frame produces a
+// well-formed number describing the wrong picture — the exact failure the A/B
+// guard exists to prevent, one level up.
+const VALUE_FLAGS = new Set(['comp', 'props', 'out', 'frames']);
+const BOOL_FLAGS = new Set(['clean']);
+for (const a of argv) {
+  if (!a.startsWith('--')) continue;
+  const name = a.slice(2);
+  if (!VALUE_FLAGS.has(name) && !BOOL_FLAGS.has(name)) {
+    console.error(
+      `Unknown flag --${name}. Known value flags: ${[...VALUE_FLAGS].map((f) => '--' + f).join(', ')}; ` +
+        `boolean flags: ${[...BOOL_FLAGS].map((f) => '--' + f).join(', ')}`
+    );
+    process.exit(2);
+  }
+}
+const args = {clean: argv.includes('--clean')};
 
 const comp = requireArg('comp');
 const propsPath = requireArg('props');
@@ -55,8 +74,25 @@ if (asFile && frames.length > 1) {
   console.error('--out names a .png but --frames lists more than one frame; pass a directory');
   process.exit(2);
 }
+
+if (args.clean && fs.existsSync(outDir)) {
+  fs.rmSync(outDir, {recursive: true, force: true});
+  console.log(`[still] --clean: emptied ${outDir}`);
+}
 if (!oneFile) {
   console.log(`[still] output directory: ${outDir}`);
+  // Say what is already in there. A stale frame from an earlier run sitting
+  // beside this run's frames is how a comparison tool ends up diffing two
+  // different frames and reporting the difference as a result.
+  if (fs.existsSync(outDir)) {
+    const existing = fs.readdirSync(outDir).filter((f) => f.toLowerCase().endsWith('.png'));
+    if (existing.length) {
+      console.log(`[still] note: ${existing.length} pre-existing PNG(s) in that directory`);
+      for (const f of existing) {
+        console.log(`[still]   - ${f}${frames.includes(Number(f.slice(1, 6))) ? ' (will be overwritten)' : ' (kept)'}`);
+      }
+    }
+  }
 }
 
 const entryPoint = fileURLToPath(new URL('../src/index.ts', import.meta.url));
