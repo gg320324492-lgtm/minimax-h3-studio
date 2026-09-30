@@ -47,6 +47,8 @@ def main() -> int:
                     help='e.g. 04_video_selected_sr — use <SID>_1080.mp4 SR outputs')
     ap.add_argument('--audio', default=None,
                     help='project-relative premixed audio; auto-discovered if omitted')
+    ap.add_argument('--fit', default='auto', choices=['auto', 'cover', 'fill', 'contain'],
+                    help='片段适配：auto=按源/目标比例自动选（默认，比例一致用 fill 否则 cover）')
     args = ap.parse_args()
 
     proj = ROOT / args.project_dir
@@ -90,13 +92,19 @@ def main() -> int:
             'durationInFrames': round(tl['shot_boundaries'][sid]['duration'] * FPS),
         })
 
+    # fit 决策：源片段已与目标同比例（--sr-dir 逐片段 SR 直出）时 fill 无变形；
+    # 原始片段比例不同必须 cover，否则 objectFit:fill 会二次拉伸变形。
+    fit = args.fit
+    if fit == 'auto':
+        fit = 'fill' if args.sr_dir else 'cover'
+
     props = {
         'version': 2,
         'project': args.project_dir,
         'template': args.template,
         'format': {'width': args.width, 'height': args.height, 'fps': FPS},
         'totalDuration': tl['total_duration'],
-        'fit': 'fill',
+        'fit': fit,
         'shots': shots,
         'audioBus': {'premixed': f'jobs/{args.job}/PREMIXED{Path(audio).suffix.lower()}'},
         'subtitles': [
