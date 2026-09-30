@@ -30,10 +30,10 @@
 | 1.2 | Cheap Metrics | ✅ | sharpness(Laplacian方差)/exposure(中灰)/not_black/motion(运动量甜区)/stability(亮度闪烁)/flow_jitter(Farneback流方差)/not_duplicate/artifact(饱和过曝+块效应)/subject_consistency(直方图漂移)。**12 帧均匀采样+256px 降采样**，226 帧与 56 帧同成本；单项失败降级不中断 |
 | 1.3 | VLM Critic provider abstraction | ⬜ | 本轮未做（客观指标已能淘汰坏的；「都好里挑更好」需 VLM，留 P1.2 增量）。**关键发现**：客观指标对「都很好」的 take 无区分力——S06 两个 take 全部指标完全相同 |
 | 1.4 | 综合评分 | ✅ | 9 项加权（0.05~0.10），权重集中在 motion/artifact/consistency；VLM 三维度(20/15/15) 留给 critic 阶段合并 |
-| 1.5 | 替换 select_takes 的 T01 默认 | ✅ | 无 override→ 调 TakeRanker；override 仍最高优先（实测 human override 生效）；**缺 take 改 fail-closed**(exit 1 + 不写 manifest，旧代码静默 continue 会让整集变短) |
-| 1.6 | 排名报告 + manifest | ✅ |  + （逐 take 指标表）+ （每 take 4 帧缩略图，黄框=选中，红=硬失败，灰=冗余）；manifest 写回 source_take/duration/frames/ranking_score |
+| 1.5 | 替换 select_takes 的 T01 默认 | ✅ | 无 override→ 调 TakeRanker（`_auto_rank()`）；override 仍最高优先（实测 human override 生效）；**缺 take 改 fail-closed**（exit 1 + 不写 manifest，旧代码静默 continue 会让整集变短） |
+| 1.6 | 排名报告 + manifest | ✅ | `take_ranking.json` + `take_report.md`（逐 take 指标表）+ `contact_sheet.html`（每 take 4 帧缩略图，黄框=选中，红=硬失败，灰=冗余）；manifest 写回 source_take/duration/frames/ranking_score |
 | 1.7 | 真实数据验证 | ✅ | **S05A 自动改选** T01(0.725)→v1(0.881)：T01 的 stability=0.01 严重闪烁是真缺陷；**S06_T02 判定冗余**——像素差 0.0，同 seed 重复生成，25 分钟 GPU 完全浪费；S05A top-2 差 0.002 → 正确标记 needs_human_review |
-| 1.8 | 回归修复 | ✅ | auto 路径下  变量为 None 导致 source_take 写空 → qa_final 崩溃；改用  后 16/16 PASS |
+| 1.8 | 回归修复 | ✅ | auto 路径下 `take` 变量为 None 导致 source_take 写空 → qa_final 崩溃；改用 `src.stem` 后 16/16 PASS |
 
 ---
 
