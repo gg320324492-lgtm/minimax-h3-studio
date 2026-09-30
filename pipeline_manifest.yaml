@@ -1,0 +1,212 @@
+# 生产入口清单（Production Manifest）
+#
+# 本文件是 Agent 判断「哪个脚本可以调用」的唯一权威。
+# 规则：不在 production 段的脚本，Agent 禁止自动调用。
+#
+# 审计依据：docs/ARCHITECTURE_AUDIT_20260930.md
+# 维护：任何脚本的角色变更必须同步本文件。
+
+meta:
+  audited: '2026-09-30'
+  audit_report: docs/ARCHITECTURE_AUDIT_20260930.md
+  note: >
+    本仓库存在两条互不连通的出片链，且两者上游（生成/TTS/BGM）均为手工步骤。
+    不存在单一的「生产链」。
+
+# ─────────────────────────────────────────────────────────────
+# 解释器：所有 Python 行为必须用这个验证（系统 python 会给出误导性错误）
+# ─────────────────────────────────────────────────────────────
+interpreter:
+  python: E:/ComfyUI/venv/Scripts/python.exe
+  version: '3.12.10'
+  node: '24.16.0'
+
+# ─────────────────────────────────────────────────────────────
+# 系统模块（被多条链共享，禁止移动位置）
+# ─────────────────────────────────────────────────────────────
+system_modules:
+  ffmpeg_env:
+    path: ffmpeg_env.py
+    role: ffmpeg/ffprobe 二进制解析器（自带 7.1.1；PATH 上是 Octave 的 4.2.11 陷阱）
+    callers: 21
+    caveat: >
+      R4：tools/ 被 gitignore，新 clone 缺自带 ffmpeg 时会把 CWD 注入 PATH。
+      P0.4 config 层落地后复查。
+  sr_pipeline_v2:
+    path: sr_pipeline_v2.py
+    role: Real-ESRGAN 超分引擎（流式、零磁盘中间产物、tile/overlap 可调）
+    callers: run_post_chain.sh, sr_takes.py + 3 个旧项目 run_post_chain.sh（subprocess，零 import）
+    caveat: R2 —— 现行引擎从未产出过交付母版（母版由已崩溃的 pipe_4k_fast.py 生成）
+
+# ─────────────────────────────────────────────────────────────
+# 链 A：ffmpeg 6 段链（唯一有编排器的链）
+# ─────────────────────────────────────────────────────────────
+chain_a_ffmpeg:
+  orchestrator: ceo_mindread_ep01/scripts/run_post_chain.sh
+  stages:
+    - name: select_takes
+      path: ceo_mindread_ep01/scripts/select_takes.py
+      caveat: R2/P1 —— T01 硬编码默认，无评分函数；override 仅 CLI argv 且编排器不传参
+    - name: build_timeline
+      path: ceo_mindread_ep01/scripts/build_timeline.py
+      note: 双写 v1(:162) + v2(:195)，两条链的共同上游
+    - name: super_resolve
+      path: sr_pipeline_v2.py
+      args: '--tile 768 --overlap 64 --out-width 1080 --out-height 1920'
+    - name: mix_audio
+      path: ceo_mindread_ep01/scripts/mix_audio_v4.py
+      note: loudnorm −14 LUFS + sidechain 鸭化（WAV 中转前的响度工程在此）
+    - name: burn_subtitles
+      path: ceo_mindread_ep01/scripts/burn_subtitles_v2.py
+      note: 同时被 qa_final.py 当库 import（STYLES 字典）
+    - name: finalize
+      path: ceo_mindread_ep01/scripts/finalize.py
+    - name: qa
+      path: ceo_mindread_ep01/scripts/qa_final.py
+      checks: 16
+
+# ─────────────────────────────────────────────────────────────
+# 链 B：Remotion 链（无编排者，只能手工单条命令）
+# ─────────────────────────────────────────────────────────────
+chain_b_remotion:
+  entry: ceo_mindread_ep01/scripts/render_with_remotion.py
+  steps:
+    - karaoke（可选）: studio/scripts/word_timestamps.py
+    - stage: ceo_mindread_ep01/scripts/stage_assets.py
+    - render: studio/bin/render.mjs
+    - master（可选）: studio/scripts/master_audio.py
+    - qa（可选）: ceo_mindread_ep01/scripts/qa_final.py
+  encoder_contract: x264 crf18 + jpeg + colorSpace=bt709 + concurrency=16
+  caveat: >
+    render.mjs 的 crf/concurrency 默认是 undefined —— README 宣称的「内置」不准确；
+    直调 render.mjs 时必须显式传参。参数由 render_with_remotion.py 提供。
+
+# ─────────────────────────────────────────────────────────────
+# 上游生产脚本（手工执行，产物被下游消费）
+# ─────────────────────────────────────────────────────────────
+upstream_manual:
+  - path: ceo_mindread_ep01/scripts/gen_tts_kokoro.py
+    role: Kokoro-82M 中文 TTS（CEO=zm_yunyang / INTERN=zf_xiaoxiao / 心声=lowpass 4k）
+  - path: ceo_mindread_ep01/scripts/gen_audio_assets.py
+    role: ffmpeg lavfi 合成 BGM/SFX
+  - path: ceo_mindread_ep01/scripts/gen_office.py
+    role: OFFICE_MASTER_REFERENCE（被 gen_keyframes_v3 硬引用为 <Picture 3>）
+  - path: ceo_mindread_ep01/scripts/comfy_utils.py
+    role: ComfyUI history 解析
+    caveat: R3 —— fallback_newest 默认 True，mtime 猜测静默生效（P0.3 修复）
+
+# ─────────────────────────────────────────────────────────────
+# 模板（Root.tsx 注册表）
+# ─────────────────────────────────────────────────────────────
+templates:
+  DramaVertical:
+    comp: DramaVertical
+    format: 1080x1920@24
+    contract: timeline-v2
+  PsaWide:
+    comp: PsaWide
+    format: 1920x1080@24
+    contract: timeline-v2
+  StoryAnimation:
+    comp: StoryAnimation
+    format: 2560x1440@24
+    contract: timeline-v2
+  ReportVertical:
+    comp: ReportVertical
+    format: 1080x1920@24
+    contract: report-data
+    style: energetic
+  CoverCard:
+    comp: CoverCard
+    format: still 1080x1920
+    contract: CoverPropsSchema（不在 schemas/，未被 check_contract 覆盖）
+
+# ─────────────────────────────────────────────────────────────
+# 工具脚本（studio/scripts）
+# ─────────────────────────────────────────────────────────────
+tools:
+  emit_props.py: 任意项目 timeline v1 → v2 props + 硬链接 staging（fit=auto）
+  word_timestamps.py: 词级卡拉OK时间戳（faster-whisper；ASR 词面只当对齐标尺）
+  make_audio_assets.py: 合成 BGM/SFX/拍网格/呼吸包络（126 BPM，免版权兜底）
+  import_real_assets.py: 导入授权真实音频（librosa 拍网格 + 许可 manifest）
+  master_audio.py: 音频母带（−14 LUFS，WAV 中转，自动收敛）
+  qa_report.py: report 成片 QA 门禁（10 项）
+  check_contract.py: 契约自检（schema 漂移 + props 校验）—— 零调用方，P0 接线
+  emit_phase0_props.py: Phase0 基准 props 生成器（版本 0，已通不过现行 schema）
+
+# ─────────────────────────────────────────────────────────────
+# experiments/ —— Agent 禁止自动调用（除非在 experimental_approved 内显式列出）
+# ─────────────────────────────────────────────────────────────
+experiments:
+  experimental_approved:
+    # 唯一具备生产级健壮性的实验脚本：7200s deadline + 异常重试 + 纯 history 解析
+    - path: experiments/flashvsr_upscale.py
+      why: 唯一有 /object_info schema 发现与 system_stats 预检；P15 SR 路由的候选实现
+      blockers: 3 个路径常量需参数化
+  benchmark_only:
+    # 可用于测量，禁止用于生产出片
+    - experiments/bench.py          # 唯一干净 poller（1800s deadline）
+    - experiments/bench_log.py      # 唯一 VRAM 探针
+    - experiments/multi_bench.py
+    - experiments/bench_4k_chain.py # 结论仍被 flashvsr_upscale 引用
+    - experiments/bench_dtype.py
+    - experiments/bench_real_esrgan.py
+  forbidden:  # 已崩溃 / 有破坏性 / 纯 mtime 主路径 —— Agent 调用即事故
+    - experiments/full_pipeline.py      # import _deprecated（已删）→ 崩溃
+    - experiments/pipe_fast.py          # import _deprecated → 崩溃
+    - experiments/pipe_4k_fast.py      # import _deprecated → 崩溃；且是母版生成者（R2）
+    - experiments/upscale_x4v3.py      # import _deprecated → 崩溃
+    - experiments/upscale_to_4k.py     # import _deprecated → 崩溃
+    - experiments/pipe_4k.py           # 无 __main__ 守卫：import 即 mkdir+unlink+ffmpeg+torch.load
+    - experiments/gen_round_a.py        # 删仓库根文件 + 轮询无 deadline + 仍有 mtime 回退
+    - experiments/test_seedvr2.py       # mtime 为唯一主路径（rglob 扫全 output）
+    - experiments/download_models.py    # 硬编码代理端口 + 误删 20GB 部分下载
+  superseded:
+    - experiments/flicker_test.py       # → quality_compare.py（严格超集）
+    - experiments/upscale_a1.py
+    - experiments/upscale_fix.py
+    - experiments/upscale_generic.py
+    - experiments/gen_lulu.py
+    - experiments/gen_remaining.py
+    - experiments/generate_4.py
+  archive_candidates:
+    - experiments/convert_seedvr2.py
+    - experiments/outputs_paths.py     # 无人 import
+    - experiments/fix_combine.py
+    - experiments/motion_analysis.py
+
+# ─────────────────────────────────────────────────────────────
+# 明确废弃（有 replacement，不得用于生产）
+# ─────────────────────────────────────────────────────────────
+deprecated:
+  scripts:
+    - path: ceo_mindread_ep01/scripts/_archive/
+      reason: 全部被 *_v2/v3/v4 取代；含全库唯一 -shortest（burn_subtitles_pil.py:255）
+    - path: ceo_mindread_ep01/scripts/gen_references.py
+      reason: 产出被 gen_reference_sheets 消费（删则断），但功能上已被取代
+      status: deprecated_but_dependent
+  artifacts:
+    - path: ceo_mindread_ep01/09_final_v2/
+      reason: 与 09_final/ 三个 mp4 md5 全同、非硬链接，~89MB 纯冗余；时间戳反而更早
+    - path: ceo_mindread_ep01/00_project/seed_manifest_v1_20steps.json
+      reason: 与当前 seed_manifest.json md5 全同，内容写的是 4step —— 文件名误导
+
+# ─────────────────────────────────────────────────────────────
+# 质量门禁（当前全部无自动执行 —— P0 接线）
+# ─────────────────────────────────────────────────────────────
+qa_gates:
+  qa_final: ceo_mindread_ep01/scripts/qa_final.py        # 16 项，链 A 末段
+  qa_report: studio/scripts/qa_report.py                  # 10 项，零调用方
+  check_contract: studio/scripts/check_contract.py        # 2 项，零调用方
+  enforced: false
+  caveat: R6 —— 干净 clone 上 check_contract 的 props 检查为空（jobs/ 被 ignore），会「假通过」
+
+# ─────────────────────────────────────────────────────────────
+# 本地私有内容（禁止入库）
+# ─────────────────────────────────────────────────────────────
+local_only:
+  backup_root: E:/H3_local_private/
+  patterns: 见 .gitignore「本地生产内容」段
+  verification: >
+    任何改动后必须 `git add -An . | grep -E "timeline|story|seed_manifest|workflows"` 返回空，
+    否则公开仓库存在泄露风险（2026-09-30 曾发生，已修）。

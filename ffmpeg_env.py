@@ -104,7 +104,22 @@ def prepend_to_path(binary: str = FFMPEG, quiet: bool = False) -> None:
 
     Prints a one-line notice to stderr whenever the resolved directory differs
     from what PATH would have given, so a version change is never silent.
+
+    BUGFIX (P0 audit R4): a bare command name ('ffmpeg', i.e. the bundled build
+    was not found) used to go through abspath() and resolve to CWD/ffmpeg —
+    whose parent is CWD, a directory that always exists — so the CWD got
+    prepended to PATH. A bare name now returns without touching PATH; if the
+    bundled build is missing that is a loud, correct failure, not a silent
+    PATH poisoning.
     """
+    if not os.path.dirname(binary):  # bare command name, not a path
+        if not quiet:
+            print(f'[ffmpeg_env] WARNING: no bundled ffmpeg found; leaving PATH '
+                  f'alone. Bare "{binary}" will resolve via PATH — which on this '
+                  f'machine is GNU Octave\'s 4.2.11, not a supported build. '
+                  f'Populate tools/ or set H3_FFMPEG_DIR.',
+                  file=sys.stderr)
+        return
     d = os.path.dirname(os.path.abspath(binary))
     if not d or not os.path.isdir(d):
         return
