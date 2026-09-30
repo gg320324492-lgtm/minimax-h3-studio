@@ -39,16 +39,33 @@ def _ts_camera_keys() -> list[str]:
     return re.findall(r'^\s{2}(\w+):', m.group(1), re.M)
 
 
+def _same_members(a, b, what: str) -> None:
+    """Membership, not order.
+
+    The contract these three lists share is "the same set of types is valid on
+    every side". Order was never part of it, and asserting it made a legitimate
+    reordering look like drift — which is how a parity check trains people to
+    ignore it. Duplicates and length are still checked, because those ARE part
+    of the contract: a duplicated entry means one side declares a type twice and
+    a consumer that switches on it has two identical branches.
+    """
+    assert len(set(a)) == len(a), f'{what}: duplicate entries in {a}'
+    assert len(set(b)) == len(b), f'{what}: duplicate entries in {b}'
+    missing = sorted(set(a) - set(b))
+    extra = sorted(set(b) - set(a))
+    assert not missing and not extra, (
+        f'{what} drifted — only on the left: {missing}; only on the right: {extra}'
+    )
+
+
 def test_python_and_ts_scene_types_match():
-    assert _ts_scene_types() == list(scene_graph.SCENE_TYPES), (
-        'scene types drifted between Python and TypeScript; the renderer would '
-        'reject scenes the Director considers valid')
+    _same_members(_ts_scene_types(), list(scene_graph.SCENE_TYPES), 'Python vs TypeScript')
 
 
 def test_json_schema_scene_types_match():
     doc = json.loads(JSON_SCHEMA.read_text(encoding='utf-8'))
     js = doc['definitions']['Scene']['properties']['type']['enum']
-    assert js == list(scene_graph.SCENE_TYPES), 'JSON Schema scene types drifted'
+    _same_members(js, list(scene_graph.SCENE_TYPES), 'JSON Schema vs Python')
 
 
 def test_camera_channels_match_across_sides():

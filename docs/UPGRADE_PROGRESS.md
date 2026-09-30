@@ -153,7 +153,8 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 7.1 | 自研 SVG 图表：Bar/Line/Area/Slope/Bubble/Heatmap/RankTable/Sparkline/VolumeBars | ⬜ | |
+| 7.1 | 自研 SVG 图表：Bar/Line/Area/Slope/Bubble/Heatmap/RankTable/Sparkline/VolumeBars | ✅ | 9 种全部实现并**逐场渲出目检**（`pipeline/examples/charts_demo.json`，9 场 1350 帧）。<br>**先发现一件事**：`bar-chart / line-chart / area-chart / bubble-chart / rank-chart / slope-chart / heatmap` **七个场景类型从 P3 起就在 schema 里声明了，却没有任何渲染器** —— 图谱要一张柱状图，得到的是一屏 "not implemented in P4"。**schema 承诺了没人兑现的能力，正是本项目反复踩的那一类。** 引擎做完这七种才变成真的；另补声明 `volume-chart` / `sparkline-chart`（引擎支持但 schema 没有，同样是不对称）。<br>**结构**：`charts/options.ts`（声明面，先写）→ `charts/scale.ts`（纯数学，零依赖）→ `charts/ChartFrame.tsx`（轴/网格/刻度/数值标签，**拥有定义域**）→ `charts/types.tsx`（九个标记）→ `charts/Chart.tsx`（适配器）。标记一律从 frame 拿已解析的比例尺，**不许自己算定义域** —— 否则标记可能和它所在的轴不是同一个尺度，而那种图是可读且错误的。 |
+| 7.1b | 选项面与 A/B 证据 | ✅ | 按纪律先注册再实现。`FIELD_READERS` 18 个选项全部注明读它的文件；**检查会读那个文件的源码确认它真的提到这个名字**（只查注册表自己的账本分不清能用和哑的）。<br>**A/B 矩阵 23 个选项全部实测为「活」**（`studio/scripts/chart_ab_matrix.py`，退出码 0，报告 `out/chart_ab.md`）。**过程中抓到一个源码级检查抓不到的真 bug**：`showArea` 登记为"被 types.tsx 读过"、也真的出现在 types.tsx —— 但在 **Area 组件**上，于是每一张 line 图的 `showArea` 都是哑的。根因更深一层：`option()` 拿 `TYPE_OPTIONS` 做**运行时闸门**，所以一张过时的表就能让一个能用的选项变哑，而守卫看不见（名字在文件里）。**修法：闸门去掉，表降级为声明，准确性另测。** 修后 volume 的 `emphasisIndex` 从 0px 变 50,730px（2.45%，区域正好一根柱）。<br>**顺带删掉 `inline`**：声明了、没有任何标记读它。与其糊一层，不如删。<br>**新增两条机械化的纪律**：每个声明的选项都必须在 A/B 矩阵里有实测行；`option()` 不得再按表过滤。 |
 | 7.2 | 统一 chart 生命周期（intro/settle/highlight/focus/exit） | ⬜ | |
 | 7.3 | annotation/label 避让/数字格式/theme/stagger/emphasis | ⬜ | |
 
@@ -298,3 +299,19 @@
   - **变异测试通过**：把 `diff_dir` 退回 `next(glob(...))`，`test_a_stale_frame_in_the_directory_cannot_be_compared` 转红；还原后 14 项全绿。**84 passed**，tsc 干净。
   - **端到端三态复核**（修之前三者返回同一个数字）：真字段 39106px/1.89%/exit 0；接上但对本图谱无效的 `cameraLanguage.perspective` 0px/INERT/exit 1；不存在的 `nonexistent.deep.key` 0px/INERT/exit 1。
   - **一个仍未解释的细节（如实记）**：`cameraLanguage.perspective` 已接为缺省（`CameraRig` 读它），但这份图谱每个场景都自带 `perspective`，所以它对本图谱确实无效。要让它生效需要移除场景级 perspective，那是艺术判断，**未擅自改**。
+- 2026-09-30：**P7.1 完成 —— 九种图表，逐场渲出，A/B 证据 23/23**（103 passed，tsc 干净，完整渲出 `out/charts_demo.mp4`，1920×1080@60 `yuv420p(tv, bt709)`）。
+  - **先做的不是图表，是数学**：`scale.ts` 零 React 零 Remotion，配 `scale.check.ts`（50 项）。**两个真缺陷在渲染里根本看不出来**：`niceTicks` 的好数阶梯缺 2.5 且是向下取整（0..1 要四格却只给三格），以及**反向定义域返回空**。两条都变异测试过。
+  - **变异测试抓到我自己的断言有洞**：第一次变异（把 Fritsch–Carlson 加权换成切线平均）**没被抓住** —— 因为那组测试数据的内部切线全走了极值分支，加权那行根本没执行。改测真正防过冲的极值分支，转红（`escaped: 116.67`，正是手算的 100+3.33×5）。**断言本身也有洞**：我按空白切分路径取数字，而路径里是 `"100,"` 这种带尾随逗号的 token，`Number("100,")` 是 NaN 被跳过 —— **等于没在检查**。正则化之后才转红。
+  - **`-0` 是不止显示的 bug**：`Math.ceil(-1e-9)` 是 `-0`，一路传到刻度，而 V8 的 `(-0).toLocaleString()` 真的给 `"-0"` —— 轴上会出现 "0, 20, 40, **-0**"。定义域和格式化两处都堵。
+  - **目检抓到 9 个渲染缺陷，全部是「读源码看不出来」的**（每个都渲出来看才发现）：
+    1. Y 轴刻度标签跑到画面外 —— `right: W - plot.x` 方向搞反（`right` 是从容器右边缘量的）
+    2. X 轴标签全部叠在一起 —— `xLabels.map` 每次渲染了一个包含**全部**标签的 div
+    3. X 标签和柱子不对齐 —— 我一度写了注释说"均匀分布而非对齐"，那是回避；改为标记自己提供 `xAt`
+    4. 最高柱顶到画面顶部、数值标签被压在柱子里 —— 定义域没留 headroom
+    5. 曲线冲出右边界 —— `plot.w` 用 `comp.width` 算，而绘图区在**带 padding** 的 div 里
+    6. **`showArea` 对 line 图无效** —— 硬编码 `withArea={false}`，而注册表显示它"被读过"
+    7. Slope 的系列名压在它自己的线上（中点标签正好落在线上）
+    8. Heatmap 的 Y 轴数字刻度和行标签相撞 —— 而 heatmap 的 Y 轴是**分类**的，数字刻度不仅无意义还撞了有意义的标签；`colLabels` 更是**完全没渲染**，又一个哑字段
+    9. Rank 的 Δ 换行、Y 轴数字刻度同样无意义、四行只占上部三分之一
+  - **`TYPE_OPTIONS` 当运行时闸门是个设计错误**（第 6 条和 volume 的 `emphasisIndex` 都源于此）。一张过时的声明表能让一个能用的选项静默失效，而守卫看不见，因为名字在文件里。**已去掉闸门，表降级为文档，准确性另测。**
+  - **磁盘事故（未解决，需要你决定）**：C: 盘 **0 字节空闲**。根因是 **125 个 Remotion 临时 bundle，共 58 GB** —— 每个都把整个 `studio/public/`（773 MB，含 EP01 的 mp4 暂存副本）复制了一份进去。**我这边的根因已修**：`still.mjs` 加 `--public-dir`，A/B 工具把临时目录指向 E:（有 2.7 TB）并用空的 public 目录。**但那 58 GB 在你的系统盘上，删除不可逆，等你授权再动。**

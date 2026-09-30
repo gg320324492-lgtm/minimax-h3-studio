@@ -33,7 +33,7 @@ const requireArg = (key) => {
 // error, because a typo that silently selects a different frame produces a
 // well-formed number describing the wrong picture — the exact failure the A/B
 // guard exists to prevent, one level up.
-const VALUE_FLAGS = new Set(['comp', 'props', 'out', 'frames']);
+const VALUE_FLAGS = new Set(['comp', 'props', 'out', 'frames', 'public-dir']);
 const BOOL_FLAGS = new Set(['clean']);
 for (const a of argv) {
   if (!a.startsWith('--')) continue;
@@ -98,8 +98,29 @@ if (!oneFile) {
 const entryPoint = fileURLToPath(new URL('../src/index.ts', import.meta.url));
 const inputProps = JSON.parse(fs.readFileSync(path.resolve(propsPath), 'utf8'));
 
+/**
+ * Where the bundler copies the static files from.
+ *
+ * The default is studio/public, and studio/public holds 773 MB of staged job
+ * props including EP01's mp4s — so every render copied 773 MB into a temp
+ * directory. 125 of those had piled up to 58 GB and filled the system drive.
+ * The static files a graph actually needs are the ones it references by name;
+ * a graph that references none (no `audio.src`) needs an empty directory, and
+ * saying so out loud beats silently shipping half a gigabyte per render.
+ */
+const publicDir = args.publicDir
+  ? path.resolve(args.publicDir)
+  : fileURLToPath(new URL('../public', import.meta.url));
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, {recursive: true});
+const needsStatic = JSON.stringify(inputProps).includes('"src"');
+if (args.publicDir && needsStatic) {
+  console.error('--public-dir was given but the graph references a static file; ' +
+    'staticFile() lookups will 404. Omit the flag for graphs that reference assets.');
+  process.exit(2);
+}
+
 const t0 = Date.now();
-const serveUrl = await bundle({entryPoint, onProgress: undefined});
+const serveUrl = await bundle({entryPoint, publicDir, onProgress: undefined});
 console.log(`[still] bundle ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
 const composition = await selectComposition({serveUrl, id: comp, inputProps});
