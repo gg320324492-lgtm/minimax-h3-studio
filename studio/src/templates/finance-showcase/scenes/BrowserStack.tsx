@@ -190,7 +190,7 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
           // three dimensional rather than as a flat row
           const z = (i - 1) * 180 * s;
           const rot = (1 - i) * 7;
-          const winW = Number(layout.width ?? 560) * s;
+          const winW = Number(layout.width ?? 520) * s;
           const winH = Number(layout.height ?? 400) * s;
           return (
             <div
@@ -201,7 +201,7 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
                 top: '50%',
                 // centre the plane; without this the windows hang off the
                 // right edge because left:50% is the window's own origin
-                transform: `translate(-50%, -50%) translateZ(${(i - (windows.length - 1) / 2) * 150 * s}px) translateX(${(i - (windows.length - 1) / 2) * 330 * s}px)`,
+                transform: `translate(-50%, -50%) translateZ(${(i - (windows.length - 1) / 2) * 110 * s}px) translateX(${(i - (windows.length - 1) / 2) * 250 * s}px)`,
                 transformStyle: 'preserve-3d',
               }}
             >

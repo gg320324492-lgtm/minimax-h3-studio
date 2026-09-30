@@ -47,7 +47,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
           style={{
             position: 'absolute',
             left: '50%',
-            top: '50%',
+            top: '54%',
             transform: 'translate(-50%, -50%)',
             display: 'flex',
             alignItems: 'flex-end',
@@ -69,7 +69,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
               <div
                 key={i}
                 style={{
-                  width: 14 * s,
+                  width: 44 * s,
                   height: `${h * 100 * grow}%`,
                   background: isTall ? PALETTE.accent : 'rgba(245,242,234,0.16)',
                   borderRadius: `${4 * s}px ${4 * s}px 0 0`,
@@ -86,7 +86,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
             position: 'absolute',
             left: '50%',
             top: '50%',
-            transform: `translate(-50%, -50%) scale(${0.94 + 0.06 * valueIn})`,
+            transform: `translate(-50%, -50%) translateY(${-330 * s}px) scale(${0.94 + 0.06 * valueIn})`,
             zIndex: 2,
             textAlign: 'center',
             opacity: valueIn,
@@ -96,7 +96,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
             style={{
               fontFamily: FONT_NUM,
               fontVariantNumeric: 'tabular-nums',
-              fontSize: TYPE.displayXL.size * s * 1.15,
+              fontSize: TYPE.displayXL.size * s * 1.5,
               fontWeight: TYPE.displayXL.weight,
               letterSpacing: TYPE.displayXL.tracking,
               color: PALETTE.ink,
