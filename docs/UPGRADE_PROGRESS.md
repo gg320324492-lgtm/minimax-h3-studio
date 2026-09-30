@@ -37,7 +37,15 @@
 
 ---
 
-## P2 — H3 Atomic Shot + Prompt Compiler　状态：⬜
+## P2 — H3 Atomic Shot + Prompt Compiler　状态：✅ 完成（数据填充待人工）
+
+| # | 任务 | 状态 | 结论/数据 |
+|---|---|---|---|
+| 2.1 | `ShotSpec` schema | ✅ | pipeline/shotspec.py：id/purpose/duration_target_s/generation_frames/seed_base/takes/subject/action/environment/camera/lighting/style/references/negative/extra。校验含 **17k+5 帧格**（22/56/124/141/226 通过，100/55/60/130 拒绝）与 **原子性**（剪辑语义检测） |
+| 2.2 | Prompt Compiler | ✅ | pipeline/prompt_compiler.py：ShotSpec→H3 prompt，**确定性**（同 spec 逐字节相同）+ sha256 指纹；结构化模板零 prompt 字面量； 去重否定（"no text artifacts"→"Avoid: text artifacts"）；读写 gitignored JSON |
+| 2.3 | 原子性检测（真实数据） | ✅ | **修正了一个共同误判**：EP01 全部 11 个 prompt 实际都是原子的。S06 的 "Two-shot medium close-up" 是电影术语的**双人同框镜头**（two-h shot），不是两次剪辑；S01/S02/S05B 的 "then" 是单镜头内的连续表演。初版正则把这些误判为非原子，收紧为只匹配剪辑语义（cut to / 镜头切 / two-shot: 冒号形式）后**误报归零、真非原子仍全抓** |
+| 2.4 | ShotSpec 骨架 | ✅ | migrate_shotspecs.py → `00_project/shot_specs.json`（11 specs，含结构化字段空位 + prompt_source 指针）；**待人工补全** subject/action/camera 后即可编译 |
+| 2.5 | P2 前置契约（复验要求） | ✅ | 9 项测试锁住：编译器零 prompt 字面量、生成脚本无 prompt、数据文件不入库、pipeline/ 已入库、原子性正反例、17k+5 正反例、确定性、否定去重、端到端形状 |
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|

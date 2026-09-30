@@ -86,3 +86,5 @@ config/local.yaml
 ceo_mindread_ep01/00_project/h3_generation.json
 tests/__pycache__/
 .pytest_cache/
+ceo_mindread_ep01/00_project/shot_specs.json
+ceo_mindread_ep01/00_project/h3_prompts.compiled.json
