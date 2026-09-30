@@ -1,9 +1,9 @@
 import React, {useMemo} from 'react';
-import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {useFrame, type Frame} from './ChartFrame';
-import {enterFor as lifecycleEnterFor, staggerPosition} from './lifecycle';
-import {areaPath, band, barBox, declutter, linePath, type Extent, type Point} from './scale';
+import {enterFor as lifecycleEnterFor} from './lifecycle';
+import {areaPath, band, barBox, declutterByY, formatValue, linePath, withAlpha, type Point} from './scale';
 import {option, type ChartType} from './options';
 
 /**
@@ -17,7 +17,12 @@ import {option, type ChartType} from './options';
  *
  * Reads from the declared option surface: emphasisIndex, deemphasis,
  * staggerFrames, enterFrames, showArea, strokeWidth, curve, barWidthRatio,
- * showRankDelta, showCellValues, sizeBy, showEndLabels, inline.
+ * showRankDelta, showCellValues, sizeBy, showEndLabels.
+ *
+ * Colour discipline: this file contains no colour literals. Every colour is a
+ * PALETTE token (theme-owned), because a literal here is a value that works on
+ * one theme and lies on the other — which is exactly how the heat ramp shipped
+ * running backwards on paper.
  */
 
 export type Series = {
@@ -48,9 +53,9 @@ const useMarkPaint = () => {
     ink: PALETTE.ink,
     inkMuted: PALETTE.inkMuted,
     inkFaint: PALETTE.inkFaint,
-    /** the emphasis fade, as a CSS colour so it composes over anything */
-    fade: (isEmphasis: boolean, deemphasis: number) =>
-      isEmphasis ? 'rgba(245,242,234,0.92)' : `rgba(245,242,234,${deemphasis})`,
+    onAccent: PALETTE.onAccent,
+    positive: PALETTE.positive,
+    negative: PALETTE.negative,
   };
 };
 
@@ -59,17 +64,21 @@ const useMarkPaint = () => {
 export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labels}) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const {PALETTE, SPACE, TYPE} = useDesign();
+  const {PALETTE, TYPE} = useDesign();
   const s = f.s;
   const b = useMemo(() => band(series.values.length, [f.plot.x, f.plot.x + f.plot.w], 0.28), [series.values.length, f.plot]);
   const width = b.width * option('bar', 'barWidthRatio', f.opts);
   const zeroY = f.yOf(0);
   const labelH = 26 * s;
-  const labelY = declutter(
+  // declutterByY, NOT declutter: labels arrive in category order, and pushing
+  // down in category order walked the 52.1M and 61.4M labels 160px/322px DOWN
+  // into their own bars (measured on f00120). The bound is the plot's bottom,
+  // not the screen's — a nudged label must not land on the x-label row.
+  const labelY = declutterByY(
     series.values.map((v) => f.yOf(v) - labelH * 0.9),
     series.values.map(() => labelH),
     0,
-    f.height
+    f.plot.y + f.plot.h
   );
 
   return (
@@ -109,6 +118,9 @@ export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labe
                   fontVariantNumeric: 'tabular-nums',
                   fontSize: TYPE.caption.size * s,
                   color: emphasised ? paint.ink : paint.inkMuted,
+                  // labels leave WITH their bar — without this they stayed at
+                  // full opacity through the exit and outlived every mark
+                  opacity: f.life.presence,
                 }}
               >
                 {f.valueText(v)}
@@ -117,7 +129,6 @@ export const Bar: React.FC<{series: Series; labels?: string[]}> = ({series, labe
           </div>
         );
       })}
-      {SPACE ? null : null}
     </>
   );
 };
@@ -154,6 +165,16 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
 
   const emphasised = f.opts.emphasisIndex;
   const last = n - 1;
+
+  // value labels sit above their point, but a dense series puts points close
+  // enough to stack — declutterByY because point order is x order, not y order
+  const valueH = 26 * s;
+  const valueY = declutterByY(
+    pts.map((pt) => pt.y - 34 * s),
+    pts.map(() => valueH),
+    0,
+    f.height
+  );
 
   return (
     <>
@@ -215,7 +236,7 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
               style={{
                 position: 'absolute',
                 left: pt.x - 60 * s, width: 120 * s,
-                top: pt.y - 34 * s,
+                top: valueY[i],
                 textAlign: 'center',
                 fontFamily: FONT_NUM,
                 fontVariantNumeric: 'tabular-nums',
@@ -261,36 +282,51 @@ export const Slope: React.FC<{before: number[]; after: number[]; labels: string[
   const n = Math.min(before.length, after.length);
   const left = f.plot.x;
   const right = f.plot.x + f.plot.w;
-  const domain: Extent = [
-    Math.min(...before.slice(0, n), ...after.slice(0, n)),
-    Math.max(...before.slice(0, n), ...after.slice(0, n)),
-  ];
-  const y = (v: number) =>
-    f.plot.y + f.plot.h - ((v - domain[0]) / Math.max(domain[1] - domain[0], 1e-6)) * f.plot.h;
+
+  // THE frame's scale, not a local one. A slope used to fit its own
+  // [min, max] while the axis drew ticks from the frame's headroom-padded
+  // domain, so the top endpoint sat 36px above where "60" said 61 was
+  // (measured on f00570: tick spacing 210.5px per 10 units, line top y≈58,
+  // frame-correct y=93). Two scales in one chart is the readable-and-wrong
+  // failure the frame exists to prevent — and the source check missed it
+  // because it only knew two function NAMES, not this pattern.
+  const y0 = Array.from({length: n}, (_, i) => f.yOf(before[i]));
+  const y1 = Array.from({length: n}, (_, i) => f.yOf(after[i]));
+
+  // three label columns; each is decluttered in Y order because series order
+  // is not y order (two series that cross would trade places mid-stack)
+  const valueH = 24 * s;
+  const nameH = 22 * s;
+  const leftTops = declutterByY(y0.map((v) => v - 12 * s), y0.map(() => valueH), 0, f.height);
+  const rightTops = declutterByY(y1.map((v) => v - 12 * s), y1.map(() => valueH), 0, f.height);
+  const midTops = declutterByY(
+    y0.map((v, i) => (v + y1[i]) / 2 - 30 * s),
+    y0.map(() => nameH),
+    0,
+    f.height
+  );
 
   return (
     <>
       {Array.from({length: n}, (_, i) => {
         const p = enterFor(f, i);
-        const y0 = y(before[i]);
-        const y1 = y(after[i]);
         const emphasised = f.opts.emphasisIndex === i;
         return (
           <React.Fragment key={i}>
             <svg style={{position: 'absolute', inset: 0, overflow: 'visible'}} aria-hidden>
               <line
-                x1={left} y1={y0 + (y1 - y0) * (1 - p) * 0}
-                x2={left + (right - left) * p} y2={y1}
+                x1={left} y1={y0[i]}
+                x2={left + (right - left) * p} y2={y1[i]}
                 stroke={emphasised ? paint.accent : paint.muted}
                 strokeWidth={(emphasised ? 5 : 3) * s}
                 strokeLinecap="round"
                 opacity={f.life.presence}
               />
             </svg>
-            <div style={{position: 'absolute', left: left - 10 * s, top: y0 - 11 * s, width: 20 * s, textAlign: 'center', opacity: f.life.presence}}>
+            <div style={{position: 'absolute', left: left - 10 * s, top: y0[i] - 11 * s, width: 20 * s, textAlign: 'center', opacity: f.life.presence}}>
               <Dot color={emphasised ? paint.accent : paint.muted} s={s} />
             </div>
-            <div style={{position: 'absolute', left: right - 10 * s, top: y1 - 11 * s, width: 20 * s, textAlign: 'center', opacity: f.life.presence}}>
+            <div style={{position: 'absolute', left: right - 10 * s, top: y1[i] - 11 * s, width: 20 * s, textAlign: 'center', opacity: f.life.presence}}>
               <Dot color={emphasised ? paint.accent : paint.muted} s={s} />
             </div>
             {f.opts.showEndLabels ? (
@@ -301,20 +337,23 @@ export const Slope: React.FC<{before: number[]; after: number[]; labels: string[
                   is gold — the most visible thing on the line — so at 8px the
                   value was tucked against it and read as "19" with a blob over
                   the 9. Centred on the dot's own middle so the two sit side by
-                  side rather than one tucked under the other.
+                  side rather than one tucked under the other. The vertical
+                  position comes from declutterByY, so two series that end close
+                  together step apart instead of printing over each other.
                 */}
-                <div style={{position: 'absolute', left: left + 30 * s, top: y0 - 12 * s, fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkFaint, whiteSpace: 'nowrap'}}>
+                <div style={{position: 'absolute', left: left + 30 * s, top: leftTops[i], fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkFaint, whiteSpace: 'nowrap'}}>
                   {f.valueText(before[i])}
                 </div>
-                <div style={{position: 'absolute', left: right - 110 * s, top: y1 - 12 * s, width: 80 * s, textAlign: 'right', fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkMuted, whiteSpace: 'nowrap'}}>
+                <div style={{position: 'absolute', left: right - 110 * s, top: rightTops[i], width: 80 * s, textAlign: 'right', fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkMuted, whiteSpace: 'nowrap'}}>
                   {f.valueText(after[i])}
                 </div>
-                <div style={{position: 'absolute', left: left + (right - left) / 2 - 60 * s, top: (y0 + y1) / 2 - 30 * s, width: 120 * s, textAlign: 'center', fontFamily: FONT_SANS, fontSize: 18 * s, color: paint.inkFaint}}>
+                <div style={{position: 'absolute', left: left + (right - left) / 2 - 60 * s, top: midTops[i], width: 120 * s, textAlign: 'center', fontFamily: FONT_SANS, fontSize: 18 * s, color: paint.inkFaint}}>
                   {/*
                     Above the line, not on it. A series name at the midpoint of
                     a slope line sits exactly where the line is, so the label
                     is drawn on top of the thing it names. Up is always clear of
-                    the line whichever way it slopes.
+                    the line whichever way it slopes — and when two midpoints
+                    land on the same row, declutterByY steps them apart.
                   */}
                   {labels[i] ?? ''}
                 </div>
@@ -368,9 +407,40 @@ export const Bubble: React.FC<{series: Series; labels?: string[]}> = ({series, l
                 boxShadow: emphasised ? `0 0 ${r * 1.4}px ${paint.accent}` : 'none',
               }}
             />
-            {f.opts.showValues ? (
-              <div style={{position: 'absolute', left: cx - 60 * s, top: cy + r + 8 * s, width: 120 * s, textAlign: 'center', fontFamily: FONT_NUM, fontSize: 20 * s, color: paint.inkFaint}}>
-                {labels?.[i] ?? f.valueText(v)}
+            {/*
+              The label lives HERE, under its own circle — not in the frame's
+              bottom row, which spaces labels evenly across the full width and
+              is therefore wrong for a multi-row grid (cell 4 sits under column
+              1). The demo rendered Mon..Sat twice: once per circle, once along
+              the bottom. The category name is data and always shows when the
+              graph supplies it; showValues gates the VALUE, which is what the
+              option says it does — the old `labels?.[i] ?? valueText` showed the
+              name instead, so a labelled chart never printed its values at all.
+            */}
+            {labels?.[i] || f.opts.showValues ? (
+              <div
+                style={{
+                  position: 'absolute', left: cx - 70 * s, width: 140 * s,
+                  top: cy + r + 8 * s, textAlign: 'center',
+                  opacity: f.life.presence,
+                }}
+              >
+                {labels?.[i] ? (
+                  <div style={{fontFamily: FONT_SANS, fontSize: 20 * s, color: paint.inkFaint}}>
+                    {labels[i]}
+                  </div>
+                ) : null}
+                {f.opts.showValues ? (
+                  <div
+                    style={{
+                      fontFamily: FONT_NUM, fontVariantNumeric: 'tabular-nums',
+                      fontSize: 20 * s,
+                      color: emphasised ? paint.ink : paint.inkMuted,
+                    }}
+                  >
+                    {f.valueText(v)}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -404,6 +474,12 @@ export const Heatmap: React.FC<{
             const p = enterFor(f, r * colLabels.length + c);
             const t = Math.abs(v) / max;
             const emphasised = f.opts.emphasisIndex === r * colLabels.length + c;
+            // withAlpha(PALETTE.ink): the ramp follows the THEME. The literal
+            // rgba(245,242,234,·) it replaces is the dark theme's ink, so on
+            // paper the ramp ran backwards — higher values turned whiter, i.e.
+            // fainter. Alpha rounds to 3 places: t*0.34 otherwise carries
+            // binary noise into every cell's background.
+            const heat = withAlpha(paint.ink, Math.round((0.05 + t * 0.34) * 1000) / 1000);
             return (
               <div
                 key={c}
@@ -413,16 +489,14 @@ export const Heatmap: React.FC<{
                   top: f.plot.y + r * (chh + gap),
                   width: cw, height: chh,
                   borderRadius: 8 * s,
-                  background: emphasised
-                    ? paint.accent
-                    : `rgba(245,242,234,${(0.05 + t * 0.34).toFixed(3)})`,
+                  background: emphasised ? paint.accent : heat,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transform: `scale(${p})`,
                   opacity: f.life.presence,
                 }}
               >
                 {f.opts.showCellValues ? (
-                  <span style={{fontFamily: FONT_NUM, fontVariantNumeric: 'tabular-nums', fontSize: 20 * s, color: emphasised ? '#14140F' : paint.inkFaint}}>
+                  <span style={{fontFamily: FONT_NUM, fontVariantNumeric: 'tabular-nums', fontSize: 20 * s, color: emphasised ? paint.onAccent : paint.inkFaint}}>
                     {f.valueText(v)}
                   </span>
                 ) : null}
@@ -508,8 +582,16 @@ export const RankTable: React.FC<{items: {label: string; value: number; previous
               {f.valueText(it.value)}
             </div>
             {f.opts.showRankDelta && it.previous ? (
-              <div style={{marginLeft: 14 * s, fontFamily: FONT_NUM, fontSize: 20 * s, color: delta >= 0 ? paint.accent : paint.inkFaint, whiteSpace: 'nowrap'}}>
-                {delta >= 0 ? '▲' : '▼'} {Math.abs(delta * 100).toFixed(1)}%
+              /*
+                Direction colours are `positive`/`negative`, not the accent:
+                options.ts's grammar reserves the one accent for the emphasised
+                mark, and a gold "+" on every rising row spends it. The percent
+                itself goes through formatValue so its decimals match every
+                other number on screen (the hand-rolled toFixed(1) did not trim
+                "20.0%" while the axis above it said "20").
+              */
+              <div style={{marginLeft: 14 * s, fontFamily: FONT_NUM, fontSize: 20 * s, color: delta > 0 ? paint.positive : delta < 0 ? paint.negative : paint.inkFaint, whiteSpace: 'nowrap'}}>
+                {delta >= 0 ? '▲' : '▼'} {formatValue(Math.abs(delta), 'percent').text}
               </div>
             ) : null}
           </div>
@@ -526,7 +608,6 @@ export const Sparkline: React.FC<{values: number[]; width?: number; height?: num
 }) => {
   const f = useFrame();
   const paint = useMarkPaint();
-  const {PALETTE} = useDesign();
   const s = f.s;
   const lo = Math.min(...values);
   const hi = Math.max(...values);
@@ -535,10 +616,38 @@ export const Sparkline: React.FC<{values: number[]; width?: number; height?: num
     y: height * s - ((v - lo) / Math.max(hi - lo, 1e-6)) * height * s * 0.86 - height * s * 0.07,
   }));
   const d = linePath(pts, f.opts.curve);
+  // On the SHARED lifecycle, like PathMark: draws on through the same entrance
+  // and leaves with presence. It used to render complete at frame 0 and hold
+  // at full opacity through the exit — the ninth mark not taking part in the
+  // timeline the other eight share, so scene c09 popped in and out while every
+  // other chart scene arrived and left.
+  const p = enterFor(f, 0);
+  let len = 0;
+  for (let i = 1; i < pts.length; i += 1) {
+    len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+  }
+  len = len || 1;
   return (
-    <svg width={width * s} height={height * s} style={{overflow: 'visible', display: 'block'}} aria-hidden>
-      <path d={d} fill="none" stroke={PALETTE.accent} strokeWidth={Math.max(2, f.opts.strokeWidth * 0.6) * s} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={pts[pts.length - 1]?.x ?? 0} cy={pts[pts.length - 1]?.y ?? 0} r={4 * s} fill={paint.accent} />
+    <svg
+      width={width * s}
+      height={height * s}
+      style={{overflow: 'visible', display: 'block', opacity: f.life.presence}}
+      aria-hidden
+    >
+      <path
+        d={d}
+        fill="none"
+        stroke={paint.accent}
+        strokeWidth={Math.max(2, f.opts.strokeWidth * 0.6) * s}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray={len}
+        strokeDashoffset={len * (1 - p)}
+      />
+      {/* the dot lands with the line, never ahead of it — same rule as PathMark */}
+      {p > 0.985 ? (
+        <circle cx={pts[pts.length - 1]?.x ?? 0} cy={pts[pts.length - 1]?.y ?? 0} r={4 * s} fill={paint.accent} />
+      ) : null}
     </svg>
   );
 };

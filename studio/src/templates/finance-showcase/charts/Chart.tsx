@@ -8,6 +8,7 @@ import {
 import {
   CHART_TYPES, DEFAULT_CHART_OPTIONS, type ChartOptions, type ChartType,
 } from './options';
+import {useDesign} from '../design/styleBible';
 
 /**
  * Chart scene adapter — turns a graph's `content.chart` into a frame and a mark.
@@ -103,6 +104,10 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
   const c = (scene.content ?? {}) as Record<string, unknown>;
   const spec = useMemo(() => normaliseChart(c.chart), [c.chart]);
   const type = spec.type;
+  // themed, not a hardcoded gold: this component lives inside the per-scene
+  // StyleBibleProvider, and a literal accent is the same defect as the heat
+  // ramp — right on one theme, wrong on the other
+  const {PALETTE} = useDesign();
 
   // every value the frame's domain must cover, per type
   const values = useMemo<number[]>(() => {
@@ -113,11 +118,31 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
     return spec.values ?? [];
   }, [spec, type]);
 
+  // Category charts label by the mark's own band positions, so "Revenue" sits
+  // under the Revenue bar. Evenly spaced labels are right for a time series and
+  // wrong here, and a label under the wrong bar is not a cosmetic problem.
+  // A band's CENTRE is at (i + 0.5) / n whatever the padding, because the
+  // padding is symmetric — which is why the label lands under its own mark and
+  // not under the gap beside it.
+  //
+  // BUBBLE is deliberately absent: a bubble grid is cols×rows, so index i is
+  // NOT at (i + 0.5) / n of the width — row 2's "Thu" would land under a
+  // different column than its circle. The bubble draws its own label under its
+  // own circle instead, and the demo's Mon..Sat no longer appears twice.
+  //
+  // Declared BEFORE the no-values return: a hook below an early return runs
+  // only on the branch that gets there, and a hook count that depends on data
+  // is a rule-of-hooks violation waiting for one graph edit.
+  const xAt = useMemo(() => {
+    if (!spec.labels || !(type === 'bar' || type === 'volume')) return undefined;
+    return (i: number, n: number) => (n > 0 ? (i + 0.5) / n : 0.5);
+  }, [spec.labels, type]);
+
   if (!values.length) {
     return (
       <CameraRig camera={scene.camera} motion={scene.motion} durationInFrames={scene.durationInFrames}>
         <div style={{position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-          <div style={{fontFamily: 'monospace', fontSize: 34, color: '#E8C464'}}>
+          <div style={{fontFamily: 'monospace', fontSize: 34, color: PALETTE.accent}}>
             chart: no values
           </div>
         </div>
@@ -129,17 +154,6 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
   // zero. A fitted domain on a bar chart is a chart that lies about size.
   const zeroBased = type === 'bar' || type === 'rank' || type === 'volume';
 
-  // Category charts label by the mark's own band positions, so "Revenue" sits
-  // under the Revenue bar. Evenly spaced labels are right for a time series and
-  // wrong here, and a label under the wrong bar is not a cosmetic problem.
-  // A band's CENTRE is at (i + 0.5) / n whatever the padding, because the
-  // padding is symmetric — which is why the label lands under its own mark and
-  // not under the gap beside it.
-  const xAt = useMemo(() => {
-    if (!spec.labels || !(type === 'bar' || type === 'bubble' || type === 'volume')) return undefined;
-    return (i: number, n: number) => (n > 0 ? (i + 0.5) / n : 0.5);
-  }, [spec.labels, type]);
-
   return (
     <CameraRig camera={scene.camera} motion={scene.motion} durationInFrames={scene.durationInFrames}>
       <ChartFrame
@@ -147,7 +161,7 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
         options={pickOptions(spec as unknown as Record<string, unknown>)}
         values={values}
         zeroBased={zeroBased}
-        xLabels={type === 'bar' || type === 'bubble' || type === 'volume' ? spec.labels : undefined}
+        xLabels={type === 'bar' || type === 'volume' ? spec.labels : undefined}
         rowLabels={type === 'heatmap' ? spec.rowLabels : undefined}
         sceneDurationInFrames={scene.durationInFrames}
         xAt={xAt}
@@ -177,8 +191,8 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
           window, a stat card — not a full-frame scene, and no declared scene
           type routes to it. It is still renderable here, at its natural size
           and centred, so a graph that asks for one gets a chart rather than a
-          blank frame. `inline: true` is the option that says "this is a mark,
-          not a scene" and it is honoured by the component, not by this branch.
+          blank frame. Its position and its lifecycle entrance are the
+          component's own business; this branch only chooses WHERE it sits.
         */}
         {type === 'sparkline' ? <SparklineSlot values={values} /> : null}
       </ChartFrame>

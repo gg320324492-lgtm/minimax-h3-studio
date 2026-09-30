@@ -43,6 +43,8 @@ def _run(path: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(SCRIPT), str(path)],
         capture_output=True, text=True, timeout=300,
+        # utf-8, not the gbk locale default: see test_chart_math's note
+        encoding='utf-8', errors='replace',
     )
 
 

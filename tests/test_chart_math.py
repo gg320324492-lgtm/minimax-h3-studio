@@ -31,9 +31,15 @@ _NPX = shutil.which('npx') or shutil.which('npx.cmd')
 
 @pytest.mark.skipif(_NPX is None, reason='node/npx not on PATH')
 def test_chart_maths_holds():
+    # encoding='utf-8', errors='replace': the default capture decodes with the
+    # LOCALE codec (gbk here), and a check line containing "—" crashed the
+    # reader thread — the run still passed on returncode, which means the same
+    # crash on a FAILING run would swallow the assertion's entire message.
+    # A guard whose failure output cannot print is a guard that fails silently.
     proc = subprocess.run(
         [_NPX, 'tsx', str(CHECK)],
         cwd=STUDIO, capture_output=True, text=True, timeout=300,
+        encoding='utf-8', errors='replace',
     )
     assert proc.returncode == 0, f'chart maths check failed:\n{proc.stdout}\n{proc.stderr}'
 
@@ -46,7 +52,9 @@ def test_the_check_actually_exists_and_covers_the_load_bearing_parts():
     """
     assert CHECK.exists(), f'no executable check at {CHECK}'
     src = CHECK.read_text(encoding='utf-8')
-    for load_bearing in ('niceTicks', 'monotone', 'overshoot', 'declutter', 'formatValue'):
+    for load_bearing in ('niceTicks', 'monotone', 'overshoot', 'declutter',
+                         'declutterByY', 'formatValue', 'fitDomain', 'withAlpha',
+                         'barBox'):
         assert load_bearing in src, f'the check never exercises {load_bearing}'
 
 

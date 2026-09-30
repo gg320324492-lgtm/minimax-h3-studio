@@ -152,7 +152,7 @@ export const TYPE_OPTIONS: Record<ChartType, readonly (keyof ChartOptions)[]> = 
   area: ['showGrid', 'showAxis', 'showValues', 'axisLabel', 'emphasisIndex',
          'staggerFrames', 'enterFrames', 'valueFormat', 'showArea',
          'strokeWidth', 'curve'],
-  slope: ['showValues', 'staggerFrames', 'enterFrames', 'valueFormat',
+  slope: ['staggerFrames', 'enterFrames', 'valueFormat',
           'showEndLabels', 'emphasisIndex'],
   bubble: ['showGrid', 'showAxis', 'showValues', 'emphasisIndex', 'deemphasis',
            'staggerFrames', 'enterFrames', 'valueFormat', 'sizeBy'],
@@ -160,7 +160,12 @@ export const TYPE_OPTIONS: Record<ChartType, readonly (keyof ChartOptions)[]> = 
             'valueFormat', 'axisLabel'],
   rank: ['showValues', 'staggerFrames', 'enterFrames', 'valueFormat',
          'showRankDelta', 'emphasisIndex'],
-  sparkline: ['strokeWidth', 'curve'],
+  // sparkline takes enterFrames because it now animates on the shared
+  // lifecycle (P7.3) — before that it ignored the timeline entirely.
+  // showEndLabels is slope's labelling knob; showValues was never read by the
+  // slope mark (it only moved the frame's headroom), so the claim is dropped
+  // rather than left as a documented option that does something else.
+  sparkline: ['strokeWidth', 'curve', 'enterFrames'],
   volume: ['emphasisIndex', 'staggerFrames', 'enterFrames'],
 };
 
