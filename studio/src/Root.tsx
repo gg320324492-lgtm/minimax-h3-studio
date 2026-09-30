@@ -4,6 +4,7 @@ import {DramaVertical} from './templates/drama-vertical/DramaVertical';
 import {PsaWide} from './templates/psa-wide/PsaWide';
 import {StoryAnimation} from './templates/story-animation/StoryAnimation';
 import {CoverCard} from './templates/cover/CoverCard';
+import {FinanceShowcaseWide, SHOWCASE_DEFAULTS, showcaseMeta} from './templates/finance-showcase/FinanceShowcaseWide';
 import {ReportVertical, reportTotalFrames} from './templates/report/ReportVertical';
 import {Phase0Probe} from './templates/Phase0Probe';
 import {timelineTotalFrames} from './templates/common/TimelinePlayer';
@@ -50,6 +51,16 @@ export const RemotionRoot: React.FC = () => {
         durationInFrames={1}
         defaultProps={{}}
         calculateMetadata={timelineMeta}
+      />
+      <Composition
+        id="FinanceShowcaseWide"
+        component={FinanceShowcaseWide}
+        width={1920}
+        height={1080}
+        fps={60}
+        durationInFrames={1}
+        defaultProps={SHOWCASE_DEFAULTS}
+        calculateMetadata={showcaseMeta}
       />
       <Composition
         id="ReportVertical"

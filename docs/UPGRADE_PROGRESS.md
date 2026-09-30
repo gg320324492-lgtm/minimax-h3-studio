@@ -73,7 +73,20 @@
 
 ---
 
-## P4 — FinanceShowcaseWide 模板　状态：⬜
+## P4 — FinanceShowcaseWide 模板　状态：✅ 完成（四类代表 scene 已渲染验证）
+
+| # | 任务 | 状态 | 结论/数据 |
+|---|---|---|---|
+| 4.1 | 设计系统 tokens | ✅ | `design/tokens.ts`：PALETTE（premium-dark/light，黑+米白+金，语义色仅用于正负）、TYPE（displayXL→annotation 9 个角色 + tabular 数字）、SPACE/RADIUS/DEPTH/SHADOW/MOTION。**所有数值按设计高 1080 定义、随 format 缩放**——同一图谱 1080p 与 4K 出同一张图 |
+| 4.2 | CameraRig（2.5D 摄像机） | ✅ | `common/CameraRig.tsx`：perspective + translateXYZ/rotateXYZ/scale/focus 各自独立轨道，接受常量或 [from,to]；**相机运动与组件动效分离**（premium 相机 2.6s 缓出，组件各自 pop）；自带 cubic-bezier 求解器避免为一条曲线引依赖 |
+| 4.3 | Scene A — KPI Hero（参考片 24s） | ✅ | 超大 tabular 数字 + eyebrow 遮罩上移 + 4 次方缓出 count-up + delta 胶囊 + 金色下划线生长；**刻意不用 shake/白闪/RGB split** |
+| 4.4 | Scene B — Browser Stack（26-30s） | ✅ | 三个浏览器窗口分处不同 translateZ 平面 + 反向 rotateY，错峰入场；含 MiniBars / Sparkline（strokeDashoffset 描线） |
+| 4.5 | Scene C — Big Number + Columns（32s） | ✅ | 巨数压柱阵之上；柱高由 seed 确定性生成（同图谱必出同画面）；金色高柱带辉光 |
+| 4.6 | Scene D — Calendar / Data Grid（34-38s） | ✅ | 30 格月历，值由 seed 确定，高亮格最后到达并带辉光；逐格 stagger |
+| 4.7 | P8 元数据驱动（提前兑现） | ✅ | `showcaseMeta` 从图谱读 width/height/fps/durationInFrames；实测 1920×1080@60、801 帧。**踩到并修掉一个隐蔽坑：Remotion 4.0.529 的 calculateMetadata 收到的是参数对象 `{props, defaultProps,...}` 而非 props 本身**，直接当 props 解析会永远走回退分支 |
+| 4.8 | 真实渲染验证 | ✅ | 801 帧 @60fps 渲染 22.8s（约 35× 实时）；四类 scene 抽帧目检通过；修 3 处布局缺陷（绝对定位缺居中 transform、浏览器窗口间距过密致标题遮挡、KPI 后缀压住末位数字） |
+
+**P4 遗留（属 P5 motion foundation 的工作）**：场景切换目前是硬切（transitionIn/out 字段已在契约里但未实现）；KPI 的 eyebrow/主体是整块淡入而非分层；无音频绑定；parity 测试仍只锁类型名不锁字段级（P8 前必须补）。
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
