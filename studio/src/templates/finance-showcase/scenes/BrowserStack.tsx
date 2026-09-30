@@ -2,7 +2,8 @@ import React from 'react';
 import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
-import {FONT_NUM, FONT_SANS, MOTION, PALETTE, RADIUS, SHADOW, SPACE, TYPE, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+import {useDesign} from '../design/styleBible';
 
 /**
  * Scene 2 — Browser Stack (reference film ~26-30s)
@@ -27,6 +28,7 @@ const MiniBars: React.FC<{values: number[]; s: number; progress: number}> = ({
   s,
   progress,
 }) => {
+  const {MOTION, PALETTE, RADIUS, SHADOW} = useDesign();
   const max = Math.max(...values, 1);
   return (
     <div style={{display: 'flex', alignItems: 'flex-end', gap: 6 * s, height: 72 * s}}>
@@ -56,6 +58,7 @@ const Spark: React.FC<{values: number[]; s: number; progress: number}> = ({
   s,
   progress,
 }) => {
+  const {MOTION, PALETTE, RADIUS, SHADOW} = useDesign();
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
   const pts = values.map((v, i) => {
@@ -89,7 +92,9 @@ const BrowserWindow: React.FC<{
   width: number;
   height: number;
   rotateY: number;
-}> = ({win, s, progress, z, width, height, rotateY}) => (
+}> = ({win, s, progress, z, width, height, rotateY}) => {
+  const {PALETTE, RADIUS, SHADOW} = useDesign();
+  return (
   <div
     style={{
       position: 'absolute',
@@ -155,9 +160,11 @@ const BrowserWindow: React.FC<{
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
+  const {MOTION, PALETTE, RADIUS, SHADOW} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
   const s = scaleFrom(comp.height);

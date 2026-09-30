@@ -95,7 +95,7 @@ export const SceneSchema = z.object({
 export const ShowcaseSchema = z.object({
   version: z.literal(1),
   project: z.string().min(1),
-  styleBible: StyleBibleSchema.optional(),
+  style_bible: StyleBibleSchema.optional(),
   format: z.object({
     width: z.number().int().positive(),
     height: z.number().int().positive(),

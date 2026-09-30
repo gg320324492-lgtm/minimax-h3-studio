@@ -84,9 +84,12 @@
 | 4.5 | Scene C — Big Number + Columns（32s） | ✅ | 巨数压柱阵之上；柱高由 seed 确定性生成（同图谱必出同画面）；金色高柱带辉光 |
 | 4.6 | Scene D — Calendar / Data Grid（34-38s） | ✅ | 30 格月历，值由 seed 确定，高亮格最后到达并带辉光；逐格 stagger |
 | 4.7 | P8 元数据驱动（提前兑现） | ✅ | `showcaseMeta` 从图谱读 width/height/fps/durationInFrames；实测 1920×1080@60、801 帧。**踩到并修掉一个隐蔽坑：Remotion 4.0.529 的 calculateMetadata 收到的是参数对象 `{props, defaultProps,...}` 而非 props 本身**，直接当 props 解析会永远走回退分支 |
-| 4.8 | 真实渲染验证 | ✅ | 801 帧 @60fps 渲染 22.8s（约 35× 实时）；四类 scene 抽帧目检通过；修 3 处布局缺陷（绝对定位缺居中 transform、浏览器窗口间距过密致标题遮挡、KPI 后缀压住末位数字） |
+| 4.8 | **style_bible 接线**（复验要求，P5 前置） | ✅ | 复验发现图谱声明的 palette/typography/motionLanguage/cameraLanguage **全部被忽略**——四个 scene 静态 import TS tokens，声明式图谱只能驱动「有哪些 scene、多长、画什么内容」，不能驱动「长什么样」。字段名还三方漂移（schema/Python=`style_bible`，TS=`styleBible`），zod 默认 strip 使其静默失效。**修法**：新增 `design/styleBible.tsx`（resolveStyleBible 按默认键过滤合并 + React Context + `useDesign()` 别名钩子），场景一律走 context；字段名统一为 `style_bible`。**验证**：只改图谱 accent 色与 KPI 字号，渲染结果真实改变（截图对比金色→青色、232→190px）。4 条测试锁住（字段名一致/scene 不得直接 import tokens/主模板必须传图谱值/合并必须按已知键做类型校验） |
+| 4.9 | 真实渲染验证 | ✅ | 801 帧 @60fps 渲染 22.8s（约 35× 实时）；四类 scene 抽帧目检通过；修 3 处布局缺陷（绝对定位缺居中 transform、浏览器窗口间距过密致标题遮挡、KPI 后缀压住末位数字） |
 
-**P4 遗留（属 P5 motion foundation 的工作）**：场景切换目前是硬切（transitionIn/out 字段已在契约里但未实现）；KPI 的 eyebrow/主体是整块淡入而非分层；无音频绑定；parity 测试仍只锁类型名不锁字段级（P8 前必须补）。
+**P4 遗留（属 P5 motion foundation 的工作）**：场景切换目前是硬切（transitionIn/out 字段已在契约里但未实现）；KPI 的 eyebrow/主体是整块淡入而非分层；无音频绑定；**parity 测试仍只锁类型名不锁字段级（P8 前必须补）**；`SHOWCASE_DEFAULTS` 与 demo 图谱是两份内容不同的源——前者仅作 Studio 占位样例，已在代码注释标明。
+
+**P4 修复记录**：复验指出三处——① style_bible 未接线（架构级，已修，见 4.8）② Browser Stack 整簇偏右、Errors 窗口被右边缘裁切（横向间距 330→250、窗宽 560→520，已修）③ Data Columns 标题压柱阵且仅占画面 25%（重标定尺度 + 标题上移；根因之一是模板字符串里 `-330 * s` 未插值 `$`，CSS 收到非法值后整条 transform 被丢弃——这类"静默失效"值得警惕）。
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|

@@ -2,7 +2,8 @@ import React from 'react';
 import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
-import {FONT_NUM, FONT_SANS, MOTION, PALETTE, RADIUS, SPACE, TYPE, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+import {useDesign} from '../design/styleBible';
 
 /**
  * Scene 1 — KPI Hero (reference film ~24s)
@@ -20,6 +21,7 @@ const fmt = (n: number, decimals: number) =>
   n.toLocaleString('en-US', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
 
 export const KpiHero: React.FC<{scene: Scene}> = ({scene}) => {
+  const {MOTION, PALETTE, RADIUS, SPACE, TYPE} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
   const s = scaleFrom(comp.height);

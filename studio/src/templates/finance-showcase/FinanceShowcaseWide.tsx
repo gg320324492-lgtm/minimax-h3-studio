@@ -5,6 +5,7 @@ import {KpiHero} from './scenes/KpiHero';
 import {BrowserStack} from './scenes/BrowserStack';
 import {CalendarGrid, DataColumns} from './scenes/DataColumns';
 import {PALETTE, scaleFrom} from './design/tokens';
+import {StyleBibleProvider} from './design/styleBible';
 import {EnsureFonts} from '../common/EnsureFonts';
 
 /**
@@ -76,24 +77,28 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
 
   return (
     <EnsureFonts>
-      <AbsoluteFill style={{background: PALETTE.background}}>
-        {resolved.map((r) => {
-          const scene = doc.scenes.find((x) => x.id === r.id);
-          if (!scene) return null;
-          return (
-            <Sequence
-              key={r.id}
-              from={r.startFrame}
-              durationInFrames={r.durationInFrames}
-              name={`${r.id}:${r.type}`}
-            >
-              <Backdrop theme={scene.theme} />
-              <SceneRenderer scene={scene} />
-            </Sequence>
-          );
-        })}
-        {audio ? <Audio src={staticFile(audio.src)} volume={audio.volume ?? 0.9} /> : null}
-      </AbsoluteFill>
+      {/* The graph's style bible is the single source of design truth: scenes
+          read palette/typography/motion through context, never a static import. */}
+      <StyleBibleProvider bible={doc.style_bible}>
+        <AbsoluteFill style={{background: PALETTE.background}}>
+          {resolved.map((r) => {
+            const scene = doc.scenes.find((x) => x.id === r.id);
+            if (!scene) return null;
+            return (
+              <Sequence
+                key={r.id}
+                from={r.startFrame}
+                durationInFrames={r.durationInFrames}
+                name={`${r.id}:${r.type}`}
+              >
+                <Backdrop theme={scene.theme} />
+                <SceneRenderer scene={scene} />
+              </Sequence>
+            );
+          })}
+          {audio ? <Audio src={staticFile(audio.src)} volume={audio.volume ?? 0.9} /> : null}
+        </AbsoluteFill>
+      </StyleBibleProvider>
     </EnsureFonts>
   );
 };

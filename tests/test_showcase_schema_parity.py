@@ -223,3 +223,47 @@ def test_python_and_ts_resolve_agree():
         'otherwise the two timelines diverge by a frame')
     assert 'Math.floor' not in ts.split('resolveScenes')[1][:1200], (
         'TS side still floors durations — that reintroduces the 1-frame gap')
+
+
+# --- style bible wiring (P4 review finding) ---------------------------------
+#
+# The graph declared palette / typography / motionLanguage / cameraLanguage and
+# the renderer ignored all of it. These guard that a graph-provided style bible
+# can actually reach a scene, so P5 does not build on a split brain.
+
+def test_style_bible_field_name_is_identical_on_both_sides():
+    py = (ROOT / 'pipeline' / 'scenes_probe.txt')
+    ts = (ROOT / 'studio' / 'src' / 'schemas' / 'showcase-v1.ts').read_text(encoding='utf-8')
+    js = json.loads((ROOT / 'pipeline' / 'schemas' / 'showcase-v1.schema.json').read_text(encoding='utf-8'))
+    assert 'style_bible' in ts, 'TS schema must use the same field name as JSON Schema/Python'
+    assert 'style_bible' in js['properties'], 'JSON Schema field name drifted'
+    sc_src = (ROOT / 'pipeline' / 'scene_graph.py').read_text(encoding='utf-8')
+    assert 'style_bible' in sc_src, 'Python loader must read the same field name'
+    assert not py.exists()
+
+
+def test_scenes_do_not_import_static_tokens_directly():
+    """A scene must read design through context. Importing the token module
+    directly is what made the graph's style bible decorative."""
+    scene_dir = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes'
+    offenders = []
+    for f in sorted(scene_dir.glob('*.tsx')):
+        src = f.read_text(encoding='utf-8')
+        for line in src.splitlines():
+            if line.startswith('import') and 'design/tokens' in line:
+                offenders.append(f.name)
+    assert not offenders, (
+        f'scenes import static tokens instead of the style bible: {offenders}')
+
+
+def test_main_template_provides_the_style_bible():
+    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'FinanceShowcaseWide.tsx').read_text(encoding='utf-8')
+    assert 'StyleBibleProvider' in src, 'main template must publish the style bible'
+    assert 'doc.style_bible' in src, 'the provider must receive the graph value, not a constant'
+
+
+def test_style_bible_merge_ignores_unknown_keys():
+    """A typo in the graph must not blank or widen a token."""
+    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'design' / 'styleBible.tsx').read_text(encoding='utf-8')
+    assert 'mergeSection' in src, 'style bible must merge per known keys'
+    assert 'typeof base[key]' in src, 'merge must type-check incoming values against the default'
