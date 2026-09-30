@@ -4,6 +4,7 @@ import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
+import {MaskReveal, Reveal, SpecularSweep} from '../common/primitives';
 
 /**
  * Scene 1 — KPI Hero (reference film ~24s)
@@ -42,7 +43,7 @@ export const KpiHero: React.FC<{scene: Scene}> = ({scene}) => {
   const enter = spring({
     frame,
     fps: comp.fps,
-    config: {damping: 200},
+    config: MOTION.springs.settle,
     durationInFrames: Math.round(MOTION.enterSeconds * comp.fps),
   });
   const mask = interpolate(enter, [0, 1], [102, 0], {

@@ -6,6 +6,7 @@ import {BrowserStack} from './scenes/BrowserStack';
 import {CalendarGrid, DataColumns} from './scenes/DataColumns';
 import {PALETTE, scaleFrom} from './design/tokens';
 import {StyleBibleProvider} from './design/styleBible';
+import {SceneEnter} from './common/primitives';
 import {EnsureFonts} from '../common/EnsureFonts';
 
 /**
@@ -91,8 +92,13 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
                 durationInFrames={r.durationInFrames}
                 name={`${r.id}:${r.type}`}
               >
-                <Backdrop theme={scene.theme} />
-                <SceneRenderer scene={scene} />
+                <SceneEnter
+                  kind={scene.transitionIn?.in}
+                  durationInFrames={scene.transitionIn?.durationInFrames ?? 18}
+                >
+                  <Backdrop theme={scene.theme} />
+                  <SceneRenderer scene={scene} />
+                </SceneEnter>
               </Sequence>
             );
           })}

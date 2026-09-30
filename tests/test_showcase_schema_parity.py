@@ -283,3 +283,56 @@ def test_style_bible_merge_ignores_unknown_keys():
     src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'design' / 'styleBible.tsx').read_text(encoding='utf-8')
     assert 'mergeSection' in src, 'style bible must merge per known keys'
     assert 'typeof base[key]' in src, 'merge must type-check incoming values against the default'
+
+
+# --- motion foundation (P5) --------------------------------------------------
+
+def test_no_scene_hand_writes_spring_physics():
+    """Scenes must name an intent (`settle`, `land`, `reveal`), not pick damping.
+
+    Before P5, `damping: 200` appeared three times across three scenes, each
+    hand-tuned, so two entrances that should have felt identical did not.
+    """
+    scene_dir = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes'
+    offenders = []
+    for f in sorted(scene_dir.glob('*.tsx')):
+        for i, line in enumerate(f.read_text(encoding='utf-8').splitlines(), 1):
+            if ('damping:' in line or 'stiffness:' in line) and 'MOTION.springs' not in line:
+                offenders.append(f'{f.name}:{i}')
+    assert not offenders, f'hand-written spring physics in scenes: {offenders}'
+
+
+def test_motion_tokens_are_named_by_intent():
+    tokens = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'design' / 'tokens.ts').read_text(encoding='utf-8')
+    for name in ('settle', 'pop', 'land', 'reveal', 'hero'):
+        assert f'{name}:' in tokens, f'motion token {name!r} missing'
+    assert 'profiles' in tokens, 'motion profiles (premium/energetic/cinematic/minimal) missing'
+
+
+def test_transitions_are_frame_local():
+    """A transition must not consume time from its neighbours: scene start
+    frames are fixed by resolve(), so a transition that shifted them would move
+    every downstream subtitle and beat off its absolute second."""
+    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'common' / 'primitives.tsx').read_text(encoding='utf-8')
+    assert 'SceneEnter' in src, 'scene transitions must exist'
+    body = src.split('export const SceneEnter')[1]
+    for banned in ('Sequence', 'durationInFrames={', 'trimBefore'):
+        assert banned not in body, (
+            f'SceneEnter must stay inside its own frames; found {banned!r}')
+
+
+def test_primitives_do_not_shadow_remotion_spring():
+    """A prop called `spring` shadows remotion's spring() and turns
+    `spring({...})` into calling a string. Renamed to springName after it bit us."""
+    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'common' / 'primitives.tsx').read_text(encoding='utf-8')
+    assert 'spring?: SpringName' not in src, 'the springName rename was reverted'
+    assert 'spring as remotionSpring' in src, 'remotion spring must be imported under an alias'
+
+
+def test_every_scene_calls_the_style_bible_and_a_primitive():
+    scene_dir = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes'
+    for f in sorted(scene_dir.glob('*.tsx')):
+        src = f.read_text(encoding='utf-8')
+        assert 'useDesign()' in src, f'{f.name} must read design through the style bible'
+        assert 'MOTION.springs' in src or 'common/primitives' in src, (
+            f'{f.name} animates without the motion tokens or primitives')
