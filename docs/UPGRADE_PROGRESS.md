@@ -156,7 +156,7 @@
 | 7.1 | 自研 SVG 图表：Bar/Line/Area/Slope/Bubble/Heatmap/RankTable/Sparkline/VolumeBars | ✅ | 9 种全部实现并**逐场渲出目检**（`pipeline/examples/charts_demo.json`，P7.1 当时 9 场 1350 帧；**P7.2 为测封顶追加第 10 场 `c10_bar_long` 600 帧 → 现为 10 场 1950 帧**）。<br>**先发现一件事**：`bar-chart / line-chart / area-chart / bubble-chart / rank-chart / slope-chart / heatmap` **七个场景类型从 P3 起就在 schema 里声明了，却没有任何渲染器** —— 图谱要一张柱状图，得到的是一屏 "not implemented in P4"。**schema 承诺了没人兑现的能力，正是本项目反复踩的那一类。** 引擎做完这七种才变成真的；另补声明 `volume-chart` / `sparkline-chart`（引擎支持但 schema 没有，同样是不对称）。<br>**结构**：`charts/options.ts`（声明面，先写）→ `charts/scale.ts`（纯数学，零依赖）→ `charts/ChartFrame.tsx`（轴/网格/刻度/数值标签，**拥有定义域**）→ `charts/types.tsx`（九个标记）→ `charts/Chart.tsx`（适配器）。标记一律从 frame 拿已解析的比例尺，**不许自己算定义域** —— 否则标记可能和它所在的轴不是同一个尺度，而那种图是可读且错误的。 |
 | 7.1b | 选项面与 A/B 证据 | ✅ | 按纪律先注册再实现。`FIELD_READERS` 18 个选项全部注明读它的文件；**检查会读那个文件的源码确认它真的提到这个名字**（只查注册表自己的账本分不清能用和哑的）。<br>**A/B 矩阵 23 个选项全部实测为「活」**（`studio/scripts/chart_ab_matrix.py`，退出码 0，报告 `out/chart_ab.md`；**P7.2 后为 24/24**，新增运动项 `enterFrames` / `staggerFrames` 与 `deemphasis`）。**过程中抓到一个源码级检查抓不到的真 bug**：`showArea` 登记为"被 types.tsx 读过"、也真的出现在 types.tsx —— 但在 **Area 组件**上，于是每一张 line 图的 `showArea` 都是哑的。根因更深一层：`option()` 拿 `TYPE_OPTIONS` 做**运行时闸门**，所以一张过时的表就能让一个能用的选项变哑，而守卫看不见（名字在文件里）。**修法：闸门去掉，表降级为声明，准确性另测。** 修后 volume 的 `emphasisIndex` 从 0px 变 50,730px（2.45%，区域正好一根柱）。<br>**顺带删掉 `inline`**：声明了、没有任何标记读它。与其糊一层，不如删。<br>**新增两条机械化的纪律**：每个声明的选项都必须在 A/B 矩阵里有实测行；`option()` 不得再按表过滤。 |
 | 7.2 | 统一 chart 生命周期（intro/settle/highlight/focus/exit） | ✅ | 九个标记原来各有一套入场（弹簧长 / dash offset 画 / 从左伸 / 缩放格子）→ 纯函数 `lifecycleAt(frame, duration, count, opts)`，五阶段按**场景时长的比例**而非固定帧数（90 帧和 600 帧都读得对），入场长度**封顶**为 `min(场景的 34%, 标记实际所需)`；`emphasis` 是阶段属性而非第二套动画（intro 升 → settle 到 → highlight/focus 保持）。`types.tsx` 迁移后**零 Remotion import**，时钟只剩一个来源，`useCurrentFrame`/`useVideoConfig`/`spring`/`interpolate` 的最后一个读者随之删除。<br>同轮**用测量抓到一个自 P7.1 就存在的柱状图入场缺陷**（`top` 是常数、height 增长 → 柱子从顶端垂下，只在满高时恰好落回基线；四次稳定帧渲染全都没暴露）→ 柱形几何抽成纯函数 `barBox(valueY, baselineY, progress)` 放进 `scale.ts`，`VolumeBars` 一并修。<br>详见变更记录 2026-09-30 P7.2 条。**复验补注（10-01）**：`lifecycle.check.ts` 实测 29 个 `check(` 调用点 / 54 条断言（原记「60+ 项」为假账）；且**未接进 pytest**，守卫目前纯靠自觉 —— 详见变更记录同日复验条。 |
-| 7.3 | annotation/label 避让/数字格式/theme/stagger/emphasis | ✅ | **完成（10-01）**。两条实测缺陷修后复测归位（柱标签 −160/+322px → 五个全部 −9/−10px；slope 线顶与刻度从差 57px → **21px = 数据差 1 单位**）。110 passed、tsc 0、三 check 0、**A/B 26/26**、成片重渲契约保持。`lifecycle.check.ts` 已接进 pytest。详见变更记录 2026-10-01 P7.3 完成条 |
+| 7.3 | annotation/label 避让/数字格式/theme/stagger/emphasis | ✅ **复验通过（10-01）** | 两条实测缺陷修后复测归位（柱标签 −160/+322px → 五个全部 −9/−10px；slope 线顶与刻度从差 57px → **21px = 数据差 1 单位**）。110 passed、tsc 0、三 check 0、**A/B 26/26**、成片重渲契约保持。`lifecycle.check.ts` 已接进 pytest。详见变更记录 2026-10-01 P7.3 完成条<br>**复验补注（10-01，遗留一项不阻塞本阶段）**：三条新守卫**实测全部能红**（`declutterByY` 排序退回类别顺序 → scale.check 3 条转红报 `[300,400,426]`；`enterFrames` 注册表指回 types.tsx → exit 1 报 CODE never mentions；`WEIGHTS.focus` 0.36→0.40 → pytest 转红）。**但仍有一个未被任何守卫覆盖的空隙**：`declutterByY` 的**调用点**若被改回 `declutter`（函数本身不动），**110 条测试全绿、三份 check 全过** —— 守卫只证明纯函数对，不证明九个标记真的调它。与 `showArea`（表在、名字在文件里、不在那个组件上）同型。**留给 P8 的 A/B 矩阵 CI 化时一并处理**，不阻塞本阶段 |
 
 ---
 
@@ -374,3 +374,19 @@
   - **终检**：**110 passed**（102 基线 + 新 8：lifecycle 3 + registry 5；cv2 的 4 条按复验官裁定仍 `--ignore` 分解释器跑）、tsc 0、三 check exit 0、**A/B 26/26 exit 0**（`out/chart_ab.md`，每行 13 溯源字段；新增行 = sparkline `enterFrames` 287px @进入帧、heatmap `theme` 2,073,383px）、完整渲出 `out/charts_demo.mp4`（1950 帧 32.5s，`yuv420p(tv, bt709)` 编码契约保持）。
   - **未做（明确留后）**：A/B 矩阵接进 `tests/` 当 CI 项（P8 收尾，与复验官约定）；P6 遗留 6.7 SPACE 尺度 / 6.8 DEPTH 无场景使用；`shot_specs.json` 创作字段与音频听感（人工）。
   - **推送状态**：本条与同日审计条**等推送授权**（铁律：不自动 push）。原尾行「本条与 `014ebe7` 一并等推送授权」已过时 —— `014ebe7`/`6abbaf2` 实测已在 `origin/main`（tip=6abbaf2），就地订正。
+
+- 2026-10-01：**P7.3 复验裁定 —— 通过**（复验官独立取证，未采信施工方自述）。**逐条重测两条最重的主张，并实测三条新守卫能否失败。**
+  - **渲染噪声地板先测**：同 props 连渲两次 `f01220.png`，`array_equal=True`、**差异 0 px**。**不先钉死地板，任何小数字都无法判定** —— 这是「取错对象拿到格式正确的答案」的第 N 次同型，所以先测地板再看数字。
+  - **柱标签（独立复现）**：修前 bar2 / bar4 **柱上方 0 像素标签**（标签沉在柱体内，与声称的 +160/+322px 一致）；修后 **−10 / −9 / −10 / −10 / −9**，五根全部在柱顶之上。
+  - **slope 轴线同源（独立复现）**：刻度列 `113:132` **修前修后逐位相同**（80 px ink，`np.array_equal`），即刻度本身没动；顶部墨迹由 y51 移到 y86。按刻度中心反解 **21.0 px/单位**，frame 尺度 y(61)=114−21=**93**。修前顶端落在 y≈58，**偏 36px = headroom 的量**，与「自建 `[min,max]` 局部域」一致。
+  - **bubble 双渲（独立复现）**：修前底部轴标签带 y931-946 有 253px 墨 / **6 个分组**（Mon..Sat）；修后该带仅 11px / 1 分组，圆下文字 87px → 551px（名字 + 数值）。
+  - **三条新守卫实测全部能红**（守卫的价值不在通过，在能失败）：
+    | 守卫 | 变异 | 实测结果 |
+    |---|---|---|
+    | `declutterByY` | 排序退回类别顺序 | scale.check **3 条转红，报 `[300,400,426]`**（出厂缺陷同形）+ pytest 1 failed |
+    | 注册表拒绝注释充数 | `enterFrames` 指回 `READER_TYPES` | `--registry` **exit 1**：`that file's CODE never mentions enterFrames` |
+    | lifecycle 接进 pytest | `WEIGHTS.focus` 0.36→0.40 | **pytest 1 failed**，报 `1 check(s) FAILED` |
+    变异全部还原，终态工作树干净、110 passed、tsc 0。
+  - **两条新增 A/B 行单独查**：两条都是极端值（一端 287px、一端 2,073,383px = 100% 帧），**越是极端越要查是不是「测错了对象」**。结论：地板为 0，287px 是真信号（独立重渲复现 325px，同一区域）；`theme` 行 100% 是因为换主题必然重画整帧背景 —— **该行只证明「主题到达了场景」，不证明「色阶跟了主题」**；另按单元格与底色亮度差直接量色阶方向：暗底 **+108…+493（变亮）**、亮底 **−87…−399（变暗）**，**单向**，与声称一致。
+  - **遗留空隙（不阻塞，已记入 7.3 行尾注）**：`declutterByY` 的**调用点**若被改回 `declutter`（函数本身不动），**110 条测试全绿、三份 check 全过**。守卫只证明纯函数对，不证明九个标记真的调它 —— 与 `showArea` 同型。留给 P8 的 A/B 矩阵 CI 化时一并处理。
+  - **复验这一侧也犯了一次静默失败，如实记**：第一次变异改 `options.ts`，但 `FIELD_READERS` 实际在 `ab_field.py` 里 —— replace **匹配 0 处**、`git diff` 为空、注册表照样 exit 0。**我差点把「守卫没反应」当成结论**；改对文件才转红。**这是账本里那个老教训的第三次实例，且发生在复验一侧** —— 变异测试自身的失败模式，与它要检验的缺陷是同一种。
