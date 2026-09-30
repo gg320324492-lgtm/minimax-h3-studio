@@ -4,6 +4,7 @@ import {ShowcaseSchema, resolveScenes, type Scene, type Showcase} from '../../sc
 import {KpiHero} from './scenes/KpiHero';
 import {BrowserStack} from './scenes/BrowserStack';
 import {CalendarGrid, DataColumns} from './scenes/DataColumns';
+import {ChartScene} from './charts/Chart';
 import {PALETTE, scaleFrom} from './design/tokens';
 import {StyleBibleProvider, useDesign} from './design/styleBible';
 import {SceneEnter} from './common/primitives';
@@ -26,6 +27,19 @@ const SCENE_RENDERERS: Record<string, React.FC<{scene: Scene}>> = {
   'browser-stack': BrowserStack,
   dashboard: DataColumns,
   calendar: CalendarGrid,
+  // P7.1. These seven were declared in showcase-v1 from P3 and had NO renderer,
+  // so a graph asking for a bar chart got a frame that said "not implemented in
+  // P4" — the schema promising a capability nothing delivered. They all route
+  // to the chart engine, which dispatches on the graph's own chart.type.
+  'bar-chart': ChartScene,
+  'line-chart': ChartScene,
+  'area-chart': ChartScene,
+  'bubble-chart': ChartScene,
+  'rank-chart': ChartScene,
+  'slope-chart': ChartScene,
+  heatmap: ChartScene,
+  'volume-chart': ChartScene,
+  'sparkline-chart': ChartScene,
 };
 
 const MissingScene: React.FC<{scene: Scene}> = ({scene}) => (

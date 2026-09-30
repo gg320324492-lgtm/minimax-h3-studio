@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "project": "charts-demo",
+  "format": { "width": 1920, "height": 1080, "fps": 60 },
+  "bpm": 126,
+  "scenes": [
+    {
+      "id": "c01_bar",
+      "type": "bar-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "bar",
+          "values": [48200000, 39900000, 52100000, 36800000, 61400000],
+          "labels": ["Overview", "Retention", "Errors", "Signups", "Revenue"],
+          "showValues": true,
+          "showGrid": true,
+          "showAxis": true,
+          "axisLabel": "MONTHLY VOLUME",
+          "valueFormat": "compact",
+          "emphasisIndex": 4
+        }
+      }
+    },
+    {
+      "id": "c02_line",
+      "type": "line-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "line",
+          "values": [22, 31, 28, 44, 51, 49, 63, 71, 68, 84, 92, 108],
+          "showArea": true,
+          "showValues": false,
+          "showGrid": true,
+          "axisLabel": "RETENTION COHORT %",
+          "valueFormat": "int",
+          "curve": "monotone",
+          "strokeWidth": 5
+        }
+      }
+    },
+    {
+      "id": "c03_area",
+      "type": "area-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "area",
+          "values": [12, 19, 16, 28, 34, 41, 38, 52],
+          "showGrid": true,
+          "axisLabel": "ACTIVE ACCOUNTS (K)",
+          "valueFormat": "int"
+        }
+      }
+    },
+    {
+      "id": "c04_slope",
+      "type": "slope-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "slope",
+          "before": [42, 28, 61, 19],
+          "after": [58, 34, 55, 37],
+          "labels": ["Mobile", "Desktop", "API", "Partners"],
+          "showEndLabels": true,
+          "valueFormat": "int",
+          "emphasisIndex": 3
+        }
+      }
+    },
+    {
+      "id": "c05_bubble",
+      "type": "bubble-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "bubble",
+          "values": [12, 28, 45, 66, 88, 100],
+          "sizes": [8, 22, 40, 61, 79, 95],
+          "labels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+          "showValues": true,
+          "sizeBy": "value"
+        }
+      }
+    },
+    {
+      "id": "c06_heatmap",
+      "type": "heatmap",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "heatmap",
+          "rows": [
+            [12, 34, 58, 71, 66, 40],
+            [28, 61, 88, 74, 52, 31],
+            [45, 72, 95, 68, 44, 22]
+          ],
+          "rowLabels": ["AMER", "EMEA", "APAC"],
+          "colLabels": ["06", "08", "10", "12", "14", "16"],
+          "showCellValues": true,
+          "valueFormat": "int",
+          "emphasisIndex": 8
+        }
+      }
+    },
+    {
+      "id": "c07_rank",
+      "type": "rank-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "rank",
+          "items": [
+            { "label": "Enterprise", "value": 48200000, "previous": 41000000 },
+            { "label": "Mid-market", "value": 39900000, "previous": 44000000 },
+            { "label": "SMB", "value": 36800000, "previous": 29000000 },
+            { "label": "Self-serve", "value": 21400000, "previous": 23000000 }
+          ],
+          "showRankDelta": true,
+          "valueFormat": "compact",
+          "emphasisIndex": 2
+        }
+      }
+    },
+    {
+      "id": "c08_volume",
+      "type": "volume-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "volume",
+          "values": [18, 34, 26, 48, 39, 62, 55, 71, 64, 88, 79, 96],
+          "baseline": 40
+        },
+        "baseline": 40
+      }
+    },
+    {
+      "id": "c09_sparkline",
+      "type": "sparkline-chart",
+      "durationInFrames": 150,
+      "camera": { "perspective": 1600 },
+      "motion": { "preset": "premium" },
+      "content": {
+        "chart": {
+          "type": "sparkline",
+          "values": [22, 31, 28, 44, 51, 49, 63, 71, 68, 84, 92, 108],
+          "strokeWidth": 6
+        }
+      }
+    }
+  ]
+}

@@ -129,12 +129,12 @@ def test_registry_rejects_an_option_whose_reader_ignores_it():
     fake = types.SimpleNamespace()
     real = ab.ROOT
     ab.FIELD_READERS.clear()
-    ab.FIELD_READERS['line'] = {
+    ab.FIELD_READERS.update({
         # a file that exists and does NOT mention showArea
         'showArea': 'common/projection.ts',
         # a reader path that does not exist at all
         'strokeWidth': 'charts/does-not-exist.tsx',
-    }
+    })
     try:
         problems = ab.check_registry()
     finally:
@@ -173,7 +173,7 @@ def test_registry_check_does_not_depend_on_the_chart_directory():
     Coupling them meant that before P7.1 landed, no option was ever checked.
     """
     ab.FIELD_READERS.clear()
-    ab.FIELD_READERS['line'] = {'showArea': 'common/projection.ts'}  # reader exists, ignores it
+    ab.FIELD_READERS['showArea'] = 'common/projection.ts'  # reader exists, ignores it
     try:
         problems = ab.check_registry()
     finally:

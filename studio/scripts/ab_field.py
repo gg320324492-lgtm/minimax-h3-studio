@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -61,9 +62,35 @@ ROOT = Path(r'E:\Minimax-H3')
 
 CHART_DIR = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'charts'
 
-#: chart option -> the file that reads it. Empty until P7.1 lands, and an empty
-#: registry is itself reported as a problem rather than passing vacuously.
-FIELD_READERS: dict[str, dict[str, str]] = {}
+#: chart option -> the file that reads it. Every entry is checked twice: that
+#: the file exists, and that it actually mentions the option — a registry that
+#: only checks its own bookkeeping cannot tell a working option from an inert
+#: one. Populated from charts/options.ts TYPE_OPTIONS before P7.1's renderers
+#: existed, which is the point: an option with no reader has to be a failing
+#: check rather than a silent capability.
+READER_FRAME = 'charts/ChartFrame.tsx'   # axes, grid, value labels, annotation
+READER_TYPES = 'charts/types.tsx'        # the nine marks
+
+FIELD_READERS: dict[str, dict[str, str]] = {
+    # ── options every chart type accepts, read by the frame ────────────────
+    'showGrid': READER_FRAME,
+    'showAxis': READER_FRAME,
+    'showValues': READER_FRAME,
+    'axisLabel': READER_FRAME,
+    'emphasisIndex': READER_TYPES,
+    'deemphasis': READER_TYPES,
+    'staggerFrames': READER_TYPES,
+    'enterFrames': READER_TYPES,
+    'valueFormat': READER_FRAME,
+    'showArea': READER_TYPES,
+    'strokeWidth': READER_TYPES,
+    'curve': READER_TYPES,
+    'barWidthRatio': READER_TYPES,
+    'showRankDelta': READER_TYPES,
+    'showCellValues': READER_TYPES,
+    'sizeBy': READER_TYPES,
+    'showEndLabels': READER_TYPES,
+}
 
 
 def check_registry() -> list[str]:
@@ -80,16 +107,15 @@ def check_registry() -> list[str]:
             'FIELD_READERS is empty — no chart options are declared, so the '
             'guard has nothing to check and would pass vacuously'
         )
-    for chart, options in sorted(FIELD_READERS.items()):
-        for opt, reader in sorted(options.items()):
-            path = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / reader
-            if not path.exists():
-                problems.append(f'{chart}.{opt}: reader {reader} does not exist')
-            elif opt not in path.read_text(encoding='utf-8'):
-                problems.append(
-                    f'{chart}.{opt}: registered against {reader}, but that file '
-                    f'never mentions {opt} — the option is inert'
-                )
+    for opt, reader in sorted(FIELD_READERS.items()):
+        path = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / reader
+        if not path.exists():
+            problems.append(f'{opt}: reader {reader} does not exist')
+        elif opt not in path.read_text(encoding='utf-8'):
+            problems.append(
+                f'{opt}: registered against {reader}, but that file never '
+                f'mentions {opt} — the option is inert'
+            )
     return problems
 
 
@@ -100,13 +126,53 @@ def frame_name(frame: int) -> str:
     return f'f{frame:05d}.png'
 
 
+def _segments(doc: dict, dotted: str) -> list[str]:
+    return dotted.split('.')
+
+
+def _descend(node, key: str, create: bool):
+    """One step down a dotted path, tolerating a list index.
+
+    A scene graph stores scenes as a LIST, so the only useful address for a
+    chart option is `scenes.0.content.chart.emphasisIndex`. Treating `0` as a
+    dict key would silently replace the list with a dict and produce a graph
+    that fails to render for a reason that has nothing to do with the field
+    under test.
+    """
+    if isinstance(node, list):
+        if not key.isdigit():
+            raise KeyError(f'{key!r} is not a list index (node is a list)')
+        idx = int(key)
+        if not (0 <= idx < len(node)) and not create:
+            raise KeyError(f'index {idx} out of range ({len(node)} items)')
+        while len(node) <= idx:
+            node.append(None)
+        if node[idx] is None and create:
+            node[idx] = {}
+        return node, idx
+    if not isinstance(node, dict):
+        raise KeyError(f'cannot descend into {type(node).__name__} at {key!r}')
+    nxt = node.get(key)
+    if nxt is None and create:
+        nxt = {}
+        node[key] = nxt
+    return node, key
+
+
 def _get_path(doc: dict, dotted: str) -> tuple[bool, object]:
     """(found, current value) for a dotted path, without creating anything."""
     node: object = doc
-    for key in dotted.split('.'):
-        if not isinstance(node, dict) or key not in node:
+    for key in _segments(doc, dotted):
+        try:
+            parent, k = _descend(node, key, create=False)
+        except KeyError:
             return False, None
-        node = node[key]
+        if isinstance(parent, list):
+            node = parent[k]
+        elif k not in parent:
+            return False, None
+        else:
+            node = parent[k]
     return True, node
 
 
@@ -150,15 +216,17 @@ def check_value(doc: dict, dotted: str, raw: str) -> tuple[object, str | None]:
 
 
 def _set_path(doc: dict, dotted: str, value: object) -> None:
-    parts = dotted.split('.')
+    parts = _segments(doc, dotted)
     node = doc
     for key in parts[:-1]:
-        nxt = node.get(key)
-        if not isinstance(nxt, dict):
-            nxt = {}
-            node[key] = nxt
-        node = nxt
-    node[parts[-1]] = value
+        parent, k = _descend(node, key, create=True)
+        node = parent[k]
+    last = parts[-1]
+    parent, k = _descend(node, last, create=True)
+    if isinstance(parent, list):
+        parent[k] = value
+    else:
+        parent[k] = value
 
 
 def ab_field(
@@ -197,15 +265,33 @@ def ab_field(
     a_json.write_text(json.dumps(base, ensure_ascii=False), encoding='utf-8')
     b_json.write_text(json.dumps(alt, ensure_ascii=False), encoding='utf-8')
 
+    # Two environment facts, both learned from a full disk.
+    #
+    # TMPDIR: the bundler writes its scratch bundle to the system temp. That
+    # temp was on a C: drive with zero free - 125 leftover bundles, 58 GB -
+    # because every one had copied the whole 773 MB studio/public (staged job
+    # props, EP01's mp4s) into itself. The scratch goes next to the output
+    # instead, which is on the repo drive.
+    #
+    # --public-dir: a graph that references no static file needs an empty
+    # directory rather than 773 MB of unrelated media. still.mjs REFUSES the
+    # combination when the graph does reference a static file, so this cannot
+    # silently break an asset lookup.
+    tmp = out_dir / 'tmp'
+    tmp.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, 'TMPDIR': str(tmp), 'TMP': str(tmp), 'TEMP': str(tmp)}
+    public_dir = out_dir / 'public'
+    public_dir.mkdir(parents=True, exist_ok=True)
+
     for tag, g in (('a', a_json), ('b', b_json)):
         proc = subprocess.run(
             [node, 'bin/still.mjs', '--comp', comp, '--props', str(g),
-             '--out', str(out_dir / tag), '--frames', str(frame)],
-            cwd=studio, capture_output=True, text=True, timeout=1800,
+             '--out', str(out_dir / tag), '--frames', str(frame),
+             '--public-dir', str(public_dir)],
+            cwd=studio, capture_output=True, text=True, timeout=1800, env=env,
         )
         if proc.returncode != 0:
-            raise RuntimeError(f'still {tag} failed:\n{proc.stdout}\n{proc.stderr}')
-
+            raise RuntimeError(f'still {tag} failed on frame {frame}')
     return diff_dir(out_dir / 'a', out_dir / 'b', frame)
 
 

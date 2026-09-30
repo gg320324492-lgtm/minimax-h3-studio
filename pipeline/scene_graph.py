@@ -28,6 +28,7 @@ SCENE_TYPES = (
     'video', 'kpi-hero', 'browser-window', 'browser-stack', 'dashboard',
     'stat-card', 'card-grid', 'calendar', 'bar-chart', 'line-chart',
     'area-chart', 'bubble-chart', 'rank-chart', 'slope-chart', 'heatmap',
+    'volume-chart', 'sparkline-chart',
     'data-table', 'quote', 'data-plane-3d', 'logo', 'outro',
 )
 

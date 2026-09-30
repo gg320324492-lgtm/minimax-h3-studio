@@ -27,6 +27,9 @@ export const SceneType = z.enum([
   'rank-chart',
   'slope-chart',
   'heatmap',
+
+  'volume-chart',
+  'sparkline-chart',
   'data-table',
   'quote',
   'data-plane-3d',
