@@ -61,7 +61,7 @@
 | 3.2 | Python 加载/校验/时序推导 | ✅ | pipeline/scene_graph.py：7 类错误全部抓出（重复 id/未知类型/零时长/坏 camera 轨道/非法 fps/未知 motion profile/空 scenes）；`resolve()` 推导 startFrame；`generative_scenes()` 按类型路由 H3 vs 程序化 |
 | 3.3 | Camera 与组件 motion 分离 | ✅ | camera 独立 schema，组件动效走 motion.preset —— P3 设计规则已编码进契约 |
 | 3.4 | 双端不漂移 | ✅ | tests/test_showcase_schema_parity.py：scene 类型/camera 通道/generative 路由三处 Python↔TS↔JSON Schema 对照（7 项） |
-| 3.5 | 卡点量化 | ✅ | **发现并修正一个数学事实**：60fps@126BPM 每拍 28.5714 帧——整数帧永远无法精确落拍。改为**吸附最近拍**（非向上取整），并让 `on_beat()` 以半拍为界（整数帧的数学上界）。**更关键**：场景时长必须对齐拍网格（4/8/12 拍 = 114/229/343 帧），否则误差累积 —— 已加 beat_aligned_durations() 告警并给出修复建议，demo 已对齐（起点 0/229/458/572 全部 ≤0.5 帧） |
+| 3.5 | 卡点量化（三轮修复） | ✅ | **复验发现我上轮「全部落在半帧内」的结论是错的**——实测 s03 偏差 0.857 帧、s04 0.571 帧，且误差单调累积（10 场达 3.86 帧 / 64ms）。机理：拍长 28.5714 帧，迭代吸附起点时「最近拍」常落在前一场结束之前，防重叠钳制把起点顶后，每场 +0.43 帧。**修法**：在拍空间用整数拍数累加、一次性转帧，且**场景占满整拍**（时长取 floor(beats×beat) 而非 round，否则 229 帧会冲出 228.57 的拍跨度造成 1 帧重叠）。结果：10 场全部 ≤0.429 帧且不累积；demo 起点 0/229/457/571。`on_beat()` 容差从「半拍」改为**「半帧」**（半拍 14.29 帧比实际可达宽松 29 倍，且作为断言结构上抓不到亚拍漂移）；`beat_aligned_durations()` 从「逐场时长检查」（对正在漂移的图谱报无告警）改为**测 resolve() 实际输出的累计漂移** |
 | 3.6 | 样例图谱 | ✅ | pipeline/examples/showcase_demo.json：对齐参考片 24-40s 的四类代表 scene（kpi-hero / browser-stack / dashboard / calendar），1920x1080@60、13.35s、**纯程序化零 H3** |
 
 | # | 任务 | 状态 | 结论/数据 |

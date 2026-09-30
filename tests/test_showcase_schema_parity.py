@@ -81,19 +81,21 @@ def test_demo_graph_loads_and_resolves():
         assert b.startFrame == a.endFrame, 'scenes must be contiguous without overlap'
 
 
-def test_beat_snap_pushes_starts_forward_only():
+def test_beat_snap_keeps_every_start_within_half_a_frame():
+    """Snapping may pull a scene slightly earlier (a whole-beat duration can be
+    shorter than the requested frame count), so the old "never pulls earlier"
+    invariant no longer holds. What must hold is: starts land on the grid, and
+    nothing overlaps."""
     sc, _ = scene_graph.load_or_report(DEMO)
-    # pair by id: snapping shifts downstream cursors, so index-wise zip compares
-    # different scenes and would read as a backward move
     plain = {s.id: s.startFrame for s in sc.resolve(beat_snap=False)}
     snapped = sc.resolve(beat_snap=True)
     for s in snapped:
-        assert s.startFrame >= plain[s.id], 'beat snapping must never pull a scene earlier'
-    # At 60 fps a 126 BPM beat is 28.5714 frames, so no integer frame can land
-    # exactly on a beat. Half a frame is the tightest tolerance a viewer can see.
-    for s in snapped[1:]:
+        assert abs(s.startFrame - plain[s.id]) <= 2 * (60.0 / sc.bpm) * sc.fps, (
+            f'{s.id} moved too far from its unsnapped position')
         assert sc.on_beat(s.startFrame), (
             f'{s.id} is {sc.beat_distance_frames(s.startFrame):.3f} frames off the beat')
+    for a, b in zip(snapped, snapped[1:]):
+        assert b.startFrame >= a.endFrame, f'{a.id} overlaps {b.id}'
 
 
 def test_generative_scenes_are_routed_not_guessed():
@@ -105,3 +107,61 @@ def test_generative_scenes_are_routed_not_guessed():
 
 if __name__ == '__main__':
     raise SystemExit(__import__('pytest').main([__file__, '-q']))
+
+
+# --- beat drift (P3 review findings) ----------------------------------------
+
+def _long_graph(n: int, dur: int) -> dict:
+    base = json.loads(DEMO.read_text(encoding='utf-8'))
+    base['scenes'] = [{'id': f's{i:02d}', 'type': 'kpi-hero',
+                       'durationInFrames': dur} for i in range(n)]
+    return base
+
+
+def test_beat_snap_does_not_accumulate_drift():
+    """The failure mode: snapping each start iteratively pushes starts forward
+    whenever the nearest beat falls before the previous scene ends. 8-beat
+    scenes at 60fps/126BPM drifted 0.43 frames per scene, 3.86 over ten."""
+    sc, _ = scene_graph.load_or_report(DEMO)
+    long = sc.__class__(project='t', width=1920, height=1080, fps=60, bpm=126,
+                        scenes=[{'id': f's{i}', 'type': 'kpi-hero',
+                                 'durationInFrames': 229} for i in range(10)])
+    drifts = [sc.beat_distance_frames(r.startFrame)
+              for r in long.resolve(beat_snap=True)]
+    assert max(drifts) <= 0.5 + 1e-6, f'drift exceeded half a frame: {drifts}'
+    # the specific regression: monotonic growth
+    assert drifts[-1] <= 0.5 + 1e-6, 'last scene drifted — error is accumulating'
+
+
+def test_beat_scenes_do_not_overlap_or_share_a_start():
+    sc, _ = scene_graph.load_or_report(DEMO)
+    long = sc.__class__(project='t', width=1920, height=1080, fps=60, bpm=126,
+                        scenes=[{'id': f's{i}', 'type': 'kpi-hero',
+                                 'durationInFrames': 229} for i in range(6)])
+    resolved = long.resolve(beat_snap=True)
+    starts = [r.startFrame for r in resolved]
+    assert len(set(starts)) == len(starts), f'two scenes share a start: {starts}'
+    for a, b in zip(resolved, resolved[1:]):
+        assert b.startFrame >= a.endFrame, f'{a.id} overlaps {b.id}'
+
+
+def test_drift_validator_agrees_with_resolver():
+    """The validator used to re-implement the beat arithmetic and disagree
+    with resolve(). It must measure resolve()'s actual output."""
+    doc = _long_graph(10, 229)
+    sc, _ = scene_graph.load_or_report(DEMO)
+    long = sc.__class__(project='t', width=1920, height=1080, fps=60, bpm=126,
+                        scenes=doc['scenes'])
+    reported = scene_graph.beat_aligned_durations(doc)
+    actual = [r.id for r in long.resolve(beat_snap=True)
+              if long.beat_distance_frames(r.startFrame) > 0.5 + 1e-6]
+    assert len(reported) == len(actual), (
+        f'validator reported {len(reported)} offenders, resolver found {len(actual)}')
+
+
+def test_on_beat_tolerance_is_half_a_frame_not_half_a_beat():
+    """A half-BEAT tolerance (14.29 frames at 126 BPM/60fps) cannot catch
+    sub-beat drift — the old assertion was structurally incapable of failing."""
+    sc, _ = scene_graph.load_or_report(DEMO)
+    assert sc.on_beat(0), 'frame 0 is on the beat'
+    assert not sc.on_beat(8), '8 frames is a quarter-beat away, must fail a half-frame test'
