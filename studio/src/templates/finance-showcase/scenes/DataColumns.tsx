@@ -2,7 +2,8 @@ import React from 'react';
 import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
-import {FONT_NUM, FONT_SANS, MOTION, PALETTE, SHADOW, SPACE, TYPE, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+import {useDesign} from '../design/styleBible';
 
 /**
  * Scene 3 — Big Number + Column Field (reference film ~32s)
@@ -19,6 +20,7 @@ const seeded = (seed: number, i: number) => {
 };
 
 export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
+  const {MOTION, PALETTE, SHADOW, SPACE, TYPE} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
   const s = scaleFrom(comp.height);
@@ -129,6 +131,7 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
  */
 
 export const CalendarGrid: React.FC<{scene: Scene}> = ({scene}) => {
+  const {MOTION, PALETTE, SHADOW, SPACE, TYPE} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
   const s = scaleFrom(comp.height);
