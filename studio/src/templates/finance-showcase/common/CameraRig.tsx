@@ -31,6 +31,107 @@ const track = (
   });
 };
 
+/**
+ * The camera's full state at a given frame, in SCALED px/deg.
+ *
+ * This is exported because layout has to know where the camera is, not just what
+ * transform string to hand CSS. Browser Stack needs the camera's translateZ to
+ * work out each window's absolute depth: whether a window is magnified depends
+ * on its distance from the EYE, which is the rig's z plus the window's own z.
+ * Recomputing the camera move inside a scene would be a second copy of the
+ * ramp/easing maths, and the two copies would drift — which is the same class
+ * of bug as a scene re-deriving the style bible instead of reading it.
+ */
+/**
+ * CSS perspective projects about the centre of the perspective element: a point
+ * at (x, z) appears on screen at `x * P / (P - z)`. Two consequences scenes
+ * depend on:
+ *
+ *  - depth is measured from the EYE, so z must be ABSOLUTE — the object's own
+ *    plane plus the camera rig's. Using the object's own z alone is wrong for
+ *    any moving camera.
+ *  - a nearer object is magnified. A row of objects at increasing depth is
+ *    therefore NOT symmetric on screen even if its authored x positions are:
+ *    the near end spreads out and the far end pulls in. That is the defect P6
+ *    recorded as "optical centre right of frame centre".
+ *
+ * The maths now lives in ./projection so it can be imported by a test with no
+ * React or Remotion in the way; this module owns the camera's MOTION only, so
+ * there is exactly one implementation of each concern.
+ */
+export type CameraState = {
+  perspective: number;
+  translateX: number;
+  translateY: number;
+  translateZ: number;
+  rotateX: number;
+  rotateY: number;
+  rotateZ: number;
+  scale: number;
+  /** normalised time through the camera move, 0..1 */
+  t: number;
+};
+
+const rampOf = (preset: string, dur: number, fps: number) => {
+  const seconds =
+    preset === 'energetic'
+      ? MOTION.energeticCameraSeconds
+      : preset === 'minimal'
+        ? 0
+        : MOTION.premiumCameraSeconds;
+  return Math.max(1, (seconds * fps) / Math.max(dur, 1));
+};
+
+/**
+ * Evaluate the camera at `frame`. Pure: CameraRig and any scene that needs the
+ * camera's position both call this with the same arguments and cannot disagree.
+ */
+export const cameraStateAt = (
+  camera: Camera | undefined,
+  motion: Motion | undefined,
+  frame: number,
+  height: number,
+  durationInFrames: number,
+  fps: number
+): CameraState => {
+  const s = height / 1080;
+  const dur = durationInFrames > 1 ? durationInFrames : 1;
+  const t = Math.min(frame / (dur - 1), 1);
+  // the move is authored as if it continues past the scene, so the ramp can
+  // exceed the scene length — that is what makes it feel like a real move
+  const ramp = rampOf(motion?.preset ?? 'premium', dur, fps);
+  const ct = Math.min(t / ramp, 1);
+  return {
+    perspective: (camera?.perspective ?? 0) * s,
+    translateX: track(camera?.translateX, ct, 0) * s,
+    translateY: track(camera?.translateY, ct, 0) * s,
+    translateZ: track(camera?.translateZ, ct, 0) * s,
+    rotateX: track(camera?.rotateX, ct, 0),
+    rotateY: track(camera?.rotateY, ct, 0),
+    rotateZ: track(camera?.rotateZ, ct, 0),
+    scale: track(camera?.scale, ct, 1),
+    t: ct,
+  };
+};
+
+/** Hook form, for components that must agree with the rig they sit inside. */
+export const useCameraState = (
+  camera?: Camera,
+  motion?: Motion,
+  durationInFrames?: number
+): CameraState => {
+  const frame = useCurrentFrame();
+  const comp = useVideoConfig();
+  return cameraStateAt(
+    camera,
+    motion,
+    frame,
+    comp.height,
+    durationInFrames ?? comp.durationInFrames,
+    comp.fps
+  );
+};
+
 export type CameraRigProps = {
   camera?: Camera;
   motion?: Motion;
@@ -47,50 +148,22 @@ export const CameraRig: React.FC<CameraRigProps> = ({
   children,
   style,
 }) => {
-  const frame = useCurrentFrame();
-  const comp = useVideoConfig();
-  const dur = durationInFrames ?? comp.durationInFrames;
-  const t = dur > 1 ? Math.min(frame / (dur - 1), 1) : 1;
-
-  const preset = motion?.preset ?? 'premium';
-  const seconds = preset === 'energetic'
-    ? MOTION.energeticCameraSeconds
-    : preset === 'minimal'
-    ? 0
-    : MOTION.premiumCameraSeconds;
-  // frames over which the camera move completes (may exceed the scene: the move
-  // is authored as if it continues, which is what makes it feel like a real move
-  // rather than a tween that starts and stops)
-  const ramp = Math.max(1, (seconds * comp.fps) / Math.max(dur, 1));
-  const ct = Math.min(t / ramp, 1);
-
-  const ease = (x: number) =>
-    MOTION.enterEase.length === 4
-      ? cubicBezier(MOTION.enterEase[0], MOTION.enterEase[1], MOTION.enterEase[2], MOTION.enterEase[3])(x)
-      : x;
+  const cam = useCameraState(camera, motion, durationInFrames);
 
   const transform = useMemo(() => {
-    const s = scaleOf(comp.height);
-    const px = (v: number) => `${v * s}px`;
+    const px = (v: number) => `${v}px`;
     const deg = (v: number) => `${v}deg`;
     const parts: string[] = [];
-    const persp = camera?.perspective;
-    if (persp) parts.push(`perspective(${persp * s}px)`);
-    const tx = track(camera?.translateX, ct, 0);
-    const ty = track(camera?.translateY, ct, 0);
-    const tz = track(camera?.translateZ, ct, 0);
-    const rx = track(camera?.rotateX, ct, 0);
-    const ry = track(camera?.rotateY, ct, 0);
-    const rz = track(camera?.rotateZ, ct, 0);
-    const sc = track(camera?.scale, ct, 1);
+    if (cam.perspective) parts.push(`perspective(${px(cam.perspective)})`);
+    const {translateX: tx, translateY: ty, translateZ: tz} = cam;
     if (ty || tx) parts.push(`translate3d(${px(tx)}, ${px(ty)}, ${px(tz)})`);
     else if (tz) parts.push(`translateZ(${px(tz)})`);
-    if (rx) parts.push(`rotateX(${deg(rx)})`);
-    if (ry) parts.push(`rotateY(${deg(ry)})`);
-    if (rz) parts.push(`rotateZ(${deg(rz)})`);
-    if (sc !== 1) parts.push(`scale(${sc})`);
+    if (cam.rotateX) parts.push(`rotateX(${deg(cam.rotateX)})`);
+    if (cam.rotateY) parts.push(`rotateY(${deg(cam.rotateY)})`);
+    if (cam.rotateZ) parts.push(`rotateZ(${deg(cam.rotateZ)})`);
+    if (cam.scale !== 1) parts.push(`scale(${cam.scale})`);
     return parts.length ? parts.join(' ') : 'none';
-  }, [camera, ct, comp.height]);
+  }, [cam]);
 
   return (
     <AbsoluteFill
@@ -105,8 +178,6 @@ export const CameraRig: React.FC<CameraRigProps> = ({
     </AbsoluteFill>
   );
 };
-
-const scaleOf = (height: number) => height / 1080;
 
 /** Minimal cubic-bezier solver — avoids a dependency for one curve. */
 const cubicBezier =

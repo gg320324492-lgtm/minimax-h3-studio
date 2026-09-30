@@ -139,7 +139,12 @@ def test_real_binary_still_prepends(monkeypatch):
     real = _P(ffmpeg_env.FFMPEG)
     if not real.exists():
         pytest.skip('bundled ffmpeg not present on this machine')
-    os.environ['PATH'] = 'C:\\Windows\\system32'
+    # monkeypatch, not os.environ[...] = ...: a bare assignment here replaces PATH
+    # for the REST OF THE SESSION and is never restored. That stayed invisible
+    # while nothing else in the suite needed PATH, and then broke an unrelated
+    # test that shells out to node — a leak like this fails somewhere you are
+    # not looking.
+    monkeypatch.setenv('PATH', 'C:\\Windows\\system32')
     ffmpeg_env.prepend_to_path(ffmpeg_env.FFMPEG, quiet=True)
     assert os.environ['PATH'].split(';')[0] == str(real.parent)
 

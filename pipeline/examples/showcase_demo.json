@@ -73,11 +73,12 @@
       "layout": {
         "gap": 40,
         "radius": 14,
-        "spreadX": 190,
-        "spreadZ": 90,
-        "perWindowRotateY": 4,
+        "spreadX": 300,
+        "spreadZ": 150,
+        "perWindowRotateY": 9,
         "windowWidth": 520,
-        "windowHeight": 400
+        "windowHeight": 400,
+        "equalOnScreen": true
       },
       "camera": {
         "perspective": 1400,

@@ -31,6 +31,10 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
   const unit = c.unit ? String(c.unit) : '';
   const count = Number(c.columns ?? 24);
   const seed = Number(c.columnSeed ?? 42);
+  const layout = (scene.layout ?? {}) as Record<string, unknown>;
+  const fieldHeight = Number(layout.fieldHeight ?? 420) * s;
+  const columnWidth = Number(layout.columnWidth ?? 44) * s;
+  const columnGap = Number(layout.columnGap ?? 10) * s;
 
   const valueIn = spring({
     frame,
@@ -41,54 +45,38 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
 
   return (
     <CameraRig camera={scene.camera} motion={scene.motion} durationInFrames={scene.durationInFrames}>
-      <div style={{position: 'absolute', inset: 0}}>
-        {/* column field, centred and receding behind the headline */}
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '54%',
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            alignItems: 'flex-end',
-            gap: 10 * s,
-            height: 520 * s,
-            transformStyle: 'preserve-3d',
-          }}
-        >
-          {Array.from({length: count}, (_, i) => {
-            const h = 0.25 + seeded(seed, i) * 0.75;
-            const at = i * 0.9;
-            const grow = spring({
-              frame: frame - at * 3,
-              fps: comp.fps,
-              config: MOTION.springs.land,
-            });
-            const isTall = i % 5 === 0;
-            return (
-              <div
-                key={i}
-                style={{
-                  width: 44 * s,
-                  height: `${h * 100 * grow}%`,
-                  background: isTall ? PALETTE.accent : 'rgba(245,242,234,0.16)',
-                  borderRadius: `${4 * s}px ${4 * s}px 0 0`,
-                  boxShadow: isTall ? SHADOW.glowAccent : 'none',
-                }}
-              />
-            );
-          })}
-        </div>
+      {/*
+        Headline ABOVE, field BELOW, in normal flow — deliberately.
 
-        {/* headline sits in front of the field, same centre */}
+        The two were both absolutely positioned and centred on `top: 50%`, with
+        the field 520px tall, so the field's top edge sat at y=323 while the
+        caption under the headline ended at y=398. The caption was therefore
+        always inside the column band, and whether it looked broken depended on
+        the column seed: with a short column under the caption it read as depth,
+        with a tall one the text was struck through by bars. That is a layout
+        that can only be right by luck.
+
+        In flow the browser guarantees the order and the spacing, so the
+        collision is not representable. The trade is that the columns no longer
+        pass behind the number — which is the right loss, since the reference
+        beats keep the figure in clear space and the P4 brief rules out using
+        clutter to fake depth.
+      */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <div
           style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: `translate(-50%, -50%) translateY(${-330 * s}px) scale(${0.94 + 0.06 * valueIn})`,
-            zIndex: 2,
             textAlign: 'center',
+            transform: `scale(${0.94 + 0.06 * valueIn})`,
+            zIndex: 2,
             opacity: valueIn,
           }}
         >
@@ -119,6 +107,40 @@ export const DataColumns: React.FC<{scene: Scene}> = ({scene}) => {
               {unit}
             </div>
           ) : null}
+        </div>
+
+        <div
+          style={{
+            marginTop: SPACE.xl * s,
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: columnGap,
+            height: fieldHeight,
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          {Array.from({length: count}, (_, i) => {
+            const h = 0.25 + seeded(seed, i) * 0.75;
+            const at = i * 0.9;
+            const grow = spring({
+              frame: frame - at * 3,
+              fps: comp.fps,
+              config: MOTION.springs.land,
+            });
+            const isTall = i % 5 === 0;
+            return (
+              <div
+                key={i}
+                style={{
+                  width: columnWidth,
+                  height: `${h * 100 * grow}%`,
+                  background: isTall ? PALETTE.accent : PALETTE.column,
+                  borderRadius: `${4 * s}px ${4 * s}px 0 0`,
+                  boxShadow: isTall ? SHADOW.glowAccent : 'none',
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     </CameraRig>
