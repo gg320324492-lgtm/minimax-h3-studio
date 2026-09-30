@@ -75,29 +75,54 @@ class Showcase:
         return sum(int(s['durationInFrames']) for s in self.scenes)
 
     def resolve(self, beat_snap: bool = False) -> list[ResolvedScene]:
-        """Assign start frames.
+        """Assign start frames (and, in beat mode, the rendered duration).
 
-        With beat_snap, each start snaps to the nearest beat. Note that a beat is
-        a fractional number of frames at almost every (fps, bpm) pair — 126 BPM
-        at 60 fps is 28.5714 frames — so no integer frame ever lands exactly on
-        a beat and the tightest achievable bound is half a beat. `on_beat()`
-        measures against that bound; a scene more than half a beat away means
-        its duration is fighting the grid, not that the snap failed.
+        With beat_snap, timing is accumulated in BEAT space and converted to
+        frames once. Two earlier attempts failed and are worth recording:
+
+        * Snapping each start iteratively: a beat is 28.5714 frames at 60 fps /
+          126 BPM, so "nearest beat" often lands BEFORE the previous scene ends.
+          The no-overlap clamp then pushes the start forward and every scene
+          donates ~0.43 frames to the next — measured 3.86 frames (64 ms) of
+          monotonic drift over 10 eight-beat scenes.
+        * Snapping the start but keeping `durationInFrames` verbatim: same
+          failure. 229 frames is 8.015 beats, so the scene overruns the grid and
+          the next start is pushed out again.
+
+        What works: in beat mode a scene occupies a WHOLE number of beats, so
+        `durationInFrames` is read as a request and rounded to the nearest
+        whole-beat frame count. Starts are then exact multiples of the beat
+        (rounded once), and no clamp is ever needed. Error stays under half a
+        frame per scene and does not accumulate.
+
+        The trade: a rendered scene may differ from `durationInFrames` by up to
+        half a beat, because a fractional beat cannot be honoured exactly by
+        integer frames. That is the price of staying on the grid, and it is
+        bounded — unlike the drift it replaces.
         """
         beat_frames = (60.0 / self.bpm) * self.fps
         out: list[ResolvedScene] = []
-        cursor = 0
+        cursor_frames = 0
+        cursor_beats = 0.0
         for s in self.scenes:
-            start = cursor
-            if beat_snap and out:
-                snapped = int(round(cursor / beat_frames) * beat_frames)
-                # never let a snap create an overlap; a tiny forward nudge is
-                # preferable to two scenes sharing a frame
-                start = max(snapped, out[-1].endFrame)
-            dur = int(s['durationInFrames'])
+            requested = int(s['durationInFrames'])
+            # whole beats, kept as an exact count so the beat cursor stays
+            # drift-free — advancing by dur/beat_frames would re-introduce the
+            # 0.015-beat residue this is meant to remove
+            beats = float(max(1, round(requested / beat_frames))) if beat_snap else 0.0
+            if beat_snap:
+                # floor, never round: 8 beats is 228.57 frames, and a rounded
+                # 229-frame scene would overrun its own beat span and overlap
+                # the next scene by a frame
+                dur = int(beats * beat_frames)
+                start = int(round(cursor_beats * beat_frames))
+            else:
+                dur = requested
+                start = cursor_frames
             out.append(ResolvedScene(id=s['id'], type=s['type'], startFrame=start,
                                      durationInFrames=dur, raw=s))
-            cursor = start + dur
+            cursor_frames = start + dur
+            cursor_beats += beats
         return out
 
     def beat_distance_frames(self, frame: int) -> float:
@@ -107,8 +132,14 @@ class Showcase:
         return min(off, beat_frames - off)
 
     def on_beat(self, frame: int) -> bool:
-        """Within half a beat — the tightest bound integer frames allow."""
-        return self.beat_distance_frames(frame) <= (60.0 / self.bpm) * self.fps / 2 + 1e-6
+        """Within HALF A FRAME of a beat.
+
+        That is the tightest bound integer frames allow when snapping is on
+        (each start is rounded once from its exact beat position). Half a BEAT
+        only applies when beat_snap is off — it is a loose bound and, used as an
+        assertion, cannot catch sub-beat drift at all.
+        """
+        return self.beat_distance_frames(frame) <= 0.5 + 1e-6
 
     def generative_scenes(self) -> list[ResolvedScene]:
         return [s for s in self.resolve() if s.generative]
@@ -162,29 +193,33 @@ def _validate(doc: dict) -> list[str]:
 
 
 def beat_aligned_durations(doc: dict) -> list[str]:
-    """Warn when scene durations are not near a whole number of beats.
+    """Report beat drift, measured from the ACTUAL resolved timeline.
 
-    Not fatal — a director may want an off-grid hold — but snapping only works
-    if durations are multiples of the beat, otherwise the error accumulates
-    across scenes. At 60 fps / 126 BPM a beat is 28.5714 frames, so use
-    4/8/12-beat durations (114/229/343 frames) and the grid never drifts.
+    Two earlier versions of this check were wrong in instructive ways:
+
+    * It compared each scene's DURATION in isolation and reported "aligned" on
+      a graph that drifted to 3.9 frames over 10 scenes. Per-scene duration
+      says nothing about where the STARTS land.
+    * It then re-implemented the beat arithmetic itself, so it silently
+      disagreed with Showcase.resolve(). It now measures resolve()'s output.
+
+    A beat is 28.5714 frames at 60 fps / 126 BPM, so integer frames can only
+    approximate the grid. Half a frame is the achievable bound once timing is
+    accumulated in beat space and rounded once (see Showcase.resolve).
     """
     fmt = doc.get('format') or {}
     fps = fmt.get('fps')
-    bpm = doc.get('bpm', 126)
-    if not isinstance(fps, int) or fps <= 0:
+    if not isinstance(fps, int) or fps <= 0 or not doc.get('scenes'):
         return []
-    beat = (60.0 / float(bpm)) * fps
-    out = []
-    for s in doc.get('scenes') or []:
-        d = s.get('durationInFrames')
-        if not isinstance(d, int) or d <= 0:
-            continue
-        beats = d / beat
-        if abs(beats - round(beats)) > 0.02:
-            out.append(f'{s.get("id")}: durationInFrames={d} is {beats:.2f} beats '
-                       f'(nearest whole beat: {round(beats)} → {round(round(beats) * beat)} '
-                       f'frames) — beat snapping will drift')
+    sc = Showcase(project=doc.get('project', '?'), width=fmt.get('width', 0),
+                  height=fmt.get('height', 0), fps=fps,
+                  bpm=float(doc.get('bpm', 126)), scenes=doc['scenes'])
+    out: list[str] = []
+    for r in sc.resolve(beat_snap=True):
+        drift = sc.beat_distance_frames(r.startFrame)
+        if drift > 0.5 + 1e-6:
+            out.append(f'{r.id}: start {r.startFrame} is {drift:.3f} frames off the '
+                       f'beat — cumulative drift')
     return out
 
 

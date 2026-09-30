@@ -125,7 +125,8 @@ export const beatFrames = (doc: Showcase): number => (60 / doc.bpm) * doc.format
 /**
  * Distance from a frame to the nearest beat boundary, in frames.
  * At 60 fps a 126 BPM beat is 28.5714 frames — no integer frame lands exactly on
- * a beat, so callers should treat <= 0.5 frames as "on the beat".
+ * a beat — so callers should treat <= 0.5 frames as "on the beat" once
+ * beatSnap is used. Half a BEAT only applies without snapping.
  */
 export const beatDistanceFrames = (doc: Showcase, frame: number): number => {
   const b = beatFrames(doc);
@@ -133,29 +134,40 @@ export const beatDistanceFrames = (doc: Showcase, frame: number): number => {
   return Math.min(off, b - off);
 };
 
+export const onBeat = (doc: Showcase, frame: number): boolean =>
+  beatDistanceFrames(doc, frame) <= 0.5 + 1e-6;
+
+/**
+ * With beatSnap, a scene occupies a WHOLE number of beats: `durationInFrames`
+ * is a request, rounded to the nearest whole-beat frame count, and starts are
+ * exact beat multiples rounded once.
+ *
+ * Both cheaper approaches drift. Snapping each start iteratively pushes starts
+ * forward whenever the nearest beat falls before the previous scene ends — 0.43
+ * frames per eight-beat scene, 3.86 frames over ten scenes. Keeping the raw
+ * duration drifts for the same reason (229 frames is 8.015 beats).
+ */
 export const resolveScenes = (doc: Showcase, beatSnap = false): ResolvedScene[] => {
   const b = beatFrames(doc);
   const out: ResolvedScene[] = [];
-  let cursor = 0;
+  let cursorFrames = 0;
+  let cursorBeats = 0;
   for (const s of doc.scenes) {
-    let start = cursor;
-    if (beatSnap && out.length > 0) {
-      // nearest beat, not the next one: at 60fps a 126 BPM beat is 28.5714
-      // frames, and nearest keeps the error under a frame where ceiling drifts
-      // up to 0.86. Never let a snap overlap the previous scene.
-      start = Math.max(
-        Math.round(cursor / b) * b,
-        out[out.length - 1].startFrame + out[out.length - 1].durationInFrames
-      );
-    }
+    const requested = s.durationInFrames;
+    const beats = beatSnap ? Math.max(1, Math.round(requested / b)) : 0;
+    // floor, never round: 8 beats is 228.57 frames, and a rounded 229-frame
+    // scene would overrun its own beat span and overlap the next by a frame
+    const durationInFrames = beatSnap ? Math.floor(beats * b) : requested;
+    const startFrame = beatSnap ? Math.round(cursorBeats * b) : cursorFrames;
     out.push({
       id: s.id,
       type: s.type,
-      startFrame: start,
-      durationInFrames: s.durationInFrames,
+      startFrame,
+      durationInFrames,
       generative: GENERATIVE_SCENE_TYPES.has(s.type),
     });
-    cursor = start + s.durationInFrames;
+    cursorFrames = startFrame + durationInFrames;
+    cursorBeats += beats;
   }
   return out;
 };
