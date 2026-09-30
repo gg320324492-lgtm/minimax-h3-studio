@@ -5,7 +5,7 @@ import {KpiHero} from './scenes/KpiHero';
 import {BrowserStack} from './scenes/BrowserStack';
 import {CalendarGrid, DataColumns} from './scenes/DataColumns';
 import {PALETTE, scaleFrom} from './design/tokens';
-import {StyleBibleProvider} from './design/styleBible';
+import {StyleBibleProvider, useDesign} from './design/styleBible';
 import {SceneEnter} from './common/primitives';
 import {EnsureFonts} from '../common/EnsureFonts';
 
@@ -54,13 +54,14 @@ const SceneRenderer: React.FC<{scene: Scene}> = ({scene}) => {
 
 /** Scene-local background so cuts feel deliberate rather than abrupt. */
 const Backdrop: React.FC<{theme?: string}> = ({theme}) => {
-  const light = theme === 'premium-light';
+  const {PALETTE} = useDesign();
+  // No branch on the theme name: the resolved palette already carries this
+  // scene's backgroundAlt and background, so the same expression is correct on
+  // both surfaces. Branching here is how the two languages drift apart.
   return (
     <AbsoluteFill
       style={{
-        background: light
-          ? `radial-gradient(120% 90% at 20% 0%, ${PALETTE.lightBackground} 0%, ${PALETTE.lightSurface} 100%)`
-          : `radial-gradient(120% 90% at 20% 0%, ${PALETTE.backgroundAlt} 0%, ${PALETTE.background} 100%)`,
+        background: `radial-gradient(120% 90% at 20% 0%, ${PALETTE.backgroundAlt} 0%, ${PALETTE.background} 100%)`,
       }}
     />
   );
@@ -78,20 +79,27 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
 
   return (
     <EnsureFonts>
-      {/* The graph's style bible is the single source of design truth: scenes
-          read palette/typography/motion through context, never a static import. */}
-      <StyleBibleProvider bible={doc.style_bible}>
-        <AbsoluteFill style={{background: PALETTE.background}}>
-          {resolved.map((r) => {
-            const scene = doc.scenes.find((x) => x.id === r.id);
-            if (!scene) return null;
-            return (
-              <Sequence
-                key={r.id}
-                from={r.startFrame}
-                durationInFrames={r.durationInFrames}
-                name={`${r.id}:${r.type}`}
-              >
+      {/* The ground behind the sequences. Every scene paints a full-frame
+          Backdrop inside its own provider, so this is only ever seen in the
+          gap between two sequences — the default theme is the right guess and
+          nothing depends on it being themed. */}
+      <AbsoluteFill style={{background: PALETTE.background}}>
+        {resolved.map((r) => {
+          const scene = doc.scenes.find((x) => x.id === r.id);
+          if (!scene) return null;
+          return (
+            <Sequence
+              key={r.id}
+              from={r.startFrame}
+              durationInFrames={r.durationInFrames}
+              name={`${r.id}:${r.type}`}
+            >
+              {/* The provider is PER SCENE, not per film. It used to wrap the
+                  whole composition, which meant `theme` could only ever change
+                  the Backdrop while every scene kept reading premium-dark
+                  tokens — a light scene came out as black windows on paper.
+                  Resolution has to happen where the theme is declared. */}
+              <StyleBibleProvider bible={doc.style_bible} override={scene.style_bible} theme={scene.theme}>
                 <SceneEnter
                   kind={scene.transitionIn?.in}
                   durationInFrames={scene.transitionIn?.durationInFrames ?? 18}
@@ -99,12 +107,12 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
                   <Backdrop theme={scene.theme} />
                   <SceneRenderer scene={scene} />
                 </SceneEnter>
-              </Sequence>
-            );
-          })}
-          {audio ? <Audio src={staticFile(audio.src)} volume={audio.volume ?? 0.9} /> : null}
-        </AbsoluteFill>
-      </StyleBibleProvider>
+              </StyleBibleProvider>
+            </Sequence>
+          );
+        })}
+        {audio ? <Audio src={staticFile(audio.src)} volume={audio.volume ?? 0.9} /> : null}
+      </AbsoluteFill>
     </EnsureFonts>
   );
 };

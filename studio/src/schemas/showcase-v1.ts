@@ -82,6 +82,13 @@ export const SceneSchema = z.object({
   type: SceneType,
   durationInFrames: z.number().int().positive(),
   theme: z.string().optional(),
+  /**
+   * Per-scene overrides, merged over the document's style_bible AFTER the
+   * scene's theme is applied. This is the escape hatch for "one scene nudges one
+   * colour" without restating a palette — and it is why the provider moved
+   * inside the scene loop: resolution has to happen where the theme is declared.
+   */
+  style_bible: StyleBibleSchema.optional(),
   layout: z.record(z.string(), z.unknown()).optional(),
   camera: CameraSchema.optional(),
   motion: MotionSchema.optional(),

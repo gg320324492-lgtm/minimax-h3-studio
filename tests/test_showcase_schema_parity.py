@@ -278,6 +278,139 @@ def test_main_template_provides_the_style_bible():
     assert 'doc.style_bible' in src, 'the provider must receive the graph value, not a constant'
 
 
+def test_provider_is_per_scene_not_per_film():
+    """A film-level provider makes `theme` decorative.
+
+    The provider used to wrap the whole composition, taking only the document
+    style bible. Backdrop honoured `scene.theme` but the scenes did not, so a
+    graph asking for premium-light got a pale background behind black windows —
+    a field that looked like it worked and did not. Resolution has to happen
+    where the theme is declared, so the provider must sit inside the scene loop
+    and receive the SCENE's theme and style bible.
+    """
+    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'FinanceShowcaseWide.tsx').read_text(encoding='utf-8')
+    assert 'theme={scene.theme}' in src, 'provider must receive the scene theme'
+    assert 'override={scene.style_bible}' in src, 'provider must receive the scene style bible'
+    assert 'bible={doc.style_bible}' in src, (
+        'the film-level bible is still the base — dropping it would make a '
+        'document-wide palette silently stop applying'
+    )
+    # the provider must be inside the per-scene map, i.e. after the Sequence that
+    # owns the scene, not around the resolved.map(...) that owns all of them.
+    # index the JSX usage, not the import statement.
+    provider = src.index('<StyleBibleProvider')
+    map_call = src.index('resolved.map(')
+    assert provider > map_call, 'the provider is outside the scene loop again'
+
+
+def test_per_scene_style_bible_exists_on_all_three_sides():
+    ts = (ROOT / 'studio' / 'src' / 'schemas' / 'showcase-v1.ts').read_text(encoding='utf-8')
+    js = json.loads((ROOT / 'pipeline' / 'schemas' / 'showcase-v1.schema.json').read_text(encoding='utf-8'))
+    scene_props = js['definitions']['Scene']['properties']
+    assert 'style_bible' in scene_props, (
+        'JSON Schema sets additionalProperties:false — without this a valid '
+        'per-scene override is rejected by the schema'
+    )
+    scene_block = ts.split('export const SceneSchema', 1)[1].split('export const ShowcaseSchema', 1)[0]
+    assert 'style_bible' in scene_block, 'zod scene schema must accept a per-scene style bible'
+
+
+def test_every_theme_carries_a_full_surface():
+    """A theme that only swaps the palette half-works.
+
+    Shadows are tuned for a ground: a near-black shadow is invisible on paper
+    and a paper shadow is a bruise on near-black. So a theme owns palette,
+    shadow AND the depth ramp together, and the check is that all three move.
+    """
+    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'design' / 'themes.ts').read_text(encoding='utf-8')
+    assert "'premium-dark'" in src and "'premium-light'" in src, 'both themes must exist'
+    for section in ('palette', 'shadow', 'depthCue'):
+        # once in the Theme type, and once per theme body
+        assert src.count(f'{section}:') >= 3, f'{section} must exist per theme, not just in the type'
+
+
+def test_scenes_do_not_hardcode_theme_colours():
+    """A hex literal in a scene cannot follow a theme, by definition."""
+    import re
+    scene_dir = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes'
+    offenders = []
+    for f in sorted(scene_dir.glob('*.tsx')):
+        for i, line in enumerate(f.read_text(encoding='utf-8').splitlines(), 1):
+            if re.search(r'#[0-9A-Fa-f]{6}\b', line) and 'rgba(' not in line:
+                offenders.append(f'{f.name}:{i}: {line.strip()[:70]}')
+    assert not offenders, f'scenes hardcode colours instead of asking for a role: {offenders}'
+
+
+# --- style bible effectiveness (P6.5) ----------------------------------------
+#
+# The demo graph carried a style_bible whose 15 declared keys were almost all
+# inert: the palette duplicated the default dark theme, and the typography was
+# CSS shorthand strings where the tokens are {size,weight,tracking,leading}
+# objects, so mergeSection's type guard dropped every one of them silently.
+#
+# Nothing looked broken, because inert is silent. The light theme is what finally
+# exposed it: the graph's dark palette overrode six keys while the theme supplied
+# the rest, and premium-light rendered as a half-and-half frame. So both failure
+# modes are now checked directly.
+
+#: keys a theme owns. A document that declares one of these has opted that key
+#: out of theming — which is only ever right if it means to.
+THEME_OWNED_PALETTE = {
+    'background', 'backgroundAlt', 'surface', 'surfaceElevated',
+    'ink', 'inkMuted', 'inkFaint', 'accent', 'accentDim', 'onAccent',
+    'positive', 'negative', 'grid', 'hairline', 'column', 'columnBright',
+}
+
+
+def test_graph_style_bible_does_not_fight_the_theme():
+    for path in sorted((ROOT / 'pipeline' / 'examples').glob('*.json')):
+        doc = json.loads(path.read_text(encoding='utf-8'))
+        for scope, bible in [('document', doc.get('style_bible'))] + [
+            (f"scene {s.get('id')}", s.get('style_bible'))
+            for s in doc.get('scenes', [])
+        ]:
+            if not isinstance(bible, dict):
+                continue
+            palette = bible.get('palette') or {}
+            clash = sorted(set(palette) & THEME_OWNED_PALETTE)
+            assert not clash, (
+                f'{path.name} {scope} pins theme-owned palette keys {clash}. '
+                f'Themes supply these; pinning them re-creates the half-applied '
+                f'theme bug (light background, dark surfaces).'
+            )
+
+
+def test_graph_typography_is_token_shaped_not_css_shorthand():
+    """`"900 120px Bahnschrift"` cannot pass mergeSection's type guard.
+
+    TypeRole entries are objects. A shorthand string is silently dropped, so a
+    graph can look like it restyles type while changing nothing.
+    """
+    for path in sorted((ROOT / 'pipeline' / 'examples').glob('*.json')):
+        doc = json.loads(path.read_text(encoding='utf-8'))
+        bibles = [doc.get('style_bible')] + [s.get('style_bible') for s in doc.get('scenes', [])]
+        for bible in bibles:
+            if not isinstance(bible, dict):
+                continue
+            for role, value in (bible.get('typography') or {}).items():
+                assert isinstance(value, dict), (
+                    f'{path.name}: typography.{role} is {type(value).__name__}, but a '
+                    f'type role is an object with size/weight/tracking/leading — a '
+                    f'shorthand string here is silently ignored'
+                )
+
+
+def test_the_two_themes_actually_differ():
+    """A theme that resolves to the same palette is a theme in name only."""
+    themes = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'design' / 'themes.ts').read_text(encoding='utf-8')
+    dark = re.search(r"'premium-dark':\s*\{.*?palette:\s*darkPalette", themes, re.S)
+    light = re.search(r"'premium-light':\s*\{.*?palette:\s*lightPalette", themes, re.S)
+    assert dark and light, 'both themes must be defined'
+    assert 'const darkPalette' in themes and 'const lightPalette' in themes
+    # the two palettes are separate objects, not one aliased twice
+    assert themes.count('background:') >= 2, 'each palette must define its own background'
+
+
 def test_style_bible_merge_ignores_unknown_keys():
     """A typo in the graph must not blank or widen a token."""
     src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'design' / 'styleBible.tsx').read_text(encoding='utf-8')
