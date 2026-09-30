@@ -1,7 +1,8 @@
 import React from 'react';
 import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Scene} from '../../../schemas/showcase-v1';
-import {CameraRig} from '../common/CameraRig';
+import {CameraRig, useCameraState} from '../common/CameraRig';
+import {cssXForScreenX, screenScaleFor} from '../common/projection';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {Stagger} from '../common/primitives';
@@ -44,7 +45,7 @@ const MiniBars: React.FC<{values: number[]; s: number; progress: number}> = ({
             style={{
               width: 16 * s,
               height: `${(v / max) * 100 * local}%`,
-              background: i === values.length - 1 ? PALETTE.accent : 'rgba(245,242,234,0.32)',
+              background: i === values.length - 1 ? PALETTE.accent : PALETTE.columnBright,
               borderRadius: 3 * s,
             }}
           />
@@ -89,24 +90,35 @@ const BrowserWindow: React.FC<{
   win: Win;
   s: number;
   progress: number;
-  z: number;
   width: number;
   height: number;
   rotateY: number;
-}> = ({win, s, progress, z, width, height, rotateY}) => {
-  const {PALETTE, RADIUS, SHADOW} = useDesign();
+  /** depth-cued shadow; see SHADOW.byDepth */
+  shadow: string;
+}> = ({win, s, progress, width, height, rotateY, shadow}) => {
+  const {PALETTE, RADIUS} = useDesign();
   return (
   <div
     style={{
-      position: 'absolute',
+      // MUST stay in flow. The wrapper is what `translate(-50%, -50%)` measures,
+      // so if the window inside it is absolutely positioned the wrapper collapses
+      // to 0x0, the percentage resolves to zero, and every window hangs from the
+      // frame centre by its TOP-LEFT corner instead of its middle. That bug put
+      // the whole cluster in the bottom-right quadrant and is invisible to a
+      // source read — the transform looks right, it just does nothing. The
+      // wrapper therefore carries the window's size explicitly.
+      position: 'relative',
       width,
       height,
-      transform: `translateZ(${z}px) rotateY(${rotateY}deg)`,
+      // depth belongs to the wrapper that positions the window — it owns both
+      // the plane and the solved x, and a second translateZ here would move
+      // the window off the axis the centring maths just placed it on
+      transform: `rotateY(${rotateY}deg)`,
       transformStyle: 'preserve-3d',
       background: PALETTE.surface,
       border: `1px solid ${PALETTE.hairline}`,
       borderRadius: RADIUS.window * s,
-      boxShadow: SHADOW.floating,
+      boxShadow: shadow,
       overflow: 'hidden',
       opacity: progress,
       display: 'flex',
@@ -165,7 +177,7 @@ const BrowserWindow: React.FC<{
 };
 
 export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
-  const {MOTION, PALETTE, RADIUS, SHADOW} = useDesign();
+  const {MOTION, PALETTE, RADIUS, SHADOW, DEPTH_CUE} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
   const s = scaleFrom(comp.height);
@@ -181,7 +193,31 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
   const spreadZ = Number(layout.spreadZ ?? 110) * s;
   const perWindowRot = Number(layout.perWindowRotateY ?? 7);
   const winW = Number(layout.windowWidth ?? layout.width ?? 520) * s;
-          const winH = Number(layout.windowHeight ?? layout.height ?? 400) * s;
+  const winH = Number(layout.windowHeight ?? layout.height ?? 400) * s;
+  /**
+   * Two coherent ways to draw a stack in perspective, and they are NOT both
+   * available at once — so the graph picks, rather than the component guessing:
+   *
+   *  equalOnScreen: true (default) — every window is counter-scaled to the size
+   *    the graph asked for ON SCREEN. The silhouette is exactly symmetric, so
+   *    the cluster is centred to the pixel at any spreadZ or rotation. The cost
+   *    is real: a near window is no longer drawn bigger than a far one, so the
+   *    depth has to come from the fan, the shadows and the camera move.
+   *
+   *  equalOnScreen: false — no counter-scale, so a near window IS drawn larger.
+   *    That reads as depth immediately, but perspective then makes the cluster
+   *    genuinely asymmetric: measured +16.8px on a 1920 frame with the demo
+   *    graph's 1400px perspective, about 0.9% of frame width.
+   *
+   * Both are correct renderings of a decision. Neither is a bug; the important
+   * thing is that the choice is visible in the graph rather than emergent.
+   */
+  const equalOnScreen = layout.equalOnScreen !== false;
+
+  // the camera's own z, read from the SAME evaluation the rig renders with, so
+  // the layout below cannot disagree with the camera actually on screen
+  const cam = useCameraState(scene.camera, motion, scene.durationInFrames);
+  const c = (windows.length - 1) / 2;
 
   return (
     <CameraRig camera={scene.camera} motion={motion} durationInFrames={scene.durationInFrames}>
@@ -196,18 +232,45 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
           });
           // depth plane + a slight counter-rotation so the stack reads as
           // three dimensional rather than as a flat row
-          const z = (i - 1) * 180 * s;
+          const planeZ = (i - c) * spreadZ;
           const rot = (1 - i) * perWindowRot;
-                  return (
+          // THE CENTRING FIX (P6.2). The stack is authored in SCREEN space —
+          // even spacing about the frame's centre line, one chosen size on
+          // screen — and this solves for the CSS that survives the projection.
+          //
+          // Authoring CSS x directly, which is what this did before, put the
+          // near window closer to the eye, so perspective magnified it more
+          // than it shrank the far one. The cluster's optical centre drifted
+          // right of the frame centre, and the drift grew as the camera's own
+          // translateZ changed every window's depth. Solving per frame against
+          // absolute depth puts the stack on the axis at EVERY frame, and the
+          // counter-scale makes the silhouette symmetric too — so "centred" is
+          // now a property of the layout, not a value someone tuned until the
+          // numbers looked right in one render.
+          const cssX = cssXForScreenX((i - c) * spreadX, planeZ + cam.translateZ, cam.perspective);
+          const k = equalOnScreen ? screenScaleFor(planeZ, cam.perspective) : 1;
+          // depth read now that the windows are equal size at rest: a nearer
+          // window carries a deeper shadow and a stronger turn
+          const depth = DEPTH_CUE[Math.min(i, DEPTH_CUE.length - 1)] ?? SHADOW.floating;
+          return (
             <div
               key={w.title}
               style={{
                 position: 'absolute',
                 left: '50%',
                 top: '50%',
-                // centre the plane; without this the windows hang off the
-                // right edge because left:50% is the window's own origin
-                transform: `translate(-50%, -50%) translateZ(${(i - (windows.length - 1) / 2) * spreadZ}px) translateX(${(i - (windows.length - 1) / 2) * spreadX}px)`,
+                // the wrapper must carry the window's size, or the -50% below
+                // is a no-op (see BrowserWindow's comment)
+                width: winW,
+                height: winH,
+                // centring: left/top put the box's top-LEFT on the frame centre,
+                // -50%,-50% moves that to its middle. The scale is applied to
+                // the element's own points first (a CSS transform list applies
+                // right to left), so it magnifies the window about the very
+                // centre this establishes.
+                transform:
+                  `translate(-50%, -50%) translateZ(${planeZ}px) ` +
+                  `translateX(${cssX}px) scale(${k})`,
                 transformStyle: 'preserve-3d',
               }}
             >
@@ -215,10 +278,10 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
                 win={w}
                 s={s}
                 progress={enter}
-                z={0}
                 width={winW}
                 height={winH}
                 rotateY={rot}
+                shadow={depth}
               />
             </div>
           );

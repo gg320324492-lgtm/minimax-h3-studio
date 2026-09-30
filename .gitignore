@@ -27,6 +27,10 @@ studio/public/jobs/
 studio/out/
 studio/.remotion/
 /.remotion/
+# Render + measurement artefacts from the top-level pipeline. Kept on disk
+# (they are evidence, and the P0 rule is that delivered media is not deleted),
+# never committed.
+/out/
 
 # External AI tool dirs / misc
 .agents/

@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useVideoConfig} from 'remotion';
-import {PALETTE, TYPE, MOTION, SPACE, RADIUS, DEPTH, SHADOW, DESIGN_HEIGHT, FONT_NUM, FONT_SANS, scaleFrom} from './tokens';
+import {PALETTE, TYPE, MOTION, SPACE, RADIUS, DEPTH, SHADOW, DEPTH_CUE, DESIGN_HEIGHT, FONT_NUM, FONT_SANS, scaleFrom} from './tokens';
 
 /**
  * Style Bible resolution (P4 review finding).
@@ -23,10 +23,18 @@ export type StyleBible = {
   spacing: Record<string, number>;
   radius: Record<string, number>;
   shadow: Record<string, string>;
+  /** one shadow per depth step, far plane first */
+  depthCue: readonly string[];
   depth: Record<string, string>;
   motion: typeof MOTION;
   camera: {perspective: number; durationSeconds: number};
 };
+
+/** A list token is all-or-nothing: a partial ramp would silently mis-index. */
+const mergeList = (base: readonly string[], over: unknown): readonly string[] =>
+  Array.isArray(over) && over.length > 0 && over.every((v) => typeof v === 'string')
+    ? (over as string[])
+    : base;
 
 const DEFAULT_BIBLE: StyleBible = {
   palette: {...PALETTE},
@@ -34,6 +42,7 @@ const DEFAULT_BIBLE: StyleBible = {
   spacing: {...SPACE},
   radius: {...RADIUS},
   shadow: {...SHADOW},
+  depthCue: DEPTH_CUE,
   depth: {...DEPTH},
   motion: {...MOTION},
   camera: {perspective: 1400, durationSeconds: MOTION.premiumCameraSeconds},
@@ -68,6 +77,7 @@ export const resolveStyleBible = (input?: unknown): StyleBible => {
     spacing: mergeSection(DEFAULT_BIBLE.spacing, section('spacing')),
     radius: mergeSection(DEFAULT_BIBLE.radius, section('radius')),
     shadow: mergeSection(DEFAULT_BIBLE.shadow, section('shadow')),
+    depthCue: mergeList(DEFAULT_BIBLE.depthCue, section('depthCue')),
     depth: mergeSection(DEFAULT_BIBLE.depth, section('depth')),
     motion: mergeSection(DEFAULT_BIBLE.motion, section('motionLanguage')),
     camera: mergeSection(DEFAULT_BIBLE.camera, section('cameraLanguage')),
@@ -106,6 +116,7 @@ export const useDesign = () => {
     SPACE: s.spacing,
     RADIUS: s.radius,
     SHADOW: s.shadow,
+    DEPTH_CUE: s.depthCue,
     DEPTH: s.depth,
     camera: s.camera,
     FONT_NUM,

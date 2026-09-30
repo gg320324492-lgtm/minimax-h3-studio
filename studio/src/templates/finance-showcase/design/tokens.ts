@@ -27,6 +27,14 @@ export const PALETTE = {
   negative: '#FF6B6B',
   grid: 'rgba(245, 242, 234, 0.07)',
   hairline: 'rgba(245, 242, 234, 0.12)',
+  /**
+   * Data marks. These were inline rgba() literals in three scenes, at two
+   * different alphas, so the same "a column" was one colour in DataColumns and
+   * another in BrowserStack. A mark's weight is a design decision, so it gets
+   * a name.
+   */
+  column: 'rgba(245, 242, 234, 0.16)',
+  columnBright: 'rgba(245, 242, 234, 0.32)',
   // premium-light — the counterpoint used for the data-plane / light sections
   lightBackground: '#F4F1EA',
   lightSurface: '#FFFFFF',
@@ -75,6 +83,25 @@ export const SHADOW = {
   floating: '0 40px 120px rgba(0,0,0,0.55)',
   glowAccent: '0 0 64px rgba(232, 196, 100, 0.28)',
 } as const;
+
+/**
+ * Depth ramp, far plane first — the shadow each layer of a stack carries.
+ *
+ * This is its own token group rather than an extra key on SHADOW because it is
+ * not one shadow but a ROLE per depth step, and a graph should be able to
+ * override the ramp without touching the flat shadows.
+ *
+ * It exists because a stack of equally-sized objects has to read its depth from
+ * somewhere other than size, and size is no longer available once the centring
+ * maths gives every window the same on-screen size. Before this, every window
+ * in the stack got SHADOW.floating and the nearest one looked no closer than
+ * the farthest.
+ */
+export const DEPTH_CUE = [
+  '0 14px 40px rgba(0,0,0,0.40)',
+  '0 30px 84px rgba(0,0,0,0.50)',
+  '0 46px 132px rgba(0,0,0,0.62)',
+] as const;
 
 /**
  * Motion presets (P5).
