@@ -39,20 +39,36 @@
 | P7 图表引擎 | 进行中 | 7.0 守卫 ✅、7.1 九种图表 ✅、7.2 统一生命周期 ✅；**下一步 P7.3** |
 | P8–P18 | ⬜ | |
 
-**状态**：106 项测试通过、工作树干净、**全部提交已推送到 `origin/main`**。
+**状态**：见下方「复验核实」。工作树干净、`out/charts_demo.mp4` = 1950 帧 32.5s。
 
 **磁盘已解决**：C: 原本 0 可用（127 个 Remotion 临时 bundle / 59 GB），现已清理到
-TEMP 5.4 GB、C: 78 GB 可用。根因也已修：临时目录指向 E:，渲染不再复制 `studio/public/`。
+TEMP 5.4 GB、C: 78 GB 可用（复验实测 **77.62 GB / 5.28 GB**，2026-10-01）。
+根因也已修：临时目录指向 E:，渲染不再复制 `studio/public/`。
 
-### 进度表的一处已知滞后（接手时需注意）
+### 进度表的一处已知滞后（**接手时需注意 —— 已由下一窗口订正**）
 
 `docs/UPGRADE_PROGRESS.md` 的**变更记录（changelog）是准确的，但任务表行和阶段表头不同步**：
 
 - `| 7.2 | ... | ⬜ |` — 实际已完成并提交（`7a6bcaf`）
-- `| 7.1 |` 行仍写「9 场 1350 帧 / A/B 23 项」，实际 1950 帧 / 24 项
-- 表头 `P6 状态：🔄`、`P7 状态：⬜` 均滞后
+- `| 7.1 |` 行仍写「9 场 1350 帧 / A/B 23 项」，实际 10 场 1950 帧 / 24 项
+- 表头 `P7 状态：⬜` 滞后
 
 **判断依据：changelog 可信，任务行与表头需与 git log 交叉核对。**
+
+> 2026-10-01 复核实测：上三条**全部成立**（`charts_demo.json` 10 场 1950 帧、`out/chart_ab.md` 24 行全 LIVE）。
+> 但**本节原先还写了「表头 `P6 状态：🔄` 滞后」—— 那是错的**：`P6 🔄` 准确（6.7 尺度未统一、6.8 `DEPTH` 无场景使用，两处均已诚实标注）。
+> **教训：交接文档本身也是待验证的主张，不是事实。** 订正见 `UPGRADE_PROGRESS.md` 变更记录 2026-10-01 复验条。
+
+### 复验核实（2026-10-01，接手窗口实测）
+
+原「106 项测试通过」**当前不可复现**：`python -m pytest tests/ -q` 直接 collection ERROR
+（`No module named 'cv2'`）—— **pytest 只装在 Python 3.12、cv2 只装在 3.10，106 = 102 + 4
+劈在两个解释器里**。实测 **102 passed / 3.16s**（`--ignore=tests/test_take_selection_behaviour.py`，
+该文件 4 条测试全需 cv2）。**裁定：不动环境**（用户决定），缺口已记进 `UPGRADE_PROGRESS.md`。
+
+另抓到 **「`lifecycle.check.ts` 60+ 项」是假账**（实测 29 个 `check(` 调用点 / 54 条断言），
+以及 **`lifecycle.check.ts` 未接进 pytest** —— `scale.check.ts`、`projection.check.ts` 接了，它没有，
+**P7.2 的 54 条守卫目前纯靠自觉**。已并入 7.3 待办。
 
 ---
 
@@ -157,6 +173,9 @@ TEMP 5.4 GB、C: 78 GB 可用。根因也已修：临时目录指向 E:，渲染
 
 **接手后第一件事建议**：跑一遍
 `git log --oneline -5 && git status --short && python -m pytest tests/ -q`
+（**注意：`python` 当前指向 3.10、无 pytest，会报 `No module named 'pytest'`；带 pytest 的解释器是
+`C:\Users\pc\AppData\Local\Programs\Python\Python312\python.exe`，但它没有 cv2，所以这条命令
+会停在 collection ERROR 而不是给出测试数 —— 见第一节「复验核实」**）
 以及**逐条核对进度表任务行与 git log**（见第二节的滞后说明）。
 
 - **P7.3**：annotation 避让 / 数字格式 / theme / stagger / emphasis 收口 —— 下一个施工目标
