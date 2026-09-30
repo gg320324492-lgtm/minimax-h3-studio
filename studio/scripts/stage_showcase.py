@@ -46,12 +46,17 @@ def fingerprint(path: Path) -> str:
 
 
 def stage(graph: Path, job: str, assets: list[str] | None = None) -> Path:
+    graph = Path(graph).resolve()
     job_dir = JOBS / job
     job_dir.mkdir(parents=True, exist_ok=True)
     dst = job_dir / 'props.json'
     shutil.copy2(graph, dst)
+    try:
+        rel = graph.relative_to(ROOT).as_posix()
+    except ValueError:  # a graph outside the repo — record it absolutely
+        rel = graph.as_posix()
     (job_dir / SIDECAR).write_text(
-        json.dumps({'source': str(graph.relative_to(ROOT)).replace('\\', '/'),
+        json.dumps({'source': rel,
                     'sha': fingerprint(graph),
                     'staged_at': __import__('datetime').date.today().isoformat()},
                    indent=2),
