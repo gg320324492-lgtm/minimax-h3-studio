@@ -32,7 +32,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from take_ranker import TakeMetrics, analyze, signature_distance  # noqa: E402
 
 ROOT = Path(r'E:\Minimax-H3')
-DUP_THRESHOLD = 1.0  # mean abs pixel diff below this == same generation
+# Same-seed reruns are pixel-identical (mean abs diff == 0.0), while any real
+# generation differs by orders of magnitude more. A small non-zero margin keeps
+# encoder noise on the "same" side without swallowing genuine differences.
+DUP_THRESHOLD = 0.5
 
 
 def find_takes(raw_dir: Path) -> list[Path]:

@@ -1,0 +1,12 @@
+# 测试与开发依赖
+#
+# 为什么这里只有 pytest：
+#   被测模块全部只依赖标准库 + 仓库内代码（comfy_utils / ffmpeg_env /
+#   emit_props / select_takes / take_ranker 的导入路径在测试里是懒加载的，
+#   且不触碰 GPU、ComfyUI 服务或网络）。生产依赖（torch、kokoro、librosa、
+#   opencv、jsonschema…）全部寄居在 ComfyUI 的 venv 里，由 pipeline_manifest.yaml
+#   的 interpreter 段指定，不在本文件重复声明——两处声明会漂移。
+#
+# 安装：python -m pip install -r requirements-dev.txt
+# 运行：python -m pytest tests/ -q
+pytest>=8.0

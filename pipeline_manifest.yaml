@@ -151,6 +151,9 @@ experiments:
     - experiments/bench_4k_chain.py # 结论仍被 flashvsr_upscale 引用
     - experiments/bench_dtype.py
     - experiments/bench_real_esrgan.py
+    - experiments/quality_compare.py # flicker_test 的严格超集，故其取代者（仍在用）；
+                                     # 但会 f.unlink() 删帧目录并调 ffmpeg 解帧——
+                                     # 属"看着只对比、实际动文件"，禁止在生产目录附近运行
   forbidden:  # 已崩溃 / 有破坏性 / 纯 mtime 主路径 —— Agent 调用即事故
     - experiments/full_pipeline.py      # import _deprecated（已删）→ 崩溃
     - experiments/pipe_fast.py          # import _deprecated → 崩溃
@@ -162,10 +165,7 @@ experiments:
     - experiments/test_seedvr2.py       # mtime 为唯一主路径（rglob 扫全 output）
     - experiments/download_models.py    # 硬编码代理端口 + 误删 20GB 部分下载
   superseded:
-    - experiments/flicker_test.py       # → quality_compare.py（严格超集）
-    - experiments/quality_compare.py    # 比 flicker_test 严格；但会 f.unlink() 删帧目录并
-                                        # 调 ffmpeg 解帧——是"看着只对比、实际动文件"的
-                                        # 一类，禁止在生产目录附近运行
+    - experiments/flicker_test.py       # 被 quality_compare.py 取代（后者是严格超集）
     - experiments/upscale_a1.py
     - experiments/upscale_fix.py
     - experiments/upscale_generic.py

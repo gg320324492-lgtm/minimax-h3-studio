@@ -9,7 +9,7 @@ All three subjects are pure functions / cheap filesystem checks — no GPU, no
 network, no ComfyUI, seconds to run.
 
 Run:
-  E:/ComfyUI/venv/Scripts/python.exe -m pytest tests/test_p0_regressions.py -q
+  python -m pytest tests/ -q
 """
 
 from __future__ import annotations
@@ -20,7 +20,8 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(r'E:\Minimax-H3')
+# Portable: derive from this file so a clone can live anywhere on disk.
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'ceo_mindread_ep01' / 'scripts'))
 sys.path.insert(0, str(ROOT / 'studio' / 'scripts'))
@@ -148,14 +149,6 @@ def test_real_binary_still_prepends(monkeypatch):
 def test_emit_props_fit_auto_rule():
     """SR-direct output is already at target geometry (fill is safe); raw clips
     are not (fill would deform them a second time)."""
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location(
-        'emit_props', ROOT / 'studio' / 'scripts' / 'emit_props.py')
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    assert '--fit' in __import__('inspect').signature(mod.main).parameters or True
-
     ap_src = (ROOT / 'studio' / 'scripts' / 'emit_props.py').read_text(encoding='utf-8')
     assert "fit = 'fill' if args.sr_dir else 'cover'" in ap_src, (
         'emit_props must pick fill only for per-take SR output, cover otherwise')
@@ -174,10 +167,19 @@ def test_contain_is_not_silently_accepted_by_schema():
 # ── P1: take ranking must not silently fall back to T01 ────────────────────
 
 def test_select_takes_has_no_t01_default():
+    """Source-text guard (cheap). Regex rather than an exact string so flipping
+    quote style cannot smuggle the bug back in.
+
+    This is NOT a behavioural test — a real one would build a two-take fixture
+    and assert the non-T01 take can win. See BEHAVIOURAL_SUITE below.
+    """
+    import re
+
     src = (ROOT / 'ceo_mindread_ep01' / 'scripts' / 'select_takes.py').read_text(encoding='utf-8')
-    assert "take = f'{shot_id}_T01'" not in src, (
+    assert not re.search(r"take\s*=\s*f?['\"]\{shot_id\}_T01['\"]", src), (
         'select_takes still hard-defaults to T01 — TakeRanker must own selection')
-    assert 'continue' in src and 'failures' in src, 'missing-take path must fail closed'
+    assert 'auto_rank' in src and 'failures' in src, (
+        'select_takes must auto-rank and fail closed on a missing take')
 
 
 def test_take_ranker_is_in_git():

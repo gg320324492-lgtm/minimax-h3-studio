@@ -122,7 +122,7 @@ Brief / Script / Data / Reference
 |---|---|---|---|
 | **P0** | 全库审计与生产边界收敛 | `pipeline_manifest.yaml`、`config/`、审计报告 | 旧生产流程仍能启动 |
 | **P1** | 自动选片 TakeRanker | `take_ranker.py` + 排名替换 T01 默认 | 真实 shot ≥3 takes 自动选优 |
-| **P2** | H3 Atomic Shot + Prompt Compiler | `ShotSpec` schema、编译器、shot 级重试 | 一生成=一原子镜头 |
+| **P2** | H3 Atomic Shot + Prompt Compiler | `ShotSpec` schema、编译器、shot 级重试 | 一生成=一原子镜头；**编译器读本地 JSON、产出新 JSON、脚本零 prompt 字面量，并有测试锁住**（R1 同构风险，见下） |
 | **P3** | Showcase Scene Graph | `schemas/showcase-v1.ts` + 20 种 scene 类型 | Agent 生成 Scene JSON 而非 TSX |
 | **P4** | FinanceShowcaseWide 模板 | 1920×1080@60fps，KPI/Dashboard/BigNumber/Calendar 四类代表 scene | 复刻参考片 24–40s 视觉结构 |
 | **P5** | Motion Design Foundation | `motion/` + `components/` primitives、motionTokens | 组件不再自造 spring |
@@ -148,6 +148,18 @@ Brief / Script / Data / Reference
 ### Real Render        ### Metrics            ### Problems Found
 ### Remaining Risks    ### Compatibility      ### Next Phase
 ```
+
+### P2 前置契约（开工前必须先定，否则事后补救成本高）
+
+Prompt Compiler 会**生成** prompt，而 prompt 现在住在 gitignored 的
+`ceo_mindread_ep01/00_project/h3_generation.json` 里——这与 P0 复验 R1 修掉的
+`gen_keyframes_v3` 是**同构风险**：核心生产逻辑可能只存在于本机。
+
+P2 第一条验收项固定为：
+1. 编译器**读** gitignored JSON（ShotSpec/现有配置），**写** gitignored 新 JSON（编译产物）；
+2. 编译器与生成脚本本身**零 prompt 字面量**，可入库；
+3. 加一条测试（照 `test_local_prompts_are_not_tracked` 模式）锁住：
+   prompt 数据文件不在 git 里、编译器源码里没有 prompt 字面量。
 
 ---
 

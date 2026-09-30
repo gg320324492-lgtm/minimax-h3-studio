@@ -233,22 +233,28 @@ class TakeMetrics:
         return d
 
 
-def pixel_signature(path: Path, n_frames: int = 8, span: int = 20, size=(64, 112)) -> np.ndarray:
+def pixel_signature(path: Path, n_frames: int = 10, size=(64, 112)) -> np.ndarray:
     """Tiny multi-frame grayscale signature for near-duplicate detection.
 
     Two takes produced from the same seed are pixel-identical (only encoder
-    noise differs), so all quality metrics tie and ranking is meaningless.
-    This signature catches that case: verified on EP01, where S06_T01 and
-    S06_T02 differ by exactly 0.0 while S05A's two real generations differ
-    by 55.9 on the same measure.
+    noise differs), so every quality metric ties and ranking is meaningless.
+    Verified on EP01: S06_T01 vs S06_T02 differ by exactly 0.0, while two
+    genuinely different generations differ by 55.9 on the same measure.
+
+    Sampling spans the WHOLE clip (linspace over the frame count) rather than
+    a fixed stride — a fixed stride under-samples short clips and can miss real
+    differences entirely.
     """
     cap = cv2.VideoCapture(str(path))
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     out = []
-    for i in range(n_frames):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, i * span)
-        ok, f = cap.read()
-        if ok and f is not None:
-            out.append(cv2.resize(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY), size).astype(np.float32))
+    if total > 0:
+        idxs = np.unique(np.linspace(0, total - 1, min(n_frames, total)).astype(int))
+        for i in idxs:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, int(i))
+            ok, f = cap.read()
+            if ok and f is not None:
+                out.append(cv2.resize(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY), size).astype(np.float32))
     cap.release()
     return np.stack(out) if out else np.zeros((1, size[1], size[0]), np.float32)
 
