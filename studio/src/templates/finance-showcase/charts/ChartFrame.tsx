@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useCurrentFrame, useVideoConfig} from 'remotion';
-import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS, scaleFor} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {fitDomain, formatValue, linear, niceTicks, type Extent} from './scale';
 import {lifecycleAt, type Lifecycle} from './lifecycle';
@@ -117,7 +117,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
 }) => {
   const {PALETTE, SPACE, TYPE} = useDesign();
   const comp = useVideoConfig();
-  const s = scaleFrom(comp.height);
+  const s = scaleFor(comp.width, comp.height);
   const opts = useMemo(
     () => ({
       showGrid: option(chart, 'showGrid', options),

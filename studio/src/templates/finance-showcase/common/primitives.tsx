@@ -1,6 +1,6 @@
 import React from 'react';
 import {interpolate, spring as remotionSpring, useCurrentFrame, useVideoConfig} from 'remotion';
-import {MOTION, profileOf, type MotionProfile, type SpringName} from '../design/tokens';
+import {MOTION, profileOf, scaleFor, type MotionProfile, type SpringName} from '../design/tokens';
 import {cubicBezierEase} from './CameraRig';
 
 /**
@@ -49,7 +49,7 @@ export const Reveal: React.FC<RevealProps> = ({
     config: cfgFor(springName),
     durationInFrames: Math.max(1, Math.round(secs * comp.fps)),
   });
-  const s = comp.height / 1080;
+  const s = scaleFor(comp.width, comp.height);
   return (
     <div
       style={{
@@ -100,7 +100,7 @@ export const MaskReveal: React.FC<{
 }> = ({delay = 0, durationSeconds, springName = 'settle', children}) => {
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
-  const s = comp.height / 1080;
+  const s = scaleFor(comp.width, comp.height);
   const p = remotionSpring({
     frame: frame - delay,
     fps: comp.fps,
@@ -176,7 +176,7 @@ export const SceneEnter: React.FC<{
 }> = ({kind = 'none', durationInFrames = 18, children}) => {
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
-  const s = comp.height / 1080;
+  const s = scaleFor(comp.width, comp.height);
   const d = Math.max(1, durationInFrames);
   if (kind === 'none' || frame >= d) return <>{children}</>;
 

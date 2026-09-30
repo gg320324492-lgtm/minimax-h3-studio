@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useVideoConfig} from 'remotion';
-import {TYPE, MOTION, SPACE, RADIUS, DEPTH, DESIGN_HEIGHT, FONT_NUM, FONT_SANS, scaleFrom} from './tokens';
+import {TYPE, MOTION, SPACE, RADIUS, DEPTH, FONT_NUM, FONT_SANS, scaleFor} from './tokens';
 import {THEMES, themeNamed, type ThemeName} from './themes';
 
 /**
@@ -144,10 +144,16 @@ export const StyleBibleProvider: React.FC<{
 /** Every scene reads design through this. There is deliberately no other path. */
 export const useStyle = (): StyleBible => useContext(StyleBibleContext);
 
-/** Design-height scaling. */
+/**
+ * The one scale for the render frame.
+ *
+ * Reads BOTH axes, via `scaleFor`. This hook used to read the height alone, and
+ * it was the second place (after the scenes) where a portrait frame got a scale
+ * that filled its height and overran its width.
+ */
 export const useScale = (): number => {
-  const {height} = useVideoConfig();
-  return height / DESIGN_HEIGHT;
+  const {width, height} = useVideoConfig();
+  return scaleFor(width, height);
 };
 /**
  * One hook per component, names aliased the way scenes already used them, so
@@ -168,6 +174,6 @@ export const useDesign = () => {
     camera: s.camera,
     FONT_NUM,
     FONT_SANS,
-    scaleFrom,
+    scaleFor,
   };
 };

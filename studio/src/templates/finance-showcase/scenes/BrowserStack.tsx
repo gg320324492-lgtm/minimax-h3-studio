@@ -6,7 +6,7 @@ import {cssXForScreenX, screenScaleFor} from '../common/projection';
 // Fonts and scaling are NOT theme-scoped, so importing them is correct.
 // Everything that IS theme-scoped (palette, type, spacing, shadow) must come
 // from useDesign() — see tests/test_design_system.py.
-import {FONT_NUM, FONT_SANS, TRAFFIC_LIGHTS, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS, TRAFFIC_LIGHTS, scaleFor} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {Stagger} from '../common/primitives';
 
@@ -183,7 +183,7 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
   const {MOTION, PALETTE, RADIUS, SHADOW, DEPTH_CUE} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
-  const s = scaleFrom(comp.height);
+  const s = scaleFor(comp.width, comp.height);
   const layout = (scene.layout ?? {}) as Record<string, unknown>;
   const motion = scene.motion;
   const stagger = Number(motion?.stagger ?? MOTION.staggerDefault);

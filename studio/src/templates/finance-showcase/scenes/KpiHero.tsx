@@ -5,7 +5,7 @@ import {CameraRig} from '../common/CameraRig';
 // Fonts and scaling are NOT theme-scoped, so importing them is correct.
 // Everything that IS theme-scoped (palette, type, spacing, shadow) must come
 // from useDesign() — see tests/test_design_system.py.
-import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+import {FONT_NUM, FONT_SANS, scaleFor} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {MaskReveal, Reveal, SpecularSweep} from '../common/primitives';
 
@@ -28,7 +28,7 @@ export const KpiHero: React.FC<{scene: Scene}> = ({scene}) => {
   const {MOTION, PALETTE, RADIUS, SPACE, TYPE} = useDesign();
   const frame = useCurrentFrame();
   const comp = useVideoConfig();
-  const s = scaleFrom(comp.height);
+  const s = scaleFor(comp.width, comp.height);
   const c = (scene.content ?? {}) as Record<string, unknown>;
   const layout = (scene.layout ?? {}) as Record<string, unknown>;
 
