@@ -31,7 +31,7 @@ const requireArg = (key) => {
 
 const comp = requireArg('comp');
 const propsPath = requireArg('props');
-const outDir = requireArg('out');
+const outArg = requireArg('out');
 const frames = requireArg('frames')
   .split(',')
   .map((s) => Number(s.trim()))
@@ -39,6 +39,24 @@ const frames = requireArg('frames')
 if (!frames.length) {
   console.error('--frames must be a comma-separated list of integers');
   process.exit(2);
+}
+
+/**
+ * --out is a DIRECTORY, and a caller who passes a file path gets a directory
+ * named after it — or a PermissionError, depending on what is already there.
+ * Both were hit during review, each time silently enough to look like a render
+ * bug. So: recognise a .png and honour it, otherwise say plainly that the value
+ * is being used as a directory.
+ */
+const asFile = /\.png$/i.test(outArg);
+const outDir = path.resolve(asFile ? path.dirname(outArg) : outArg);
+const oneFile = asFile && frames.length === 1;
+if (asFile && frames.length > 1) {
+  console.error('--out names a .png but --frames lists more than one frame; pass a directory');
+  process.exit(2);
+}
+if (!oneFile) {
+  console.log(`[still] output directory: ${outDir}`);
 }
 
 const entryPoint = fileURLToPath(new URL('../src/index.ts', import.meta.url));
@@ -54,9 +72,13 @@ console.log(
     `${composition.durationInFrames} frames`
 );
 
-fs.mkdirSync(path.resolve(outDir), {recursive: true});
+fs.mkdirSync(outDir, {recursive: true});
+const written = [];
 for (const frame of frames) {
-  const output = path.resolve(outDir, `f${String(frame).padStart(5, '0')}.png`);
+  const name = `f${String(frame).padStart(5, '0')}.png`;
+  const output = oneFile ? path.resolve(outArg) : path.join(outDir, name);
   await renderStill({composition, serveUrl, output, frame, inputProps, imageFormat: 'png'});
+  written.push(output);
   console.log(`[still] frame ${frame} -> ${output}`);
 }
+console.log(`[still] wrote ${written.length} file(s) to ${outDir}`);
