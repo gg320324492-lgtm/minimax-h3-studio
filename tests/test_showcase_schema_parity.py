@@ -336,3 +336,37 @@ def test_every_scene_calls_the_style_bible_and_a_primitive():
         assert 'useDesign()' in src, f'{f.name} must read design through the style bible'
         assert 'MOTION.springs' in src or 'common/primitives' in src, (
             f'{f.name} animates without the motion tokens or primitives')
+
+
+# --- dual-graph drift (P6 review finding) -----------------------------------
+#
+# studio/public/jobs/ is gitignored because Remotion Studio serves props over
+# HTTP. That makes it a place where a hand-placed copy of a tracked graph can
+# drift forever without leaving a trace in any commit — which is exactly what
+# happened in P6.0. The staging script plus its sidecar is the guard.
+
+def test_staging_script_exists_and_writes_a_fingerprint_sidecar():
+    s = (ROOT / 'studio' / 'scripts' / 'stage_showcase.py').read_text(encoding='utf-8')
+    assert 'SIDECAR' in s, 'staging must record which source it copied from'
+    assert 'fingerprint' in s, 'staging must hash the source so drift is detectable'
+    assert 'sort_keys=True' in s, 'fingerprint must ignore key order / formatting'
+
+
+def test_source_graphs_are_tracked():
+    """The graphs a render depends on must live in git; the staging copy is a
+    derived artefact, never the source of truth."""
+    import subprocess
+    import shutil as _sh
+    git = _sh.which('git') or r'C:\Program Files\Git\cmd\git.exe'
+    tracked = subprocess.run([git, 'ls-files', 'pipeline/examples'],
+                             cwd=ROOT, capture_output=True, text=True).stdout.split()
+    graphs = [g for g in tracked if g.endswith('.json')]
+    assert graphs, 'no showcase source graph is tracked — renders would be unreproducible'
+
+
+def test_staging_copy_is_not_the_render_input():
+    """render.mjs must be pointed at the source graph, not the staging copy."""
+    s = (ROOT / 'studio' / 'bin' / 'render.mjs').read_text(encoding='utf-8')
+    assert '--props' in s, 'render.mjs takes props from the command line'
+    # the staging path is where Studio keeps props; it must not be a default
+    assert "default: 'jobs" not in s, 'render.mjs must not default to a staging copy'
