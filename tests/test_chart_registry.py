@@ -85,6 +85,34 @@ def test_every_registered_option_is_actually_read_by_its_registered_reader():
     assert not problems, f'registry problems:\n' + '\n'.join(problems)
 
 
+def test_neither_path_filters_options_by_the_documented_table():
+    """Two gates, not one.
+
+    `option()` stopped consulting TYPE_OPTIONS, but `pickOptions` was still
+    filtering the graph's bag by ALL_OPTION_KEYS — which is derived from
+    TYPE_OPTIONS. So a value could still be discarded at the ENTRY, before
+    option() saw it, and the docstring claiming otherwise was simply untrue. A
+    false statement in a comment about a design guarantee is the same class of
+    error this project has now hit several times, in a place that looks like a
+    promise.
+    """
+    adapter = (TEMPLATE / 'charts' / 'Chart.tsx').read_text(encoding='utf-8')
+    # slice to the next top-level declaration, not to the first `};` — the
+    # function opens with `const out = {};` and a shorter slice sees only that
+    pick = adapter.split('const pickOptions', 1)[1].split('export const normaliseChart', 1)[0]
+    # from the arrow onwards, so the docstring that NAMES ALL_OPTION_KEYS in
+    # order to explain why it is not used does not trip the check
+    body = pick[pick.index('=> {') + 3:]
+    assert 'ALL_OPTION_KEYS' not in body, (
+        'pickOptions must not filter by ALL_OPTION_KEYS — it is derived from '
+        'TYPE_OPTIONS, and a stale table would discard a value the graph set'
+    )
+    assert 'DEFAULT_CHART_OPTIONS' in body, (
+        'pickOptions must key off the defaults, which TypeScript guarantees '
+        'complete because the object is typed ChartOptions'
+    )
+
+
 def test_options_and_data_are_separated_in_the_adapter():
     """`content.chart` is one bag, but options and data are different things.
 

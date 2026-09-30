@@ -288,10 +288,18 @@ export const Slope: React.FC<{before: number[]; after: number[]; labels: string[
             </div>
             {f.opts.showEndLabels ? (
               <>
-                <div style={{position: 'absolute', left: left + 18 * s, top: y0 - 12 * s, fontFamily: FONT_NUM, fontSize: 20 * s, color: paint.inkFaint}}>
+                {/*
+                  END_LABEL_GAP is 30px, not the 8px it started at. The dot is
+                  20px wide and centred on the endpoint, and the emphasised one
+                  is gold — the most visible thing on the line — so at 8px the
+                  value was tucked against it and read as "19" with a blob over
+                  the 9. Centred on the dot's own middle so the two sit side by
+                  side rather than one tucked under the other.
+                */}
+                <div style={{position: 'absolute', left: left + 30 * s, top: y0 - 12 * s, fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkFaint, whiteSpace: 'nowrap'}}>
                   {f.valueText(before[i])}
                 </div>
-                <div style={{position: 'absolute', left: right - 90 * s, top: y1 - 12 * s, width: 74 * s, textAlign: 'right', fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkMuted}}>
+                <div style={{position: 'absolute', left: right - 110 * s, top: y1 - 12 * s, width: 80 * s, textAlign: 'right', fontFamily: FONT_NUM, fontSize: 20 * s, color: emphasised ? paint.ink : paint.inkMuted, whiteSpace: 'nowrap'}}>
                   {f.valueText(after[i])}
                 </div>
                 <div style={{position: 'absolute', left: left + (right - left) / 2 - 60 * s, top: (y0 + y1) / 2 - 30 * s, width: 120 * s, textAlign: 'center', fontFamily: FONT_SANS, fontSize: 18 * s, color: paint.inkFaint}}>

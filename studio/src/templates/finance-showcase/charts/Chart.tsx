@@ -5,7 +5,9 @@ import {ChartFrame, useFrame} from './ChartFrame';
 import {
   Area, Bar, Bubble, Heatmap, Line, RankTable, Slope, Sparkline, VolumeBars,
 } from './types';
-import {ALL_OPTION_KEYS, CHART_TYPES, type ChartOptions, type ChartType} from './options';
+import {
+  CHART_TYPES, DEFAULT_CHART_OPTIONS, type ChartOptions, type ChartType,
+} from './options';
 
 /**
  * Chart scene adapter — turns a graph's `content.chart` into a frame and a mark.
@@ -53,13 +55,23 @@ const numArray = (v: unknown): number[] =>
  * `content.chart` is one bag, but a chart's data and a chart's options are
  * different things and conflating them is how a graph ends up with
  * `chart.values` meaning "the numbers" in one type and "the y domain" in
- * another. Only declared option keys are lifted out; everything else stays
- * data. An unrecognised key is ignored rather than passed through, so a typo
- * cannot become a silently-ignored prop.
+ * another. Data keys stay data.
+ *
+ * The key list is `Object.keys(DEFAULT_CHART_OPTIONS)`, NOT `ALL_OPTION_KEYS`.
+ * That distinction is the whole point: ALL_OPTION_KEYS is derived from
+ * TYPE_OPTIONS, which is documentation, and filtering by it made this a second
+ * runtime gate — a graph could lose a value here, before `option()` ever saw it,
+ * which is exactly what the `option()` de-gating was supposed to prevent and
+ * which left its own docstring untrue.
+ *
+ * `DEFAULT_CHART_OPTIONS` is typed `ChartOptions`, so TypeScript fails to
+ * compile if an option is declared and has no default. The list therefore
+ * cannot fall behind the option surface the way a hand-maintained table can,
+ * and adding an option makes it live immediately with nothing else to edit.
  */
 const pickOptions = (raw: Record<string, unknown>): Partial<ChartOptions> => {
   const out: Record<string, unknown> = {};
-  for (const key of ALL_OPTION_KEYS) {
+  for (const key of Object.keys(DEFAULT_CHART_OPTIONS)) {
     if (raw[key] !== undefined) out[key] = raw[key];
   }
   return out as Partial<ChartOptions>;
