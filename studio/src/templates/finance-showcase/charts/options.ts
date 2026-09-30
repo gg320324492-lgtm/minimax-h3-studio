@@ -180,9 +180,11 @@ export const ALL_OPTION_KEYS: readonly (keyof ChartOptions)[] = [
 /**
  * Read one option, falling back to the default.
  *
- * Any value the graph actually supplied wins, whatever the type says. The
- * documented surface (TYPE_OPTIONS) is not consulted here, so a stale table
- * cannot silence a graph.
+ * Any value the graph supplied wins, and nothing here consults the documented
+ * surface. Combined with `pickOptions` being keyed off
+ * `Object.keys(DEFAULT_CHART_OPTIONS)` — which TypeScript guarantees complete,
+ * since the object is typed `ChartOptions` — there is no path by which a graph's
+ * value is discarded for want of a table entry. Adding an option makes it live.
  */
 export const option = <K extends keyof ChartOptions>(
   chart: ChartType,
