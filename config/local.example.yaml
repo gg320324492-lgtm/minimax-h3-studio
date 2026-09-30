@@ -1,0 +1,22 @@
+# 本地路径配置（复制为 local.yaml 后按需修改；local.yaml 已被 .gitignore 排除）
+#
+# 优先级：环境变量 > local.yaml > 本文件 > 内置默认值
+# 环境变量名：H3_ROOT / COMFY_ROOT / H3_PYTHON / H3_FFMPEG_DIR / H3_COMFY_SERVER
+
+# 仓库根目录
+root: E:\Minimax-H3
+
+# ComfyUI 检出目录
+comfy_root: E:\ComfyUI
+
+# 生产解释器（拥有 torch / kokoro / librosa / jsonschema）
+python: E:\ComfyUI\venv\Scripts\python.exe
+
+# 自带 ffmpeg（注意：tools/ 被 gitignore，新 clone 需要自行放入）
+ffmpeg_dir: E:\Minimax-H3\tools\ffmpeg-7.1.1-full_build\bin
+
+# ComfyUI 服务地址
+comfy_server: http://127.0.0.1:8188
+
+# 本地私有内容备份根（永不入库）
+local_private_backup: E:\H3_local_private

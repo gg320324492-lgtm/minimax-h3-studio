@@ -52,20 +52,78 @@ def outputs_from_history(rec, output_dir: Path | None = None) -> list[Path]:
 
 
 def resolve_output_file(rec, output_dir: Path | None = None,
-                        fallback_newest: bool = True) -> Path | None:
+                        fallback_newest: bool = False) -> Path | None:
     """The file this prompt produced, or None.
 
-    Only if the history carries no usable entry do we fall back to the old
-    newest-mtime guess, and the caller is expected to warn when that happens.
+    PRODUCTION DEFAULT IS STRICT: if the history record carries no usable
+    entry, this returns None and the caller must fail. Guessing "newest mp4"
+    is only safe when you are the only job writing to that output dir.
+
+    Rationale (P0 audit R3): the original default was True, and all three
+    callers relied on it silently — which is exactly the bug this module was
+    created to eliminate (wrong take silently shipped into the edit).
+
+    Opt in explicitly for interactive/experimental use:
+        resolve_output_file(rec, fallback_newest=True)   # warns loudly
     """
     for p in outputs_from_history(rec, output_dir):
         if p.exists():
             return p
     if not fallback_newest:
         return None
+    import sys as _sys
+    print('[WARN] history has no output entry — falling back to newest-mtime '
+          'guess (UNSAFE in concurrent production; wrong take may be shipped)',
+          file=_sys.stderr, flush=True)
     base = output_dir or COMFY_OUTPUT
     files = list(base.glob('MiniMax_H3*.mp4')) or list(base.rglob('*.mp4'))
     if not files:
         return None
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return files[0]
+
+
+# --- P0.3: bounded polling (R3: ComfyUI hang used to block forever) ---
+
+DEFAULT_DEADLINE_S = 3600
+
+
+def wait_for_prompt(api, pid, deadline_s: int = DEFAULT_DEADLINE_S,
+                    log=print, sleep_s: float = 5.0):
+    """Poll /history/<pid> until the job completes, fails, or the deadline hits.
+
+    Returns the history record on success, None on job failure or timeout.
+    Replaces the bare `while True: ... time.sleep(5)` loops, which hung
+    forever whenever the ComfyUI queue stalled or the service restarted.
+    The deadline pattern already existed in experiments/bench.py (1800s) and
+    flashvsr_upscale.py (7200s) — production just never adopted it.
+    """
+    import time as _time
+    t0 = _time.time()
+    last_log = 0.0
+    while True:
+        try:
+            h = api(f'/history/{pid}')
+        except Exception as e:  # service restart / transient network
+            if _time.time() - t0 > deadline_s:
+                log(f'TIMEOUT after {deadline_s}s (last error: {e})')
+                return None
+            _time.sleep(sleep_s)
+            continue
+        if pid in h:
+            rec = h[pid]
+            if rec.get('status', {}).get('completed') or 'outputs' in rec:
+                log(f'DONE in {_time.time() - t0:.1f}s')
+                return rec
+            st = rec.get('status', {}).get('status_str')
+            if st in ('error', 'failed'):
+                log(f'FAILED: {st}')
+                return None
+        now = _time.time()
+        if now - t0 > deadline_s:
+            log(f'TIMEOUT after {deadline_s}s waiting for prompt {pid}')
+            return None
+        if now - last_log > 60:
+            log(f'  ...waiting {int(now - t0)}s')
+            last_log = now
+        _time.sleep(sleep_s)
