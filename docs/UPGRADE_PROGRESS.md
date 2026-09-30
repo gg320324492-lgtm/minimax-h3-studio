@@ -149,14 +149,14 @@
 
 ---
 
-## P7 — 图表引擎　状态：⬜
+## P7 — 图表引擎　状态：🔄 进行中
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 7.1 | 自研 SVG 图表：Bar/Line/Area/Slope/Bubble/Heatmap/RankTable/Sparkline/VolumeBars | ✅ | 9 种全部实现并**逐场渲出目检**（`pipeline/examples/charts_demo.json`，9 场 1350 帧）。<br>**先发现一件事**：`bar-chart / line-chart / area-chart / bubble-chart / rank-chart / slope-chart / heatmap` **七个场景类型从 P3 起就在 schema 里声明了，却没有任何渲染器** —— 图谱要一张柱状图，得到的是一屏 "not implemented in P4"。**schema 承诺了没人兑现的能力，正是本项目反复踩的那一类。** 引擎做完这七种才变成真的；另补声明 `volume-chart` / `sparkline-chart`（引擎支持但 schema 没有，同样是不对称）。<br>**结构**：`charts/options.ts`（声明面，先写）→ `charts/scale.ts`（纯数学，零依赖）→ `charts/ChartFrame.tsx`（轴/网格/刻度/数值标签，**拥有定义域**）→ `charts/types.tsx`（九个标记）→ `charts/Chart.tsx`（适配器）。标记一律从 frame 拿已解析的比例尺，**不许自己算定义域** —— 否则标记可能和它所在的轴不是同一个尺度，而那种图是可读且错误的。 |
-| 7.1b | 选项面与 A/B 证据 | ✅ | 按纪律先注册再实现。`FIELD_READERS` 18 个选项全部注明读它的文件；**检查会读那个文件的源码确认它真的提到这个名字**（只查注册表自己的账本分不清能用和哑的）。<br>**A/B 矩阵 23 个选项全部实测为「活」**（`studio/scripts/chart_ab_matrix.py`，退出码 0，报告 `out/chart_ab.md`）。**过程中抓到一个源码级检查抓不到的真 bug**：`showArea` 登记为"被 types.tsx 读过"、也真的出现在 types.tsx —— 但在 **Area 组件**上，于是每一张 line 图的 `showArea` 都是哑的。根因更深一层：`option()` 拿 `TYPE_OPTIONS` 做**运行时闸门**，所以一张过时的表就能让一个能用的选项变哑，而守卫看不见（名字在文件里）。**修法：闸门去掉，表降级为声明，准确性另测。** 修后 volume 的 `emphasisIndex` 从 0px 变 50,730px（2.45%，区域正好一根柱）。<br>**顺带删掉 `inline`**：声明了、没有任何标记读它。与其糊一层，不如删。<br>**新增两条机械化的纪律**：每个声明的选项都必须在 A/B 矩阵里有实测行；`option()` 不得再按表过滤。 |
-| 7.2 | 统一 chart 生命周期（intro/settle/highlight/focus/exit） | ⬜ | |
-| 7.3 | annotation/label 避让/数字格式/theme/stagger/emphasis | ⬜ | |
+| 7.1 | 自研 SVG 图表：Bar/Line/Area/Slope/Bubble/Heatmap/RankTable/Sparkline/VolumeBars | ✅ | 9 种全部实现并**逐场渲出目检**（`pipeline/examples/charts_demo.json`，P7.1 当时 9 场 1350 帧；**P7.2 为测封顶追加第 10 场 `c10_bar_long` 600 帧 → 现为 10 场 1950 帧**）。<br>**先发现一件事**：`bar-chart / line-chart / area-chart / bubble-chart / rank-chart / slope-chart / heatmap` **七个场景类型从 P3 起就在 schema 里声明了，却没有任何渲染器** —— 图谱要一张柱状图，得到的是一屏 "not implemented in P4"。**schema 承诺了没人兑现的能力，正是本项目反复踩的那一类。** 引擎做完这七种才变成真的；另补声明 `volume-chart` / `sparkline-chart`（引擎支持但 schema 没有，同样是不对称）。<br>**结构**：`charts/options.ts`（声明面，先写）→ `charts/scale.ts`（纯数学，零依赖）→ `charts/ChartFrame.tsx`（轴/网格/刻度/数值标签，**拥有定义域**）→ `charts/types.tsx`（九个标记）→ `charts/Chart.tsx`（适配器）。标记一律从 frame 拿已解析的比例尺，**不许自己算定义域** —— 否则标记可能和它所在的轴不是同一个尺度，而那种图是可读且错误的。 |
+| 7.1b | 选项面与 A/B 证据 | ✅ | 按纪律先注册再实现。`FIELD_READERS` 18 个选项全部注明读它的文件；**检查会读那个文件的源码确认它真的提到这个名字**（只查注册表自己的账本分不清能用和哑的）。<br>**A/B 矩阵 23 个选项全部实测为「活」**（`studio/scripts/chart_ab_matrix.py`，退出码 0，报告 `out/chart_ab.md`；**P7.2 后为 24/24**，新增运动项 `enterFrames` / `staggerFrames` 与 `deemphasis`）。**过程中抓到一个源码级检查抓不到的真 bug**：`showArea` 登记为"被 types.tsx 读过"、也真的出现在 types.tsx —— 但在 **Area 组件**上，于是每一张 line 图的 `showArea` 都是哑的。根因更深一层：`option()` 拿 `TYPE_OPTIONS` 做**运行时闸门**，所以一张过时的表就能让一个能用的选项变哑，而守卫看不见（名字在文件里）。**修法：闸门去掉，表降级为声明，准确性另测。** 修后 volume 的 `emphasisIndex` 从 0px 变 50,730px（2.45%，区域正好一根柱）。<br>**顺带删掉 `inline`**：声明了、没有任何标记读它。与其糊一层，不如删。<br>**新增两条机械化的纪律**：每个声明的选项都必须在 A/B 矩阵里有实测行；`option()` 不得再按表过滤。 |
+| 7.2 | 统一 chart 生命周期（intro/settle/highlight/focus/exit） | ✅ | 九个标记原来各有一套入场（弹簧长 / dash offset 画 / 从左伸 / 缩放格子）→ 纯函数 `lifecycleAt(frame, duration, count, opts)`，五阶段按**场景时长的比例**而非固定帧数（90 帧和 600 帧都读得对），入场长度**封顶**为 `min(场景的 34%, 标记实际所需)`；`emphasis` 是阶段属性而非第二套动画（intro 升 → settle 到 → highlight/focus 保持）。`types.tsx` 迁移后**零 Remotion import**，时钟只剩一个来源，`useCurrentFrame`/`useVideoConfig`/`spring`/`interpolate` 的最后一个读者随之删除。<br>同轮**用测量抓到一个自 P7.1 就存在的柱状图入场缺陷**（`top` 是常数、height 增长 → 柱子从顶端垂下，只在满高时恰好落回基线；四次稳定帧渲染全都没暴露）→ 柱形几何抽成纯函数 `barBox(valueY, baselineY, progress)` 放进 `scale.ts`，`VolumeBars` 一并修。<br>详见变更记录 2026-09-30 P7.2 条。**复验补注（10-01）**：`lifecycle.check.ts` 实测 29 个 `check(` 调用点 / 54 条断言（原记「60+ 项」为假账）；且**未接进 pytest**，守卫目前纯靠自觉 —— 详见变更记录同日复验条。 |
+| 7.3 | annotation/label 避让/数字格式/theme/stagger/emphasis | ⬜ | **下一步**。附带把 `lifecycle.check.ts` 接进 `tests/`（`scale.check.ts`/`projection.check.ts` 已接），否则 7.2 的 54 条守卫无机制保障 |
 
 ---
 
@@ -331,7 +331,7 @@
   - **过程中我自己写错两次**：`_descend` 在 `create=False` 时没抛错，裸 KeyError 逃出了我新加的 PathError；以及测试断言 `main()` 抛 SystemExit，而它其实是 return 2。两处都记在提交里。
   - 复测：**106 passed**、注册表 0 问题、**A/B 矩阵 23/23 全活且报告带溯源**、tsc 干净。
 - 2026-09-30：**P7.2 统一 chart 生命周期**（`charts/lifecycle.ts`）+ **用测量抓到一个自 P7.1 就存在的柱状图入场缺陷**。
-  - **九个标记各自一套入场，是设计缺陷而非执行遗漏**：`Bar` 用 `land` 弹簧长、`PathMark` 用 dash offset 画、`Slope` 从左往右伸、`Heatmap` 缩放格子 —— 同一个「到达」发生了九种。**统一为纯函数 `lifecycleAt(frame, duration, count, opts)`**，五阶段 `intro / settle / highlight / focus / exit` **按场景时长的比例而非固定帧数**，所以 90 帧和 600 帧都读得对；**入场长度封顶**为 `min(场景的 34%, 标记实际所需)`，否则 40 帧场景会在没画完时就切掉。`emphasis` 是**阶段**的属性而非第二套动画：intro 升起 → settle 到位 → highlight/focus **保持不动**。<br>`lifecycle.check.ts` 60+ 项，含三条渲染里看不出的：阶段在任意时长上无缝无重叠、封顶确实生效、**stagger 必须让最后一根比第一根晚到**（同步的 stagger 不是 stagger）。
+  - **九个标记各自一套入场，是设计缺陷而非执行遗漏**：`Bar` 用 `land` 弹簧长、`PathMark` 用 dash offset 画、`Slope` 从左往右伸、`Heatmap` 缩放格子 —— 同一个「到达」发生了九种。**统一为纯函数 `lifecycleAt(frame, duration, count, opts)`**，五阶段 `intro / settle / highlight / focus / exit` **按场景时长的比例而非固定帧数**，所以 90 帧和 600 帧都读得对；**入场长度封顶**为 `min(场景的 34%, 标记实际所需)`，否则 40 帧场景会在没画完时就切掉。`emphasis` 是**阶段**的属性而非第二套动画：intro 升起 → settle 到位 → highlight/focus **保持不动**。<br>`lifecycle.check.ts` **60+ 项（10-01 复验订正为 29 个 `check(` 调用点 / 54 条断言 —— 原数字两种读法都到不了 60）**，含三条渲染里看不出的：阶段在任意时长上无缝无重叠、封顶确实生效、**stagger 必须让最后一根比第一根晚到**（同步的 stagger 不是 stagger）。
   - **`types.tsx` 现在零 Remotion import**：九个标记是 frame 上下文的纯函数，时钟只有一个来源。迁移后 `useCurrentFrame` / `useVideoConfig` / `spring` / `interpolate` 全部失去最后一个读者，**删掉了而不是留着误导后来的人**；文件高度改由 frame 提供。
   - **测量抓到一个四次稳定帧渲染都没暴露的缺陷**：柱子**从顶端往下长**而不是从基线往上长。`top: min(y, zeroY)` 是常数、height 增长，柱子从顶端垂下、**只在满高时恰好落回基线** —— 稳定帧看着完全正确，入场中间帧全错。**自 P7.1 就在，我之前渲的四帧全是稳定帧。**<br>修法是把柱形几何抽成纯函数 `barBox(valueY, baselineY, progress)` 放进 `scale.ts`，9 条检查钉住：零进度贴在基线上、满高到自己的顶、单调上升、**底边从不动**。`VolumeBars` 同一缺陷一起修。<br>**判据是黄金区域上下边随帧的变化**：修前 top 恒 187、bottom 从 268 漂到 909；修后 top 从 828→510→320→202 上升而 **bottom 恒定 909**。
   - **A/B 矩阵 24/24，报告带完整溯源**（`option / measured / scene / scene frames / chart type / path / was→now / frame / ink / px / % / region / verdict`）。这一轮三个数字全是我「考错对象却得到格式正确的答案」：<br>① **`enterFrames` 被封顶**：150 帧场景封顶 51，`34` 和 `90` 都夹到 51 —— 该时长下选项确实无效（**正确行为、无用测量**）。加 `c10_bar_long`（600 帧，封顶 204）专供测运动项。<br>② **`--frame` 是绝对帧号**：第 10 场在 1350..1950，我写 90 落进第 1 场。<br>③ 报告加 `scene frames` 列正是为了让这类错误**一眼可见**；**`measured` 列写进报告头部** —— 运动项只能在低 ink 帧测、静态项只能在高 ink 帧测，**同一张矩阵两类选项取帧规则相反**，不写明将来有人拿稳定帧测运动项会得到一个「看起来像结论的零」。
@@ -340,3 +340,12 @@
 `），还有一次替换脚本在写盘前异常退出 —— 所以我说「已应用」的东西实际从未落盘。**我在一个报告工具上重复了同一类静默失败**，最后改成「先定位所有索引、一次算完、写一次」。静默的失败比明确的失败危险，这是老教训的新实例。
   - 复测：**106 passed**、tsc 干净、三份可执行 check 全过（projection / scale / lifecycle）、**A/B 24/24 exit 0**、完整渲出 `out/charts_demo.mp4`（1950 帧 32.5s，`yuv420p(tv, bt709)`）。
   - **未做**：P7.3（annotation 避让 / 数字格式 / theme / stagger / emphasis 收口）；矩阵接进 `tests/` 成为 CI 项（复验官建议 P8 收尾做）。
+
+- 2026-10-01：**复验官独立核实交接状态**（接手 `docs/HANDOFF_VERIFIER_20261001.md`，`git log` 交叉核对）。**抓到 3 处账实不符 + 1 个当下生效的机制缺口**，进度表滞后已按 `git log` 订正。
+  - **订正进度表**：`7.2` 行 ⬜ → ✅（实际 `7a6bcaf` 已提交）、P7 表头 ⬜ → 🔄、`7.1` 行补注第 10 场（1950 帧）、`7.1b` 行补注矩阵 24/24。**changelog 判定可信、任务行与表头滞后 —— 这条判断经核实成立。**
+  - **假账一：「60+ 项」不成立**。`lifecycle.check.ts` 实测 **29 个 `check(` 调用点、跑出 54 条断言**（`dur` 循环把 29 展开为 54）；`scale.check.ts` 为 59 调用点 / 58 断言。已在上方 P7.2 条内就地订正。
+  - **假账二：「106 passed」当前不可复现**。`python -m pytest tests/ -q` 直接 collection ERROR（`No module named 'cv2'`）—— **pytest 只装在 Python 3.12、cv2 只装在 3.10，106 = 102 + 4 劈在两个解释器里**，两个都不是完整环境。实测 **102 passed / 3.16s**（`--ignore=tests/test_take_selection_behaviour.py`，该文件 4 条测试全部需要 cv2）。**裁定：不动环境**（用户决定），缺口记录在此。
+  - **机制缺口：`lifecycle.check.ts` 没接进 pytest**。`tests/` 全库零引用；而 `scale.check.ts`（`tests/test_chart_math.py:27`）与 `projection.check.ts` 都接了。**P7.2 的 54 条守卫目前纯靠自觉**，且 `out/` 被 `.gitignore:33` 忽略、矩阵报告不入库。**这不再是 P8 的事 —— 对 P7.2 已经生效**，已并入 7.3 待办。
+  - **订正交接文档的错误判断**：交接第二节称「表头 `P6 状态：🔄` 滞后」—— 实测 **准确**（6.7 `SPACE` 仍是 8…168 而非规定的 4…96、6.8 `DEPTH` 四场无一使用，两处均已诚实标注）。只有 P7 表头滞后。**教训又一次兑现：交接文档本身也是待验证的主张。**
+  - **核实通过项**：`out/charts_demo.mp4` = 1950 帧 / 32.5s / 1920×1080 / yuv420p / bt709；`charts_demo.json` = 10 场 1950 帧；`out/chart_ab.md` = **24 行全 LIVE**；`barBox` 在 `scale.ts:276` 且有基线锚定检查；`types.tsx` 零 remotion 引用；`lifecycle.check.ts` exit 0、`scale.check.ts` 58 ok；C: **77.62 GB** 可用、TEMP **5.28 GB**；工作树干净；`origin/main` 落后本地 1 个提交（`014ebe7` 交接文档）。
+  - **本条与 `014ebe7` 一并等推送授权**（铁律：不自动 push）。
