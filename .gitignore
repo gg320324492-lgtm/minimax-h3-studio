@@ -51,3 +51,31 @@ studio/public/audio/sfx_coin.m4a
 
 # Vendor-installed agent skills (reinstall: npx skills add remotion-dev/skills)
 .claude/skills/remotion-*
+
+# ===== 本地生产内容（不公开）=====
+# H3 workflow JSON（含 prompt+采样参数）/ 种子 / 剧本 / 时间线
+workflows/
+**/00_project/timeline.json
+**/00_project/timeline_v2.json
+**/00_project/timeline_v2.words.json
+**/00_project/dialogue.json
+**/00_project/seed_manifest*.json
+**/00_project/story*.json
+**/00_project/shots.json
+**/00_project/sfx_times.json
+**/00_project/*_MANIFEST*.json
+# prompt 型生产脚本（含全部 prompt/种子硬编码）
+ceo_mindread_ep01/scripts/build_timeline.py
+ceo_mindread_ep01/scripts/_archive/
+ceo_mindread_ep01/scripts/gen_keyframes*.py
+ceo_mindread_ep01/scripts/gen_office.py
+ceo_mindread_ep01/scripts/gen_reference_sheets.py
+ceo_mindread_ep01/scripts/gen_references.py
+ceo_mindread_ep01/scripts/gen_tts_kokoro.py
+liaozhai_demo/scripts/gen_clips.py
+liaozhai_demo/scripts/build_timeline.py
+piyao_2026/scripts/gen_clips.py
+piyao_2026/scripts/build_timeline.py
+third_lantern/scripts/gen_clips.py
+third_lantern/scripts/build_timeline.py
+# 备份在 E:/H3_local_private/
