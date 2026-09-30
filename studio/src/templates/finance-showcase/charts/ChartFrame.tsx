@@ -2,7 +2,7 @@ import React, {createContext, useContext, useMemo} from 'react';
 import {useCurrentFrame, useVideoConfig} from 'remotion';
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
-import {formatValue, linear, niceTicks, type Extent} from './scale';
+import {fitDomain, formatValue, linear, niceTicks, type Extent} from './scale';
 import {lifecycleAt, type Lifecycle} from './lifecycle';
 import {option, type ChartOptions, type ChartType} from './options';
 
@@ -149,15 +149,14 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
 
   // domain first: the axis labels depend on the ticks, and the gutter depends
   // on the labels, and the plot box depends on the gutter. In that order.
-  const rawLo = zeroBased ? Math.min(0, ...values) : Math.min(...values);
-  const rawHi = Math.max(...values, zeroBased ? 0 : -Infinity);
-  // Headroom. Without it the tallest mark's top edge IS the top of the plot and
-  // its value label has nowhere to go but inside the mark — which is how a
-  // value ends up printed on top of itself in a different colour.
+  // Headroom without value labels is small but never zero: even a bare chart
+  // needs its tallest mark off the plot's top edge. The fit itself (including
+  // the constant-series case) lives in scale.ts where it can be checked.
   const headroom = options?.showValues ? 0.14 : 0.04;
-  const lo = rawLo < 0 ? rawLo - Math.abs(rawHi - rawLo) * headroom : rawLo;
-  const hi = rawHi + Math.abs(rawHi - rawLo) * headroom;
-  const domain: Extent = Number.isFinite(lo) && Number.isFinite(hi) && hi > lo ? [lo, hi] : [0, 1];
+  const domain = useMemo(
+    () => fitDomain(values, zeroBased, headroom),
+    [values, zeroBased, headroom]
+  );
   const ticks = niceTicks(domain[0], domain[1], 5);
   const tickLabels = ticks.map((t) => formatValue(t, opts.valueFormat).text);
   const unit = useMemo(
@@ -185,9 +184,17 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
     [domain, plot.y, plot.h]
   );
 
+  // The frame, hoisted OUT of the memo. A hook call inside a useMemo callback
+  // runs only when the deps change — the old shape survived only because
+  // pickOptions hands a fresh object identity every render, so the callback
+  // happened to re-run every render. A coincidence, not a guarantee: memoize
+  // options once and the hook count starts varying between renders. The frame
+  // is also in the deps now, because lifecycleAt is a pure function OF it —
+  // without that, one stabilized dep set would freeze the timeline.
+  const currentFrame = useCurrentFrame();
   const life = useMemo(
     () => lifecycleAt({
-      frame: useCurrentFrame(),
+      frame: currentFrame,
       durationInFrames: sceneDurationInFrames,
       count: Math.max(values.length, 1),
       emphasisIndex: option(chart, 'emphasisIndex', options),
@@ -199,7 +206,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
     // values.length is a count, not an identity: the lifecycle only needs how
     // many marks there are, and recomputing on every array identity would make
     // a new timeline for every render
-    [chart, options, sceneDurationInFrames, values.length]
+    [chart, options, sceneDurationInFrames, values.length, currentFrame]
   );
 
   const frame: Frame = useMemo(() => ({
@@ -231,7 +238,10 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
     <FrameContext.Provider value={frame}>
       <div style={{position: 'absolute', inset: 0, padding: `${SPACE.lg * s}px ${SPACE.xl * s}px`}}>
         <div style={{position: 'relative', width: '100%', height: '100%'}}>
-          {/* gridlines: hairlines or nothing. never a box, never a frame. */}
+          {/* gridlines: hairlines or nothing. never a box, never a frame.
+              The furniture fades with presence: the composition has no
+              SceneExit, so marks leave through the lifecycle and an axis that
+              held full opacity would sit on screen alone until the hard cut. */}
           {opts.showGrid && !categoricalY
             ? ticks.map((t) => (
                 <div
@@ -241,6 +251,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
                     left: plot.x, width: plot.w,
                     top: yOf(t), height: 1,
                     background: PALETTE.grid,
+                    opacity: life.presence,
                   }}
                 />
               ))
@@ -255,6 +266,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
               top: yOf(Math.max(0, domain[0]) === 0 ? 0 : domain[0]),
               height: 1,
               background: PALETTE.hairline,
+              opacity: life.presence,
             }}
           />
 
@@ -278,6 +290,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
                       fontVariantNumeric: 'tabular-nums',
                       fontSize: 20 * s,
                       color: PALETTE.inkFaint,
+                      opacity: life.presence,
                     }}
                   >
                     {label}
@@ -296,6 +309,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
                 letterSpacing: TYPE.annotation.tracking,
                 textTransform: 'uppercase',
                 color: PALETTE.inkFaint,
+                opacity: life.presence,
               }}
             >
               {opts.axisLabel}
@@ -320,6 +334,7 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
                     position: 'absolute',
                     left: plot.x, width: plot.w, top: plot.y + plot.h + 16 * s,
                     height: 30 * s,
+                    opacity: life.presence,
                   }}
                 >
                   {xLabels.map((label, i) => {

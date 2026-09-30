@@ -46,6 +46,10 @@ def test_projection_maths_holds():
         capture_output=True,
         text=True,
         timeout=300,
+        # utf-8, not the gbk locale default: see test_chart_math's note —
+        # locale-decoded capture eats the message exactly when it is needed
+        encoding='utf-8',
+        errors='replace',
     )
     assert proc.returncode == 0, f'projection check failed:\n{proc.stdout}\n{proc.stderr}'
 

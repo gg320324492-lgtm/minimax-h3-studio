@@ -52,6 +52,39 @@ export const domainFor = (values: readonly number[], zeroBased: boolean): Extent
 };
 
 /**
+ * The domain a chart is actually drawn against: zero-based or fitted, plus
+ * headroom for value labels.
+ *
+ * Headroom exists so the tallest mark's top edge is not the plot's top edge —
+ * without it a value label's only place is inside the mark. A CONSTANT series
+ * is where a naive fit breaks: range 0 pads nothing, hi == lo, and the old
+ * inline fallback [0, 1] would draw a flat series at 50 far above the plot
+ * (that fallback only ever made sense for an all-ZERO chart, where it puts the
+ * baseline on the floor with zero-height marks — so the two constants are
+ * told apart). Extracted to the maths file because the slope mark now relies
+ * on the frame's domain being usable for every input, and a claim that broad
+ * belongs where it can be checked.
+ */
+export const fitDomain = (
+  values: readonly number[],
+  zeroBased: boolean,
+  headroom: number
+): Extent => {
+  if (!values.length) return [0, 1];
+  const [vLo, vHi] = extent(values);
+  if (!Number.isFinite(vLo) || !Number.isFinite(vHi)) return [0, 1];
+  const rawLo = zeroBased ? Math.min(0, vLo) : vLo;
+  const rawHi = zeroBased ? Math.max(0, vHi) : vHi;
+  const range = Math.abs(rawHi - rawLo);
+  const lo = rawLo < 0 ? rawLo - range * headroom : rawLo;
+  const hi = rawHi + range * headroom;
+  if (hi > lo) return [lo, hi];
+  if (rawHi === 0 && rawLo === 0) return [0, 1];
+  const pad = Math.max(1, Math.abs(rawHi) * 0.05);
+  return [rawHi - pad, rawHi + pad];
+};
+
+/**
  * The nice-number ladder.
  *
  * 2.5 is in it and not only because quarters are nice: without it, a 0..1 axis
@@ -229,32 +262,78 @@ export const trimZeros = (s: string): string =>
   s.includes('.') ? s.replace(/\.?0+$/, '') : s;
 
 /**
- * Snap label rectangles apart vertically.
+ * Snap label rectangles apart vertically. Positions are TOP edges.
  *
- * The cheapest correct answer to "labels collide": keep the order, push each
- * label away from the previous one by half the overlap, and stop at the band
- * edges. A full label-placement solver is not worth it here because value
- * labels in these charts are already ordered by value, so the only ambiguity
- * is a tie, and a tie is exactly the case a nudge fixes.
+ * The cheapest correct answer to "labels collide": keep the input ORDER, push
+ * each label down until it clears the one above, and stop at the band edges.
+ * Input order is a real precondition, not a formality — the function only
+ * behaves when the inputs arrive already stacked the way they will be read
+ * (topmost first). It used to claim in this comment that "value labels in
+ * these charts are already ordered by value", and that was false: a bar
+ * chart's labels arrive in CATEGORY order, and pushing down in category order
+ * marched the emphasised bar's own value 322px into its own body. Callers with
+ * unordered input must go through `declutterByY`.
  *
  * Returns the same length as `positions`, in pixels.
  */
 export const declutter = (positions: readonly number[], heights: readonly number[], min = 0, max = 1080): number[] => {
   const out = positions.slice();
   for (let i = 1; i < out.length; i += 1) {
-    const need = out[i - 1] + (heights[i - 1] + heights[i]) / 2;
+    const need = out[i - 1] + Math.max(heights[i - 1], heights[i]);
     if (out[i] < need) out[i] = need;
   }
   // if the last label ran past the bottom, push the stack back up
   const last = out.length - 1;
-  if (last >= 0 && out[last] + heights[last] / 2 > max) {
-    const overshoot = out[last] + heights[last] / 2 - max;
+  if (last >= 0 && out[last] + heights[last] > max) {
+    const overshoot = out[last] + heights[last] - max;
     for (let i = 0; i <= last; i += 1) {
       out[i] -= overshoot;
-      if (out[i] - heights[i] / 2 < min) break;
+      if (out[i] < min) break;
     }
   }
   return out;
+};
+
+/**
+ * Declutter labels whose input order is NOT their vertical order.
+ *
+ * A bar chart's labels arrive in category order (Overview, Retention, ...)
+ * and a slope chart's end labels arrive in series order — neither is sorted
+ * by y, so handing them straight to `declutter` pushes a high label down past
+ * a low one and lands it inside a mark it does not describe. Sort by y first,
+ * declutter in y order, then map back to the original slots, because the
+ * caller addresses labels by mark index.
+ */
+export const declutterByY = (tops: readonly number[], heights: readonly number[], min = 0, max = 1080): number[] => {
+  const order = tops.map((_t, i) => i).sort((a, b) => tops[a] - tops[b]);
+  const placed = declutter(
+    order.map((i) => tops[i]),
+    order.map((i) => heights[i]),
+    min,
+    max
+  );
+  const out = new Array<number>(tops.length);
+  order.forEach((origIdx, k) => {
+    out[origIdx] = placed[k];
+  });
+  return out;
+};
+
+/**
+ * A palette colour at a given alpha.
+ *
+ * Heat intensity shipped as a literal rgba() carrying the DARK theme's ink,
+ * so on the light theme the ramp ran backwards: a higher value turned
+ * whiter, i.e. fainter, on paper. The alpha ramp is a chart decision; the
+ * colour it ramps is the theme's. A non-#RRGGBB input passes through
+ * untouched, so handing it a token that is already rgba() cannot corrupt it.
+ */
+export const withAlpha = (hex: string, alpha: number): string => {
+  const a = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex);
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 };
 
 

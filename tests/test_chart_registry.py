@@ -205,3 +205,93 @@ def test_type_options_is_not_a_runtime_gate():
         'would silently discard a value the graph set'
     )
     assert 'void chart;' in body, 'the chart type is documentation now; say so'
+
+
+def _component(src: str, start: str, end: str) -> str:
+    """The body of one component, between two anchors, or a loud failure."""
+    assert start in src, f'{start!r} not found — the component moved or was renamed'
+    tail = src.split(start, 1)[1]
+    assert end in tail, f'{end!r} not found after {start!r}'
+    return tail.split(end, 1)[0]
+
+
+def test_no_chart_mark_hardcodes_a_colour():
+    """A colour literal in a mark is a value that works on one theme.
+
+    The heat ramp shipped as rgba(245,242,234,·) — the DARK theme's ink — so on
+    paper a higher value turned whiter, i.e. fainter. Themes own colour; marks
+    own geometry. Comments are stripped first, because the fix's own comment
+    names the literal it replaced, and a check that flags its own explanation
+    teaches people to delete the explanation.
+    """
+    src = ab._strip_ts_comments(
+        (TEMPLATE / 'charts' / 'types.tsx').read_text(encoding='utf-8')
+    )
+    import re
+    hexes = re.findall(r'#[0-9a-fA-F]{6}\b', src)
+    assert not hexes, f'types.tsx hardcodes colour literals: {hexes}'
+    assert 'rgba(' not in src, 'types.tsx builds a colour from raw rgba()'
+
+
+def test_slope_draws_against_the_frame_scale():
+    """A mark must not invent a scale beside the axis it is drawn against.
+
+    The slope chart fit its own [min, max] while the frame drew ticks from the
+    headroom-padded domain: measured, the top endpoint sat 36px above where the
+    "60" tick said 61 belonged (tick spacing 210.5px per 10 units, line top
+    y=58, frame-correct y=93). The old test only knew two function NAMES
+    (domainFor / niceTicks) and missed this pattern entirely — so the assertions
+    are about what the component must use and must not declare.
+    """
+    src = (TEMPLATE / 'charts' / 'types.tsx').read_text(encoding='utf-8')
+    slope = _component(src, 'export const Slope', 'const Dot')
+    assert 'f.yOf' in slope, 'Slope must draw against the frame scale'
+    assert ': Extent' not in slope, 'Slope declares its own extent again'
+    assert 'const domain' not in slope, 'Slope fits its own domain again'
+
+
+def test_sparkline_is_on_the_shared_lifecycle():
+    """The ninth mark used to ignore the timeline the other eight follow:
+
+    no entrance, no exit fade — scene c09 popped in and out while every other
+    chart scene arrived and left. presence and the shared entrance are what
+    make nine marks read as one film.
+    """
+    src = (TEMPLATE / 'charts' / 'types.tsx').read_text(encoding='utf-8')
+    spark = _component(src, 'export const Sparkline', 'export const VolumeBars')
+    assert 'enterFor' in spark, 'Sparkline does not take the shared entrance'
+    assert 'life.presence' in spark, 'Sparkline does not leave with the scene'
+    assert 'strokeDashoffset' in spark, 'Sparkline does not draw on'
+
+
+def test_type_options_matches_what_the_marks_actually_read():
+    """Documentation drift in both directions, one test.
+
+    sparkline gained enterFrames when it joined the lifecycle; slope LOST
+    showValues because the slope mark never read it (it only moved the frame's
+    headroom — a documented option that does something else is worse than an
+    undocumented one).
+    """
+    src = (TEMPLATE / 'charts' / 'options.ts').read_text(encoding='utf-8')
+    import re
+    spark = re.search(r"sparkline:\s*\[([^\]]*)\]", src)
+    assert spark, 'TYPE_OPTIONS.sparkline not found'
+    assert "'enterFrames'" in spark.group(1), 'sparkline animates now; document its knob'
+    slope = re.search(r"slope:\s*\[([^\]]*)\]", src)
+    assert slope, 'TYPE_OPTIONS.slope not found'
+    assert "'showValues'" not in slope.group(1), (
+        'slope claims showValues but the slope mark never reads it'
+    )
+
+
+def test_the_bubble_frame_does_not_duplicate_the_marks_labels():
+    """c05 rendered Mon..Sat twice: per-circle (right place) and along the
+    frame's bottom row, where (i + 0.5) / n lies for a multi-row grid."""
+    src = (TEMPLATE / 'charts' / 'Chart.tsx').read_text(encoding='utf-8')
+    import re
+    m = re.search(r'xLabels=\{([^}]*)\}', src)
+    assert m, 'ChartFrame gets no xLabels prop — the assertion is stale'
+    assert 'bubble' not in m.group(1), (
+        f'bubble is in the frame xLabels condition ({m.group(1).strip()}) — '
+        f'the frame and the mark would both draw the labels'
+    )

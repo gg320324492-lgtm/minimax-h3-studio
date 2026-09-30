@@ -48,6 +48,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -80,7 +81,10 @@ FIELD_READERS: dict[str, dict[str, str]] = {
     'emphasisIndex': READER_TYPES,
     'deemphasis': READER_TYPES,
     'staggerFrames': READER_TYPES,
-    'enterFrames': READER_TYPES,
+    # enterFrames is read by the FRAME (it feeds lifecycleAt), not by the
+    # marks: types.tsx only ever mentioned it in a doc comment, which is what
+    # the comment-stripping check now refuses to accept
+    'enterFrames': READER_FRAME,
     'valueFormat': READER_FRAME,
     'showArea': READER_TYPES,
     'strokeWidth': READER_TYPES,
@@ -91,6 +95,26 @@ FIELD_READERS: dict[str, dict[str, str]] = {
     'sizeBy': READER_TYPES,
     'showEndLabels': READER_TYPES,
 }
+
+
+def _strip_ts_comments(src: str) -> str:
+    """Remove /* ... */ blocks and // lines, so a COMMENT cannot satisfy the
+    registry check.
+
+    `enterFrames` was registered against types.tsx and passed the check while
+    types.tsx mentioned it only in a doc comment — the real reader was
+    ChartFrame. That is the showArea class one level down: the name IS in the
+    file, just not in the code, and a presence check cannot tell those apart.
+    Stripping first means "the file mentions it" becomes "the file's CODE
+    mentions it".
+
+    A `//` inside a string literal would over-strip. The reader files are two
+    known components with no such literals; if one ever grows one, this must
+    become a real parse rather than a regex — noted rather than pretended away.
+    """
+    src = re.sub(r'/\*.*?\*/', '', src, flags=re.S)
+    src = re.sub(r'//[^\n]*', '', src)
+    return src
 
 
 def check_registry() -> list[str]:
@@ -111,10 +135,10 @@ def check_registry() -> list[str]:
         path = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / reader
         if not path.exists():
             problems.append(f'{opt}: reader {reader} does not exist')
-        elif opt not in path.read_text(encoding='utf-8'):
+        elif opt not in _strip_ts_comments(path.read_text(encoding='utf-8')):
             problems.append(
-                f'{opt}: registered against {reader}, but that file never '
-                f'mentions {opt} — the option is inert'
+                f'{opt}: registered against {reader}, but that file\'s CODE never '
+                f'mentions {opt} — the option is inert (a doc comment does not count)'
             )
     return problems
 

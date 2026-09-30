@@ -14,8 +14,8 @@
  */
 
 import {
-  areaPath, band, barBox, declutter, domainFor, extent, formatValue, linePath,
-  linear, niceTicks, trimZeros, type Point,
+  areaPath, band, barBox, declutter, declutterByY, domainFor, extent, fitDomain, formatValue, linePath,
+  linear, niceTicks, trimZeros, withAlpha, type Point,
 } from './scale';
 
 let failures = 0;
@@ -146,10 +146,77 @@ console.log('scale: label declutter');
     JSON.stringify(crowded));
   check('order is preserved', crowded[0] < crowded[1] && crowded[1] < crowded[2]);
   const atEnd = declutter([1000, 1004], [40, 40], 0, 1080);
-  check('a stack past the bottom is pulled back', atEnd[atEnd.length - 1] + 20 <= 1080 + 1e-6,
-    JSON.stringify(atEnd));
+  check('a stack past the bottom is pulled back (bottom edge <= max)',
+    atEnd[atEnd.length - 1] + 40 <= 1080 + 1e-6, JSON.stringify(atEnd));
+  const tooLow = declutter([1060, 1064], [40, 40], 0, 1080);
+  check('even a hard overshoot lands inside the band',
+    tooLow[tooLow.length - 1] + 40 <= 1080 + 1e-6, JSON.stringify(tooLow));
   check('an empty list is fine', JSON.stringify(declutter([], [])) === '[]');
   check('a single label is fine', JSON.stringify(declutter([500], [20])) === '[500]');
+}
+
+console.log('scale: declutterByY — category order is not y order');
+{
+  // The shipped defect, as input: three bars in CATEGORY order where the y
+  // order differs. Plain declutter marches bar2 down into its own bar;
+  // declutterByY sorts first and leaves well-separated labels alone.
+  const tops = [300, 400, 240];
+  const heights = [26, 26, 26];
+  const straight = declutter(tops, heights, 0, 1080);
+  check('plain declutter really does distort category-ordered input',
+    straight[2] >= 420, JSON.stringify(straight));
+  const sorted = declutterByY(tops, heights, 0, 1080);
+  check('by-y leaves well-separated labels where they were',
+    JSON.stringify(sorted) === JSON.stringify([300, 400, 240]), JSON.stringify(sorted));
+  const rev = declutterByY([108, 104, 100], [20, 20, 20], 0, 1080);
+  const asStack = [...rev].sort((a, b) => a - b);
+  check('by-y pushes crowded labels apart regardless of input order',
+    asStack[0] === 100 && asStack[1] >= 120 && asStack[2] >= 140, JSON.stringify(rev));
+  check('by-y maps back to the original slots', rev.length === 3 && rev[0] > rev[1] && rev[1] > rev[2],
+    JSON.stringify(rev));
+  const low = declutterByY([1060, 1064], [40, 40], 0, 1080);
+  check('by-y respects the bottom edge',
+    low[low.length - 1] + 40 <= 1080 + 1e-6, JSON.stringify(low));
+}
+
+console.log('scale: withAlpha ramps the THEME colour, not a literal');
+{
+  check('a hex becomes rgba at the requested alpha',
+    withAlpha('#14140F', 0.5) === 'rgba(20, 20, 15, 0.5)', withAlpha('#14140F', 0.5));
+  check('the dark ink ramps too',
+    withAlpha('#F5F2EA', 0.05).startsWith('rgba(245, 242, 234,'), withAlpha('#F5F2EA', 0.05));
+  check('alpha clamps to 1', withAlpha('#000000', 2).endsWith('1)'));
+  check('alpha clamps to 0', withAlpha('#FFFFFF', -1).endsWith('0)'));
+  check('an already-rgba token passes through untouched',
+    withAlpha('rgba(1, 2, 3, 0.5)', 0.9) === 'rgba(1, 2, 3, 0.5)');
+  check('a non-hex string is not corrupted', withAlpha('#XYZ', 0.5) === '#XYZ');
+}
+
+console.log('scale: fitDomain — the domain every mark and axis share');
+{
+  // zero-based bars must include zero or their lengths lie about magnitude
+  const z = fitDomain([5, 10], true, 0.04);
+  check('zero-based includes zero', z[0] === 0, JSON.stringify(z));
+  check('zero-based pads the top', near(z[1], 10.4), JSON.stringify(z));
+  const fitted = fitDomain([5, 10], false, 0.04);
+  check('a fitted domain keeps its floor', fitted[0] === 5, JSON.stringify(fitted));
+  check('value labels get more headroom than bare marks',
+    fitDomain([0, 61.4e6], true, 0.14)[1] > fitDomain([0, 61.4e6], true, 0.04)[1]);
+  // THE case the slope mark's delegation to the frame relies on: a constant
+  // series pads nothing, and the old [0, 1] fallback drew a flat series at 50
+  // far above the plot
+  const flat = fitDomain([50, 50], false, 0.04);
+  check('a constant series gets a window around itself',
+    flat[0] < 50 && 50 < flat[1], JSON.stringify(flat));
+  check('all zeros keep the floor at the bottom (the [0,1] case that is right)',
+    JSON.stringify(fitDomain([0, 0], true, 0.14)) === '[0,1]');
+  check('an empty series is the neutral domain',
+    JSON.stringify(fitDomain([], true, 0.04)) === '[0,1]');
+  check('NaN cannot poison the domain',
+    JSON.stringify(fitDomain([NaN], false, 0.04)) === '[0,1]');
+  const neg = fitDomain([-5, -2], false, 0.04);
+  check('negatives pad downward', near(neg[0], -5.12) && near(neg[1], -1.88),
+    JSON.stringify(neg));
 }
 
 console.log('scale: a growing bar is anchored at the BASELINE');

@@ -97,6 +97,17 @@ MATRIX: list[tuple[int, int, str, object, str]] = [
     (9, 1440, 'scenes.9.content.chart.enterFrames', 120, ENTERING),
     (9, 1440, 'scenes.9.content.chart.staggerFrames', 40, ENTERING),
     (4, 720, 'scenes.4.content.chart.deemphasis', 1.0, SETTLED),
+    # ── P7.3 rows ─────────────────────────────────────────────────────────────
+    # sparkline joins the shared lifecycle (it used to render complete at frame
+    # 0), so its entrance must be measurable. The scene is 150 frames, so the
+    # CAP still binds high values (51) — but a LOW value shortens the entrance
+    # (34*1.4+2*11 clamps to 36), and at local frame 20 the two dash offsets
+    # differ. Measured where the stroke is still drawing: ENTERING.
+    (8, 1220, 'scenes.8.content.chart.enterFrames', 10, ENTERING),
+    # theme reaches the chart marks: the heat ramp follows PALETTE.ink, so a
+    # light theme must change the cells' fill, not only the backdrop. Charts had
+    # no light-theme pixel evidence at all before this row.
+    (5, 870, 'scenes.5.theme', 'premium-light', SETTLED),
 ]
 
 
