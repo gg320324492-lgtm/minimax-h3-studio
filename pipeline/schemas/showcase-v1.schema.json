@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "showcase-v1",
+  "description": "Scene graph for programmatic product-film / data-showcase video. P3 of docs/UPGRADE_MASTER_PLAN.md. Lives in pipeline/ (Python side) and is mirrored to a zod schema in studio/src/schemas/showcase-v1.ts — the two must stay in sync (see tests/test_showcase_schema_parity.py).",
+  "type": "object",
+  "required": ["version", "project", "format", "scenes"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": 1},
+    "project": {"type": "string", "minLength": 1},
+    "style_bible": {"$ref": "#/definitions/StyleBible"},
+    "format": {
+      "type": "object",
+      "required": ["width", "height", "fps"],
+      "additionalProperties": false,
+      "properties": {
+        "width": {"type": "integer", "minimum": 16},
+        "height": {"type": "integer", "minimum": 16},
+        "fps": {"type": "integer", "minimum": 1, "maximum": 120}
+      }
+    },
+    "bpm": {"type": "number", "minimum": 40, "maximum": 240, "default": 126},
+    "scenes": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/Scene"}}
+  },
+  "definitions": {
+    "Scene": {
+      "type": "object",
+      "required": ["id", "type", "durationInFrames"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+        "type": {"type": "string", "enum": [
+          "video", "kpi-hero", "browser-window", "browser-stack", "dashboard",
+          "stat-card", "card-grid", "calendar", "bar-chart", "line-chart",
+          "area-chart", "bubble-chart", "rank-chart", "slope-chart", "heatmap",
+          "data-table", "quote", "data-plane-3d", "logo", "outro"
+        ]},
+        "durationInFrames": {"type": "integer", "minimum": 1},
+        "theme": {"type": "string"},
+        "layout": {"type": "object"},
+        "camera": {"$ref": "#/definitions/Camera"},
+        "motion": {"$ref": "#/definitions/Motion"},
+        "content": {"type": "object"},
+        "transitionIn": {"$ref": "#/definitions/Transition"},
+        "transitionOut": {"$ref": "#/definitions/Transition"},
+        "audioEvents": {"type": "array", "items": {"type": "object"}},
+        "notes": {"type": "string"}
+      }
+    },
+    "Camera": {
+      "description": "Camera motion is separate from component motion (P3 design rule). Values are [from, to] pairs in px/deg, or a single number for a constant.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "perspective": {"type": "number", "minimum": 0, "maximum": 20000},
+        "translateX": {"$ref": "#/definitions/Track"},
+        "translateY": {"$ref": "#/definitions/Track"},
+        "translateZ": {"$ref": "#/definitions/Track"},
+        "rotateX": {"$ref": "#/definitions/Track"},
+        "rotateY": {"$ref": "#/definitions/Track"},
+        "rotateZ": {"$ref": "#/definitions/Track"},
+        "scale": {"$ref": "#/definitions/Track"},
+        "focus": {"$ref": "#/definitions/Track"}
+      }
+    },
+    "Motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preset": {"type": "string", "enum": ["premium", "energetic", "cinematic", "minimal"]},
+        "stagger": {"type": "number", "minimum": 0, "maximum": 2},
+        "ease": {"type": "string"}
+      }
+    },
+    "Transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "in": {"type": "string"},
+        "out": {"type": "string"},
+        "durationInFrames": {"type": "integer", "minimum": 0}
+      }
+    },
+    "StyleBible": {
+      "description": "One per project. Every scene must obey it — this is what stops each screen looking like a different template.",
+      "type": "object",
+      "properties": {
+        "palette": {"type": "object"},
+        "typography": {"type": "object"},
+        "spacing": {"type": "object"},
+        "cameraLanguage": {"type": "object"},
+        "motionLanguage": {"type": "object"},
+        "chartLanguage": {"type": "object"},
+        "audioLanguage": {"type": "object"}
+      }
+    }
+  }
+}

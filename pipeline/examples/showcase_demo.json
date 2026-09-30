@@ -1,0 +1,199 @@
+{
+  "_note": "参考片 24-40s 视觉结构的 showcase-v1 样例（合成数据）。场景时长对齐 4/8 拍网格。",
+  "version": 1,
+  "project": "showcase_demo",
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 60
+  },
+  "bpm": 126,
+  "style_bible": {
+    "palette": {
+      "background": "#0A0A0C",
+      "surface": "#141418",
+      "ink": "#F5F2EA",
+      "accent": "#E8C464",
+      "positive": "#5AD878",
+      "negative": "#FF6B6B"
+    },
+    "typography": {
+      "display": "900 120px Bahnschrift",
+      "kpi": "700 220px Bahnschrift",
+      "body": "400 32px Inter",
+      "numeric": "tabular-nums"
+    },
+    "motionLanguage": {
+      "preset": "premium",
+      "ease": "expo-out",
+      "stagger": 0.035
+    },
+    "cameraLanguage": {
+      "perspective": 1400,
+      "range": "translateZ -180..60, rotateY -8..0"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s01_kpi",
+      "type": "kpi-hero",
+      "durationInFrames": 229,
+      "layout": {
+        "align": "left",
+        "padX": 120,
+        "eyebrow": "TOTAL VOLUME"
+      },
+      "camera": {
+        "perspective": 1600,
+        "scale": [
+          1.06,
+          1.0
+        ]
+      },
+      "motion": {
+        "preset": "premium",
+        "ease": "expo-out"
+      },
+      "content": {
+        "value": 7263,
+        "prefix": "$",
+        "suffix": "M",
+        "delta": "+18.4%",
+        "caption": "processed this quarter"
+      },
+      "transitionIn": {
+        "in": "mask-wipe",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "s02_dash",
+      "type": "browser-stack",
+      "durationInFrames": 229,
+      "layout": {
+        "gap": 40,
+        "radius": 14
+      },
+      "camera": {
+        "perspective": 1400,
+        "translateZ": [
+          -220,
+          0
+        ],
+        "rotateY": [
+          -9,
+          0
+        ],
+        "rotateX": [
+          5,
+          0
+        ]
+      },
+      "motion": {
+        "preset": "premium",
+        "stagger": 0.05
+      },
+      "content": {
+        "windows": [
+          {
+            "title": "Overview",
+            "metric": "48.2M",
+            "bars": [
+              34,
+              52,
+              41,
+              67,
+              58
+            ]
+          },
+          {
+            "title": "Retention",
+            "metric": "63.8%",
+            "spark": [
+              22,
+              31,
+              28,
+              44,
+              51,
+              49
+            ]
+          },
+          {
+            "title": "Errors",
+            "metric": "0.04%",
+            "flat": true
+          }
+        ]
+      },
+      "transitionIn": {
+        "in": "depth-push",
+        "durationInFrames": 20
+      }
+    },
+    {
+      "id": "s03_columns",
+      "type": "dashboard",
+      "durationInFrames": 114,
+      "camera": {
+        "perspective": 1200,
+        "rotateX": [
+          12,
+          2
+        ],
+        "translateY": [
+          60,
+          0
+        ]
+      },
+      "motion": {
+        "preset": "premium",
+        "ease": "expo-out"
+      },
+      "content": {
+        "headline": "563",
+        "unit": "accounts opened",
+        "columns": 18,
+        "columnSeed": 42
+      },
+      "transitionIn": {
+        "in": "depth-push",
+        "durationInFrames": 16
+      }
+    },
+    {
+      "id": "s04_calendar",
+      "type": "calendar",
+      "durationInFrames": 229,
+      "layout": {
+        "cell": 34,
+        "gap": 6
+      },
+      "camera": {
+        "perspective": 1400,
+        "scale": [
+          1.04,
+          1.0
+        ]
+      },
+      "motion": {
+        "preset": "premium",
+        "stagger": 0.012
+      },
+      "content": {
+        "month": "2026-09",
+        "values": "deterministic-from-seed",
+        "seed": 7,
+        "highlight": [
+          3,
+          9,
+          17,
+          24
+        ]
+      },
+      "transitionIn": {
+        "in": "mask-wipe",
+        "durationInFrames": 18
+      }
+    }
+  ]
+}
