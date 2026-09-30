@@ -171,3 +171,4 @@
 - 删除（可再生/陈旧）：`tests/` 2GB 旧基准残留、`upscale_frames*/` 258MB 帧缓存、`preview/`、`work_frames/`、全部 `__pycache__`、`experiments/{oi,hist}.json` dump、`_deprecated.py`（远端同步移除）、`07_edit/EP01_K6_TEST.mp4` 55MB 测试渲染、`studio/out` 旧版本渲染（262MB→7.7MB，只留 v5 成片+封面+探针帧）。
 - 归档（不删）：4 个 `.pre-v2.bak` + `09_final.pre-v2.bak`（233MB 旧交付备份）→ `ceo_mindread_ep01/_archive_prev2/`；`_archive_20260910_rerun/`（407MB v1 交付存档）保留原位。
 - 保留：`logs/`（活跃管线日志）、`09_final*/` 现行交付。
+- 2026-09-30：**仓库转公开**（隐私/凭据/IP 四类审计通过）。出库：4 个 Mixkit 派生音频（本地保留，gitignore）+ 12 个 vendor 技能目录（可重装）。当前公开内容 = 模板代码 + 契约 + 文档 + CC0/自研音频；H3 prompt/种子/剧本按用户决策一并公开。
