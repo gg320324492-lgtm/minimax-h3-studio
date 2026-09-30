@@ -165,3 +165,61 @@ def test_on_beat_tolerance_is_half_a_frame_not_half_a_beat():
     sc, _ = scene_graph.load_or_report(DEMO)
     assert sc.on_beat(0), 'frame 0 is on the beat'
     assert not sc.on_beat(8), '8 frames is a quarter-beat away, must fail a half-frame test'
+
+
+# --- continuity is structural, not a rounding choice (P3 review round 2) -----
+
+def test_beat_timeline_is_exactly_continuous():
+    """start[i+1] == end[i] for every boundary, in beat mode.
+
+    The previous version derived start and duration with different rounding
+    (round / floor), which is not a bug but an inexpressible state: whenever
+    frac(k*beat) >= 0.5 the two disagree by one frame — an overlap with
+    `round`, a gap with `floor`. Deriving each end from the next start makes
+    both unrepresentable. This assertion is what the old suite was missing;
+    `startFrame >= prev.endFrame` cannot see a gap.
+    """
+    sc, _ = scene_graph.load_or_report(DEMO)
+    r = sc.resolve(beat_snap=True)
+    for a, b in zip(r, r[1:]):
+        assert b.startFrame == a.endFrame, (
+            f'{a.id} ends {a.endFrame} but {b.id} starts {b.startFrame} '
+            f'({b.startFrame - a.endFrame:+d} frames)')
+
+
+def test_continuity_holds_over_many_scenes():
+    sc, _ = scene_graph.load_or_report(DEMO)
+    for n, dur in ((10, 229), (12, 114), (8, 343)):
+        long = sc.__class__(project='t', width=1920, height=1080, fps=60, bpm=126,
+                            scenes=[{'id': f's{i}', 'type': 'kpi-hero',
+                                     'durationInFrames': dur} for i in range(n)])
+        r = long.resolve(beat_snap=True)
+        for a, b in zip(r, r[1:]):
+            assert b.startFrame == a.endFrame, (
+                f'{n}x{dur}f: gap/overlap at {a.id}->{b.id}')
+
+
+def test_resolved_duration_is_authoritative_and_reported():
+    """Beat mode may shorten a scene; that must be visible, not silent."""
+    sc, _ = scene_graph.load_or_report(DEMO)
+    r = sc.resolve(beat_snap=True)
+    declared = sc.totalFrames
+    resolved = r[-1].endFrame
+    assert resolved == sum(s.durationInFrames for s in r)
+    adjusted = [s for s in r if s.adjusted]
+    assert len(adjusted) == sum(1 for s in r if s.requested_frames != s.durationInFrames)
+    for s in adjusted:
+        # the difference is quantisation only, bounded by one beat
+        assert abs(s.durationInFrames - s.requested_frames) <= (60.0 / sc.bpm) * sc.fps, (
+            f'{s.id} changed by more than a beat')
+    assert abs(resolved - declared) <= len(r) * (60.0 / sc.bpm) * sc.fps
+
+
+def test_python_and_ts_resolve_agree():
+    """The rounding fix must land on both sides identically."""
+    ts = (ROOT / 'studio' / 'src' / 'schemas' / 'showcase-v1.ts').read_text(encoding='utf-8')
+    assert 'Math.round((beatCursor + beats) * b)' in ts, (
+        'TS side must derive the end boundary the same way Python does, '
+        'otherwise the two timelines diverge by a frame')
+    assert 'Math.floor' not in ts.split('resolveScenes')[1][:1200], (
+        'TS side still floors durations — that reintroduces the 1-frame gap')

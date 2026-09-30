@@ -138,36 +138,45 @@ export const onBeat = (doc: Showcase, frame: number): boolean =>
   beatDistanceFrames(doc, frame) <= 0.5 + 1e-6;
 
 /**
- * With beatSnap, a scene occupies a WHOLE number of beats: `durationInFrames`
- * is a request, rounded to the nearest whole-beat frame count, and starts are
- * exact beat multiples rounded once.
+ * With beatSnap, timing lives in BEAT space and is converted to frames exactly
+ * once per boundary. Both boundaries of a scene come from the same rounding of
+ * the same grid, so `start[i+1] === end[i]` by construction — neither an
+ * overlap nor a gap can be expressed — and drift stays under half a frame
+ * without accumulating.
  *
- * Both cheaper approaches drift. Snapping each start iteratively pushes starts
- * forward whenever the nearest beat falls before the previous scene ends — 0.43
- * frames per eight-beat scene, 3.86 frames over ten scenes. Keeping the raw
- * duration drifts for the same reason (229 frames is 8.015 beats).
+ * Choosing start-rounding and duration-rounding independently does not work:
+ * round(a) + round(b) !== round(a + b), so every pairing leaves a one-frame
+ * defect on one side. Deriving each end from the next start is what makes the
+ * error unrepresentable.
+ *
+ * `durationInFrames` in the input is a REQUEST; the resolved duration is
+ * authoritative and may differ by up to half a beat.
  */
 export const resolveScenes = (doc: Showcase, beatSnap = false): ResolvedScene[] => {
   const b = beatFrames(doc);
   const out: ResolvedScene[] = [];
-  let cursorFrames = 0;
-  let cursorBeats = 0;
+  let beatCursor = 0;
+  let frameCursor = 0;
   for (const s of doc.scenes) {
-    const requested = s.durationInFrames;
-    const beats = beatSnap ? Math.max(1, Math.round(requested / b)) : 0;
-    // floor, never round: 8 beats is 228.57 frames, and a rounded 229-frame
-    // scene would overrun its own beat span and overlap the next by a frame
-    const durationInFrames = beatSnap ? Math.floor(beats * b) : requested;
-    const startFrame = beatSnap ? Math.round(cursorBeats * b) : cursorFrames;
+    let start: number;
+    let end: number;
+    if (beatSnap) {
+      const beats = Math.max(1, Math.round(s.durationInFrames / b));
+      start = Math.round(beatCursor * b);
+      end = Math.round((beatCursor + beats) * b);
+      beatCursor += beats;
+    } else {
+      start = frameCursor;
+      end = frameCursor + s.durationInFrames;
+    }
     out.push({
       id: s.id,
       type: s.type,
-      startFrame,
-      durationInFrames,
+      startFrame: start,
+      durationInFrames: end - start,
       generative: GENERATIVE_SCENE_TYPES.has(s.type),
     });
-    cursorFrames = startFrame + durationInFrames;
-    cursorBeats += beats;
+    frameCursor = end;
   }
   return out;
 };
