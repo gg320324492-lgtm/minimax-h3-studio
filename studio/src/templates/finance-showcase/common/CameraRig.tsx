@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Camera, Motion} from '../../../schemas/showcase-v1';
 import {MOTION} from '../design/tokens';
+import {useDesign} from '../design/styleBible';
 
 /**
  * CameraRig — the 2.5D camera every showcase scene renders inside.
@@ -148,7 +149,17 @@ export const CameraRig: React.FC<CameraRigProps> = ({
   children,
   style,
 }) => {
-  const cam = useCameraState(camera, motion, durationInFrames);
+  // The film-wide camera default from the style bible. A scene's own camera wins;
+  // the bible is what a graph sets once for every scene. This used to be a
+  // declaration nothing read — the graph could set cameraLanguage.perspective and
+  // nothing moved, which is the same "looks wired, is inert" failure the demo
+  // graph's whole style bible turned out to be.
+  const {camera: cameraDefaults} = useDesign();
+  const cam = useCameraState(
+    camera?.perspective ? camera : {...camera, perspective: cameraDefaults.perspective},
+    motion,
+    durationInFrames
+  );
 
   const transform = useMemo(() => {
     const px = (v: number) => `${v}px`;

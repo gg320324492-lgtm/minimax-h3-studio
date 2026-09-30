@@ -8,31 +8,6 @@
     "fps": 60
   },
   "bpm": 126,
-  "style_bible": {
-    "palette": {
-      "background": "#0A0A0C",
-      "surface": "#141418",
-      "ink": "#F5F2EA",
-      "accent": "#E8C464",
-      "positive": "#5AD878",
-      "negative": "#FF6B6B"
-    },
-    "typography": {
-      "display": "900 120px Bahnschrift",
-      "kpi": "700 220px Bahnschrift",
-      "body": "400 32px Inter",
-      "numeric": "tabular-nums"
-    },
-    "motionLanguage": {
-      "preset": "premium",
-      "ease": "expo-out",
-      "stagger": 0.035
-    },
-    "cameraLanguage": {
-      "perspective": 1400,
-      "range": "translateZ -180..60, rotateY -8..0"
-    }
-  },
   "scenes": [
     {
       "id": "s01_kpi",
@@ -201,5 +176,16 @@
         "durationInFrames": 18
       }
     }
-  ]
+  ],
+  "style_bible": {
+    "typography": {
+      "numericDisplay": {
+        "size": 232,
+        "weight": 700,
+        "tracking": "-0.055em",
+        "leading": 0.94,
+        "tabular": true
+      }
+    }
+  }
 }

@@ -3,7 +3,10 @@ import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig, useCameraState} from '../common/CameraRig';
 import {cssXForScreenX, screenScaleFor} from '../common/projection';
-import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
+// Fonts and scaling are NOT theme-scoped, so importing them is correct.
+// Everything that IS theme-scoped (palette, type, spacing, shadow) must come
+// from useDesign() — see tests/test_design_system.py.
+import {FONT_NUM, FONT_SANS, TRAFFIC_LIGHTS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {Stagger} from '../common/primitives';
 
@@ -136,7 +139,7 @@ const BrowserWindow: React.FC<{
         background: PALETTE.surfaceElevated,
       }}
     >
-      {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => (
+      {TRAFFIC_LIGHTS.map((c) => (
         <div key={c} style={{width: 9 * s, height: 9 * s, borderRadius: '50%', background: c, opacity: 0.65}} />
       ))}
       <div

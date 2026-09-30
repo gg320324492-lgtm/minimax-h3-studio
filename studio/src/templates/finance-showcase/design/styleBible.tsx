@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useVideoConfig} from 'remotion';
-import {PALETTE, TYPE, MOTION, SPACE, RADIUS, DEPTH, SHADOW, DEPTH_CUE, DESIGN_HEIGHT, FONT_NUM, FONT_SANS, scaleFrom} from './tokens';
+import {TYPE, MOTION, SPACE, RADIUS, DEPTH, DESIGN_HEIGHT, FONT_NUM, FONT_SANS, scaleFrom} from './tokens';
+import {THEMES, themeNamed, type ThemeName} from './themes';
 
 /**
  * Style Bible resolution (P4 review finding).
@@ -18,6 +19,8 @@ import {PALETTE, TYPE, MOTION, SPACE, RADIUS, DEPTH, SHADOW, DEPTH_CUE, DESIGN_H
  */
 
 export type StyleBible = {
+  /** which theme resolved this bible; scenes read the palette, not the name */
+  theme: ThemeName;
   palette: Record<string, string>;
   typography: Record<string, {size: number; weight: number; tracking: string; leading: number; tabular?: boolean}>;
   spacing: Record<string, number>;
@@ -35,18 +38,6 @@ const mergeList = (base: readonly string[], over: unknown): readonly string[] =>
   Array.isArray(over) && over.length > 0 && over.every((v) => typeof v === 'string')
     ? (over as string[])
     : base;
-
-const DEFAULT_BIBLE: StyleBible = {
-  palette: {...PALETTE},
-  typography: {...TYPE} as StyleBible['typography'],
-  spacing: {...SPACE},
-  radius: {...RADIUS},
-  shadow: {...SHADOW},
-  depthCue: DEPTH_CUE,
-  depth: {...DEPTH},
-  motion: {...MOTION},
-  camera: {perspective: 1400, durationSeconds: MOTION.premiumCameraSeconds},
-};
 
 /**
  * Merge a graph-provided section over the defaults, ignoring keys the defaults
@@ -66,31 +57,87 @@ const mergeSection = <T extends Record<string, unknown>>(base: T, over: unknown)
   return out as T;
 };
 
-/** Shallow-merge each section so a graph may override one colour, not all. */
-export const resolveStyleBible = (input?: unknown): StyleBible => {
+/**
+ * The parts of the bible that do NOT vary by theme.
+ *
+ * Type scale, spacing, radius, motion and camera are the brand; the palette and
+ * shadows are the surface. Keeping that split explicit is what stops "add a
+ * light theme" from quietly becoming a redesign — and it means a scene cannot
+ * end up with light-theme ink on the dark theme's type scale, which is the
+ * failure mode when the two get mixed section by section.
+ */
+const resolveInvariant = (b: Record<string, unknown>) => ({
+  typography: mergeSection({...TYPE} as Record<string, unknown>, b.typography),
+  spacing: mergeSection({...SPACE} as Record<string, unknown>, b.spacing),
+  radius: mergeSection({...RADIUS} as Record<string, unknown>, b.radius),
+  depth: mergeSection({...DEPTH} as Record<string, unknown>, b.depth),
+  motion: mergeSection({...MOTION} as unknown as Record<string, unknown>, b.motionLanguage),
+  camera: mergeSection(
+    {perspective: 1400, durationSeconds: MOTION.premiumCameraSeconds} as Record<string, unknown>,
+    b.cameraLanguage
+  ),
+});
+
+/**
+ * Resolve a graph's style bible against a named theme.
+ *
+ * `theme` is the per-scene one, not a film-level flag: a showcase that moves
+ * from a dark act to a light data section switches theme scene by scene, and
+ * that only works if resolution happens per scene. A scene's explicit
+ * `style_bible` still overrides the theme, so a graph can nudge one colour in
+ * one scene without restating the whole palette.
+ */
+export const resolveStyleBible = (input?: unknown, themeName?: unknown): StyleBible => {
   const b = (input ?? {}) as Record<string, unknown>;
+  const theme = THEMES[themeNamed(themeName)];
   const section = (name: string): Record<string, unknown> =>
     (b[name] ?? {}) as Record<string, unknown>;
   return {
-    palette: mergeSection(DEFAULT_BIBLE.palette, section('palette')),
-    typography: mergeSection(DEFAULT_BIBLE.typography, section('typography')),
-    spacing: mergeSection(DEFAULT_BIBLE.spacing, section('spacing')),
-    radius: mergeSection(DEFAULT_BIBLE.radius, section('radius')),
-    shadow: mergeSection(DEFAULT_BIBLE.shadow, section('shadow')),
-    depthCue: mergeList(DEFAULT_BIBLE.depthCue, section('depthCue')),
-    depth: mergeSection(DEFAULT_BIBLE.depth, section('depth')),
-    motion: mergeSection(DEFAULT_BIBLE.motion, section('motionLanguage')),
-    camera: mergeSection(DEFAULT_BIBLE.camera, section('cameraLanguage')),
+    theme: themeNamed(themeName),
+    palette: mergeSection({...theme.palette}, section('palette')),
+    shadow: mergeSection({...theme.shadow}, section('shadow')),
+    depthCue: mergeList(theme.depthCue, section('depthCue')),
+    ...(resolveInvariant(b) as unknown as Omit<StyleBible, 'theme' | 'palette' | 'shadow' | 'depthCue'>),
   };
 };
 
-const StyleBibleContext = createContext<StyleBible>(DEFAULT_BIBLE);
+/**
+ * Combine the film-level bible with a scene's, so a document-wide palette
+ * still applies to every scene and a scene may nudge one token on top.
+ *
+ * Merged per SECTION, shallowly, before resolution — not by resolving twice and
+ * combining, because resolution is where the theme is applied and doing it
+ * twice would let the scene's raw value land on the wrong theme's defaults.
+ */
+export const combineBibles = (film?: unknown, scene?: unknown): Record<string, unknown> => {
+  const f = (film ?? {}) as Record<string, unknown>;
+  const s = (scene ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = {...f};
+  for (const key of Object.keys(s)) {
+    const fv = f[key];
+    const sv = s[key];
+    out[key] =
+      fv && sv && typeof fv === 'object' && typeof sv === 'object' && !Array.isArray(fv)
+        ? {...(fv as Record<string, unknown>), ...(sv as Record<string, unknown>)}
+        : sv;
+  }
+  return out;
+};
 
-export const StyleBibleProvider: React.FC<{bible?: unknown; children: React.ReactNode}> = ({
-  bible,
-  children,
-}) => {
-  const resolved = useMemo(() => resolveStyleBible(bible), [bible]);
+const StyleBibleContext = createContext<StyleBible>(resolveStyleBible());
+
+export const StyleBibleProvider: React.FC<{
+  /** the film-level style bible */
+  bible?: unknown;
+  /** this scene's overrides, layered over `bible` */
+  override?: unknown;
+  theme?: unknown;
+  children: React.ReactNode;
+}> = ({bible, override, theme, children}) => {
+  const resolved = useMemo(
+    () => resolveStyleBible(combineBibles(bible, override), theme),
+    [bible, override, theme]
+  );
   return <StyleBibleContext.Provider value={resolved}>{children}</StyleBibleContext.Provider>;
 };
 

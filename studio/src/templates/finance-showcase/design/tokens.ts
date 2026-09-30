@@ -12,37 +12,32 @@
  * meaning. Less than 3 hues per screen.
  */
 
-export const PALETTE = {
-  // premium-dark — the default surface
-  background: '#0A0A0C',
-  backgroundAlt: '#101014',
-  surface: '#141418',
-  surfaceElevated: '#1C1C22',
-  ink: '#F5F2EA',
-  inkMuted: 'rgba(245, 242, 234, 0.62)',
-  inkFaint: 'rgba(245, 242, 234, 0.34)',
-  accent: '#E8C464',
-  accentDim: 'rgba(232, 196, 100, 0.16)',
-  positive: '#5AD878',
-  negative: '#FF6B6B',
-  grid: 'rgba(245, 242, 234, 0.07)',
-  hairline: 'rgba(245, 242, 234, 0.12)',
-  /**
-   * Data marks. These were inline rgba() literals in three scenes, at two
-   * different alphas, so the same "a column" was one colour in DataColumns and
-   * another in BrowserStack. A mark's weight is a design decision, so it gets
-   * a name.
-   */
-  column: 'rgba(245, 242, 234, 0.16)',
-  columnBright: 'rgba(245, 242, 234, 0.32)',
-  // premium-light — the counterpoint used for the data-plane / light sections
-  lightBackground: '#F4F1EA',
-  lightSurface: '#FFFFFF',
-  lightInk: '#14140F',
-  lightInkMuted: 'rgba(20, 20, 15, 0.58)',
-} as const;
+/**
+ * The default theme's palette and shadows.
+ *
+ * These are NOT the definition — `themes.ts` is, because a theme has to be
+ * able to change them. They stay exported under the old names so existing call
+ * sites resolve, but a SCENE must read them through the style bible, never by
+ * importing here: importing here is exactly what made a graph's `theme` field
+ * decorative when only the backdrop honoured it.
+ */
+import {THEMES} from './themes';
 
-/** Typography roles. Sizes are at design height 1080 and scale from there. */
+export const PALETTE = THEMES['premium-dark'].palette;
+export const SHADOW = THEMES['premium-dark'].shadow;
+export const DEPTH_CUE = THEMES['premium-dark'].depthCue;
+
+/**
+ * Typography roles. Sizes are at design height 1080 and scale from there.
+ *
+ * Numeric roles are separate from the display roles on purpose. A headline
+ * figure and a figure in a table are the same NUMBER but different typography:
+ * the headline wants tight tracking and a heavy weight, a table wants a size
+ * where digits are the same width as each other and nothing shifts as it counts.
+ * Before these existed, KpiHero reached for kpiXL — a display role — to set a
+ * number that animates, which is why it had to set tabular figures by hand to
+ * stop the digits jittering.
+ */
 export const TYPE = {
   displayXL: {size: 148, weight: 800, tracking: '-0.03em', leading: 1.02},
   displayL: {size: 112, weight: 800, tracking: '-0.025em', leading: 1.05},
@@ -53,6 +48,12 @@ export const TYPE = {
   body: {size: 32, weight: 400, tracking: '0', leading: 1.4},
   caption: {size: 26, weight: 400, tracking: '0.01em', leading: 1.35},
   annotation: {size: 20, weight: 500, tracking: '0.08em', leading: 1.2},
+  /** the hero figure: display scale, but a NUMERIC face and tabular figures */
+  numericDisplay: {
+    size: 232, weight: 700, tracking: '-0.04em', leading: 0.94, tabular: true,
+  },
+  /** a figure in a table or a stat row: fits a column, never reflows */
+  numericTable: {size: 52, weight: 700, tracking: '-0.02em', leading: 1.1, tabular: true},
   /** tabular figures — non-negotiable for any number that animates */
   numeric: {size: 72, weight: 600, tracking: '-0.01em', leading: 1.1, tabular: true},
 } as const;
@@ -65,10 +66,30 @@ export const FONT_SANS =
 export const FONT_NUM =
   '"Bahnschrift", "DIN Alternate", "Segoe UI", var(--font-sans), sans-serif';
 
+/**
+ * The macOS window controls.
+ *
+ * Deliberately NOT theme-scoped, and that is the point: these three dots are a
+ * UI convention, and a "light theme" version of a red dot is still a red dot.
+ * Recolouring them to match a paper background would stop them reading as
+ * window controls at all. They live in tokens rather than inline in the scene
+ * so the exemption is a named value instead of a hex literal nobody can find.
+ */
+export const TRAFFIC_LIGHTS = ['#FF5F57', '#FEBC2E', '#28C840'] as const;
+
 export const SPACE = {xs: 8, sm: 16, md: 24, lg: 40, xl: 64, xxl: 104, hero: 168} as const;
 
 export const RADIUS = {chip: 999, card: 20, window: 14, panel: 28} as const;
 
+/**
+ * Depth planes, as CSS transform strings.
+ *
+ * Note the honest state of this table: no scene uses it. Every scene computes
+ * its own z from the graph's spread values, because a scene's depth is a
+ * function of its composition rather than a fixed step. It stays exported for
+ * scenes that DO want a fixed plane (a floating card over a page), but P6.8
+ * should not be recorded as done on the strength of this table existing.
+ */
 export const DEPTH = {
   z0: 'translateZ(0)',
   z1: 'translateZ(60px)',
@@ -76,32 +97,6 @@ export const DEPTH = {
   z3: 'translateZ(240px)',
   zHero: 'translateZ(380px)',
 } as const;
-
-export const SHADOW = {
-  near: '0 2px 12px rgba(0,0,0,0.35)',
-  medium: '0 18px 48px rgba(0,0,0,0.45)',
-  floating: '0 40px 120px rgba(0,0,0,0.55)',
-  glowAccent: '0 0 64px rgba(232, 196, 100, 0.28)',
-} as const;
-
-/**
- * Depth ramp, far plane first — the shadow each layer of a stack carries.
- *
- * This is its own token group rather than an extra key on SHADOW because it is
- * not one shadow but a ROLE per depth step, and a graph should be able to
- * override the ramp without touching the flat shadows.
- *
- * It exists because a stack of equally-sized objects has to read its depth from
- * somewhere other than size, and size is no longer available once the centring
- * maths gives every window the same on-screen size. Before this, every window
- * in the stack got SHADOW.floating and the nearest one looked no closer than
- * the farthest.
- */
-export const DEPTH_CUE = [
-  '0 14px 40px rgba(0,0,0,0.40)',
-  '0 30px 84px rgba(0,0,0,0.50)',
-  '0 46px 132px rgba(0,0,0,0.62)',
-] as const;
 
 /**
  * Motion presets (P5).

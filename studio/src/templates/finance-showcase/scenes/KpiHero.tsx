@@ -2,6 +2,9 @@ import React from 'react';
 import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {Scene} from '../../../schemas/showcase-v1';
 import {CameraRig} from '../common/CameraRig';
+// Fonts and scaling are NOT theme-scoped, so importing them is correct.
+// Everything that IS theme-scoped (palette, type, spacing, shadow) must come
+// from useDesign() — see tests/test_design_system.py.
 import {FONT_NUM, FONT_SANS, scaleFrom} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {MaskReveal, Reveal, SpecularSweep} from '../common/primitives';
@@ -96,16 +99,16 @@ export const KpiHero: React.FC<{scene: Scene}> = ({scene}) => {
             fontFamily: FONT_NUM,
             fontVariantNumeric: 'tabular-nums',
             color: PALETTE.ink,
-            lineHeight: TYPE.kpiXL.leading,
+            lineHeight: TYPE.numericDisplay.leading,
             overflow: 'hidden',
           }}
         >
           {prefix ? (
-            <span style={{fontSize: TYPE.kpiXL.size * 0.5 * s, color: PALETTE.inkMuted, marginRight: 6 * s}}>
+            <span style={{fontSize: TYPE.numericDisplay.size * 0.5 * s, color: PALETTE.inkMuted, marginRight: 6 * s}}>
               {prefix}
             </span>
           ) : null}
-          <span style={{fontSize: TYPE.kpiXL.size * s, fontWeight: TYPE.kpiXL.weight, letterSpacing: TYPE.kpiXL.tracking}}>
+          <span style={{fontSize: TYPE.numericDisplay.size * s, fontWeight: TYPE.numericDisplay.weight, letterSpacing: TYPE.numericDisplay.tracking}}>
             {fmt(value, decimals)}
           </span>
           {suffix ? (

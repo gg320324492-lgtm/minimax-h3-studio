@@ -142,10 +142,10 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 6.5 | Palette tokens + premium-dark/light 主题 | 🔄 部分 | `PALETTE` 已存在并已接进 StyleBible（6.0 之前的 P4/P5 完成）。本轮新增 `column` / `columnBright`（此前是三处内联 `rgba(245,242,234,α)` 字面量，同一根柱在两个场景是两种颜色）、`DEPTH_CUE` 深度渐变。**premium-light 双主题仍未做** |
-| 6.6 | Typography roles（displayXL…annotation + numeric，全 tabular-nums） | ⬜ | `TYPE` 9 个角色已存在并接进 StyleBible。**缺 numericDisplay / numericTable 两个数字专用角色**（KpiHero 用 `kpiXL/kpiL` 兼代） |
+| 6.5 | Palette tokens + premium-dark/light 双主题 | ✅ | **发现并修掉一个半接线缺陷**：`scene.theme` 字段和 `Backdrop` 里的 `premium-light` 判断早就存在，但四个场景一直从 StyleBible 读 premium-dark —— 图谱作者设 `theme: premium-light` 会得到**亮背景配黑窗口**。半接线比没接线更糟，因为字段看起来是能用的。<br>修法：新增 `design/themes.ts`（**主题 = palette + shadow + depthCue 三件套**。阴影必须随主题走 —— 近黑底上的阴影在纸上等于没有，纸上的阴影在近黑底上是一块淤青）；`StyleBibleProvider` **移进场景循环**（原来包着整片影片，所以 theme 只能在 Backdrop 生效；解析必须发生在 theme 被声明的地方）；`Backdrop` 去掉按主题名的分支（解析后的调色板已经带着本场景的底色，同一个表达式在两种表面上都对，按名字分支正是两种语言漂移的来源）。<br>**实测**（像素采样）：light 背景 (253,252,251)→(244,241,234) = 精确的 #FFFFFF→#F4F1EA；窗口面 (240,240,239)；dark 侧 (15,15,18)/(16,16,19) 未受影响。四场亮色全部目检通过。<br>**但主题第一次渲出来是坏的**，见变更记录 —— 根因不在主题系统 |
+| 6.6 | Typography roles | ✅ | 补齐 `numericDisplay`（展示级数字，232/700，tabular）/ `numericTable`（表格级数字，52/700，tabular）。理由：标题数字和表格数字是**同一个数字的不同排版** —— 前者要紧字距重字重，后者要等宽不换行；此前 KpiHero 拿 `kpiXL`（展示角色）去放一个会动的数字，只好手工补 `tabular-nums` 才不抖。KpiHero 已改用 `numericDisplay` 并删掉手工 tabular 设置。**图谱级覆盖已验证有效**（见变更记录，0.92% 像素变化，变化区域精确落在数字上） |
 | 6.7 | Spacing 尺度 | ⬜ | `SPACE` 已存在并接进 StyleBible。**尺度本身仍是 8/16/24/40/64/104/168，与总任务书要求的 4…96 步长不一致**，未统一 |
-| 6.8 | Depth 层级 | ⬜ | `DEPTH` translateZ 阶梯已存在；**但四个场景没有一个真正用 `DEPTH` token**（各自算自己的 z） |
+| 6.8 | Depth 层级 | ⚠️ **不算完成** | `DEPTH` translateZ 阶梯存在，**但四个场景没有一个用它** —— 场景的深度是构图函数（图谱给的 spreadZ），不是固定台阶。已在 tokens.ts 注明诚实状态。另外**新增了真正在用的深度 token：`DEPTH_CUE`**（每层一个阴影，远→近），因为屏幕等大之后景深只能靠阴影读；此前每个窗口都是同一个 `SHADOW.floating`，最近的那个看起来并不比最远的近 |
 
 ---
 
@@ -275,3 +275,10 @@
   - **取舍已显式化而非隐式**：精确居中 ↔ 真透视尺寸在数学上互斥（透视下中心对称与剪影对称不可兼得，已推导）。做成图谱里的 `equalOnScreen` 显式二选一，两种都渲了都量了（+1.5px / +30.0px），默认精确居中。**没有偷偷选一个然后声称只有一个是对的**。
   - **方法论边界（新发现）**：`measure_frame.py` 的表面色剪影判据**只在无损 still 上可信**。同一帧从 h264 mp4 抽出来，Calendar 的剪影从 −0.5px 变成 −34px，而内容 bbox 仍是 0.0px —— 压缩噪声推过了颜色阈值。以后量交付视频一律用内容判据，量 still 才用剪影判据。
   - **顺手修的真缺陷**：`test_real_binary_still_prepends` 用 `os.environ['PATH'] = ...` 裸赋值且从不还原，**把被清空的 PATH 泄漏给整个测试会话**。此前没暴露只因没有别的测试需要 node。这是本项目第一次出现「一个测试污染另一个测试」。
+- 2026-09-30：**P6.5–6.8 Design System 收尾 —— 双主题真正生效**。67 passed，tsc 干净，完整渲出 `out/showcase_p6_theme.mp4`（`yuv420p(tv, bt709)`）。四场亮色 + 四场暗色逐场目检。
+  - **主题系统第一次渲染出来是坏的，而且是本项目最典型的一类事故**：演示图谱的 `style_bible` 声明了 15 个键，**只有 1 个真的生效**（`cameraLanguage.perspective`，且恰好等于默认值）。`palette` 抄的是暗色主题的原值 —— 对暗色渲染毫无作用，却把亮色主题打成了**明暗交替的半成品**（实测：bgAlt=#FFFFFF 亮、bg=#0A0A0C 暗、surf=#141418 暗、surfE=#FBFAF6 亮，全在同一个调色板对象里）。`typography` 写的是 `"900 120px Bahnschrift"` 这种 CSS 简写字符串，而 token 是 `{size,weight,tracking,leading}` 对象，`mergeSection` 的类型守卫把 4 个全部**静默丢弃**，而且角色名（display/kpi/body）根本不存在。
+  - **定位过程值得记**：先量像素（背景 217→10，算出渐变两端一亮一暗）→ 网格采样确认是渐变本身而不是遮挡 → **把解析结果直接渲染进画面**（`DEBUG theme=… bgAlt=… bg=…`）才拿到确证。**推测（"是不是两个组件用了两套调色板"）错了一整轮，最后的答案在图谱文件里，我从头到尾没打开过它**。教训：组件层的值可疑时，先查喂给它的数据。
+  - **删掉的比加上的重要**：删掉那份哑 style_bible，换成**一个**真生效的声明（`typography.numericDisplay.tracking`），并 A/B 验证 —— 0.92% 像素变化、变化区域精确落在 x[289..744] y[408..598]（就是那个大数字）。**一个能证明的声明，胜过十五个看起来像声明的东西。**
+  - **顺手接上了一个哑字段**：`cameraLanguage.perspective` 之前没有任何代码读（`CameraRig` 只看 `scene.camera`）。已接为缺省值（场景自己的优先）。注意这份图谱每个场景都自带 perspective，所以对它是缺省而非覆盖 —— 已在图谱里不放该声明，**不声明一个接上了但对这份图谱无效的东西**。
+  - **测量工具自身也有主题盲区**：`measure_frame.py` 原来按暗色表面色（`R≥19`）判剪影，亮色四场全部 EMPTY。**只对一个主题有效的验收工具，会安静地给另一个主题发错通行证。** 已重写为**背景相对**判据（取画面边框环的众数作背景，再按偏离量取 bbox），两个主题通用。同时把误导性的 `ink` 标签改成 `marks` 并写明它测的是内容范围不是居中。
+  - **仍未做（如实记）**：`SPACE` 尺度仍是 8/16/24/40/64/104/168，与总任务书要求的 4…96 步长不一致；`DEPTH` 阶梯无场景使用；`CameraRig`/`primitives` 仍静态 import `MOTION`，所以 `motionLanguage` 的覆盖到不了它们（与本轮发现同类的哑声明，已记录未修）。
