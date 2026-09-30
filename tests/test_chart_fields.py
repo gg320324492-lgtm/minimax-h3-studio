@@ -183,14 +183,65 @@ def test_registry_check_does_not_depend_on_the_chart_directory():
     )
 
 
-def test_set_path_builds_missing_intermediate_objects():
-    """A/B must be able to probe any depth without the caller hand-building a
-    whole document — otherwise nobody runs it on nested fields."""
-    doc = {'scenes': [{'id': 's1'}]}
-    ab._set_path(doc, 'style_bible.typography.heading.size', 96)
-    assert doc['style_bible']['typography']['heading']['size'] == 96
-    # existing structure is preserved, not clobbered
-    assert doc['scenes'][0]['id'] == 's1'
+def test_a_new_leaf_is_allowed_but_a_new_container_is_refused(tmp_path):
+    """The rule that separates "set a field nobody has set" from "you typed the
+    path wrong".
+
+    Both used to end the same way: a key created where nothing read it, a 0px
+    measurement, and a report saying INERT — which is indistinguishable from a
+    real finding. The review hit this and spent a round unable to reproduce a
+    matrix row that had been working the whole time, because `scenes[0]` with
+    brackets is just a key NAME and the tool built a phantom object for it.
+
+    So: a leaf may be new, an ancestor may not.
+    """
+    import pytest as _pytest
+    # a leaf that does not exist yet is legitimate — that is how you A/B an
+    # option no graph has ever set
+    doc = {'layout': {'spreadX': 250}}
+    ab._set_path(doc, 'layout.showValues', True)
+    assert doc['layout']['showValues'] is True
+    assert doc['layout']['spreadX'] == 250, 'existing values are untouched'
+
+    # a container that does not exist is a mistake, and is refused rather than
+    # created
+    with _pytest.raises(ab.PathError) as exc:
+        ab._set_path(doc, 'style_bible.typography.heading.size', 96)
+    assert 'style_bible' in str(exc.value)
+    assert 'style_bible' not in doc, 'a refused path must not leave a phantom behind'
+
+
+def test_bracket_syntax_is_refused_with_the_right_hint():
+    """`scenes[0]` is a key name, not an index. Saying so is the whole fix."""
+    import pytest as _pytest
+    doc = {'scenes': [{'content': {'chart': {'emphasisIndex': 4}}}]}
+    with _pytest.raises(ab.PathError) as exc:
+        ab._set_path(doc, 'scenes[0].content.chart.emphasisIndex', 1)
+    msg = str(exc.value)
+    assert 'bracket' in msg.lower()
+    assert 'scenes.0.content.chart.emphasisIndex' in msg, 'the error must show the right form'
+    assert 'scenes[0]' not in doc, 'nothing may be created'
+
+    # the dotted form reaches the same value
+    ab._set_path(doc, 'scenes.0.content.chart.emphasisIndex', 1)
+    assert doc['scenes'][0]['content']['chart']['emphasisIndex'] == 1
+
+
+def test_a_wrong_path_is_reported_as_a_caller_error_not_a_finding(capsys):
+    """The distinction the whole change is for.
+
+    INERT means "this field changes nothing on screen" — a claim about the code.
+    BAD PATH means "you asked about a field that is not there" — a claim about
+    the call. Printing the second in the first's vocabulary is how a typo becomes
+    a line in the ledger.
+    """
+    code = ab.main(['--props', str(ROOT / 'pipeline' / 'examples' / 'charts_demo.json'),
+                    '--set', 'scenes[0].content.chart.emphasisIndex=1',
+                    '--frame', '120'])
+    assert code == 2, 'a bad path is a caller error, so it exits 2 like the other refusals'
+    out = capsys.readouterr().out
+    assert 'BAD PATH' in out
+    assert 'INERT' not in out, 'a caller error must not be reported as a finding'
 
 
 def test_check_value_parses_literals_and_leaves_plain_strings():

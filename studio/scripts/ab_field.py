@@ -126,6 +126,14 @@ def frame_name(frame: int) -> str:
     return f'f{frame:05d}.png'
 
 
+class PathError(ValueError):
+    """The path is wrong, as opposed to the field being inert.
+
+    The two are indistinguishable in a pixel count, and conflating them is how a
+    typo gets recorded as a finding.
+    """
+
+
 def _segments(doc: dict, dotted: str) -> list[str]:
     return dotted.split('.')
 
@@ -152,10 +160,10 @@ def _descend(node, key: str, create: bool):
         return node, idx
     if not isinstance(node, dict):
         raise KeyError(f'cannot descend into {type(node).__name__} at {key!r}')
-    nxt = node.get(key)
-    if nxt is None and create:
-        nxt = {}
-        node[key] = nxt
+    if key not in node:
+        if not create:
+            raise KeyError(key)
+        node[key] = {}
     return node, key
 
 
@@ -216,17 +224,51 @@ def check_value(doc: dict, dotted: str, raw: str) -> tuple[object, str | None]:
 
 
 def _set_path(doc: dict, dotted: str, value: object) -> None:
+    """Set a leaf, creating it — but never inventing the structure above it.
+
+    Two mistakes produce the same output as a dead field, and the difference
+    matters:
+
+      scenes.0.content.chart.emphasisIndex   the real path; 0 is an index
+      scenes[0].content.chart.emphasisIndex  bracket syntax; "scenes[0]" is
+                                             just a key name, so this created a
+                                             top-level object nobody reads, and
+                                             the measurement came back 0px —
+                                             which reads exactly like "this
+                                             option is inert". It is not. It is
+                                             a typo, and it nearly cost a review
+                                             round on a matrix row that was
+                                             working perfectly.
+
+    So the rule is: a leaf may be new, but an ANCESTOR may not. Setting a field
+    the graph has never mentioned is legitimate — that is how you A/B an option
+    nobody set yet. Inventing a container three levels up is a mistake, and it
+    is refused rather than measured.
+    """
     parts = _segments(doc, dotted)
+    for part in parts:
+        if '[' in part or ']' in part:
+            raise PathError(
+                f'{part!r} uses bracket syntax. This tool takes a dotted path, so a '
+                f'list index is a bare number: scenes.0.content.chart.emphasisIndex. '
+                f'Bracket syntax silently creates a key literally named "{part}", '
+                f'nothing reads it, and the measurement reports the field as inert.'
+            )
     node = doc
     for key in parts[:-1]:
-        parent, k = _descend(node, key, create=True)
+        try:
+            parent, k = _descend(node, key, create=False)
+        except KeyError as exc:
+            raise PathError(
+                f'{dotted}: no {key!r} at this level. Only the LAST segment may be '
+                f'new — a missing container means the path is wrong, and creating '
+                f'it would measure a field nobody reads and report it as inert. '
+                f'({exc})'
+            ) from exc
         node = parent[k]
     last = parts[-1]
     parent, k = _descend(node, last, create=True)
-    if isinstance(parent, list):
-        parent[k] = value
-    else:
-        parent[k] = value
+    parent[k] = value
 
 
 def ab_field(
@@ -254,7 +296,10 @@ def ab_field(
 
     base = json.loads(props.read_text(encoding='utf-8'))
     alt = json.loads(props.read_text(encoding='utf-8'))
-    _set_path(alt, dotted, value)
+    try:
+        _set_path(alt, dotted, value)
+    except PathError as exc:
+        raise PathError(str(exc)) from exc
 
     # a stale frame here is what produced a confident wrong number before
     if out_dir.exists():
@@ -413,12 +458,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f'  REFUSED — {err}')
         return 2
 
-    found, _ = _get_path(doc, field)
-    res = ab_field(props, field, value, args.frame, Path(args.out), comp=args.comp)
+    found, current = _get_path(doc, field)
+    try:
+        res = ab_field(props, field, value, args.frame, Path(args.out), comp=args.comp)
+    except PathError as exc:
+        # A wrong path is a CALLER error and is reported in those words. The
+        # alternative — a 0px result and "INERT" — is indistinguishable from a
+        # real finding, and a finding that is really a typo goes into the ledger
+        # and gets argued about.
+        print(f'  BAD PATH — {exc}')
+        return 2
     ink = frame_ink(Path(res['a']))
 
     print(f'  field    {field} = {json.dumps(value, ensure_ascii=False)}'
-          f'{"  (NEW — no previous value to compare against)" if not found else ""}')
+          f'{"  (NEW — no previous value to type-check against)" if not found else ""}'
+          f'{"  (was " + repr(current) + ")" if found else ""}')
     print(f'  frame    {res["frame"]}   content on that frame: {ink:.2f}% of pixels')
     print(f'  compared {res["a"]}')
     print(f'        vs {res["b"]}')
