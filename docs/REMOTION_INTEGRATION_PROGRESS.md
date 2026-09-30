@@ -172,3 +172,4 @@
 - 归档（不删）：4 个 `.pre-v2.bak` + `09_final.pre-v2.bak`（233MB 旧交付备份）→ `ceo_mindread_ep01/_archive_prev2/`；`_archive_20260910_rerun/`（407MB v1 交付存档）保留原位。
 - 保留：`logs/`（活跃管线日志）、`09_final*/` 现行交付。
 - 2026-09-30：**仓库转公开**（隐私/凭据/IP 四类审计通过）。出库：4 个 Mixkit 派生音频（本地保留，gitignore）+ 12 个 vendor 技能目录（可重装）。当前公开内容 = 模板代码 + 契约 + 文档 + CC0/自研音频；H3 prompt/种子/剧本按用户决策一并公开。
+- 2026-09-30：**仓库转公开前完成历史净化**（用户决策：prompt/种子/剧本/timeline 只留本地）。git filter-repo 从全部历史清除 37 个敏感文件（workflows JSON、各项目 seed_manifest/story/dialogue/shots/timeline、prompt 型生成脚本）；本地文件备份于 `E:/H3_local_private/repo_backup/` 并已恢复为 gitignore 的未跟踪状态；强制推送重写后的历史（999088a），远端树验证 0 敏感路径。同轮：仓库转 PUBLIC + About/topics（remotion/comfyui/text-to-video/ai-video/douyin/real-esrgan）。
