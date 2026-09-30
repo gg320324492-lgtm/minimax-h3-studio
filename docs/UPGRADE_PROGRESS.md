@@ -53,7 +53,16 @@
 
 ---
 
-## P3 — Showcase Scene Graph　状态：⬜
+## P3 — Showcase Scene Graph　状态：✅ 完成
+
+| # | 任务 | 状态 | 结论/数据 |
+|---|---|---|---|
+| 3.1 | showcase-v1 契约（JSON Schema + zod 镜像） | ✅ | pipeline/schemas/showcase-v1.schema.json（draft-07）+ studio/src/schemas/showcase-v1.ts。20 种 scene 类型、Camera（perspective/translateXYZ/rotateXYZ/scale/focus 各自独立轨道）、Motion（premium/energetic/cinematic/minimal）、Transition、StyleBible、format 元数据驱动 |
+| 3.2 | Python 加载/校验/时序推导 | ✅ | pipeline/scene_graph.py：7 类错误全部抓出（重复 id/未知类型/零时长/坏 camera 轨道/非法 fps/未知 motion profile/空 scenes）；`resolve()` 推导 startFrame；`generative_scenes()` 按类型路由 H3 vs 程序化 |
+| 3.3 | Camera 与组件 motion 分离 | ✅ | camera 独立 schema，组件动效走 motion.preset —— P3 设计规则已编码进契约 |
+| 3.4 | 双端不漂移 | ✅ | tests/test_showcase_schema_parity.py：scene 类型/camera 通道/generative 路由三处 Python↔TS↔JSON Schema 对照（7 项） |
+| 3.5 | 卡点量化 | ✅ | **发现并修正一个数学事实**：60fps@126BPM 每拍 28.5714 帧——整数帧永远无法精确落拍。改为**吸附最近拍**（非向上取整），并让 `on_beat()` 以半拍为界（整数帧的数学上界）。**更关键**：场景时长必须对齐拍网格（4/8/12 拍 = 114/229/343 帧），否则误差累积 —— 已加 beat_aligned_durations() 告警并给出修复建议，demo 已对齐（起点 0/229/458/572 全部 ≤0.5 帧） |
+| 3.6 | 样例图谱 | ✅ | pipeline/examples/showcase_demo.json：对齐参考片 24-40s 的四类代表 scene（kpi-hero / browser-stack / dashboard / calendar），1920x1080@60、13.35s、**纯程序化零 H3** |
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
