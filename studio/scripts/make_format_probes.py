@@ -202,16 +202,22 @@ def _self_test(baseline_text: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=str(DEFAULT_OUT))
+    ap.add_argument('--baseline', default=str(BASELINE),
+                    help='the graph to derive probes from; it is opened read-only. '
+                         'A second baseline is what lets the same machinery prove '
+                         '"only format changed" for charts_demo.json instead of '
+                         'growing a second copy of these checks that can drift.')
     ap.add_argument('--verify-only', action='store_true')
     ap.add_argument('--self-test', action='store_true',
                     help='check that the byte-level guard rejects damaged probes')
     args = ap.parse_args(argv)
 
+    baseline_path = Path(args.baseline).resolve()
     out_dir = Path(args.out)
-    baseline_text = _read_exact(BASELINE)
+    baseline_text = _read_exact(baseline_path)
     baseline = json.loads(baseline_text)
     if 'format' not in baseline:
-        raise SystemExit(f'{BASELINE} has no `format`; refusing to write probes from it')
+        raise SystemExit(f'{baseline_path} has no `format`; refusing to write probes from it')
 
     if args.self_test:
         return _self_test(baseline_text)
@@ -219,7 +225,11 @@ def main(argv: list[str] | None = None) -> int:
     if not args.verify_only:
         out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f'baseline  {BASELINE.relative_to(ROOT)}  {baseline["format"]}')
+    try:
+        shown_baseline = baseline_path.relative_to(ROOT)
+    except ValueError:
+        shown_baseline = baseline_path
+    print(f'baseline  {shown_baseline}  {baseline["format"]}')
     print(f'probes    {out_dir}\n')
 
     failures = 0

@@ -170,6 +170,27 @@ if (parsed.success) {
   );
 }
 
+console.log('\nfps is not a scene property: the frame count must not follow it');
+{
+  // Measured, not assumed: showcase_demo.json is 801 frames at 60, 30 AND 120
+  // fps, so the same graph runs 13.35s / 26.70s / 6.67s. Scene lengths are
+  // authored in frames, which is a deliberate choice and has a consequence
+  // worth pinning: the same frame number is a DIFFERENT moment of the film at a
+  // different rate. At frame 515 the 30fps and 60fps renders differ by 16.57%
+  // of the frame, because the camera ramp is wall-clock anchored
+  // (`cameraMoveFrames = seconds * fps`, checked in scale.check.ts) while the
+  // scene lengths are not. Silent on this, someone changes fps to make a render
+  // faster and the camera silently moves.
+  const counts = [60, 30, 120].map((fps) =>
+    resolveShowcaseMeta({...graph(), format: {width: 1920, height: 1080, fps}}).durationInFrames
+  );
+  check('the frame count is identical at 30, 60 and 120 fps',
+    new Set(counts).size === 1, `${counts.join(' / ')}`);
+  check('and it is the sum of the scenes, so it is authored not derived from fps',
+    counts[0] === graph().scenes.reduce((n, s) => n + s.durationInFrames, 0),
+    `${counts[0]}`);
+}
+
 if (failures) {
   console.log(`\n${failures} check(s) failed`);
   process.exit(1);

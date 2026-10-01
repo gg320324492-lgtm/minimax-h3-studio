@@ -184,3 +184,33 @@ def test_invalid_graph_metadata_is_not_silently_defaulted():
     assert 'GRAPH_KEYS' in meta, (
         'the absent test must key on declared graph fields, not on one of them'
     )
+
+
+def test_the_chart_plot_box_is_the_design_box_scaled_not_the_frame():
+    """The frame's height is not a design quantity, and reading it as one held.
+
+    `scaleFor` had already been fixed to take both axes, and every chart still
+    sized its plot box from `comp.height - padY`. That is the same number as
+    `DESIGN_HEIGHT * s - padY` on every same-aspect format, which is why a
+    1920x1080 render and a 3840x2160 render both looked right and the bug was
+    invisible. On 1080x1920 the two expressions part company: s = 0.5625, so the
+    design height is 607.5 while the frame is 1920, and the chart was STRETCHED
+    rather than scaled -- five bars measured 1223/1012/1331/943/1557 px tall
+    against 319/285/345/260/406 for the scaled design box, 3.4x too tall, with
+    the baseline at y=1824 instead of 532.
+
+    So this asserts the shape of the expression rather than a value: the plot
+    box may not be derived from the frame. Every same-aspect format renders
+    identically either way, so only a format with a different aspect ratio can
+    tell them apart -- which is the same reason the defect survived from P7.1.
+    """
+    frame = (TEMPLATE / 'charts' / 'ChartFrame.tsx').read_text(encoding='utf-8')
+    assert 'DESIGN_WIDTH * s' in frame and 'DESIGN_HEIGHT * s' in frame, (
+        'the plot box must be the DESIGN box scaled by s'
+    )
+    for line in frame.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(('const W =', 'const H =')):
+            assert 'comp.width' not in stripped and 'comp.height' not in stripped, (
+                f'plot box derived from the frame, which is not a design quantity: {stripped}'
+            )

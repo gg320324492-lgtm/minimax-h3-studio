@@ -64,12 +64,15 @@
 | 3.5 | 卡点量化（两轮复验修复） | ✅ | **复验两次各抓出一个我漏报的问题**。第一轮：误差单调累积（每场 +0.43 帧，10 场 3.86 帧/64ms）。第二轮：`floor` 修掉重叠后，`round` 起点配 `floor` 时长在 frac≥0.5 时必然差 1 帧 —— **重叠变成了同量级的空隙**，而 `startFrame >= prev.endFrame` 断言天然看不见空隙。**根因不是选 round 还是 floor**：`round(a)+round(b) ≠ round(a+b)`，任何「起点一种舍入+时长另一种」的组合都会留 1 帧缺陷。**最终解法是结构性的**：在拍空间算出每场的起止边界，时长 = end − start，于是 start[i+1] == end[i] 由构造保证，重叠与空隙**同时不可表达**；漂移仍 ≤0.5 帧且不累积。配套：`on_beat()` 容差改半帧（原半拍宽松 29 倍）；`beat_aligned_durations` 改测 resolve() 实际输出；resolve 输出新增 `adjusted` 标记，CLI 用 `*` 显式暴露「声明 801f → 实际 800f」的量化差异。**流程教训（本项目第三次同类问题）**：mtime→严格模式、round→floor 都是在二元选项里换边；正确解法在选项之外——「让错误在结构上不可表达」，而不是选对参数 |
 | 3.6 | 样例图谱 | ✅ | pipeline/examples/showcase_demo.json：对齐参考片 24-40s 的四类代表 scene（kpi-hero / browser-stack / dashboard / calendar），1920x1080@60、13.35s、**纯程序化零 H3** |
 
+
+**以下为 P3 立项时的原始清单，已被上表取代，不计入任务**（编号与上表重复、状态全为 ⬜，任何按任务行统计的读法都会把它算成未完成）。保留原文以供对照，故行号加删除线、状态改为 `—`。
+
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 3.1 | `schemas/showcase-v1.ts` + JSON Schema 导出 | ⬜ | |
-| 3.2 | 20 种 scene 类型注册 | ⬜ | video/kpi-hero/browser-window/browser-stack/dashboard/stat-card/card-grid/calendar/bar-chart/line-chart/area-chart/bubble-chart/rank-chart/slope-chart/heatmap/data-table/quote/data-plane-3d/logo/outro |
-| 3.3 | Camera Model（perspective/translate/rotate/scale/focus 曲线，与组件 motion 分离） | ⬜ | |
-| 3.4 | Motion Profile（premium/energetic/cinematic/minimal） | ⬜ | |
+| ~~3.1~~ | `schemas/showcase-v1.ts` + JSON Schema 导出 | — | |
+| ~~3.2~~ | 20 种 scene 类型注册 | — | video/kpi-hero/browser-window/browser-stack/dashboard/stat-card/card-grid/calendar/bar-chart/line-chart/area-chart/bubble-chart/rank-chart/slope-chart/heatmap/data-table/quote/data-plane-3d/logo/outro |
+| ~~3.3~~ | Camera Model（perspective/translate/rotate/scale/focus 曲线，与组件 motion 分离） | — | |
+| ~~3.4~~ | Motion Profile（premium/energetic/cinematic/minimal） | — | |
 
 ---
 
@@ -95,14 +98,17 @@
 
 **P4 修复记录**：复验指出三处——① style_bible 未接线（架构级，已修，见 4.8）② Browser Stack 整簇偏右、Errors 窗口被右边缘裁切（横向间距 330→250、窗宽 560→520，已修）③ Data Columns 标题压柱阵且仅占画面 25%（重标定尺度 + 标题上移；根因之一是模板字符串里 `-330 * s` 未插值 `$`，CSS 收到非法值后整条 transform 被丢弃——这类"静默失效"值得警惕）。
 
+
+**以下为 P4 立项时的原始清单，已被上表取代，不计入任务**（编号与上表重复、状态全为 ⬜，任何按任务行统计的读法都会把它算成未完成）。保留原文以供对照，故行号加删除线、状态改为 `—`。
+
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 4.1 | 模板骨架 1920×1080@60fps（premium 语言，不复用 energetic 特效） | ⬜ | |
-| 4.2 | Scene A — KPI Hero（count-up/odometer/eyebrow/micro-settle/自定义数字字体） | ⬜ | |
-| 4.3 | Scene B — 3D Dashboard Stack（BrowserWindow/PerspectiveCard/DepthStack/CameraRig） | ⬜ | |
-| 4.4 | Scene C — Big Number + 3D Columns（camera tilt/纵深柱阵/staged build） | ⬜ | |
-| 4.5 | Scene D — Calendar / Data Grid（SVG calendar/高亮/mask reveal/表格动效） | ⬜ | |
-| 4.6 | 扩展：Quote/Rank/Dashboard Overview/Data Plane/Window Wall/Logo/CTA | ⬜ | |
+| ~~4.1~~ | 模板骨架 1920×1080@60fps（premium 语言，不复用 energetic 特效） | — | |
+| ~~4.2~~ | Scene A — KPI Hero（count-up/odometer/eyebrow/micro-settle/自定义数字字体） | — | |
+| ~~4.3~~ | Scene B — 3D Dashboard Stack（BrowserWindow/PerspectiveCard/DepthStack/CameraRig） | — | |
+| ~~4.4~~ | Scene C — Big Number + 3D Columns（camera tilt/纵深柱阵/staged build） | — | |
+| ~~4.5~~ | Scene D — Calendar / Data Grid（SVG calendar/高亮/mask reveal/表格动效） | — | |
+| ~~4.6~~ | 扩展：Quote/Rank/Dashboard Overview/Data Plane/Window Wall/Logo/CTA | — | |
 
 ---
 
@@ -118,14 +124,17 @@
 
 **P5 遗留**：charts 组件集（P7）、Design System 正式化（P6）、scene 转场只实现了 in 未实现 out、reveal 原语尚未接入四个场景（已可用未全用）。
 
+
+**以下为 P5 立项时的原始清单，已被上表取代，不计入任务**（编号与上表重复、状态全为 ⬜，任何按任务行统计的读法都会把它算成未完成）。保留原文以供对照，故行号加删除线、状态改为 `—`。
+
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 5.1 | Camera primitives：CameraRig/DepthStack/ParallaxLayer/FocusLayer | ⬜ | |
-| 5.2 | Layout：SafeArea/Grid/Stack/WindowFrame/Card | ⬜ | |
-| 5.3 | Typography：KpiNumber/Odometer/AnimatedText/MaskText/Label | ⬜ | |
-| 5.4 | Motion：MaskReveal/SlideReveal/ScaleReveal/DepthPush/CameraPush/CameraOrbit/SharedAxis/StaggerGroup | ⬜ | |
-| 5.5 | Visual：SpecularSweep/SoftGlow/Vignette/NoiseTexture/GridBackground | ⬜ | |
-| 5.6 | `motionTokens.ts` 集中 spring 预设（micro/standard/hero/slowCinematic/camera/overshoot/settle） | ⬜ | |
+| ~~5.1~~ | Camera primitives：CameraRig/DepthStack/ParallaxLayer/FocusLayer | — | |
+| ~~5.2~~ | Layout：SafeArea/Grid/Stack/WindowFrame/Card | — | |
+| ~~5.3~~ | Typography：KpiNumber/Odometer/AnimatedText/MaskText/Label | — | |
+| ~~5.4~~ | Motion：MaskReveal/SlideReveal/ScaleReveal/DepthPush/CameraPush/CameraOrbit/SharedAxis/StaggerGroup | — | |
+| ~~5.5~~ | Visual：SpecularSweep/SoftGlow/Vignette/NoiseTexture/GridBackground | — | |
+| ~~5.6~~ | `motionTokens.ts` 集中 spring 预设（micro/standard/hero/slowCinematic/camera/overshoot/settle） | — | |
 
 ---
 
@@ -149,7 +158,7 @@
 
 ---
 
-## P7 — 图表引擎　状态：🔄 进行中
+## P7 — 图表引擎　状态：✅ 完成
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
@@ -160,12 +169,12 @@
 
 ---
 
-## P8 — Format 数据驱动　状态：🔄 进行中
+## P8 — Format 数据驱动　状态：✅ 完成
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
 | 8.1 | `calculateMetadata` 返回 width/height/fps/durationInFrames | ✅ | **代码 P6 起就已存在，但「返回 format」不等于「按 format 渲」** —— 审计才把这两件事分开。`showcaseMeta`（`FinanceShowcaseWide.tsx`）四项全返回、`Root.tsx:63` 已接上，`render.mjs` 走 `selectComposition` 所以 format 确实来自图谱。**但布局是高度驱动的**：`scaleFrom(height) = height/1080`，**全库没有任何东西读帧宽**。于是竖版一渲就横向溢出（见 8.2）。<br>**修法**：`scaleFrom` **删除**（不留别名 —— 「一个只认高度的缩放器存在」本身就是病因），换成 `scaleFor(width, height) = min(w/1920, h/1080)`（contain），补上缺失的 `DESIGN_WIDTH`。**11 处生产调用点**全改（含 `styleBible.useScale()` 与 `primitives.tsx` 三处内联的 `comp.height/1080`）。<br>**附带**：判据抽成纯模块 `schemas/showcaseMeta.ts`（只依赖 zod，因此可测），组件里只剩两行包装 —— 原判据在 React 组件内部，**「图谱写坏会怎样」这个问题在不渲一帧的前提下无法提出**。<br>16:9 不变性**实测**：`orig` vs `scaleonly` @f343 = **0 px 逐位相同**（`min(1,1)=1`）。 |
-| 8.2 | 验证 1920×1080@60 / 1080×1920@60 / 3840×2160@60 | ✅ **但验证本身抓出三个缺陷** | **实测数据（复验重测，判据 = 内容像素 `max channel > 30`；背景渐变 ≤18、内容 ≥49，两侧留足余量）**：<br>**① 竖版横向溢出（已修）**。`scaleFrom(1920)=1.7778` 而帧只有 1080 宽。修前三帧**全部 `x 0-1079` 双向裁切**；修后 **v515 x 255-824（边距 L255 R255）、v343 x 231-857、v259 x 255-844，全部干净**。<br>**② 静默回退（已修）**。`safeParse` 失败时旧代码返回 `1920×1080@60 / 1 帧` —— 图谱写坏时渲染器**不报错**，交出一段别的东西。`broken.json`（`width: "1920"`）现在抛：`showcase-v1: this graph does not match the schema, so its render format cannot be trusted.` + `format.width: Invalid input: expected number, received string`。**旧代码在帧 515 报的是 `Cannot use frame 515: Duration of composition is 1` —— 在怪帧号，而不是在怪图谱。**<br>**③ `Math.max` 方向错误，token 在所有已交付场景里都是死的（已修）**。HEAD 的 `rampOf` 结尾是 `Math.max(1, seconds*fps/sceneFrames)`：`229 帧 ÷ (2.6s×60fps=156) = 0.68`，而 **`Math.max(1, 0.68) = 1`** —— clamp 只往上抬，于是**任何长于标称时长的场景，ramp 都被抬成 1.0，相机动机跑满整场**，`premiumCameraSeconds: 2.6` 被乘出来然后丢掉。藏在其下的 fps 依赖是真的，但只在**短于**标称时长的场景上显形，所以之前没被发现。改为 `cameraMoveFrames = seconds*fps`（绝对帧数，**不取整**：energetic 0.55s 在 30fps 是 16.5 帧，`Math.round` 会变 17，等于把刚要修掉的 fps 依赖装回去）→ premium 在 229 帧场景第 **156** 帧到位、后 72 帧静止，与 token 声明和 `CameraRig` 两处注释一致。<br>**施工方主动更正了自己上一轮的判断**（原文称「60fps 只差不到一帧」，是把 `Math.max` 的方向写反了）—— 这条更正比原结论有价值，已留在变更记录。 |
+| 8.2 | 验证 1920×1080@60 / 1080×1920@60 / 3840×2160@60 | ✅ **但验证本身抓出三个缺陷** | **实测数据（复验重测，判据 = 内容像素 `max channel > 30`；背景渐变 ≤18、内容 ≥49，两侧留足余量）**：<br>**① 竖版横向溢出（已修）**。`scaleFrom(1920)=1.7778` 而帧只有 1080 宽。修前三帧**全部 `x 0-1079` 双向裁切**；修后 **v515 x 255-824（边距 L255 R255）、v343 x 231-857、v259 x 255-844，全部干净**。<br>**② 静默回退（已修）**。`safeParse` 失败时旧代码返回 `1920×1080@60 / 1 帧` —— 图谱写坏时渲染器**不报错**，交出一段别的东西。`broken.json`（`width: "1920"`）现在抛：`showcase-v1: this graph does not match the schema, so its render format cannot be trusted.` + `format.width: Invalid input: expected number, received string`。**旧代码在帧 515 报的是 `Cannot use frame 515: Duration of composition is 1` —— 在怪帧号，而不是在怪图谱。**<br>**③ `Math.max` 方向错误，token 在所有已交付场景里都是死的（已修）**。HEAD 的 `rampOf` 结尾是 `Math.max(1, seconds*fps/sceneFrames)`：`229 帧 ÷ (2.6s×60fps=156) = 0.68`，而 **`Math.max(1, 0.68) = 1`** —— clamp 只往上抬，于是**任何长于标称时长的场景，ramp 都被抬成 1.0，相机动机跑满整场**，`premiumCameraSeconds: 2.6` 被乘出来然后丢掉。藏在其下的 fps 依赖是真的，但只在**短于**标称时长的场景上显形，所以之前没被发现。改为 `cameraMoveFrames = seconds*fps`（绝对帧数，**不取整**：energetic 0.55s 在 30fps 是 16.5 帧，`Math.round` 会变 17，等于把刚要修掉的 fps 依赖装回去）→ premium 在 229 帧场景第 **156** 帧到位、后 72 帧静止，与 token 声明和 `CameraRig` 两处注释一致。<br>**施工方主动更正了自己上一轮的判断**（原文称「60fps 只差不到一帧」，是把 `Math.max` 的方向写反了）—— 这条更正比原结论有价值，已留在变更记录。 <br>**⑤ chart 场景三档复验（10-01，本阶段收尾）—— 抓到并修掉一个 P7.1 遗留缺陷**。P7.3 的整条证据链（柱标签、slope 轴、A/B 26/26、成片 1950 帧）**全部建立在 1920×1080 单档上**，而缩放器是共享的。用 `--baseline` 从 `charts_demo.json` 派生探针（只改 `format`，字节校验 + self-test），三档 × 四帧共 12 张全部渲出、无裁切。<br>**缺陷**：`ChartFrame.tsx` 的 plot 盒取自 `H = comp.height - padY` —— **原始帧高**，而标记/字体/padding 全乘 `s`。这行来自 **`11b9274`（P7.1）**，不是 P8 引入的；**P8 让它第一次能被渲出来**。`comp.width - padX` 恰好正确是因为三档都满足 `comp.width = DESIGN_WIDTH × s`，**高度只在首个非 16:9 格式上分家**（竖版 s=0.5625：设计高 607.5、帧高 1920）。实测竖版五根柱 **1223/1012/1331/943/1557px**，设计值 **319/285/345/260/406** —— **被拉伸 3.4 倍**，基线落在 y=1824 而非 532。**修法是结构性的**：plot 盒 = **设计盒 × s**，不再是「帧减 padding」。**16:9 与 4K 共 8 张渲染 `0 px` 逐位相同**（构造上即 no-op，已用像素证明），竖版柱高回到 **318/263/353/252/406**、slope 顶部墨迹 hd 87 / 竖版 48（预期 49）/ 4K 174（预期 174）。<br>**顺带把竖版图表居中**：`offsetY = max(0, (comp.height - DESIGN_HEIGHT × s) / 2)`，修前竖版图表贴顶（上方留白 33、下方 **1385px**），修后上下 **690/729、703/710、762/714、689/714** —— 与场景的「上下各约 700px」一致。**同样是 16:9/4K 的 0 px no-op**（`comp.height` 在这两档恰等于 `DESIGN_HEIGHT × s`）。<br>**柱标签主张三档复测**：hd **−10/−9/−10/−10/−9px**，与 P7.3 声称逐项吻合；4K/竖版大体随 `s` 缩放，个别柱偏差来自**标签与柱顶只隔 1–2px、该间隙在缩放后不成立**（P7.3 记录过的同类污染读数），**不是新缺陷**。 |
 
 ---
 
@@ -414,3 +423,18 @@
     **两条合起来是一件事：验证者给的数字和施工方给的数字，会以同样的方式错。**
   - **未做（明确留后）**：**chart 场景（`charts_demo.json`）未做像素验证** —— `ChartFrame.tsx` 换了缩放器调用，而 P7.3 的整条证据链（柱标签 −9/−10px、slope 21px、A/B 26/26、成片 1950 帧）**全部建立在 1920×1080 单档上**；缩放器是共享的，`min(2,2)=2` 的算术成立，**但 P7.3 的像素数字在 4K 下一个都没验过**。连同 P7.3 遗留的 `declutterByY` 调用点守卫与 A/B 矩阵进 `tests/`，**一并放在 P8 收尾**。
   - **另有人工项在册未动**：P6 遗留 6.7 `SPACE` 尺度（仍 8…168 而非规定的 4…96）/ 6.8 `DEPTH` 四场无一使用；`shot_specs.json` 创作字段；音频听感。
+- 2026-10-01：**P8 收尾 —— chart 场景三档像素验证抓到 P7.1 遗留缺陷（已修）+ 守卫三件 + 账本双表清理**。P8 完成。
+  - **最大的一处不是新写的代码，而是一直没人渲过的那一档**：`ChartFrame.tsx` 的 `H = comp.height - padY` 来自 **`11b9274`（P7.1）**，把**原始帧高**当作设计量。`scaleFor` 早就改成两轴了，`W` 那一行也恰好正确（因为三档都满足 `comp.width = DESIGN_WIDTH × s`），**只有高度在首个非 16:9 格式上分家** —— 所以 16:9 与 4K 两条路径都「看着对」，缺陷自 P7.1 潜伏至今。实测竖版柱高 **1223/1012/1331/943/1557** vs 设计值 **319/285/345/260/406**（**拉伸 3.4 倍**，基线 y=1824 而非 532）。
+  - **修法与证明**：plot 盒 = **设计盒 × s**。**16:9 与 4K 各四帧共 8 张渲染 `0 px` 逐位相同** —— 构造上即 no-op，用像素证明而非论证。竖版柱高回到 318/263/353/252/406，slope 顶部 hd 87 / 竖版 48 / 4K 174，全部按 `s` 缩放。
+  - **顺带居中**：`offsetY = max(0, (comp.height - DESIGN_HEIGHT × s) / 2)`。修前竖版图表贴顶、下方空 **1385px**；修后上下 **690/729、703/710、762/714、689/714**，与场景一致。**同样 16:9/4K 0 px**。
+  - **守卫**：
+    | 守卫 | 变异 | 结果 |
+    |---|---|---|
+    | `test_the_chart_plot_box_is_the_design_box_scaled_not_the_frame` | `W` 注回 `comp.width` | 转红（断言表达式形状，禁 `const W/H` 行出现 `comp.*`） |
+    | `test_the_nine_marks_place_labels_with_the_by_y_variant` | `declutterByY` → `declutter`（**P7.3 遗留、110 条全绿的那个空隙**） | 转红（禁 `types.tsx` 出现裸 `declutter(`） |
+    | `showcaseMeta.check.ts` 新增 fps 段 | 帧总数改为随 fps 缩放 | 转红（30/60/120fps 报 401/801/1602） |
+  - **A/B 矩阵接进 `tests/`（P7.3 遗留的机制化，销账）**：新建 `tests/test_chart_ab_matrix.py`，按成本拆两半 —— **便宜的一半永远跑**（注册表 17 项与矩阵行交叉核对；反向漂移检查；**timing 选项不得声明为 `settled`**，这条正是矩阵 docstring 记录「live 行被报成 dead」那次事故的规则化）；**贵的一半 52 次渲染用 `H3_AB_MATRIX=1` 门控**（实测 146s 通过，CI 可设）。**矩阵从此不是「跑一次存一份报告」而是测试项。**
+  - **fps 轴结论（实测，非推断）**：`showcase_demo.json` 在 **30 / 60 / 120fps 下 `durationInFrames` 恒为 801**，成片 26.70s / 13.35s / 6.67s —— **场景时长是帧锚定的**。但**同一帧号在不同 fps 下是不同画面**：帧 515 处 30fps 与 60fps 相差 **16.57%** 的像素，因为**相机 ramp 是墙钟锚定**（`cameraMoveFrames = seconds × fps`）。**即「改 fps 让渲染变快」会静默改变相机运动**，已把这条后果写进 `showcaseMeta.check.ts` 的注释里 —— 改 fps 的人会先读到它。
+  - **账本双表清理**：P3 / P4 / P5 各有**第二张任务表**，编号与上表重复、状态全为 ⬜（立项时的原始清单，后来走了别的结构，表留在那儿）。**任何按任务行统计的读法都会把它们算成未完成** —— 我第一次解析就得出「P3 完成度 60%」这种结论。加 caption 标注「已被上表取代，不计入任务」并把行号加删除线、状态改 `—`。**现在账本可被无歧义解析：75 条真任务行，未完 26，其中 22 条是 P9–P18 未开工，4 条是有记录的例外**（`1.3` VLM Critic 延后、`4.9`/`6.0` 是记录下来的失败而非未完、`6.7`/`6.8` 真未完）。P6 的第二张表是**合法续表**（6.5–6.8 不重复），未动。
+  - **我这一侧又错了两次，都记下**：① 柱带检测的 run 收尾条件写成 `x-prev>4`，**永远不成立**，一度得出「0 根柱」；② 做双表清理的解析脚本**先按「只数第一张表」统计，把 P6 的 `6.7`/`6.8` 漏掉了** —— 我刚制造的规则立刻产生了新的漏读，**说明「消除了歧义」这句话必须由解析器证明，不能由改表的人宣称**。改成按 caption 规则解析后才拿回 6.7/6.8。
+  - **终检**：**122 passed + 1 skipped**（原 116 + 矩阵 4 + 调用点 1；skip 是 52 渲那一半）、tsc 0、`showcase_demo.json` 与 `charts_demo.json` 均与 HEAD 逐字节相同。

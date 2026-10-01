@@ -295,3 +295,33 @@ def test_the_bubble_frame_does_not_duplicate_the_marks_labels():
         f'bubble is in the frame xLabels condition ({m.group(1).strip()}) — '
         f'the frame and the mark would both draw the labels'
     )
+
+
+def test_the_nine_marks_place_labels_with_the_by_y_variant():
+    """The pure function is checked; this checks that anyone CALLS it.
+
+    `declutterByY` is in `scale.check.ts` and its behaviour cannot rot. What
+    nothing checked was the call sites: replacing `declutterByY` with plain
+    `declutter` in `types.tsx` leaves the function correct, leaves all 110
+    tests green, and leaves all three .check.ts files passing — because the
+    regression is invisible at every level that exists.
+
+    The defect that mutation reintroduces is the one P7.3 fixed by
+    measurement: plain `declutter` assumes the labels arrive ordered by value,
+    which holds for none of the nine marks (a bar chart's are in CATEGORY
+    order), so it pushes labels down into the bars they belong to — two of them
+    160px and 322px inside their own columns.
+
+    So this forbids the plain variant at a call site, which is a stronger
+    statement than "the function exists" and the only one that would have
+    caught it.
+    """
+    src = (TEMPLATE / 'charts' / 'types.tsx').read_text(encoding='utf-8')
+    plain = re.findall(r'(?<![\w.])declutter\s*\(', src)
+    assert not plain, (
+        f'types.tsx calls plain declutter() {len(plain)} time(s). Its ordering '
+        f'assumption is that labels arrive sorted by value, which is false for '
+        f'every mark that places a label; use declutterByY.'
+    )
+    calls = len(re.findall(r'(?<![\w.])declutterByY\s*\(', src))
+    assert calls >= 1, 'types.tsx must actually place labels with declutterByY'

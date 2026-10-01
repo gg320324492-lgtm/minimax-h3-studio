@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useCurrentFrame, useVideoConfig} from 'remotion';
-import {FONT_NUM, FONT_SANS, scaleFor} from '../design/tokens';
+import {DESIGN_HEIGHT, DESIGN_WIDTH, FONT_NUM, FONT_SANS, scaleFor} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {fitDomain, formatValue, linear, niceTicks, type Extent} from './scale';
 import {lifecycleAt, type Lifecycle} from './lifecycle';
@@ -133,10 +133,38 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
   // padding. Measuring it from comp.width made every chart 2*SPACE.lg too wide
   // and the last point of a line ran off the right edge — which is why a
   // 'full width' chart is not a full width chart.
+  //
+  // But `comp.width - padX` is only the design box while
+  // `comp.width === DESIGN_WIDTH * s`, and that holds only for formats whose
+  // width is the design width times the scale — every same-aspect one, and the
+  // first non-16:9 breaks it. On a 1080x1920 render s = 0.5625, so the design
+  // width is 1080 (fine) while the design height is 607.5 and the frame is
+  // 1920. Measuring the height from the frame therefore did not scale the
+  // chart, it STRETCHED it: five bars measured 1223/1012/1331/943/1557 px tall
+  // where the scaled design box gives 319/285/345/260/406 — 3.4x too tall, and
+  // the baseline sat at y=1824 instead of 532.
+  //
+  // So the box is the DESIGN box times s, not the frame minus padding. On
+  // 1920x1080 and 3840x2160 the two expressions are equal by definition and
+  // this is a no-op; only a format with a different aspect ratio can tell them
+  // apart, which is exactly what it is for.
   const padX = (SPACE.lg + SPACE.xl) * s;
   const padY = SPACE.lg * s * 2;
-  const W = comp.width - padX;
-  const H = comp.height - padY;
+  const W = DESIGN_WIDTH * s - padX;
+  const H = DESIGN_HEIGHT * s - padY;
+
+  // Where the frame is LARGER than the scaled design box, the chart is centred
+  // in the slack instead of pinned to the top-left. Both offsets are zero on
+  // 1920x1080 and on 3840x2160 by definition — there `comp.width` IS
+  // `DESIGN_WIDTH * s` — so this is a no-op on every same-aspect format and
+  // only a non-16:9 frame can tell it apart from leaving them out.
+  //
+  // Measured on 1080x1920 before this: the chart occupied y 33..534 of a
+  // 1920-tall frame, leaving 1385px of empty space underneath. The scenes
+  // centre the same way (roughly 700px above and below), so a chart pinned to
+  // the top was not a considered position, it was a missing offset.
+  const offsetX = Math.max(0, (comp.width - DESIGN_WIDTH * s) / 2);
+  const offsetY = Math.max(0, (comp.height - DESIGN_HEIGHT * s) / 2);
 
   // A heatmap's y axis is rows (AMER/EMEA/APAC) and a rank table's is categories
   // (Enterprise/Mid-market/...). Neither has a numeric scale, and drawing one
@@ -173,8 +201,8 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
   const top = (opts.showValues ? 46 : 18) * s;
 
   const plot: PlotBox = {
-    x: gutter + SPACE.md * s,
-    y: top,
+    x: gutter + SPACE.md * s + offsetX,
+    y: top + offsetY,
     w: Math.max(10, W - (gutter + SPACE.md * s) - SPACE.xl * s),
     h: Math.max(10, H - top - bottom - SPACE.xl * s),
   };
