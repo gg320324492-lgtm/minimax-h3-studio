@@ -143,7 +143,16 @@ def test_beat_snap_does_not_accumulate_drift():
     long = sc.__class__(project='t', width=1920, height=1080, fps=60, bpm=126,
                         scenes=[{'id': f's{i}', 'type': 'kpi-hero',
                                  'durationInFrames': 229} for i in range(10)])
-    drifts = [sc.beat_distance_frames(r.startFrame)
+    # `long`, not `sc`. The synthetic timeline is built at 126 bpm, so it has to be
+    # MEASURED at 126 bpm too; `beat_distance_frames` is a method, so it uses its
+    # own receiver's bpm. This used to call `sc.beat_distance_frames`, which
+    # happened to agree only because the demo graph also declared 126 — so the
+    # assertion was really "does 126-bpm snapping stay near the GRAPH's grid",
+    # and the moment the graph's tempo became a measured 128.998 against a
+    # measured track, it reported 12.9 frames of drift that had never existed.
+    # Nothing about the snapping changed; the test was comparing two different
+    # tempi and only passed while they coincided.
+    drifts = [long.beat_distance_frames(r.startFrame)
               for r in long.resolve(beat_snap=True)]
     assert max(drifts) <= 0.5 + 1e-6, f'drift exceeded half a frame: {drifts}'
     # the specific regression: monotonic growth
