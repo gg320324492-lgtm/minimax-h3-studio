@@ -382,19 +382,30 @@ def test_no_test_in_this_module_can_reach_the_real_tokens():
     body = src.split('def test_no_test_in_this_module_can_reach_the_real_tokens', 1)[0]
     tree = ast.parse(body)
 
-    def _all_assignments(t: ast.AST) -> list[ast.Assign]:
-        """Every single-target Name assignment, wherever it is.
+    def _all_assignments(t: ast.AST) -> list[tuple[str, ast.AST]]:
+        """Every (name, value) a name is bound to, wherever it is bound.
 
         Inside a function, a loop or a conditional, not just at the top level:
         a rebinding hidden in a `for` body is the same reachability as one at
         module scope, and a guard that only reads the obvious ones is a guard
         that reads whatever the author put where it could see it.
+
+        The filter is on the TARGET being a Name, not on there being exactly one
+        target. `dst, spare = TOKENS_TS, 0` binds `dst` just as firmly as
+        `dst = TOKENS_TS`, and a single-target filter reads the tuple assignment
+        as "not a binding at all" — which the `rebind_via_tuple` mutation
+        demonstrated by writing the real tokens with the structural guard still
+        green. Four rebinding forms in, one out.
         """
-        out = []
+        out: list[tuple[str, ast.AST]] = []
         for node in ast.walk(t):
-            if isinstance(node, ast.Assign) and len(node.targets) == 1 \
-                    and isinstance(node.targets[0], ast.Name):
-                out.append(node)
+            if not isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                continue
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for tgt in targets:
+                for sub in ast.walk(tgt):
+                    if isinstance(sub, ast.Name):
+                        out.append((sub.id, node.value))
         return out
 
     # name -> the expression it was last bound to, in source order
@@ -404,9 +415,10 @@ def test_no_test_in_this_module_can_reach_the_real_tokens():
     # the most natural way anyone writes this. `ast.walk` also gives no ordering
     # guarantee, so the assignment nodes are sorted by position explicitly.
     bound: dict[str, list[ast.AST]] = {}
-    for node in sorted(_all_assignments(tree), key=lambda n: (n.lineno, n.col_offset)):
-        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-            bound.setdefault(node.targets[0].id, []).append(node.value)
+    for name, value in sorted(_all_assignments(tree),
+                              key=lambda p: (getattr(p[1], 'lineno', 0),
+                                             getattr(p[1], 'col_offset', 0))):
+        bound.setdefault(name, []).append(value)
 
     #: what counts as the repository's own source. A write to any of these, or
     #: to anything derived from one, is the bug this guard exists for.
