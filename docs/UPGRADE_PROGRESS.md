@@ -539,6 +539,42 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
 - `qa_layers.MEASURED_NOTE['duplicate']` 原本断言「3042 对在切口下、50914 对在上、两侧落在 0.498465 / 0.500140」即「一把真实数据上的真切口」—— **它的测量推翻了这个结论**，留着就是在本项自己的文件里留一句已过时的断言。已改为实测值。**`PINNED_LAYERS` 语义未动**（`duplicate` 仍在 Motion —— **层跟着输入走，不跟着切口走**），由既有 partition 测试钉住；
 - `tests/test_p18_qa_layer_partition.py:107` 用 sha256 钉住 `visual_qa.py`，**它正确地响了** —— 已在同一提交里更新**并写明理由**，正如该测试自己要求的那样。
 
+---
+
+## P20 — 同一个问题三处三个数字　状态：✅
+
+记录文档 `docs/P19_DUPLICATE_POPULATION.md` §1a 的处置；守卫 `tests/test_p20_one_ruler.py`（5 条）。全量 424→**431 passed, 3 skipped**（+1 skip 见下）。
+
+**两把尺子：逐位相同，但不该合并。** `visual_qa.py:311/331` 与 `take_ranker` 各有一份 `signature_distance`/`signature` —— 实测 **120 对真实语料 + 12 档合成幅度 (`repr()` 级别，float32 噪声会显形) 零差异**，且**它们按构造相等**（两边都字面是 `float(np.abs(a - b).mean())`）—— **这恰恰是两份拷贝会漂移的原因**。**但 `visual_qa` 不能 import `take_ranker`**（cv2；`test_the_module_does_not_import_the_renderer` 明令禁止）⇒ **裁定不合并**（超出本项范围，且可能伸进 `ceo_mindread_ep01` 那条独立管线），**改为加守卫防漂移**。
+
+**⚠️ 顺带发现（未修）**：`visual_qa.signature()` 用 **PIL** 读 PNG，`take_ranker.pixel_signature` 用 **cv2** 读视频 —— 同一真实帧上两次重采样的差异是 **4.106** 均绝差，**约为最紧的"真实不同 take 对"（31.264）的 13%**。真实存在、但仍落在间隙里，未修。
+
+**阈值裁定 A：让 `select_takes.py` 引用 `rank_takes.DUP_THRESHOLD`，且它明确拒绝判断哪个数字对** —— 因为测量判不了：
+
+- **总体**：12 个磁盘 shot 目录（= `select_takes` 的 12 个 `shot_targets`），只有 S05A(4 take) 与 S06(2 take) 有多于一条 ⇒ **7 对**进入任一循环；
+- **分布**：那 7 对 = **{0.000} ∪ [34.543, 62.820]}**；扩到全部 120 对 = **{0.000} ∪ [31.264, 105.839]}** —— **P1 的间隙仍成立**；
+- **它定不下来的部分**：**(0.0, 34.543) 里的任何值对现存每一对都给出相同判定**，**0.5 与 1.0 都在这个空隙里、都只抓到那一个 0.000 对**。
+
+`git log -S` 显示那个 `1.0` 是 P1（`47d2f79`）写进来的 —— **与它并不依据的那份测量同时写下**。
+
+**⚠️ 指挥窗口复验时纠正了执行 agent 的一处方向性错误**：它写「a near-duplicate at 0.7 is caught by 0.5, missed by 1.0」—— **反了**。判定是 `d < threshold`，**阈值越大判得越宽** ⇒ **1.0 抓得到 0.7、0.5 漏掉它**。它自己跑出的变异输出第 2 行也是 `duplicate=False`，**与它 docstring 里那句相反** —— 注释与自己的输出口径不一致。**指挥窗口独立复核：** `0.7 < 0.5` 为假、`0.7 < 1.0` 为真；**统一到 0.5 是收窄盲区，不是放宽**。**结论（删掉第二个字面量）不受影响 —— 理由方向错了，结论方向对。**
+
+**`DUP_THRESHOLD = 0.5` 的值未被改动**（`rank_takes.py` 仅注释变更），`take_ranker.py` 与 `visual_qa.py` 字节未变。
+
+**五条变异全部杀掉**（每条都先 assert 落盘、并从活模块读回值，再读结果）。其中 mut2 造的正是**裁定 B 的形状**（一个数字 / 两个问题），由三尺守卫以 `assert 0.5 == 0.0` 抓住。
+
+**执行 agent 主动上报的失误里，有三条造出了假绿，值得单列**：
+
+① **`sys.modules.setdefault('cv2', stub)` 在 `import cv2` 失败之后是空操作** —— 此时 `sys.modules['cv2']` 已被置为 `None`，于是 `take_ranker` 导入失败、`select_takes` 打印「take_ranker unavailable」、`_auto_rank` **每个用例都返回 `[]`** —— **守卫根本没有上膛**。已改为直接赋值，并新增 `test_the_guard_is_actually_armed` 断言 `_RANKER is not None`；
+② **它跑的是 `out/` 里的一份快照副本**，`ROOT = parents[1]` 解析到 `E:\Minimax-H3\out` —— **测了一棵没有 `studio/` 的树**（与指挥窗口本轮 glob 到 4 张平铺 PNG 属同一族错误）；
+③ `_auto_rank(raw_root)` 会追加 shot id 而 `rank_shot(shot_dir)` 不会，把同一个目录传给两者 ⇒ `_auto_rank` 什么都看不到 —— **读起来像「没有 take 会相撞」，而不是一个错误**；
+④ 一处 stub 名复用于两条 take，导致每个 metric 的 `take_id` 都是 `B_T01`。
+
+**另**：它有一次**把命令管道进 `tail`，从一个真失败里读到 `EXIT=0`** —— **正是工单点名的那个陷阱**；此后所有退出码改由 `subprocess` 取，**不再用管道**。
+
+**一处偏离（已报备，且我认为处理得当）**：py-3.10 有 cv2 但**没有 pytest**，所以语料测量**在本机无法跑进 pytest**。它把测量放进普通函数 `measure_within_shot_distribution()`，用 3.10 脚本驱动（输出在 `out/p20_probe/measure_310.txt`），**在 3.12 套件里 skip 而不是撒谎**。**所以那些断言本身是验证过的，但 3.12 套件跑绿并不等于它们被跑到** —— **这个「skip 不等于通过」的诚实标注，正是本项目反复要求的东西**。
+
+**第三把尺子没有强行判等**：`visual_qa.rule_duplicate` 是第三份 `signature_distance`，但 P19 给它 `SIGNATURE_EQUAL = 0.0` 因为 `--frame-pair` 递给它的是**同一次渲染的两个相邻帧**（另一个总体，且语料证明不分离）。**这个差异被记录并附证据，而不是靠断言三者相等掩盖掉。**
 **记录未修（超范围）**：`ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
 **这条本身就是一个「同一个问题三个答案」的实例，值得单列**，已写入 `docs/P19_DUPLICATE_POPULATION.md` §1a。
 
