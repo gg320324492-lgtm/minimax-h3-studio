@@ -402,8 +402,36 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 15.1 | SR Router：程序化内容 native 直出免 SR；H3 走 sr_pipeline_v2 | ⬜ | |
-| 15.2 | FlashVSR 仅纹理丰富镜头（hair/fabric/architecture/hero） | ⬜ | |
+| 15.1 | SR Router：程序化内容 native 直出免 SR；H3 走 sr_pipeline_v2 | ⬜ |**裁定 B：不值得建。** 全仓检索 `sr_pipeline`/`flashvsr`/`real.?esrgan`/`seedvr`/`super.?res` **只命中 8 个 markdown、零个代码文件** —— P15 从未实现。**且路由信号本身是哑的**（见下），**已交付内容按设计全部该免 SR**（`video` / `data-plane-3d` 在 14 个场景里出现 **0 次**） | 
+| 15.2 | FlashVSR 仅纹理丰富镜头（hair/fabric/architecture/hero） | ⬜ | 同上 | 
+
+**`generative` 的死法与本项目修过的所有哑声明都不同 —— 它死在类型边界上，差一步就能到达**（记录文档 `docs/P15_SR_ROUTER_EVIDENCE.md`，守卫 `tests/test_generative_signal_has_no_consumer.py` 6 条）：
+
+```tsx
+const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算出 generative
+{resolved.map((r) => {
+  const scene = doc.scenes.find((x) => x.id === r.id);                // ← 回头从 RAW doc 取
+  return <SceneRenderer scene={scene} ... />                        // ← 传 scene，不传 r
+```
+
+`generative` 活在 `r` 上，**下一行就被丢弃**；而 `SceneRenderer` 的类型是 `React.FC<{scene: Scene}>`，**`SceneSchema` 是 `.strict()` 且无 `generative` 键** ⇒ **它在类型层面根本过不去**。`resolveScenes` **确实在生产里被调用**（`:146`）、`resolved.map()` **确实在跑**（`:155`）—— **差一行**。
+
+**这不是「声明了没人读」的形态**，所以关键词检索是错的工具。执行 agent 逐条关闭了间接路径（props 展开 / `useDesign()` / 方括号访问 / `JSON.stringify` / `Object.keys` / `GENERATIVE_SCENE_TYPES` 的 import——**无人 import**）。Python 侧 `scene_graph.py:179` 确实消费它，**但那是规划器读自己的模型，不是渲染器读这个 prop**。
+
+**来历**：`a707d31`（P3）引入，commit message 写的是 routing「declared, not guessed」；`git log -S generative -- studio/` **只有这一个提交** —— **TS 消费方从未存在过**。parity 测试钉住的是两侧的**声明**，所以它一直绿着、也一直没被质疑。
+
+**建议（未实施，提请裁定）**：**标注，不删、不接线。**
+- 删 TS 那一半 → **为去掉一个惰性的一半而破坏一条活着的 parity 守卫**；
+- 本项目已有先例：`tests/test_undeclared_field_reads.py:26-28` 把六个惰性字段列为 「ledger entries… tracked separately」—— **记账，不要静默删除**。
+
+**指挥窗口独立复验**：注入真实读取（`KpiHero.tsx` 加一行 `.generative`）→ **2 条守卫红，且指名 `KpiHero.tsx:line 28: .generative`**；还原后 git 干净、全量 389→**395 passed, 2 skipped**。
+
+**执行 agent 纠正了指挥窗口一处**：工单写「13 个场景」，实测 **14 个**（`charts_demo.json` 有第二个 `bar-chart`：`c10_bar_long`）—— 结论不变。
+**它主动上报四条自身失误**：`_run_ts` 辅助函数**在失败路径上泄漏探针文件**（`studio/__probe_gen_*.mts`），靠 `git status` 抓到、加 `try/finally` 修掉（**仓库既有守卫本来就做对了，是它自己那份没做对**）；自己守卫里的三个真 bug（正则语法错、`String(ESM_namespace)` 抛错、`in` 操作数写反）；以及**最初把生产者排除钉在行号 316/373 上 —— 正是那种会造出「一遇无关编辑就误报」的守卫的脆弱性**，提交前改成形状匹配。
+
+**变异 C 存活且判定为「等价、不该杀」**：只在注释里提一句 `generative` → 6 passed。**理由正是 `render.mjs` 那个陷阱**：注释不是消费方，**为它造守卫会造出一个「文档一改就误报」的守卫**。并用邻侧守卫验证（散文下同样 42 passed）+ 变异 A 验证真实读取仍被抓住，证明这不是可达性缺口。
+
+**「入口静默通过」这一族确认无第三处**：`render.mjs` / `still.mjs` 与四个 `argparse` 脚本都拒绝未知 flag；`check_contract.py` **不接受任何参数** —— 无此面。仅记录，未扩大范围。
 
 ---
 
