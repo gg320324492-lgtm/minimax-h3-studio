@@ -146,8 +146,10 @@ AMBIGUOUS: dict[str, str] = {
              'take_ranker uses for m_sharpness, an aesthetic quantity. '
              'One layer only; the alternative reading is recorded, not adopted.'),
     'duplicate': ("read as Technical too (two runs of one render are a pipeline "
-                  'defect). Classified Motion because the question is time-domain: '
-                  'did the sequence advance. See MEASURED_NOTE below.'),
+                  'defect, and P19 showed the 0.5 cut that used to sit here WAS '
+                  'exactly that question). Classified Motion because the input '
+                  'the entry point supplies is time-domain: two consecutive '
+                  'frames of one render. See MEASURED_NOTE below.'),
 }
 
 #: MEASUREMENTS THAT QUALIFY AN ENTRY. Kept beside the table so a reader does
@@ -189,20 +191,23 @@ MEASURED_NOTE: dict[str, str] = {
              'because BLUR_VARIANCE = 2.0 sits below every frame this project has '
              'produced: corpus p5 is 11.5, a 5.75x margin ABOVE the threshold. The '
              'threshold is below the floor of the real distribution.'),
-    'duplicate': ('DUP_DISTANCE = 0.5 is take_ranker\'s threshold, reused on '
-                  'take_ranker\'s 0..255 signature scale, against its real take '
-                  'distribution {0.000} u [34.5, 67.2] — a 34.5x margin THERE. '
-                  'Measured on this repo\'s own corpus instead (all 53956 pairs of '
-                  'frames under out/p13_probe): 3042 pairs below the cut, 50914 '
-                  'above, the two sides landing at 0.498465 and 0.500140. So the '
-                  'cut is a real cut on real data, not an invented one. But what '
-                  'it separates is SCENE, not TIME: restricted to the input this '
-                  'rule actually gets — consecutive frames of one scene — 20 of '
-                  '40 such pairs FAIL in every group measured, i.e. it reports '
-                  'DUPLICATE about half the time on frames that are visibly '
-                  'moving. Its input and its threshold are mismatched: the '
-                  'threshold was measured for two RENDERS of one graph, this rule '
-                  'is fed two FRAMES of one render.'),
+    'duplicate': ('STALE-UNTIL-P19 WAS WRONG ON THREE COUNTS AT ONCE, AND IS '
+                  'UPDATED HERE; THE LAYER IS NOT. The cut it used was 0.5, cited '
+                  'as take_ranker\'s own threshold — take_ranker holds no such '
+                  'threshold at all (its m_duplicate works on a different scale, '
+                  'mean abs diff / 255, cut at 0.0015); 0.5 lives in '
+                  'rank_takes.DUP_THRESHOLD and compares two whole RENDERS. '
+                  '`--frame-pair` hands this rule two CONSECUTIVE FRAMES, for '
+                  'which "nearly identical" is the correct answer. Measured on '
+                  'this repo\'s own corpus (329 frames under out/p13_probe): 152 '
+                  'of 320 consecutive pairs FAIL at that cut, and — measured — '
+                  'no cut on signature distance separates the two populations, '
+                  'the best balance being 0.9969 sitting above exactly 0.0 and '
+                  'carried by ONE real rerun pair. P19 therefore moved the rule '
+                  'onto an exact identity cut (SIGNATURE_EQUAL = 0.0, the same '
+                  'kind of warrant `freeze` has) and left the cross-render '
+                  'question to rank_takes.py. It is still the second of the two '
+                  'rules that need a PAIR of rendered frames.'),
     'missing_asset': ('rule_missing_asset(props) never reads its `props` argument — '
                       'verified by unparsing the function body with the docstring '
                       'removed and checking "props" does not appear, and by calling '
