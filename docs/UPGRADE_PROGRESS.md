@@ -273,6 +273,37 @@
 - **执行 agent 报告自己的守卫第一版读了自己的被测对象**：它把 `styleBible.tsx` 算作消费方，而 resolver 定义了全部 9 个导出、因而命名了全部 9 个。已修并写进注释。**这一条与 P11「治愈式重绑定」同族：守卫问错了对象。**
 - 另主动上报五条自身失误（第二版用词匹配判消费方造成 6 个假消费方、文档写坏 30 个中文字符、两处 grep 数字写错、node 探针 `npx` 路径失败等），均如实记录。
 
+**反向缺陷已闭合（`836f532`，复验通过）** —— 四段逐段裁定 A/A/A/B：
+
+| 段 | 裁定 | 依据 |
+|---|---|---|
+| `radius` | **A 接进 schema** | **2 处真实读**（`BrowserStack.tsx:159` / `KpiHero.tsx:143`）。与**已声明的 `spacing` 同型**（都是 `Record<string, number>`）、同类（都是 brand/不变式），却待遇不同 |
+| `shadow` | **A 接进 schema** | **3 处真实读**（`BrowserStack.tsx:293` / `DataColumns.tsx:142`/`:237`）。与 `palette` 同为「主题表面」，而 `palette` 在 schema 里 |
+| `depthCue` | **A 接进 schema** | 见下 —— 6.8 的成果在图谱层原本**完全不可达** |
+| `depth` | **B 删掉合并** | 零消费（三重确认）**且输入结构上不可能存在** → `mergeSection(..., undefined)` 是恒等空操作，不可能改变任何输出 |
+
+**指挥窗口的消费者证据漏了三处**（只列了 `BrowserStack`），执行 agent 实测另有 `KpiHero.tsx:143`（`RADIUS.chip`）与 `DataColumns.tsx:142`/`:237`（`SHADOW.glowAccent`）—— 方向不变，但把 A 的论据从「一处弱消费」加强到**跨两个场景的 5 处真实读取**。
+
+**执行 agent 收窄了 B 的边界并报请裁定**：它删掉了图谱侧接线（merge 行 / `StyleBible.depth` 字段 / `useDesign().DEPTH` / 悬空 import），但**明确不删 `tokens.ts` 的 `DEPTH` 表** —— P6.8 当年正是在那里写下「删 token 是更大的决定」。理由记在该文件 docstring 里。**这个边界是对的。**
+
+**`depthCue` 与 6.8 的关系（本项最关键的一条）**：6.8 把 ramp 从 3 层拟合外推到 5 层并**渲染真场景验证** —— 修的是 **theme 层**；**graph 层全程不可达**：`b.depthCue` 恒为 `undefined`，`BrowserStack` 永远只拿到 `themes.ts` 的字面量。**即 6.8 的成果在图谱层面是死的，且没有报错。** 裁定 A 关闭的正是这个缺口，**成本为零**（两端合并逻辑都已存在，只差一个键）。
+
+**守卫（最重要交付物）**：`tests/test_style_bible_merges_only_declared.py` —— **解析** `StyleBibleSchema` 键集合与合并行做差集，**双向**：
+
+- **正向**：抓到「合并了但未声明」（本项的原始缺陷形态）
+- **反向**：抓到「删掉声明但保留 merge 与消费方」—— **第二个编辑产生完全相同的症状，正向断言抓不到**
+
+豁免通道是**代码里 merge 行上的 `not-graph-controlled` 标记**，不是守卫里的名单（名单会与代码漂移）。**全文零文本存在性断言** —— 执行 agent 指出：P12 之后 `radius` 一词照样出现在 `showcase-v1.ts` 的 docstring 里，`assert 'radius' in schema_text` 会为一个已回退的 schema 报绿。
+
+**执行 agent 纠正了指挥窗口三处**：① 消费者证据漏三处（见上）；② **工单称 `showcase-v1.ts` 是 LF，实测是 CRLF**（339 CRLF / 0 裸 LF）—— 照工单会写坏整个文件；③ 它自报**自己写的守卫第一版有真 bug**：`bleed` 没有 `useDesign()` 导出时抛 `KeyError` 而非正常断言 —— **红在错误的理由上，等于没红**。已修。
+
+另它抓出**第五处文本存在性断言**：`test_depth_cue_layers.py` 的 `assert 'depth' not in schema_text` 被 `depthCue` 的子串触发 —— 它报告了一条 P12 并未违反的规则。已改为解析键集合。
+
+**指挥窗口独立复验**：node 探针实测 `radius`/`shadow`/`depthCue` **三段 SURVIVED 带真实值**、`depth` 按裁定被剥离；正向变异（加未声明的 `bleed` merge）→ 5 条红；反向变异（删已声明且被消费的 `spacing`）→ 6 条红，含镜像一致性与两侧解析。还原后 git 干净、全量 346→**355 passed, 2 skipped**（+9）。
+
+**提请指挥裁定、本项遵令未做**：`StyleBibleSchema` 是否该加 `.strict()`。方向认为是对的（**开放 schema 正是这个缺陷家族的温床**），但它会把现有写 `depth` 的图谱从静默无效变成硬报错，属破坏性变更，**建议单独一项**、在本缺口收口后做。
+
+**未动**：`chartLanguage` / `audioLanguage`（P11 方向）—— 方向相反、修法不同，不在授权范围。
 **比工单所问更严重的反向缺陷（本项最重要发现）**：
 `styleBible.tsx:72/:73` 合并 `radius`/`depth`，`:98/:99` 合并 `shadow`/`depthCue`，场景**确实消费**——
 但**这四段都不在 7 键 schema 里**。指挥窗口独立 node 探针实测：
