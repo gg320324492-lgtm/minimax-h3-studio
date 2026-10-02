@@ -9,9 +9,20 @@ republished by `useDesign()`, and read by a scene. Break any link and the graph
 still validates, still renders, and changes nothing: the declaration is a lie
 that costs an operator the belief that editing the graph does anything.
 
-`StyleBibleSchema` is an OPEN `z.object` with no `.strict()`, so an undeclared
-key is stripped rather than rejected — a dumb declaration is not merely legal,
-it is invisible. Nothing else in the suite would notice one.
+`StyleBibleSchema` WAS an OPEN `z.object` with no `.strict()`, so an undeclared
+key was stripped rather than rejected — a dumb declaration was not merely legal,
+it was invisible. Nothing else in the suite would have noticed one.
+
+P12 closed that half: the schema is `.strict()` now, so an undeclared key is a
+hard error and `test_style_bible_schema_is_strict.py` guards it BEHAVIOURALLY,
+by calling `safeParse` and asserting the returned value rather than by looking
+for a substring. That file is the parser half of this defect. THIS file is the
+half strictness cannot reach: a section the schema DECLARES and the resolver
+never merges. There is no undeclared key in that chain — validation is
+perfectly happy — and the declaration is still a lie. `chartLanguage` and
+`audioLanguage` are both such keys today, and that is the P11 direction, whose
+repair (delete the declaration, or wire the consumer) is a different decision
+from this one.
 
 This is the mirror of `test_undeclared_field_reads.py`. That file stops code
 reading a field the schema strips; this one stops a graph declaring a field
@@ -79,20 +90,41 @@ def _tsx_command(probe: Path) -> list[str]:
 # ── 1. the chain itself is real, and is what this file thinks it is ─────────
 
 def test_style_bible_schema_is_open_so_this_guard_is_needed():
-    """Anchors the premise. If someone adds `.strict()` to `StyleBibleSchema`,
-    an undeclared key starts REJECTING rather than being silently stripped.
+    """Anchors the premise. WAS: "if someone adds `.strict()` ... re-derive this
+    file". Someone did, and this is the re-derivation.
 
-    That is a genuine improvement and it is also a different world: the guard
-    below would then be redundant for the parser, and `ghostKey` in a graph
-    would fail loudly instead of vanishing. Either state is defensible; what is
-    not defensible is the premise of this file quietly becoming false, so the
-    premise is asserted rather than assumed.
+    `.strict()` landed on `StyleBibleSchema` in P12. The original version of this
+    test asserted the schema was OPEN and told the reader to re-derive the file
+    if it stopped being; it now asserts the opposite, for a stated reason, so the
+    premise still cannot rot silently.
+
+    WHAT CHANGED AND WHAT DID NOT. An undeclared style_bible key is now a hard
+    error instead of a silent strip, so `ghostKey` in a graph fails loudly rather
+    than vanishing. The argument this file is built on — "a declaration nothing
+    reads is a lie, and nothing in the toolchain can see it" — is WEAKENED but
+    NOT void, and the residue is what still needs measuring:
+
+      * gone: a graph declaring a key the schema strips. That is now impossible
+        to express; the parser rejects it. `test_style_bible_schema_is_strict.py`
+        owns that half, behaviourally, via `safeParse`.
+      * STILL HERE, and still invisible from the data side: a key the schema
+        DECLARES and the resolver never merges. `chartLanguage` and
+        `audioLanguage` are both declared on both mirrors today, and neither is
+        bound by `styleBible.tsx`. The graph sets one, validation passes, and
+        nothing renders differently — strictness does not touch this, because
+        there is no undeclared key anywhere in the chain. That is the P11
+        direction and a different repair (delete the declaration or wire the
+        consumer); it is deliberately out of P12's scope.
+
+    So the file's guard is now measuring the second half, and the first half has
+    moved next door rather than disappeared.
     """
-    assert sbc.style_bible_is_strict() is False, (
-        'StyleBibleSchema is .strict() now. An undeclared style_bible key is '
-        'REJECTED instead of stripped. Re-read this file: the "dumb declaration '
-        'is invisible" argument no longer holds and the guard needs re-deriving '
-        'against whatever replaced it.')
+    assert sbc.style_bible_is_strict() is True, (
+        'StyleBibleSchema is open again. An undeclared style_bible key is being '
+        'STRIPPED with success: true, which is the P12 defect returning: a '
+        'section merged by the resolver and read by a scene can no longer be fed '
+        'from a graph, and nothing will say so. Re-read this file AND '
+        'test_style_bible_schema_is_strict.py.')
 
 
 def test_the_derivation_is_not_vacuous():
@@ -336,14 +368,24 @@ def test_mutation_renaming_a_render_side_export_is_caught():
 
 
 @pytest.mark.skipif(NODE is None, reason='node not on PATH')
-def test_the_parser_really_drops_an_undeclared_key(tmp_path):
-    """The runtime half of mutation A, and the reason link 1 of the chain is
-    load-bearing rather than decorative.
+def test_the_parser_really_rejects_an_undeclared_key(tmp_path):
+    """The runtime half of mutation A. INVERTED in P12, deliberately.
 
-    `ghostKey` does not fail the parse. It passes, and then is gone. That is
-    the difference between a guard that says "rejected" and a guard that says
-    "invisible", and it is exactly why a dumb declaration needs a behavioural
-    guard: there is no error anywhere for one to catch.
+    This used to assert that `ghostKey` PARSED and was then gone — the strip,
+    which was the whole point: there was no error anywhere for one to catch. The
+    schema is `.strict()` now, so the correct answer is the opposite verdict, and
+    asserting the old one would be asserting the defect back into existence.
+
+    It is kept rather than deleted for two reasons. It runs the probe through
+    `ShowcaseSchema` end to end, which the derivation in this file cannot do at
+    all — every other assertion here is regex-based and runs without node. And a
+    file that documented the strip and quietly dropped the test would leave no
+    receipt that the behaviour changed on purpose.
+
+    The parse half (a key the schema strips) now lives in
+    `test_style_bible_schema_is_strict.py`, which asserts it by REJECTION rather
+    than by absence — `.passthrough()` also keeps unknown keys, so "the key is
+    gone" would not have caught it.
     """
     probe = ROOT / 'studio' / '__probe_p12.mts'
     probe.write_text(
@@ -357,6 +399,8 @@ def test_the_parser_really_drops_an_undeclared_key(tmp_path):
         "console.log(JSON.stringify({\n"
         "  success: r.success,\n"
         "  keys: r.success ? Object.keys((r.data as any).style_bible).sort() : null,\n"
+        "  issues: r.success ? null : r.error.issues.map(\n"
+        "    (i) => `${i.path.map(String).join('.') || '(root)'}: ${i.message}`),\n"
         "}));\n",
         encoding='utf-8')
     try:
@@ -367,14 +411,15 @@ def test_the_parser_really_drops_an_undeclared_key(tmp_path):
         line = [l for l in proc.stdout.splitlines() if l.startswith('{')]
         assert line, f'no probe output:\n{proc.stdout}\n{proc.stderr[-1500:]}'
         got = json.loads(line[-1])
-        assert got['success'] is True, (
-            f'the graph with ghostKey was REJECTED: {got}. That is not a '
-            'failure of the guard; it means StyleBibleSchema became strict and '
-            'test_style_bible_schema_is_open_so_this_guard_is_needed should be '
-            'revisited.')
-        assert got['keys'] == ['typography'], (
-            f'ghostKey SURVIVED the parse: {got}. The whole premise of this '
-            'file — that an unconsumed key is silently discarded — is now wrong.')
+        assert got['success'] is False, (
+            f'a graph setting an undeclared style_bible key was ACCEPTED: {got}. '
+            'The key is either being stripped with success: true — the P12 '
+            'defect, still open — or passed through, which is the same problem '
+            'wearing a different hat.')
+        assert got['keys'] is None, got
+        assert any('ghostKey' in i for i in (got['issues'] or [])), (
+            f'the rejection does not name the offending key: {got}. An author '
+            'would know their bible was refused and not which key was at fault.')
     finally:
         probe.unlink(missing_ok=True)
 

@@ -237,6 +237,7 @@
     "StyleBible": {
       "description": "One per project. Every scene must obey it — this is what stops each screen looking like a different template.",
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "palette": {
           "type": "object"

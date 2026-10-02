@@ -85,10 +85,27 @@ STRICT_SITES = [
 #: Object-valued bags that stay OPEN by design. Strictness covers the graph's own
 #: vocabulary; these are free-form payload the scene components interpret, and
 #: closing them would be a large breaking change to every delivered graph.
+#:
+#: `StyleBible` WAS on this list until P12 made it `.strict()` /
+#: `additionalProperties: false`, and that is the one deliberate move between the
+#: two kinds of object this schema contains. It is worth being precise about
+#: which is which, because the distinction is what makes the change defensible:
+#:
+#:   * `Scene.layout` and `Scene.content` are keyed by whatever the scene
+#:     components choose to interpret. Nothing enumerates them, so an unknown key
+#:     there is a version skew between a scene and a graph, not a typo.
+#:   * `StyleBible`'s TEN top-level keys are enumerated, declared, and consumed.
+#:     The resolver binds each by name. So an unknown top-level key is not a
+#:     payload a component might understand later -- it is a section that does
+#:     not exist, and with stripping on it vanished without a word.
+#:
+#: The BAG INTERIOR is still open and is not touched by this: `palette.card`,
+#: `spacing.gutter` and the rest remain free-form, because `mergeSection` filters
+#: by the default's own keys. `additionalProperties: false` here governs the
+#: style bible's top level only.
 OPEN_BAGS = [
     ('Scene.layout', ('definitions', 'Scene', 'properties', 'layout')),
     ('Scene.content', ('definitions', 'Scene', 'properties', 'content')),
-    ('StyleBible', ('definitions', 'StyleBible')),
 ]
 
 
