@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | 你的角色 | **执行 agent**。写代码、跑测试、自证。**不做放行/退回裁定** |
 | 上游状态 | 本地领先 `origin/main` **7 个提交，未推送** |
-| 全量测试基线 | `234 passed, 2 skipped` |
+| 全量测试基线 | `235 passed, 2 skipped`（已实测，含新增的结构性守卫 1 条） |
 | 当前阶段 | P11 Auto Repair Loop，账本 `docs/UPGRADE_PROGRESS.md` 第 200–206 行 |
 
 **环境（已实测，不要改）**：
@@ -23,7 +23,7 @@
   cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
       --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
   ```
-- 预期：**`234 passed, 2 skipped`**。数字对不上就是你的改动有问题，先查清再往下
+- 预期：**`235 passed, 2 skipped`**（已在 `0567d2c` / `55b3ac5` / `33e54fb` 之上实测确认）。数字对不上就是你的改动有问题，先查清再往下
 
 ---
 
@@ -115,6 +115,7 @@
   生命周期 `exit` 阶段、图表已退场），测出来的"墨迹"全是背景噪声。
 - **"最小间隔"这类判据会在关键时反转**：标签融合时段数减少、间隔反而变大。
   （P10 审计早就记录过这个陷阱）
+- **结果红不等于交付物 ——** 执行 agent 至今两次自报"达成验收"，指挥窗口独立复验**都复现不出来**（`602708b` 的碰撞阈值、`55b3ac5` 的结构守卫）。**执行者的报告是待验证的主张，不是事实。** 细节见 `docs/WORKORDER_P11_GUARD_REBIND_FIX.md` 第一节与第四节。
 - **写长文本一律在字节层操作**（`read_bytes` + 精确匹配 + 写回），
   写完逐项验 CRLF / 裸 LF 计数。`docs/*.md` 是 CRLF 文件。
   另：heredoc 里 `\\b` 会被 shell 变成退格符（`\x08`）——用 `bytes([92])` 显式构造。
