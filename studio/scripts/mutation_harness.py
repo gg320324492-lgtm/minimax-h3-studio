@@ -169,25 +169,74 @@ MUTATION_TEXT: dict[str, tuple[Path, str, str]] = {
         "    d = tmp_path / 'x.ts'\n    d.write_bytes(TOKENS_TS.read_bytes())\n"
         "    return d\n",
     ),
-    # 11. the guard degrades to resolving NAMES instead of BINDINGS. Everything
-    #     else — the write list, the forbidden/allowed roots, the message
-    #     shape — is untouched, so the only property this removes is "can it
-    #     follow a rebinding".
+    # 11. the guard keeps only the LAST binding per name again — the third
+    #     version's bug. Everything else (the write list, the forbidden roots,
+    #     the message shape) is untouched, so the only property this removes is
+    #     "does it see every binding or just the final one".
     #
-    #     It is killed, and that is correct: with `root = recv.id`, the name
-    #     `dst` is neither forbidden nor `tmp_path`, so the guard reports "say
-    #     where it comes from" and fails. Note WHY that is not evidence for the
-    #     name-based check: the degraded guard cannot tell a safe `dst` from a
-    #     rebound one. A guard with no way to distinguish them is forced to
-    #     either pass everything or reject correct code, and both are wrong.
-    #     Measured, the rejection branch is what it takes. So this mutation
-    #     shows the degradation is DETECTED, not that the AST was necessary for
-    #     correctness — see `benign_rename`, which is the honest half: without
-    #     binding resolution there is no way to be right about a rename.
-    'name_only_instead_of_binding': (
+    #     It is killed, and that is the point: the healing rebind is the
+    #     acceptance criterion for this round, and a last-write-wins map walks
+    #     straight past it.
+    # 11. the guard keeps only the LAST binding per name again — the third
+    #     version's actual bug, `bound[name] = value`: one value per name, so
+    #     last-write-wins. The value is a bare AST node, not a list, which is
+    #     what made that version a plain dict.
+    #
+    #     The first attempt at this mutation wrote `bound[name] = [value]`,
+    #     which still keeps a list of one and therefore still walks every
+    #     binding — it reproduced the SECOND version's shape, not this one's,
+    #     and it survived. A mutation that survives because it tested the wrong
+    #     code is worse than one that survives because the code is right.
+    'last_binding_only': (
         TEST,
-        "        root = root_of(recv.id)\n",
-        "        root = recv.id  # MUTATION: name, not binding\n",
+        "    for name, value in sorted(_all_assignments(tree),\n"
+        "                              key=lambda p: (getattr(p[1], 'lineno', 0),\n"
+        "                                             getattr(p[1], 'col_offset', 0))):\n"
+        "        bound.setdefault(name, []).append(value)\n",
+        "    for name, value in _all_assignments(tree):  # MUTATION: last wins\n"
+        "        bound[name] = value\n",
+    ),
+    # 12. THE ACCEPTANCE CRITERION for this round: rebind to the source, write,
+    #     then put the variable back. Last-write-wins erased the malicious
+    #     binding; measured before the fix, the structural guard did not redden
+    #     and the real tokens were written.
+    'healing_rebind': (
+        TEST,
+        "    dst = tmp_path / 'tokens.ts'\n    dst.write_bytes(TOKENS_TS.read_bytes())\n",
+        "    dst = tmp_path / 'tokens.ts'\n"
+        "    dst = TOKENS_TS  # MUTATION: malicious\n"
+        "    dst.write_bytes(TOKENS_TS.read_bytes())\n"
+        "    dst = tmp_path / 'tokens.ts'  # 'healed' back\n",
+    ),
+    # 13. the same rebinding hidden in a loop body. A guard that reads only
+    #     module-level assignments sees nothing here.
+    'rebind_in_loop': (
+        TEST,
+        "    dst = tmp_path / 'tokens.ts'\n    dst.write_bytes(TOKENS_TS.read_bytes())\n",
+        "    dst = tmp_path / 'tokens.ts'\n"
+        "    for _ in range(1):\n"
+        "        dst = TOKENS_TS  # MUTATION: in a loop\n"
+        "    dst.write_bytes(TOKENS_TS.read_bytes())\n",
+    ),
+    # 14. and in a conditional branch, which is how it would reach production:
+    #     only on a platform where the path differs.
+    'rebind_in_branch': (
+        TEST,
+        "    dst = tmp_path / 'tokens.ts'\n    dst.write_bytes(TOKENS_TS.read_bytes())\n",
+        "    dst = tmp_path / 'tokens.ts'\n"
+        "    if True:\n"
+        "        dst = TOKENS_TS  # MUTATION: in a branch\n"
+        "    dst.write_bytes(TOKENS_TS.read_bytes())\n",
+    ),
+    # 15. a tuple-assignment rebinding: `dst, other = TOKENS_TS, x` has TWO
+    #     targets, so the single-target filter never saw it. Measured necessary
+    #     after mutation 12 landed: without this, that shape is a hole.
+    'rebind_via_tuple': (
+        TEST,
+        "    dst = tmp_path / 'tokens.ts'\n    dst.write_bytes(TOKENS_TS.read_bytes())\n",
+        "    dst = tmp_path / 'tokens.ts'\n"
+        "    dst, _spare = TOKENS_TS, 0  # MUTATION: two targets\n"
+        "    dst.write_bytes(TOKENS_TS.read_bytes())\n",
     ),
 }
 
@@ -228,7 +277,8 @@ def main() -> int:
 
     #: mutations that MUST redden the structural guard specifically
     must_hit_guard = {'whitelisted_name_rebound', 'rebound_multiline',
-                      'direct_source_write'}
+                      'direct_source_write', 'healing_rebind', 'rebind_in_loop',
+                      'rebind_in_branch', 'rebind_via_tuple'}
     for n in names:
         global _is_crlf
         f, old_txt, new_txt = MUTATION_TEXT[n]
