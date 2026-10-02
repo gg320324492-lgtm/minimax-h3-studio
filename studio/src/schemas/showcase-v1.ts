@@ -58,10 +58,51 @@ export const CameraSchema = z.object({
   focus: Track.optional(),
 });
 
+/**
+ * Per-scene motion overrides. `preset` and `stagger` are READ; `ease` was
+ * removed in P11 and is deliberately not coming back (see below).
+ *
+ * WHY THERE IS NO `ease` (P11, defect 2 — measured, not inferred):
+ *
+ * The delivered graph set `"ease": "expo-out"` on s01_kpi and s03_columns, and
+ * the field was declared here — but nothing in the render path ever read
+ * it. Every `motion.*` read in production is exactly three lines, and `ease`
+ * is in none of them:
+ *
+ *   CameraRig.tsx:98     motion?.preset   -> cameraMoveFrames(...)
+ *   BrowserStack.tsx:189 motion?.stagger
+ *   DataColumns.tsx:176  motion?.stagger
+ *
+ * So the graph told an author `expo-out` was shaping those two scenes. It was
+ * not: the only easing in the render path is the hardcoded bezier at
+ * `primitives.tsx:183`, `cubicBezierEase(0.16, 1, 0.3, 1)`.
+ *
+ * DELIBERATELY CLEANED, NOT WIRED. Wiring was rejected on evidence, not taste:
+ *
+ *  * That bezier takes FOUR NUMBERS. So does the built-in table
+ *    (`MOTION.profiles[x].ease`, a `[n,n,n,n]` tuple). The shipped value is the
+ *    NAME `expo-out` — and NO name’curve resolver exists anywhere in
+ *    studio/src, studio/scripts or pipeline (the only two `expo-out` hits are a
+ *    comment in CameraRig.tsx and a hand-rolled quartic in KpiHero.tsx).
+ *    Honouring the field would mean INVENTING that table — deciding alone
+ *    that `expo-out` means [0.16, 1, 0.3, 1] — a design decision, not a bug fix.
+ *  * The alternative — retype the field as a 4-number bezier — would
+ *    REJECT every graph shipped today. Breaking a delivered artefact is worse
+ *    than the lie it replaces.
+ *  * The "read it, fail to resolve it, fall back to the hardcoded bezier" variant
+ *    is the one this project has already paid for: it trades a lie you can read
+ *    in the graph for a lie the code performs, and it makes the guard unfalsifiable.
+ *
+ * Removing the declaration (not just the graph values) is what makes the fix
+ *  stick: on the JSON Schema side `Motion` carries `additionalProperties:false`,
+ * so a re-added `ease` is REJECTED, while here zod would silently STRIP it. If the
+ * declaration came back without a reader, the graph would be claiming an effect
+ * again while `safeParse` still returned success — defect one, one level
+ * down. `tests/test_motion_ease_is_not_a_claim.py` guards both halves.
+ */
 export const MotionSchema = z.object({
   preset: z.enum(['premium', 'energetic', 'cinematic', 'minimal']).optional(),
   stagger: z.number().min(0).max(2).optional(),
-  ease: z.string().optional(),
 });
 
 export const TransitionSchema = z.object({
