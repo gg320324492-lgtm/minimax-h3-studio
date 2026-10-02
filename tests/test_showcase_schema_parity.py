@@ -33,10 +33,24 @@ def _ts_scene_types() -> list[str]:
 
 
 def _ts_camera_keys() -> list[str]:
+    """Camera channels declared by the zod `CameraSchema`.
+
+    Matches the `.object({` marker rather than a whole line, because P11 defect 3
+    wrapped the object onto its own line to attach `.strict()`. Pinning the old
+    one-line spelling made this parity test go red on a REFACTOR, which is the
+    failure mode a parity check should never have: it teaches people to expect
+    red and ignore it. The body is bounded by "no intervening `export const`",
+    not by the first `})`.
+    """
     src = TS.read_text(encoding='utf-8')
-    m = re.search(r'export const CameraSchema = z\.object\(\{(.*?)\n\}\);', src, re.S)
-    assert m, 'could not find CameraSchema'
-    return re.findall(r'^\s{2}(\w+):', m.group(1), re.M)
+    m = re.search(
+        r'export const CameraSchema = [^=]*?\.object\(\{\r?\n'
+        r'((?:(?!export const)[\s\S])*?)'
+        r'\r?\n  \}\)\r?\n  \.strict\(\);', src, re.S)
+    assert m, (
+        'could not find CameraSchema. If the declaration was reshaped again, '
+        'update this parser rather than reading the failure as a parity break.')
+    return re.findall(r'^\s{4}(\w+):', m.group(1), re.M)
 
 
 def _same_members(a, b, what: str) -> None:

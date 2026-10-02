@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "showcase-v1",
-  "description": "Scene graph for programmatic product-film / data-showcase video. P3 of docs/UPGRADE_MASTER_PLAN.md. Lives in pipeline/ (Python side) and is mirrored to a zod schema in studio/src/schemas/showcase-v1.ts — the two must stay in sync (see tests/test_showcase_schema_parity.py).",
+  "description": "Scene graph for programmatic product-film / data-showcase video. P3 of docs/UPGRADE_MASTER_PLAN.md. Lives in pipeline/ (Python side) and is mirrored to a zod schema in studio/src/schemas/showcase-v1.ts — the two must stay in sync (see tests/test_showcase_schema_parity.py and tests/test_showcase_schema_mirrors_agree.py).",
   "type": "object",
   "required": [
     "version",
@@ -17,6 +17,10 @@
     "project": {
       "type": "string",
       "minLength": 1
+    },
+    "_note": {
+      "type": "string",
+      "description": "Provenance comment for humans. Declared rather than smuggled through a hole: this is the project's leading-underscore convention for meta/annotation, so it gets a named home instead of riding on additionalProperties. Stripped before rendering — no renderer reads it."
     },
     "style_bible": {
       "$ref": "#/definitions/StyleBible"
@@ -60,6 +64,22 @@
     }
   },
   "definitions": {
+    "Track": {
+      "description": "A camera channel: a constant, or [from, to] interpolated over the scene. Mirrors the zod `Track` union. This definition was MISSING until P11 defect 3 — eight properties $ref'd it and nothing provided it, so the whole schema failed to compile in any conforming validator (Ajv: \"can't resolve reference #/definitions/Track from id #\"). Nothing ever noticed because no test ran this file through a validator, only through regexes. A schema that cannot compile cannot disagree with its mirror either: it simply never answers.",
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
+    },
     "Scene": {
       "type": "object",
       "required": [

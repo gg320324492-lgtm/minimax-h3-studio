@@ -71,11 +71,23 @@ def _top_level_schema_keys() -> set[str]:
     Parsed out of the zod literal rather than by running zod, so this sweep does
     not depend on a node runtime — a Python-side guard that can still fail when
     node is unavailable is worth more than one that cannot.
+
+    Matches the `.object({` marker, not a whole line: P11 defect 3 wrapped the
+    declaration to attach `.strict()`, which moved the brace onto its own line.
+    A parser pinned to the old spelling goes red on a refactor, and a guard that
+    cries wolf on reshapes is a guard people stop reading. The body is bounded by
+    "no intervening `export const`" rather than by the first `})`.
     """
     src = SHOWCASE_TS.read_text(encoding='utf-8')
-    m = re.search(r'export const ShowcaseSchema = z\.object\(\{(.*?)\n\}\);', src, re.S)
-    assert m, 'could not find ShowcaseSchema in showcase-v1.ts'
-    return set(re.findall(r'^\s{2}(\w+):', m.group(1), re.M))
+    m = re.search(
+        r'export const ShowcaseSchema = [^=]*?\.object\(\{\r?\n'
+        r'((?:(?!export const)[\s\S])*?)'
+        r'\r?\n  \}\)\r?\n  \.strict\(\);', src, re.S)
+    assert m, (
+        'could not find ShowcaseSchema in showcase-v1.ts. If the declaration was '
+        'reshaped again, update this parser rather than reading the failure as a '
+        'schema problem.')
+    return set(re.findall(r'^\s{4}(\w+):', m.group(1), re.M))
 
 
 def _read_of_docs(src: Path) -> list[tuple[int, str]]:
@@ -126,11 +138,17 @@ def test_top_level_schema_keys_are_what_this_file_expects():
     than letting the guard below pass vacuously over a regex that no longer
     matches anything."""
     keys = _top_level_schema_keys()
-    assert keys == {'version', 'project', 'style_bible', 'format', 'bpm', 'scenes'}, keys
+    assert keys == {'version', 'project', '_note', 'style_bible', 'format', 'bpm', 'scenes'}, keys
     # The defect: `audio` is not among them, and that is the whole reason the
     # template's branch was dead. Asserted so the day someone wires it, this
     # file says so out loud.
     assert 'audio' not in keys
+    # `_note` IS among them, as of P11 defect 3. It was previously absent and
+    # stripped by zod, which meant a graph's provenance comment was legal on the
+    # JSON Schema side in name only and had no declared type anywhere. It is now
+    # declared on BOTH mirrors as `string`, and the comment below says why it is
+    # allowed to be one of the few keys that is declared and never read.
+    assert '_note' in keys
 
 
 def test_no_production_source_reads_an_undeclared_showcase_field():
@@ -222,13 +240,20 @@ console.log(JSON.stringify({
 
 
 @pytest.mark.skipif(_NPX is None, reason='node/npx not on PATH')
-def test_zod_strips_an_undeclared_top_level_audio_at_runtime(tmp_path):
+def test_zod_rejects_an_undeclared_top_level_audio_at_runtime(tmp_path):
     """The measurement behind every comment in this file, re-taken.
 
-    The source sweep proves nobody READS `audio`. This proves the other half —
-    that zod REMOVES it, which is what made the original read silent rather than
-    merely wrong. Without this, `audio` could silently become reachable through
-    some future `.passthrough()`, and the strip would no longer be a fact.
+    The source sweep proves nobody READS `audio`. This proves the other half --
+    that zod REJECTS it, so a graph carrying `audio` cannot load at all.
+
+    This assertion used to be `success is True` plus `audioSurvived is False`:
+    the strip WAS the defect, and this test pinned it as the contract. That was
+    the cost of leaving the two mirrors to disagree, and it was paid until P11
+    defect 3 made both mirrors strict. `ShowcaseSchema` is `.strict()` now, so a
+    re-added `.passthrough()` would be a live regression rather than a comment.
+
+    If someone genuinely wants `audio` back, that is a feature request: it needs a
+    declaration AND a reader, and this test is the thing that says so out loud.
     """
     probe = STUDIO / '__probe_audio.mts'
     try:
@@ -242,9 +267,11 @@ def test_zod_strips_an_undeclared_top_level_audio_at_runtime(tmp_path):
         line = [l for l in proc.stdout.splitlines() if l.startswith('{')]
         assert line, f'no probe output:\n{proc.stdout}\n{proc.stderr}'
         got = json.loads(line[-1])
-        assert got['success'] is True, got
-        assert got['audioSurvived'] is False, got
-        assert 'audio' not in got['keys'], got
+        assert got['success'] is False, (
+            f'zod ACCEPTS a top-level `audio` key: {got}. It is stripping again, '
+            'which means a graph asking for a music bed would validate and render '
+            'silent -- the P11 defect, reintroduced.')
+        assert got['keys'] == [], got
     finally:
         probe.unlink(missing_ok=True)
 
