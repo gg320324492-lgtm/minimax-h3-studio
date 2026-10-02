@@ -3,7 +3,7 @@
 // 用法：
 //   node bin/render.mjs --comp DramaVertical --props <props.json> --out <out.mp4>
 //       [--codec h264] [--crf 18] [--bitrate 8M|14000K] [--hw disable|if-possible|required]
-//       [--concurrency 8]
+//       [--concurrency 8] [--pixelfmt yuv420p] [--imageformat jpeg] [--colorspace bt709]
 // bundle 在单次进程内复用；批量产能升级为常驻服务是 Phase 4 事项。
 
 import fs from 'node:fs';
@@ -28,6 +28,42 @@ const requireArg = (key) => {
   }
   return v;
 };
+// Hand-rolled flag parsing is why `--frames 10` where `--frame` was meant used
+// to render the whole film and exit 0. still.mjs got this check first and says
+// why in its own comment; render.mjs did not, and the two entry points then
+// disagreed about the same mistake. A typo here that lands on a flag WITH a
+// default cannot be caught by requireArg at all — `--cosdec vp9` (codec)
+// leaves h264 in place, renders, and exits 0, so the caller sees a perfectly
+// plausible file. Unknown flags are now an error, for the same reason still.mjs
+// makes them one: a typo that silently selects different settings produces a
+// wrong film rather than a failure.
+//
+// The known set is every `--name` this file reads, by hand, because `get()`
+// hides them: the three required, the six read at the top, and the three read
+// inline inside renderMedia() (pixelfmt / imageformat / colorspace). Those last
+// three are the ones a list derived from the parsing helpers would miss, and
+// they are documented only by the usage comment above until this file landed.
+//
+// There are NO boolean flags: nothing here is consumed as `argv.includes(...)`,
+// so every flag takes a value. still.mjs has `--clean` precisely because it
+// reads one; render.mjs has nothing of the kind. Reject `--clean` here like
+// any other unknown, rather than quietly accepting a flag that does nothing.
+const VALUE_FLAGS = new Set([
+  'comp', 'props', 'out',            // required
+  'codec', 'crf', 'bitrate', 'hw', 'concurrency',   // read at the top
+  'pixelfmt', 'imageformat', 'colorspace',         // read inline in renderMedia()
+]);
+for (const a of argv) {
+  if (!a.startsWith('--')) continue;
+  const name = a.slice(2);
+  if (!VALUE_FLAGS.has(name)) {
+    console.error(
+      `Unknown flag --${name}. Known value flags: ` +
+        `${[...VALUE_FLAGS].map((f) => '--' + f).join(', ')}`
+    );
+    process.exit(2);
+  }
+}
 
 const comp = requireArg('comp');
 const propsPath = requireArg('props');
