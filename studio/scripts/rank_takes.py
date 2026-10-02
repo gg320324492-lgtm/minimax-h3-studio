@@ -41,6 +41,17 @@ ROOT = Path(r'E:\Minimax-H3')
 # duplicates only. A rerun with a non-deterministic sampler would land at a
 # small-but-nonzero distance and slip through. Revisit the threshold (and the
 # sample size — n=1 real duplicate so far) whenever more multi-take shots land.
+#
+# P20 re-measured on the WHOLE corpus (2026-10-03, all 16 takes -> 120 pairs,
+# not just same-shot ones): still {0.000} ∪ [31.264, 105.839], and the
+# within-shot pairs the rule can actually see are {0.000} ∪ [34.543, 62.820].
+# So the gap P1 recorded is real and 0.5 still sits ~63x below the nearest
+# genuine pair. Note WHAT the measurement does NOT pin down: 0.5 is not
+# derived from this distribution, it is merely inside the gap. Anything in
+# (0.0, 34.543) gives the same verdict on every pair that exists, so the corpus
+# cannot choose a number here. `select_takes.py` used 1.0 for the same question
+# over the same population — that second literal is gone (P20); it is imported
+# below rather than retyped.
 DUP_THRESHOLD = 0.5
 
 
