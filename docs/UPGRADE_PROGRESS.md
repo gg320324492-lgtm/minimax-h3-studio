@@ -197,6 +197,8 @@
 
 ---
 
+<br>**惰性字段全量复核完成（10-02，含运行时验证）**：全量枚举后**真正惰性的是 6 个，不是交接文档记的 18 个** —— `scene.notes`、`scene.audioEvents`、`scene.transitionOut`、`camera.focus`、`motion.ease`、`content.chart.baseline`。**六个全部经 grep 零命中验证**（`focus`/`ease` 的命中数不为零，但全是同名诱饵：前者是生命周期阶段名 `focus`，后者是内置 `MOTION.profiles` 表的键，没有一处读图谱的值）。**这六个 schema 全部静默接受**——zod 无 `.passthrough()`，作者设了不报错，只是被忽略。<br>**最值得处理的一条不是这六个**：`FinanceShowcaseWide.tsx:99` 读顶层 `doc.audio` 并在 `:135` 渲染 `<Audio>`，**但 `ShowcaseSchema` 根本没声明 `audio`**。运行时实测：`safeParse` 返回 `success: true`，解析后键为 `version,project,format,bpm,scenes`，**`audio survived?: false`** —— zod 剥掉未知键，所以那个 `<Audio>` 分支**永久不可达**，任何今天写的带 `"audio": {"src": ...}` 的图谱都会**渲染静音且校验通过**。当前两份交付图谱都没有顶层 `audio`，所以**尚未造成实际损失**。<br>**六个里唯一被交付图谱主动设置的是 `motion.ease`**（`showcase_demo.json` 设 2 次、`studio/public/jobs/showcase_demo.json` 设 3 次）——作者有充分理由相信那些场景的缓动由它决定，而 `common/primitives.tsx:183` 把 bezier 硬编码成 `cubicBezierEase(0.16, 1, 0.3, 1)`，全仓无一处读 `motion.ease`。<br>**「18」的差异解释**：那个数字统计的是更大的面 —— 跨两个 schema（Python JSON Schema + TypeScript）、含 `style_bible` 子区（其中 `chartLanguage`/`audioLanguage` 解析 nowhere）、以及 Python 管线自己那层未接线的 chart-spec 字段（`chart.width`/`chart.height`/`color`/`timing`，这些字段今天在两份 schema 里都不存在）。**两个数字都不错，是问的不是同一批东西** —— 要合成一个数字，得先裁定 `style_bible` 的两个语言区与管线字段是否在审计范围内。
+
 ## P11 — Auto Repair Loop　状态：⬜（1/3：**11.2 完全闭环**；11.1 **前置仪器已建成、修复器未写**；11.3 未开始）。**
 
 **11.1 的前置条件已建成，但修复器本身还没有。**新增 `studio/scripts/chart_geometry.py`：**从图表选项的几何算标签间隔，不靠像素**——这正是 P10 审计结论「Needs the mark layout from the chart options, not pixels」指的方向。对着渲染真值校准（**5 根柱 334px vs 333.6px，16 根柱 104.5px vs 104.2px，误差 0.2%**）；宽度用真实字体逐字符量（标签字体里 `i` 是 5.3px、`W` 是 20.4px，同长度差 4 倍，数字数会误判）。九个变异八个杀。
