@@ -350,8 +350,22 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 13.1 | `job_state.json`（scene 级 input/asset/render hash + qa_status + version） | ⬜ | |
-| 13.2 | 改一个 scene 只重跑该 scene 的 preview/QA/final | ⬜ | |
+| 13.1 | `job_state.json`（scene 级 input/asset/render hash + qa_status + version） | ⬜ |**裁定 B：不值得建。** 全仓检索 `job_state`/`sceneCache` **零实现**。**bundle 只占单次渲染 6%**（实测 **1.2s / 19.6s**，三次 1.2/1.3/1.2 复现）：`studio/public` 是 **127 文件 / 810.6 MB** —— **体积大但文件数只有 127**，bundler 逐文件 `copyFile`，所以快。**800 MB 从来不是瓶颈。** 且 `render.mjs:57` 每进程 `mkdtempSync` + `finally` 删除，**当前形态下这 1.2s 根本省不掉**；要省它必须先变**长驻进程 = P14** | 
+| 13.2 | 改一个 scene 只重跑该 scene 的 preview/QA/final | ⬜ |**裁定 C：收益够大，但现在建不了。** 实测收益 **63–72%**（s01: 19.6→7.3s；s03: 19.6→5.5s），**挡住它的不是收益**，是三个实测事实：**① 产物不可复现** —— 同图三次得 **711054 / 710851 / 712303** 字节三个 sha256，**`concurrency=1` 亦然**，而 ffmpeg 对同一输入逐字节相同 ⇒ **缓存不能靠「重渲比对」验证命中**（这一条直接决定缓存方案的可验证性）；**② 没有任何一层能察觉「改了一个 scene」** —— 把 `s01` 值改成 9999，`visual_qa.py` 报告**逐字节相同**、退出码相同，无代码比较图谱；**③ 拼接后 re-encode 成本未实测**，所以 63–72% 只是上限。**且无 scene 级入口**（`bin/` 只有全片 `render.mjs` / 单帧 `still.mjs`；`visual_qa.py:746-751` 只有 `--props` 无 `--scene`）。**瓶颈不在 bundle，在「没有 scene 级入口」和「没有 scene 级 diff」——都不是 `job_state.json` 能解决的** | 
+
+**勘察记录**：`docs/P13_CACHE_PAYOFF.md`；**事实守卫** `tests/test_p13_scene_cache_facts.py`（+8 条，钉住上述「现状」而非「应然」）。全量 365→**373 passed, 2 skipped**。
+
+**执行 agent 自抓的一条严重测量错误**：第一版局部性守卫断言「被改 scene 之外逐像素相同」，实测 delta 达 **198** —— 根因是它在 **480×270 下采样**上做的测量，**差异被平均掉了**。**「在错误的尺度上测量等于没测」**，这条已写进 docstring 与 commit。
+
+**变异存活且应当存活**：把图谱里一个 scene 的值改掉 → `373 passed`，**因为现有系统真的察觉不到**，那正是被记录的发现；agent 用第三条变异（让某规则真去读 scene 值）证明这个存活**不是守卫空转**，而非造 contrived 输入去杀它。
+
+**本阶段附带修掉一处更危险的失效（`6e86b46`）**：**`visual_qa.py` 被喂错东西时报告「通过」** —— `:761` 的 `args.props.exists()` 条件在文件不存在时静默跳过 → `props` 保持 `None` → `:773` 整段 `rule_missing_asset` 被跳过 → **一次什么都没跑的 QA 输出「无发现」报告、退出码 0**（实测：`0 FAIL, 0 UNVERIFIABLE, 4 UNAVAILABLE` + `EXITCODE=0`）。**CI 里等价于绿灯。**
+
+- **裁定走 B（报 `UNVERIFIABLE`）而非 A（`ap.error()`）**，依据是**房屋约定**：`qa_report.py:17` 写明「Exit 1 on any FAIL, and on any UNVERIFIABLE」，`visual_qa.py` 自身表头 §2 定义 UNVERIFIABLE 为「仪器测不了」。A 被否决是因为它会**毁掉报告** —— `--json` 消费方会拿到非零退出码**且完全没有 findings 数组**。- **接上了那个零调用方的 `rule_duplicate_check_props`（`:615`）而不是重新发明** —— 它本就实现了 B 的语义（UNVERIFIABLE + 带路径）。- **两个工具现在约定一致**：缺失 props 时 `visual_qa.py` 退出 **1** 并指名路径，`ab_field.py:471-472` 退出 **2** 并指名文件。方向一致（都非零）。- **那条钉住「现状」的守卫被重写而非删除或放松**（161 行变更），agent 读后确认它钉的是现状、并按其注释要求「刻意回来重写」——**红在了正确的理由上**（规则不再消失，而是改变判定）。
+
+**指挥窗口独立复验**：真实退出码 **1**（**第一次测时用管道读到的是 `tail` 的退出码，差点误判** —— 这正是本项目反复批的那类错误，复查后纠正）；报告指名 `props.json does not exist`；健康图谱仍退出 **0** 且零 UNVERIFIABLE；`ab_field.py` 缺失 props 退出 **2** 并指名。全量 373→**379 passed, 2 skipped**。
+
+**未决（agent 提出）**：`--frame` + 坏 `--props` 的组合**未测**；且 props 分支的 finding 现在排在 frame findings **之前**，既有排序守卫只覆盖「`--frame` 无 `--props`」故仍通过。
 
 ---
 
