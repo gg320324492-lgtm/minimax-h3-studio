@@ -197,12 +197,12 @@
 
 ---
 
-## P11 — Auto Repair Loop　状态：⬜
+## P11 — Auto Repair Loop　状态：⬜（1/3：**11.2 完成**，11.1 / 11.3 未开始）。**注：11.1 按审计结论其 9 个杠杆有 4 个惰性/不存在，且它会被 11.2 禁止——见下方说明。**
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
 | 11.1 | Repair Planner（可改 padding/scale/font/chart width/color/timing/camera/stagger/duration） | ⬜ | |
-| 11.2 | 锁定项保护（核心文案/品牌 logo/数值事实） | ⬜ | |
+| 11.2 | 锁定项保护（核心文案/品牌 logo/数值事实） | ✅ | **新增 `studio/scripts/locked_fields.py`（14 条锁定规则）。**实测 **3 种 kind：fact 9 / copy 4 / identity 1**。**品牌那一类不走字段规则**：`logo` 在 `showcase-v1.ts:36` 是**场景类型**而非 content 字段，所以锁的是类型本身（`LOCKED_SCENE_TYPES = {'logo'}`），`by_kind['brand']` 实测为 **空列表** —— 计数器第三类为零斯箍这一点是实测结论，不是遗漏。为什么是显式路径而不是类型：`content` 在 `showcase-v1.ts:100` 是 `z.record(z.string(), z.unknown())`，**每个场的每个字段都是 `unknown`，包括那些不得动的** → 没有类型边界可靠，锁必须显式写下来，代价就是可能不完整——所以 `LOCK_RULES` 导出且在测试里数掉，`coverage_report()` 直接打印交付图谱真正命中的部分。<br>**实测覆盖：14 条规则、`unexercised: []`——零盲区。**<br>**不锁的是审计结论而不是口味：**`durationInFrames`/`camera`/`motion`/`layout`/`style_bible`/`format`/`transitionIn/Out` 正是 11.1 点名的杠杆，锁了它们修复循环就什么都做不了。边界是「**a claim** vs **the staging of the claim**」——可以改数字怎么呈现，不能改它说什么。<br>**变异测试，4 个全杀**：删 `labels` 规则 → 2 条红；列长差返回 `[]` → `test_a_repair_may_not_shorten_labels` 红；删第二个 `emit()` → `test_a_locked_field_added_where_none_existed_is_caught` 红。<br>**第三个变异暴露了一个真实缺陷，不是测量有效性的问题：**`diff_locked` 初稿只有单向 `emit(before, after)`，**修复过程里向一个原本没有锁定键的场景新增锁定字段（凭空写 caption、补值）就根本看不到**——每个其他测试全绿。补上第二次 `emit()` 后，新测试立即转红且 before/after 符号反了，需要在 `not primary` 时交换两边。<br>**14 条测试两个方向都断言**：违规动作被拒（改值/删标签/删整个字段/改标题），**11.1 的合法杠杆不被拦**——只会说「不」的守卫会通过这个文件里每一条测试，故 `test_the_levers_11_1_names_are_not_locked` 专为它存在。 |
 | 11.3 | MAX_REPAIR_ROUNDS=3 + scene 级重渲 | ⬜ | |
 
 ---
