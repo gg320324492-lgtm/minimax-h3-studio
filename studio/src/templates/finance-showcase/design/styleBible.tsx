@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useVideoConfig} from 'remotion';
-import {TYPE, MOTION, SPACE, RADIUS, DEPTH, FONT_NUM, FONT_SANS, scaleFor} from './tokens';
+import {TYPE, MOTION, SPACE, RADIUS, FONT_NUM, FONT_SANS, scaleFor} from './tokens';
 import {THEMES, themeNamed, type ThemeName} from './themes';
 
 /**
@@ -28,7 +28,6 @@ export type StyleBible = {
   shadow: Record<string, string>;
   /** one shadow per depth step, far plane first */
   depthCue: readonly string[];
-  depth: Record<string, string>;
   motion: typeof MOTION;
   camera: {perspective: number; durationSeconds: number};
 };
@@ -70,7 +69,11 @@ const resolveInvariant = (b: Record<string, unknown>) => ({
   typography: mergeSection({...TYPE} as Record<string, unknown>, b.typography),
   spacing: mergeSection({...SPACE} as Record<string, unknown>, b.spacing),
   radius: mergeSection({...RADIUS} as Record<string, unknown>, b.radius),
-  depth: mergeSection({...DEPTH} as Record<string, unknown>, b.depth),
+  // `depth` USED to be merged here, from the same `b.depth`, and was deleted in
+  // P12: zero consumers (measured three ways) and an input that could not exist,
+  // because `StyleBibleSchema` never declared it and zod therefore stripped it on
+  // every parse. The `DEPTH` table itself is untouched in tokens.ts — removing a
+  // token is a larger call than removing a graph-facing binding.
   motion: mergeSection({...MOTION} as unknown as Record<string, unknown>, b.motionLanguage),
   camera: mergeSection(
     {perspective: 1400, durationSeconds: MOTION.premiumCameraSeconds} as Record<string, unknown>,
@@ -95,6 +98,11 @@ export const resolveStyleBible = (input?: unknown, themeName?: unknown): StyleBi
   return {
     theme: themeNamed(themeName),
     palette: mergeSection({...theme.palette}, section('palette')),
+    // Every section merged here MUST also be declared in StyleBibleSchema, or zod
+    // strips the graph's value before it arrives and `section()` returns the theme
+    // default while still reporting success. `radius` / `shadow` / `depthCue` sat in
+    // exactly that state from P4 until P12. tests/test_style_bible_merges_only_declared.py
+    // is the guard; do not add a section here without adding it to the schema.
     shadow: mergeSection({...theme.shadow}, section('shadow')),
     depthCue: mergeList(theme.depthCue, section('depthCue')),
     ...(resolveInvariant(b) as unknown as Omit<StyleBible, 'theme' | 'palette' | 'shadow' | 'depthCue'>),
@@ -170,7 +178,6 @@ export const useDesign = () => {
     RADIUS: s.radius,
     SHADOW: s.shadow,
     DEPTH_CUE: s.depthCue,
-    DEPTH: s.depth,
     camera: s.camera,
     FONT_NUM,
     FONT_SANS,
