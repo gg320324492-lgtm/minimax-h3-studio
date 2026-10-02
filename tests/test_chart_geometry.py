@@ -382,12 +382,31 @@ def test_no_test_in_this_module_can_reach_the_real_tokens():
     body = src.split('def test_no_test_in_this_module_can_reach_the_real_tokens', 1)[0]
     tree = ast.parse(body)
 
+    def _all_assignments(t: ast.AST) -> list[ast.Assign]:
+        """Every single-target Name assignment, wherever it is.
+
+        Inside a function, a loop or a conditional, not just at the top level:
+        a rebinding hidden in a `for` body is the same reachability as one at
+        module scope, and a guard that only reads the obvious ones is a guard
+        that reads whatever the author put where it could see it.
+        """
+        out = []
+        for node in ast.walk(t):
+            if isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                    and isinstance(node.targets[0], ast.Name):
+                out.append(node)
+        return out
+
     # name -> the expression it was last bound to, in source order
-    bound: dict[str, ast.AST] = {}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and len(node.targets) == 1 \
-                and isinstance(node.targets[0], ast.Name):
-            bound[node.targets[0].id] = node.value
+    # name -> EVERY binding it receives, in source order. A dict of one value per
+    # name was the second version's bug: last-write-wins meant a "healed"
+    # rebinding erased the malicious one, because putting the variable back is
+    # the most natural way anyone writes this. `ast.walk` also gives no ordering
+    # guarantee, so the assignment nodes are sorted by position explicitly.
+    bound: dict[str, list[ast.AST]] = {}
+    for node in sorted(_all_assignments(tree), key=lambda n: (n.lineno, n.col_offset)):
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            bound.setdefault(node.targets[0].id, []).append(node.value)
 
     #: what counts as the repository's own source. A write to any of these, or
     #: to anything derived from one, is the bug this guard exists for.
@@ -395,26 +414,42 @@ def test_no_test_in_this_module_can_reach_the_real_tokens():
     #: the only place a write may land
     ALLOWED_ROOT = 'tmp_path'
 
-    def root_of(name: str, seen: frozenset[str] = frozenset()) -> str:
-        """Follow a name's bindings to whatever it is ultimately derived from.
+    def reaches_forbidden(name: str, seen: frozenset[str] = frozenset()) -> tuple[bool, str]:
+        """Has this name EVER been bound to something derived from a forbidden root?
 
-        A rebinding to TOKENS_TS simply makes TOKENS_TS the root, so the answer
-        is a property of the data flow rather than of how any one line is
-        spelled. Recursion is cycle-guarded: a test that rebinds a name inside a
-        loop would otherwise hang the guard meant to catch it.
+        "Ever", not "currently". A name that touched TOKENS_TS and was later
+        reassigned to a tmp_path child has held a writable handle to the source
+        — at the moment the write happens, that is the binding that counts, and
+        the guard cannot know the order of a write and a later reassignment
+        without full control-flow analysis, which is more than this property is
+        worth. So the rule is conservative in the only direction that is safe:
+        any binding that ever reaches a forbidden root is a violation.
+
+        Returns (forbidden?, evidence) so the failure message can name what it
+        saw rather than just asserting a boolean.
         """
         if name in seen:
-            return name
-        expr = bound.get(name)
-        if expr is None:
-            return name
-        for child in {n.id for n in ast.walk(expr) if isinstance(n, ast.Name)}:
-            if child == name:
-                return name
-            r = root_of(child, seen | {name})
-            if r in FORBIDDEN_ROOTS or r == ALLOWED_ROOT:
-                return r
-        return name
+            return False, ''
+        for expr in bound.get(name, ()):
+            for child in sorted({n.id for n in ast.walk(expr) if isinstance(n, ast.Name)}):
+                if child == name:
+                    continue
+                if child in FORBIDDEN_ROOTS:
+                    return True, f'{name} is bound to {child}'
+                bad, why = reaches_forbidden(child, seen | {name})
+                if bad:
+                    return True, why
+                if child in bound and _root_hint(child) == ALLOWED_ROOT:
+                    break
+        return False, ''
+
+    def _root_hint(name: str) -> str:
+        """A best-effort allowed-root hint, used only to stop the walk early."""
+        for expr in bound.get(name, ()):
+            for child in {n.id for n in ast.walk(expr) if isinstance(n, ast.Name)}:
+                if child == ALLOWED_ROOT:
+                    return ALLOWED_ROOT
+        return ''
 
     writes = [
         node for node in ast.walk(tree)
@@ -437,27 +472,26 @@ def test_no_test_in_this_module_can_reach_the_real_tokens():
                 f'which is not a plain name and so cannot be traced'
             )
             continue
-        root = root_of(recv.id)
-        if root in FORBIDDEN_ROOTS:
+        bad, why = reaches_forbidden(recv.id)
+        if bad:
             offenders.append(
-                f'line {call.lineno}: {recv.id} is bound to {root} — the real '
-                f'design tokens. A test may not hold a writable handle to the source.'
+                f'line {call.lineno}: {why} — the real design tokens. A test may '
+                f'not hold a writable handle to the source, at any point in its life.'
             )
-        elif root != ALLOWED_ROOT:
+        elif _root_hint(recv.id) != ALLOWED_ROOT:
             offenders.append(
-                f'line {call.lineno}: {recv.id} is derived from {root!r}, which is '
-                f'neither tmp_path nor forbidden. Say where it comes from, or '
-                f'write to a tmp_path child.'
+                f'line {call.lineno}: {recv.id} is not derived from tmp_path. '
+                f'Say where it comes from, or write to a tmp_path child.'
             )
     assert not offenders, 'structural: ' + '; '.join(offenders)
 
     # The walk must have had something to walk, or the check above proved
     # nothing. Stated over the resolved roots rather than over names, so a
     # rename of a correct writer does not redden it.
-    roots = {root_of(c.func.value.id) for c in writes
-             if isinstance(c.func.value, ast.Name)}
-    assert ALLOWED_ROOT in roots, (
-        f'no write in this module resolves to tmp_path; roots seen: {sorted(roots)}'
+    assert any(_root_hint(c.func.value.id) == ALLOWED_ROOT
+               for c in writes if isinstance(c.func.value, ast.Name)), (
+        'no write in this module resolves to tmp_path — the binding walk found '
+        'nothing to resolve, so the check above proved nothing'
     )
 
 
