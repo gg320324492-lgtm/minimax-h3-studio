@@ -20,6 +20,42 @@ import {Stagger} from '../common/primitives';
  * snaps anything into place.
  */
 
+/**
+ * The depth cue for window `i`, and what happens past the end of the ramp.
+ *
+ * This replaces `DEPTH_CUE[Math.min(i, DEPTH_CUE.length - 1)]`, which was the
+ * clamp that made every window from the fourth onward share the third window's
+ * shadow. Measured, not inferred: rendering this scene with six windows and
+ * reading back what React actually emitted gave
+ *
+ *     w0 0 14px  40px   w1 0 30px  84px   w2 0 46px 132px
+ *     w3 0 46px 132px   w4 0 46px 132px   w5 0 46px 132px
+ *
+ * Exported because the behaviour past the last layer is a DESIGN decision and
+ * not an indexing detail, and a decision deserves to be named and checked
+ * rather than written as a `Math.min` nobody reads:
+ *
+ *  - clamp at the LAST layer (what this does). The ramp runs five deep (see
+ *    themes.ts for how those five were derived), so a six-window stack repeats
+ *    the deepest cue. That under-claims depth rather than lying about it.
+ *  - WRAP (`i % length`). Rejected, and the reason is specific: it makes
+ *    window 5 render as window 0 - the FAR plane - behind a window carrying
+ *    the deepest shadow. The stack would read as nearer-behind-further, which
+ *    is a depth lie the viewer can see, and it would cost nothing to ship.
+ *  - EXTRAPOLATE the ramp's own progression past layer five. Also rejected,
+ *    and this one is arithmetic: the dark ramp's alpha multiplies by 1.240 per
+ *    layer and reaches 0.95 at five, so layer six would need alpha 1.18. Not a
+ *    colour. The ramp saturates on near-black before its geometry does.
+ *
+ * `undefined` for an empty ramp rather than a throw, so a graph that overrides
+ * `depthCue` with an empty list falls through to the scene's own `SHADOW.floating`
+ * at the call site.
+ */
+export const depthCueAt = (cue: readonly string[], i: number): string | undefined => {
+  if (cue.length === 0) return undefined;
+  return cue[i < cue.length ? i : cue.length - 1];
+};
+
 type Win = {
   title: string;
   metric: string;
@@ -254,7 +290,7 @@ export const BrowserStack: React.FC<{scene: Scene}> = ({scene}) => {
           const k = equalOnScreen ? screenScaleFor(planeZ, cam.perspective) : 1;
           // depth read now that the windows are equal size at rest: a nearer
           // window carries a deeper shadow and a stronger turn
-          const depth = DEPTH_CUE[Math.min(i, DEPTH_CUE.length - 1)] ?? SHADOW.floating;
+          const depth = depthCueAt(DEPTH_CUE, i) ?? SHADOW.floating;
           return (
             <div
               key={w.title}
