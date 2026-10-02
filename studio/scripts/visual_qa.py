@@ -734,16 +734,39 @@ def main(argv: list[str] | None = None) -> int:
         findings.append(rule_duplicate(*args.frame_pair))
     if props is not None and not args.frame:
         findings += rule_missing_asset(props)
-    findings += unavailable_findings()
+    if not args.frame:
+        # run_on_frame appends these itself, with the reason each instrument is
+        # missing. Appending them here too emitted every one of them twice, so
+        # the CLI counted 15 findings where the library counted 11 — and a
+        # repair budget sized off that number over-counts by four.
+        findings += unavailable_findings()
 
     if args.json:
-        print(json.dumps([asdict(f) for f in findings], indent=1, ensure_ascii=False))
+        # Two ways this used to break a consumer, both now closed:
+        #  - the summary line followed the array, so json.load() raised
+        #    "Extra data" — the summary goes to stderr instead;
+        #  - ensure_ascii=False wrote real CJK through a GBK stdout on
+        #    Windows, so the bytes were not valid UTF-8 and read_text('utf-8')
+        #    died at the first non-ASCII char. JSON escapes to pure ASCII, so
+        #    the byte stream no longer depends on the terminal's encoding.
+        sys.stdout.write(json.dumps([asdict(f) for f in findings], indent=1,
+                                    ensure_ascii=True))
+        sys.stdout.write('\n')
     else:
         for f in findings:
             print(f)
     hard = [f for f in findings if f.verdict == FAIL]
-    unver = [f for f in findings if f.verdict in (UNVERIFIABLE, UNAVAILABLE)]
-    print(f'\n{len(findings)} findings: {len(hard)} FAIL, {len(unver)} not measurable')
+    unver = [f for f in findings if f.verdict == UNVERIFIABLE]
+    unavail = [f for f in findings if f.verdict == UNAVAILABLE]
+    # One number for two different states. "the instrument is absent" and "the
+    # instrument ran and could not decide" are not the same claim, and a budget
+    # sized off their sum is sizing off a category that does not exist.
+    if args.json:
+        print(f'\n{len(findings)} findings: {len(hard)} FAIL, '
+              f'{len(unver)} UNVERIFIABLE, {len(unavail)} UNAVAILABLE', file=sys.stderr)
+    else:
+        print(f'\n{len(findings)} findings: {len(hard)} FAIL, '
+              f'{len(unver)} UNVERIFIABLE, {len(unavail)} UNAVAILABLE')
     return 1 if hard else 0
 
 
