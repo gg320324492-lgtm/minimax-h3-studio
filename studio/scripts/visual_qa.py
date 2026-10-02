@@ -613,7 +613,26 @@ def rule_missing_asset(props: dict) -> list[Finding]:
 
 
 def rule_duplicate_check_props(props_path: Path) -> Finding:
-    """Sanity: the props file the asset rule reads is itself present and parseable."""
+    """Sanity: the props file the asset rule reads is itself present and parseable.
+
+    This function existed with ZERO call sites, while the code that needed it
+    (`if args.props and args.props.exists():`) quietly did the opposite — a
+    path that does not exist was dropped without a word. A rule can only fail
+    if it runs; one that silently never runs reports the same "0 FAIL" as a
+    clean frame, and in CI that is a green light on a QA pass that checked
+    nothing.
+
+    So it is now called. Its verdict vocabulary is already the right one:
+    UNVERIFIABLE means "the instrument could not measure it" (see this file's
+    header, point 2), and a graph that could not be opened is exactly that —
+    it is not a FAIL, because nothing measured a frame and found it wrong.
+
+    The exit code follows `qa_report.py`: UNVERIFIABLE exits non-zero, because
+    a caller gating on the return code cannot otherwise tell "checked, clean"
+    from "checked nothing". This is also the direction `ab_field.py` takes for
+    the same flag; the two tools had opposite conventions, and the strict one
+    is right for a gate.
+    """
     if not props_path.exists():
         return Finding('missing_asset', UNVERIFIABLE, None,
                        f'props file {props_path} does not exist', trusted=False)
@@ -759,8 +778,28 @@ def main(argv: list[str] | None = None) -> int:
 
     findings: list[Finding] = []
     props = None
-    if args.props and args.props.exists():
-        props = json.loads(args.props.read_text(encoding='utf-8'))
+    if args.props:
+        # A --props path that does not exist is a CALLER ERROR, not an absence
+        # of findings. It used to be dropped without a word here, which left
+        # `props` None and silently skipped the whole `missing_asset` block
+        # below — so a typo in a path produced a QA run that checked nothing,
+        # printed "0 FAIL, 0 UNVERIFIABLE", and exited 0. In CI that is
+        # indistinguishable from a clean pass.
+        #
+        # It is now reported through the rule system rather than raised, so the
+        # report says WHY nothing ran instead of vanishing. UNVERIFIABLE is the
+        # verdict for that ("the instrument could not measure it", header point
+        # 2); an unreadable graph is not a FAIL, because no frame was measured
+        # and found wrong.
+        probe = rule_duplicate_check_props(args.props)
+        if probe.verdict == PASS:
+            props = json.loads(args.props.read_text(encoding='utf-8'))
+        else:
+            # Only the UNVERIFIABLE half is reported. The PASS half says a file
+            # exists, which the `missing_asset` rule below then demonstrates by
+            # running — emitting both printed `missing_asset` twice on every
+            # healthy props-only run, for a fact nothing could act on.
+            findings.append(probe)
 
     if args.frame:
         declared = None
@@ -806,7 +845,14 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f'\n{len(findings)} findings: {len(hard)} FAIL, '
               f'{len(unver)} UNVERIFIABLE, {len(unavail)} UNAVAILABLE')
-    return 1 if hard else 0
+    # FAIL exits 1 and UNVERIFIABLE exits 1 too. Only FAIL did before, so a run
+    # that could not measure anything — including the missing-props case above —
+    # returned 0, and `qa_report.py` and CI gate on exactly this number. The
+    # vocabulary already separates the two states in the summary line; the exit
+    # code now agrees with that separation instead of collapsing it. UNAVAILABLE
+    # stays 0: an instrument that was never built is not a failed measurement,
+    # and four of them are announced on every props-only run by design.
+    return 1 if hard or unver else 0
 
 
 if __name__ == '__main__':
