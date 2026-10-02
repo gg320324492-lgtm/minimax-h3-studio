@@ -76,6 +76,41 @@ const lightPalette = {
   columnBright: 'rgba(20, 20, 15, 0.32)',
 } as const;
 
+/**
+ * The two `depthCue` ramps below run to FIVE layers, and the fourth and fifth
+ * are derived rather than chosen. Measured 2026-10-03, because the third layer
+ * used to be the end of the ramp and `BrowserStack` clamped every window from
+ * the fourth onto it:
+ *
+ *     window 0: 0 14px  40px rgba(0,0,0,0.40)
+ *     window 1: 0 30px  84px rgba(0,0,0,0.50)
+ *     window 2: 0 46px 132px rgba(0,0,0,0.62)      <- everything above too
+ *     window 3: 0 46px 132px rgba(0,0,0,0.62)
+ *
+ * Identical strings, so a stack of four or more rendered with no depth
+ * difference past the third window. No delivered graph had ever shown it:
+ * all 46 `browser-stack` scenes in the repository carry exactly three windows,
+ * and `content.windows` is an untyped bag on both schema sides, so a four-window
+ * graph was always legal and always wrong.
+ *
+ * The extension is the ramp's OWN progression, fitted rather than picked:
+ * `y` steps by 16 (dark) / 12 (light), blur is the least-squares fit of
+ * `blur = k * y` (k = 2.849 dark, 2.671 light), and alpha multiplies by the
+ * ramp's last measured ratio (1.240 dark, 1.357 light). Every new entry is
+ * therefore the same curve continued, and no number here was chosen by taste.
+ *
+ * FIVE, and no more, is a real ceiling and not modesty. The dark ramp's alpha
+ * multiplies by 1.240 per layer and is at 0.95 on layer 5: layer 6 would be
+ * 1.18, which is not a colour. A black shadow on a near-black ground saturates
+ * well before its geometry runs out, so past five layers the cue has to change
+ * KIND rather than grow. `depthCueAt` in BrowserStack stops at the last layer
+ * rather than wrapping or extrapolating, because a wrapped ramp would make the
+ * sixth window read as the FIRST - nearer than the fifth - which is a depth
+ * lie, and an extrapolated one would emit an invalid alpha. Five is what the
+ * measured ramp supports; see design/depthCue.check.ts, which renders the real
+ * scene and reads back what each window was actually handed.
+ */
+
 export const THEMES: Record<ThemeName, Theme> = {
   'premium-dark': {
     palette: darkPalette,
@@ -89,6 +124,8 @@ export const THEMES: Record<ThemeName, Theme> = {
       '0 14px 40px rgba(0,0,0,0.40)',
       '0 30px 84px rgba(0,0,0,0.50)',
       '0 46px 132px rgba(0,0,0,0.62)',
+      '0 62px 177px rgba(0,0,0,0.77)',
+      '0 78px 222px rgba(0,0,0,0.95)',
     ],
   },
   'premium-light': {
@@ -105,6 +142,8 @@ export const THEMES: Record<ThemeName, Theme> = {
       '0 8px 22px rgba(20,20,15,0.10)',
       '0 18px 48px rgba(20,20,15,0.14)',
       '0 30px 80px rgba(20,20,15,0.19)',
+      '0 42px 112px rgba(20,20,15,0.26)',
+      '0 54px 144px rgba(20,20,15,0.35)',
     ],
   },
 };
