@@ -193,9 +193,6 @@
           "type": "number",
           "minimum": 0,
           "maximum": 2
-        },
-        "ease": {
-          "type": "string"
         }
       }
     },

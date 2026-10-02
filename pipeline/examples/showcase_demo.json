@@ -26,8 +26,7 @@
         ]
       },
       "motion": {
-        "preset": "premium",
-        "ease": "expo-out"
+        "preset": "premium"
       },
       "content": {
         "value": 7263,
@@ -127,8 +126,7 @@
         ]
       },
       "motion": {
-        "preset": "premium",
-        "ease": "expo-out"
+        "preset": "premium"
       },
       "content": {
         "headline": "563",
