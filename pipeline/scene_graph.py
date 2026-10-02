@@ -9,6 +9,98 @@ Schema: pipeline/schemas/showcase-v1.schema.json
 Mirror:  studio/src/schemas/showcase-v1.ts (kept in sync by
          tests/test_showcase_schema_parity.py)
 
+WHY THIS FILE NOW VALIDATES AGAINST `SCHEMA_PATH` INSTEAD OF A HAND-WRITTEN LIST.
+
+For most of the project's life this module declared the schema path above and
+never used it. Its validation was `_validate()`, a second, hand-maintained
+spelling of the same contract, and the two had drifted apart in BOTH
+directions. Measured on 35 probe graphs (`tests/test_pipeline_validates_the_schema.py`
+runs them; the table is in that file's docstring):
+
+  * Python accepted 8 graphs the JSON Schema REJECTED — including every case
+    the last three commits were written for. `motion.ease`, a top-level
+    `audio`, and a misspelled scene key all passed `scene_graph.load()`.
+    Those are exactly the "the graph claims something nothing honours" defects,
+    and the producer — the side that WRITES graphs — was the one not checking.
+  * Python rejected 2 graphs the JSON Schema ACCEPTED: a duplicate scene id,
+    and `camera.perspective: 0`.
+
+The asymmetry is the bug. The pipeline is where graphs are authored, so a
+permissive producer validator means a typo leaves the pipeline looking valid and
+fails only at render time. So the schema is now the authority here too: this
+file runs the schema at `SCHEMA_PATH` and reports what it says.
+
+WHY THE SCHEMA IS RUN BY CODE IN THIS FILE RATHER THAN BY `import jsonschema`.
+
+`jsonschema` is installed on Python 3.10 (4.26.0) and NOT on 3.12 — and 3.12 is
+the only interpreter the test suite runs on, by the project's own documented
+setup. `requirements-dev.txt` carries `pytest` and nothing else, with an
+explicit comment that production dependencies "all live in ComfyUI's venv and
+are not duplicated here because two declarations drift". So `import jsonschema`
+would make the pipeline's validator unavailable on the machine the tests run on,
+which is precisely the silent-skip failure this change exists to remove.
+
+Instead `_Schema` below implements the exact draft-07 keyword subset the schema
+uses, driven entirely by the parsed schema file — nothing is hardcoded about
+showcase-v1's fields. `test_pipeline_validates_the_schema.py` checks that
+subset against a real validator (Ajv, via the repo's own node) so the subset
+cannot silently rot into a weaker language.
+
+THE RULES THAT SURVIVED ARE THE ONES JSON SCHEMA CANNOT EXPRESS.
+
+Two checks stay in `_validate` because no draft-07 keyword can state them, and
+each has a consumer that breaks when it is dropped:
+
+  * DUPLICATE SCENE ID — `FinanceShowcaseWide.tsx:156` resolves each resolved
+    scene with `doc.scenes.find(x => x.id === r.id)`, so two scenes sharing an id
+    both render the FIRST one's content and the second never renders at all.
+    `uniqueItems` cannot express this either: it compares whole objects, so two
+    scenes that differ only in `durationInFrames` are "distinct" while sharing an
+    id. This is the one probe where Python was RIGHT and the schema was silent,
+    and it is the one place this file is deliberately stricter than its authority.
+    `tests/test_pipeline_validates_the_schema.py` pins the disagreement as a
+    known, intended one rather than letting it drift back to silent.
+  * `scenes` must be a non-empty LIST OF OBJECTS — `additionalProperties` applies
+    only to objects, so `{"scenes": {"a": 1}}` satisfies `items` vacuously, and
+    the per-scene loop below would then be iterating a dict.
+
+ONE PREVIOUS DISAGREEMENT WAS RESOLVED IN THE SCHEMA'S FAVOUR, NOT OURS.
+
+The old `_validate` rejected `camera.perspective: 0`; the zod mirror rejects it
+too (`.positive()`), but the JSON Schema says `minimum: 0` and therefore accepts
+it. So the two MIRRORS already disagreed, and the only tie-breaker available is
+the instruction this change was given: the schema is the authority the renderer
+enforces, so the producer catches up to it. `perspective: 0` is therefore
+ACCEPTED here, and that is a real (if minor) widening of what the pipeline lets
+through. It is recorded here and pinned by a test rather than absorbed
+silently, because the alternative — keeping the stricter check — would mean this
+file enforces a rule the renderer does not, which is the mirror image of the bug
+being fixed. No delivered graph sets `perspective: 0`; all ten in `charts_demo`
+use 1600.
+
+WHAT WAS DELETED, AND WHY IT WAS SAFE TO DELETE.
+
+`_is_track()`, the camera-track shape check, the scene-type check, the
+`motion.preset` check, and every hand-copied numeric range are gone. Each was
+measured against the schema on the probe set and every one of them is covered by
+a real schema keyword (`oneOf` + `minItems`/`maxItems` on `Track`, `enum` on
+`Scene.type` and `Motion.preset`, `minimum`/`maximum` elsewhere). Keeping a
+second copy of a rule that the schema already states is how this file drifted in
+the first place: `_is_track` accepted `[1, 2, 3]`-shaped tracks and the schema
+rejects them, and nobody noticed for a year.
+
+WHAT WAS DELIBERATELY NOT ADDED: TOLERANCE FOR UNKNOWN KEYS.
+
+There is an obvious temptation here, and it is the wrong one. The schema already
+declares `_note` on both mirrors as a `string`, so the meta convention keeps
+working with zero special-casing in this file — the schema file is where that
+decision belongs, and duplicating it here would be a third place for it to drift
+out of. Adding an "ignore unknown keys" pass on top of `additionalProperties:
+false` would re-open exactly the hole commit 55a1d90 closed in the other two
+mirrors: an unknown key is precisely how `motion.ease` and `audio` entered this
+project, and tolerating them here makes the producer permissive again while the
+renderer stays strict. An unknown key is a hard error, on all three mirrors.
+
 Usage:
   python pipeline/scene_graph.py --file showcase.json [--resolve] [--beat-snap]
 """
@@ -17,12 +109,32 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 SCHEMA_PATH = Path(__file__).resolve().parent / 'schemas' / 'showcase-v1.schema.json'
+
+#: Draft-07 keywords this file's `_Schema` implements. `_check_supported()`
+#: refuses to run against a schema that uses anything else, so an unsupported
+#: keyword can never be silently ignored — it stops the pipeline loudly, which is
+#: the opposite of the silent-skip failure this change exists to remove.
+SUPPORTED_KEYWORDS = frozenset({
+    '$schema', '$ref', 'title', 'description', 'default', 'definitions',
+    'type', 'properties', 'required', 'additionalProperties',
+    'items', 'enum', 'const',
+    'minimum', 'maximum', 'minLength', 'minItems', 'maxItems',
+    'pattern', 'oneOf',
+})
+
+#: JSON Schema `type` values this file distinguishes.
+_TYPE_CHECKS = {
+    'object': dict, 'array': list, 'string': str,
+    'boolean': bool, 'null': type(None),
+}
 
 SCENE_TYPES = (
     'video', 'kpi-hero', 'browser-window', 'browser-stack', 'dashboard',
@@ -149,49 +261,270 @@ class Showcase:
         return [s for s in self.resolve() if s.generative]
 
 
+class _Schema:
+    """A draft-07 validator for the keyword subset in `SUPPORTED_KEYWORDS`.
+
+    Deliberately small and deliberately strict about its own limits. It knows
+    nothing about showcase-v1 — every rule comes from the parsed schema file —
+    so it cannot go stale the way a hand-written field list did. And
+    `_check_supported()` makes an unknown keyword a loud error rather than a
+    silently-skipped constraint, which is the same class of failure as a
+    validator that quietly does nothing when its schema file is missing.
+    """
+
+    def __init__(self, schema: dict, source: str = '<schema>') -> None:
+        self._root = schema
+        self._source = source
+        self._patterns: dict[str, re.Pattern[str]] = {}
+        self._check_supported(schema, '')
+        self._resolve_every_ref(schema, '')
+
+    # ── construction ────────────────────────────────────────────────────────
+
+    def _check_supported(self, node: Any, at: str) -> None:
+        """Refuse to run against a schema using a keyword we do not implement."""
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == 'properties':
+                    for name, sub in value.items():
+                        self._check_supported(sub, f'{at}/properties/{name}')
+                    continue
+                if key == 'definitions':
+                    for name, sub in value.items():
+                        self._check_supported(sub, f'{at}/definitions/{name}')
+                    continue
+                if key not in SUPPORTED_KEYWORDS:
+                    raise ShowcaseError(
+                        f'{self._source}: unsupported JSON Schema keyword '
+                        f'{key!r} at {at or "(document root)"}. Add it to '
+                        f'SUPPORTED_KEYWORDS and implement it in _Schema, or the '
+                        f'pipeline would validate against a weaker schema than '
+                        f'the renderer does.')
+                self._check_supported(value, f'{at}/{key}')
+        elif isinstance(node, list):
+            for i, item in enumerate(node):
+                self._check_supported(item, f'{at}/{i}')
+
+    def _resolve_every_ref(self, node: Any, at: str) -> None:
+        """Resolve EVERY `$ref` up front, exactly as a compiling validator does.
+
+        This is not tidiness. Resolving lazily, at validation time, means a
+        dangling reference is only noticed when some document happens to reach
+        that branch -- so the graph being validated has to contain a camera
+        before a broken camera schema is detected. That is precisely the
+        `definitions/Track` failure of 55a1d90 reproduced in a new place: the
+        schema is broken, and the pipeline validates against it anyway, quietly,
+        until the day a graph uses the broken part. Ajv rejects it at COMPILE
+        time; so does this, which is what keeps the two agreeing about what a
+        broken schema means rather than about which documents happen to trip
+        over it.
+        """
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == '$ref' and isinstance(value, str):
+                    self._resolve(value)
+                    continue
+                self._resolve_every_ref(value, f'{at}/{key}')
+        elif isinstance(node, list):
+            for i, item in enumerate(node):
+                self._resolve_every_ref(item, f'{at}/{i}')
+
+    def _pattern(self, expr: str) -> re.Pattern[str]:
+        """Compiled patterns are cached — ECMA and Python regex syntax differ
+        only where this schema never goes, and a divergence would raise rather
+        than silently pass."""
+        compiled = self._patterns.get(expr)
+        if compiled is None:
+            try:
+                compiled = re.compile(expr)
+            except re.error as exc:  # pragma: no cover - defensive
+                raise ShowcaseError(
+                    f'{self._source}: pattern {expr!r} did not compile: {exc}') from exc
+            self._patterns[expr] = compiled
+        return compiled
+
+    def _resolve(self, ref: str) -> dict:
+        if not ref.startswith('#/'):
+            raise ShowcaseError(f'{self._source}: only local $ref is supported, got {ref!r}')
+        node: Any = self._root
+        for step in ref[2:].split('/'):
+            step = step.replace('~1', '/').replace('~0', '~')
+            if not isinstance(node, dict) or step not in node:
+                raise ShowcaseError(
+                    f'{self._source}: $ref {ref!r} does not resolve. A schema that '
+                    f'cannot resolve its own references cannot be compiled by any '
+                    f'validator, so it can never agree with the renderer — it just '
+                    f'never answers.')
+            node = node[step]
+        if not isinstance(node, dict):
+            raise ShowcaseError(f'{self._source}: $ref {ref!r} does not point at a schema')
+        return node
+
+    # ── validation ──────────────────────────────────────────────────────────
+
+    def iter_errors(self, doc: Any) -> list[str]:
+        """Every violation, as `path: message` — an author can act on that."""
+        out: list[str] = []
+        self._check(self._root, doc, '', out)
+        return out
+
+    def _check(self, schema: dict, value: Any, at: str, out: list[str]) -> None:
+        if '$ref' in schema:
+            self._check(self._resolve(schema['$ref']), value, at, out)
+            # draft-07: a $ref object ignores its sibling keywords.
+            return
+
+        if 'const' in schema and value != schema['const']:
+            out.append(f'{at or "(document root)"}: must be {schema["const"]!r}, got {value!r}')
+        if 'enum' in schema and value not in schema['enum']:
+            out.append(f'{at or "(document root)"}: must be one of {schema["enum"]!r}, got {value!r}')
+        if 'oneOf' in schema and not self._matches_one(schema['oneOf'], value):
+            out.append(f'{at or "(document root)"}: does not match any of the '
+                       f'{len(schema["oneOf"])} allowed forms, got {value!r}')
+
+        types = schema.get('type')
+        if types is not None:
+            wanted = [types] if isinstance(types, str) else list(types)
+            if not any(_is_type(value, t) for t in wanted):
+                out.append(f'{at or "(document root)"}: must be '
+                           f'{" or ".join(wanted)}, got {_describe(value)}')
+                return
+
+        if isinstance(value, str):
+            if 'minLength' in schema and len(value) < schema['minLength']:
+                out.append(f'{at}: must be at least {schema["minLength"]} characters')
+            if 'pattern' in schema and not self._pattern(schema['pattern']).search(value):
+                out.append(f'{at}: {value!r} does not match {schema["pattern"]!r}')
+        elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            # draft-06+: booleans are NOT numbers, and `True` is an int in Python.
+            if 'minimum' in schema and value < schema['minimum']:
+                out.append(f'{at}: must be >= {schema["minimum"]}, got {value!r}')
+            if 'maximum' in schema and value > schema['maximum']:
+                out.append(f'{at}: must be <= {schema["maximum"]}, got {value!r}')
+        elif isinstance(value, list):
+            if 'minItems' in schema and len(value) < schema['minItems']:
+                out.append(f'{at}: must have at least {schema["minItems"]} items')
+            if 'maxItems' in schema and len(value) > schema['maxItems']:
+                out.append(f'{at}: must have at most {schema["maxItems"]} items')
+            item_schema = schema.get('items')
+            if isinstance(item_schema, dict):
+                for i, item in enumerate(value):
+                    self._check(item_schema, item, f'{at}[{i}]', out)
+        elif isinstance(value, dict):
+            for key in schema.get('required', ()):
+                if key not in value:
+                    out.append(f'{at or "(document root)"}: missing required key {key!r}')
+            props = schema.get('properties') or {}
+            for key, sub in props.items():
+                if key in value:
+                    self._check(sub, value[key], f'{at}.{key}' if at else key, out)
+            if schema.get('additionalProperties') is False:
+                extra = sorted(set(value) - set(props))
+                if extra:
+                    out.append(f'{at or "(document root)"}: unknown key(s) '
+                               f'{extra}; this graph\'s vocabulary is closed, and '
+                               f'an unknown key is either a typo or a field no '
+                               f'renderer reads')
+
+    @staticmethod
+    def _matches_one(branches: list[dict], value: Any) -> bool:
+        """`oneOf` means exactly one branch may match (not "at least one")."""
+        hits = 0
+        for branch in branches:
+            probe: list[str] = []
+            _Schema(branch, '<oneOf>')._check(branch, value, '', probe)
+            if not probe:
+                hits += 1
+        return hits == 1
+
+
+def _is_type(value: Any, name: str) -> bool:
+    if name == 'integer':
+        return isinstance(value, int) and not isinstance(value, bool)
+    if name == 'number':
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if name == 'boolean':
+        return isinstance(value, bool)
+    py = _TYPE_CHECKS.get(name)
+    if py is None:
+        raise ShowcaseError(f'unsupported JSON Schema type {name!r}')
+    # An `object` in JSON is never a `string` in Python even though str is iterable.
+    return isinstance(value, py) and not (name != 'boolean' and isinstance(value, bool))
+
+
+def _describe(value: Any) -> str:
+    if value is None:
+        return 'null'
+    if isinstance(value, bool):
+        return f'boolean {value}'
+    return f'{type(value).__name__} {value!r}'
+
+
+@lru_cache(maxsize=1)
+def schema() -> _Schema:
+    """The compiled schema at `SCHEMA_PATH`. Loaded ONCE, and loudly.
+
+    A missing, unreadable, or unsupported schema is a hard `ShowcaseError`, not
+    a skip. The failure this change removes began with a validator that quietly
+    did nothing; a validator that quietly does nothing when its file is absent
+    is the same defect wearing a different hat. Raising here means a caller sees
+    "the schema is missing" instead of "this graph validated", which is the
+    difference between a bug you can fix and one you have to reproduce.
+    """
+    try:
+        raw = SCHEMA_PATH.read_bytes()
+    except OSError as exc:
+        raise ShowcaseError(
+            f'cannot read the showcase schema at {SCHEMA_PATH}: {exc}. The pipeline '
+            f'will NOT validate without it -- a skipped schema check is exactly the '
+            f'permissive-validator defect this replaced.') from exc
+    try:
+        doc = json.loads(raw.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ShowcaseError(
+            f'{SCHEMA_PATH} is not valid JSON: {exc}') from exc
+    if not isinstance(doc, dict):
+        raise ShowcaseError(f'{SCHEMA_PATH} must contain a JSON object at the root')
+    return _Schema(doc, source=str(SCHEMA_PATH))
+
+
 def _validate(doc: dict) -> list[str]:
-    problems: list[str] = []
+    """Validate a graph: the schema first, then the rules JSON Schema cannot state.
 
-    if doc.get('version') != 1:
-        problems.append(f"version must be 1, got {doc.get('version')!r}")
+    The schema is the authority -- it is the same file the renderer validates
+    against -- so its errors come first and are not softened by anything here.
+    The extra checks that follow are narrow and each one is documented below with
+    the consumer that breaks without it.
+    """
+    problems = schema().iter_errors(doc)
 
-    fmt = doc.get('format') or {}
-    for k in ('width', 'height', 'fps'):
-        if not isinstance(fmt.get(k), int) or fmt[k] <= 0:
-            problems.append(f'format.{k} must be a positive integer')
-
+    # `scenes` must be a non-empty list OF OBJECTS. `additionalProperties` applies
+    # only to objects, so `{"scenes": {"a": 1}}` satisfies `items` vacuously and
+    # the per-scene rules below would then be checking a dict.
     scenes = doc.get('scenes')
     if not isinstance(scenes, list) or not scenes:
-        problems.append('scenes must be a non-empty array')
+        # The schema already said so when it is empty; only add the shape claim.
+        if not any('scenes' in p for p in problems):
+            problems.append('scenes must be a non-empty array')
+        return problems
+    if not all(isinstance(s, dict) for s in scenes):
+        problems.append('scenes must be an array of objects')
         return problems
 
+    # DUPLICATE SCENE ID -- kept, and it is the only probe where Python was right
+    # and the schema was silent. `FinanceShowcaseWide.tsx:156` resolves a scene
+    # with `doc.scenes.find(x => x.id === r.id)`, so two scenes sharing an id
+    # both render the FIRST one's content and the second silently vanishes.
+    # JSON Schema cannot express uniqueness inside an array without `uniqueItems`
+    # on a whole-object comparison, so it can never be covered by the schema.
     seen: set[str] = set()
-    cursor = 0
     for i, s in enumerate(scenes):
         sid = s.get('id', f'#{i}')
         if sid in seen:
-            problems.append(f'{sid}: duplicate scene id')
+            problems.append(f'scenes[{i}]: duplicate scene id {sid!r} '
+                            f'(the renderer looks scenes up by id, so the first '
+                            f'one wins and this one never renders)')
         seen.add(sid)
-        if s.get('type') not in SCENE_TYPES:
-            problems.append(f'{sid}: unknown type {s.get("type")!r}')
-        dur = s.get('durationInFrames')
-        if not isinstance(dur, int) or dur < 1:
-            problems.append(f'{sid}: durationInFrames must be a positive integer')
-        else:
-            cursor += dur
-
-        cam = s.get('camera') or {}
-        for k in CAMERA_TRACKS:
-            if k in cam and not _is_track(cam[k]):
-                problems.append(f'{sid}: camera.{k} must be a number or [from, to]')
-        if 'perspective' in cam and not (isinstance(cam['perspective'], (int, float))
-                                         and 0 < cam['perspective'] <= 20000):
-            problems.append(f'{sid}: camera.perspective out of range')
-
-        motion = s.get('motion') or {}
-        if 'preset' in motion and motion['preset'] not in (
-                'premium', 'energetic', 'cinematic', 'minimal'):
-            problems.append(f'{sid}: motion.preset must be a known profile')
 
     return problems
 
@@ -225,14 +558,6 @@ def beat_aligned_durations(doc: dict) -> list[str]:
             out.append(f'{r.id}: start {r.startFrame} is {drift:.3f} frames off the '
                        f'beat — cumulative drift')
     return out
-
-
-def _is_track(v: Any) -> bool:
-    if isinstance(v, (int, float)):
-        return True
-    if isinstance(v, list):
-        return len(v) in (2,) and all(isinstance(x, (int, float)) for x in v)
-    return False
 
 
 def load(path: Path) -> Showcase:
