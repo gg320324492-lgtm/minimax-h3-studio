@@ -352,33 +352,113 @@ def test_no_test_in_this_module_can_reach_the_real_tokens():
     broken. So the property worth having is "no test holds a writable handle",
     not "a test notices afterwards".
 
-    The check is by usage, not by grep for a banned call: a `write_bytes` on a
-    `tmp_path` child is exactly the right thing and must not be flagged, and a
-    banned-string check would be satisfied by a comment. So it counts how many
-    distinct paths this module can write to.
+    The check is by BINDING, not by name, and that is the second version of
+    this guard. The first asked whether the receiver of each write was spelled
+    like the writers it knew about, which a rebinding walks straight past:
+
+        dst = tmp_path / 'tokens.ts'
+        dst = TOKENS_TS            # <- still spelled "dst"
+        dst.write_bytes(...)
+
+    Measured: that left the real tokens at `lg: 88` (sha256 2b796b83…) and this
+    guard PASSED. Four other tests went red, so the suite did not look clean —
+    but the wrong guard did the catching, and "the suite went red" is not the
+    property anyone is relying on.
+
+    So: parse the module, find every write, and resolve the receiver's binding
+    back to where it came from. Multi-line bindings are not a special case — an
+    AST sees them the same as one-liners, which is why this is not line-based.
+
+    There is no name whitelist, and there must not be: `d = tmp_path/'x.ts'`
+    followed by `d.write_bytes(...)` is a legal write, and the whitelist
+    rejected it for being spelled differently. That is the complaint this very
+    docstring makes about wrong reasons, committed twice — a guard that rejects
+    correct code teaches the reader to distrust the next red, including the real
+    one. Spelling cannot establish safety; it can only reject correct code.
     """
+    import ast
+
     src = Path(__file__).read_text(encoding='utf-8')
     body = src.split('def test_no_test_in_this_module_can_reach_the_real_tokens', 1)[0]
-    writes = [ln for ln in body.splitlines()
-              if '.write_bytes(' in ln or '.write_text(' in ln]
-    assert writes, 'no writes at all — the assertion below would be vacuous'
-    # Every write must name a path derived from tmp_path. This started as a
-    # literal check for "tmp_path" in the line, and it flagged _tokens_copy's
-    # own `dst.write_bytes(...)` — a correct write, because dst IS
-    # tmp_path/'tokens.ts'. A guard that rejects correct code for using a
-    # variable is the same mistake as the assertion that fires for the wrong
-    # reason: both make the reader distrust the next red. So the rule is about
-    # the binding, not the spelling: every write's receiver must be one of the
-    # names this module binds to a tmp_path child.
-    for ln in writes:
-        receiver = ln.strip().split('.write_')[0]
-        assert receiver in {'dst', 'copy', 'probe'}, (
-            f'a write in this module targets {receiver!r}, which is not a '
-            f'tmp_path child: {ln.strip()!r}'
-        )
-    # and the real tokens are only ever READ
-    assert 'TOKENS_TS.write_bytes' not in body, 'the real tokens are written'
-    assert 'TOKENS_TS.write_text' not in body, 'the real tokens are written'
+    tree = ast.parse(body)
+
+    # name -> the expression it was last bound to, in source order
+    bound: dict[str, ast.AST] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                and isinstance(node.targets[0], ast.Name):
+            bound[node.targets[0].id] = node.value
+
+    #: what counts as the repository's own source. A write to any of these, or
+    #: to anything derived from one, is the bug this guard exists for.
+    FORBIDDEN_ROOTS = {'TOKENS_TS'}
+    #: the only place a write may land
+    ALLOWED_ROOT = 'tmp_path'
+
+    def root_of(name: str, seen: frozenset[str] = frozenset()) -> str:
+        """Follow a name's bindings to whatever it is ultimately derived from.
+
+        A rebinding to TOKENS_TS simply makes TOKENS_TS the root, so the answer
+        is a property of the data flow rather than of how any one line is
+        spelled. Recursion is cycle-guarded: a test that rebinds a name inside a
+        loop would otherwise hang the guard meant to catch it.
+        """
+        if name in seen:
+            return name
+        expr = bound.get(name)
+        if expr is None:
+            return name
+        for child in {n.id for n in ast.walk(expr) if isinstance(n, ast.Name)}:
+            if child == name:
+                return name
+            r = root_of(child, seen | {name})
+            if r in FORBIDDEN_ROOTS or r == ALLOWED_ROOT:
+                return r
+        return name
+
+    writes = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in ('write_bytes', 'write_text', 'write_texts',
+                               'writelines', 'unlink', 'mkdir', 'rmdir')
+    ]
+    assert writes, (
+        'no writes found — the assertions below would be vacuous. The parser '
+        'has drifted from the module, not the module from the rule.'
+    )
+
+    offenders: list[str] = []
+    for call in writes:
+        recv = call.func.value
+        if not isinstance(recv, ast.Name):
+            offenders.append(
+                f'line {call.lineno}: writes through {ast.unparse(recv)!r}, '
+                f'which is not a plain name and so cannot be traced'
+            )
+            continue
+        root = root_of(recv.id)
+        if root in FORBIDDEN_ROOTS:
+            offenders.append(
+                f'line {call.lineno}: {recv.id} is bound to {root} — the real '
+                f'design tokens. A test may not hold a writable handle to the source.'
+            )
+        elif root != ALLOWED_ROOT:
+            offenders.append(
+                f'line {call.lineno}: {recv.id} is derived from {root!r}, which is '
+                f'neither tmp_path nor forbidden. Say where it comes from, or '
+                f'write to a tmp_path child.'
+            )
+    assert not offenders, 'structural: ' + '; '.join(offenders)
+
+    # The walk must have had something to walk, or the check above proved
+    # nothing. Stated over the resolved roots rather than over names, so a
+    # rename of a correct writer does not redden it.
+    roots = {root_of(c.func.value.id) for c in writes
+             if isinstance(c.func.value, ast.Name)}
+    assert ALLOWED_ROOT in roots, (
+        f'no write in this module resolves to tmp_path; roots seen: {sorted(roots)}'
+    )
 
 
 def test_a_changed_design_token_moves_the_geometry_with_it(tmp_path):
