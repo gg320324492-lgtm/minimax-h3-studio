@@ -301,7 +301,39 @@
 
 **指挥窗口独立复验**：node 探针实测 `radius`/`shadow`/`depthCue` **三段 SURVIVED 带真实值**、`depth` 按裁定被剥离；正向变异（加未声明的 `bleed` merge）→ 5 条红；反向变异（删已声明且被消费的 `spacing`）→ 6 条红，含镜像一致性与两侧解析。还原后 git 干净、全量 346→**355 passed, 2 skipped**（+9）。
 
-**提请指挥裁定、本项遵令未做**：`StyleBibleSchema` 是否该加 `.strict()`。方向认为是对的（**开放 schema 正是这个缺陷家族的温床**），但它会把现有写 `depth` 的图谱从静默无效变成硬报错，属破坏性变更，**建议单独一项**、在本缺口收口后做。
+**根已关：`.strict()` 已加（`f1a591e`，复验通过）** —— 上一项修的是实例，本项关的是温床：
+
+- **zod 侧** `StyleBibleSchema` 加 `.strict()`；**JSON Schema 侧** `definitions/StyleBible` 加 `"additionalProperties": false`（10 键）。**两侧镜像同步**，`test_showcase_schema_parity.py` 仍绿。
+- **查全比工单宽得多**：工单测的是 19 份图谱，**执行 agent 扫了全仓 563 份 JSON**（含 `pipeline/**`、`studio/public/**`、`tests/**`、`studio/bin/**` 及 `node_modules` 之外的一切）：**携带 `style_bible` 的仅 3 份，未声明键 0 处 → 加 `.strict()` 不会让任何现存图谱转红。**
+  `tests/**` **零 JSON 夹具**（图谱在内存里构造），其 `style_bible` 夹具把未知键放在**已声明段内部**（`palette: {nope: 1}`），而 `.strict()` **管不到那里**。
+- **上一位 agent 说这是破坏性变更，指挥窗口实测推翻了**（19 份零处），agent 用 563 份复核后确认。**但账本要写清区别：「今天不破坏」不等于「永远不破坏」** —— `.strict()` 的价值恰恰是把「静默失效」提前到**编写时**变成一次指名道姓的报错。
+
+**`.strict()` 关掉了什么 / 没关掉什么**（同一输入实测三态）：
+
+| 形态 | 结果 | 键 | 
+|---|---|---|
+| 加之前（开放） | `success: true` | `['typography']` —— **静默消失** |
+| `.passthrough()` | `success: true` | `['typography', 'ghostKey']` —— **被保留** |
+| 加之后（严格） | **`success: false`** | `Unrecognized key: "ghostKey"` —— **报错并指名** |
+
+**没关掉**：袋子内部（`palette.card` 仍合法，**两条既有跨镜像测试依赖它**）、`Scene.layout` / `Scene.content`、`depthCue` 的列表形状。
+
+**执行 agent 抓到一条指挥窗口预见了但没想透的反直觉形态**：**`.passthrough()` 与不加 `.strict()` 在同一条断言上表现相反** —— 前者 `success=true` 且**键被保留**、后者 `success=true` 但**键被剥掉**。**一条断言「键不存在」的守卫会抓住后者、并且整个漏掉前者。**
+守卫因此断言 `success is False`（两种形态都红），并有一条 `test_both_mutations_are_caught_by_the_same_assertion` 把这个性质钉住。
+
+**守卫是真调 `safeParse` 断返回值**（工单硬要求），docstring 明写 `assert '.strict()' in src` 会因字符串出现而通过 —— 本项目已被文本存在性断言骗过五次。
+
+**执行 agent 主动上报的三条自身失误**：
+① 加严格性的当天 **12 条测试转红**，而它的 grep 只预测 2 条 —— 根因是 `declared_style_bible_keys()` 用了**贪婪的 `.*?` 加固定 2 空格缩进**，对象换行后匹配到 `SceneSchema` 的收尾括号，把 Camera/Motion/Transition 的键一起扫进来；② **第一版修复只修了一半** —— 改 2 空格为 4 空格后，它的变异用旧锚点删 `spacing` 行只删掉一半缩进，固定宽度解析器随即把下一个键误报为未声明；现改为 `[ \t]+` 无关、变异的锚点也一并改；
+③ **手工注入的变异 A 把对象体压塌了**，守卫把它报成第三条失败 —— 是它自己造成的噪声，如实上报并重做（保留对象体）。
+
+另：**工单写的「`showcase-v1.ts` 339 CRLF」已过期**（实测改前 371、改后 400）—— 分类（CRLF）判对了，具体数字变了。
+
+**指挥窗口独立复验**：node 探针实测未声明键 → `success=false` 且 `issues: ["(root): Unrecognized key: \"ghostKey\""]`（**报错指名**，不是只说 schema 错了）；`palette: {nope: 1}` + `radius: {card: 4}` → `success=true`（**袋子内部仍开放**）。独立注入 `.passthrough()` → **3 条红**，含那条专钉此形态的。还原后 git 干净、四个 sha256 与自报逐字节相同、全量 355→**365 passed, 2 skipped**（+10）。
+
+**一处判断留档**：`test_style_bible_no_dumb_declarations` 曾断言 schema 是**开放的**、并注明「若有人加 `.strict()` 需重新推导本文件」—— agent 做了那次重新推导而没有停下，理由是「它点名了确切的改动与预期结果」。**这个判断可接受**（工单正是要求加 `.strict()`），但若当初工单没写，改动一个被测试"钉住"的前提确实是应当上报的。
+
+**原提请裁定已了结**：`StyleBibleSchema` 是否该加 `.strict()` —— **已裁定该加，且已实施**（见上「根已关」一节）。原顾虑「会把现有写 `depth` 的图谱变成硬报错」经 563 份 JSON 全仓实测**证伪**（零处）。
 
 **未动**：`chartLanguage` / `audioLanguage`（P11 方向）—— 方向相反、修法不同，不在授权范围。
 **比工单所问更严重的反向缺陷（本项最重要发现）**：
