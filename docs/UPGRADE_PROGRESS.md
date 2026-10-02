@@ -373,8 +373,28 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 14.1 | 长驻 bundle 的 render worker | ⬜ | |
-| 14.2 | still/scene/draft/full 分级渲染（preview 540p30 快编码） | ⬜ | |
+| 14.1 | 长驻 bundle 的 render worker | ⬜ |**裁定 B：不值得建。** **指挥窗口的假设错了一个数量级** —— 「800 MB bundle → 800 MB 常驻」**不成立**：**bundle 是磁盘上的目录，不是常驻对象**，Remotion 从磁盘读它、从未上过堆。实测常驻成本 **262 MB**（对照进程 57 MB vs 常驻 serveUrl 318–328 MB，`process.memoryUsage().rss`、两次 `global.gc()`、5 次采样须一致；空闲 90 秒 **0 MB 增长**）。**决定性的一条**：`render_with_remotion.py:70` **一个进程渲一部片子** ⇒ **生产路径净省 0.0 s**（暖渲 18693/19277 ms vs 冷渲 21368/20633/20069 ms，**全部差额就是 bundle**，别的都不会变快）。**且它靠放松 46 GB 事故的清理逻辑换来那 1.2 s** —— 用每次泄漏换永久 800 MB 占用 | 
+| 14.2 | still/scene/draft/full 分级渲染（preview 540p30 快编码） | ⬜ |**裁定 C：现在不建。** 固定开销 **1.9 s（9%）** / 可变 **18.4 s（91%）**；**瓶颈不是 P13 说的「没有 scene 级入口 / scene 级 diff」，而更基础的一句：** **单次渲染没有值得回收的重复**。**bundler 不 watch**（实测 `durationInFrames={150}`→`{151}` 后 5 秒仍是 150，**只有显式重新 bundle 才变 151**）—— 但**失效判据极便宜**：mtime **0.21 ms**（56 文件）/ 内容 hash **2.15 ms**，对照省下的 1200 ms。**指挥窗口工单猜「失效判据是最大复杂度来源」，实测它是最便宜的一环** | 
+
+**勘察记录**：`docs/P14_WORKER_PAYOFF.md`（505 行）；**入口守卫** `tests/test_p14_render_entry_points.py`（8→10 条）。全量 373→**387 passed, 2 skipped**。**什么都没实现。**
+
+**执行 agent 自抓两条严重测量错误**（本项目最贵的一类教训）：
+① **第一次失效实验测的是死代码** —— 注入一个未使用的 export 然后 grep bundle，**webpack tree-shake 掉了**，据此差点得出「编辑永不生效」的结论；改用构造级可观测的编辑（`durationInFrames={150}`→`{151}`）重做。**「测了不存在的东西」与「在错误的尺度上测」（P13 的 480×270 下采样）是同一族错误**；
+② 它**不信任 `render.mjs` 自己的 `150f` 输出**，用 `ffprobe -count_frames` 独立复核了帧数 —— **这个态度值得保留**。
+
+**本阶段附带修掉两处「入口静默通过」（`306f327`）** —— 与 `6e86b46` 的 `visual_qa.py` **同构**：工具在被喂错东西时报告成功。**这不是一个 bug 是一类**：「入口接受任意输入，错的那个和对的那个返回同样的成功」。
+
+- **`render.mjs` 静默忽略任何未知 flag**。**带默认值的 flag 拼错时连 `requireArg` 兜底都没有**：`--cosdec vp9`（`codec` 拼错）过去**退出 0 并产出一部 h264 片子**，**输出里没有任何东西能把它和成功区分开**。已修：退出 2 + 指名该 flag + 列出全部已知 flag。
+- **`still.mjs` 早就修过这个 bug、`render.mjs` 漏了**：`still.mjs:31-33` 的注释原话是「Unknown flags are now an error, because a typo that silently selects a different frame produces a wrong image rather than a failure」—— **同仓库、同类 bug、修一处漏一处**。
+- **已知 flag 集合是逐个手工找出来的**，因为 `get()` 会藏起调用点：除顶部读的六个外，**还有三个在 `renderMedia()` 内部内联读取**的 `pixelfmt` / `imageformat` / `colorspace` —— **任何从解析辅助函数推导出来的清单都会漏掉这三个**。
+- **布尔型 flag 不存在**（`render.mjs` 无任何 `argv.includes(...)`；`still.mjs` 有 `--clean` 正因为它读布尔）⇒ `--clean` 现在被当作未知 flag 拒绝。
+- **两条钉住旧行为的守卫被重写而非删除**（agent 确认两条都明写 「pins the ABSENCE of that fix, so it has to be rewritten deliberately rather than deleted」）。方向 (b)（所有已知 flag 仍能渲染）的 flag 清单**从工具自己的错误消息里读**，**两者无法静默漂移**。
+
+**执行 agent 的预检抓到文本存在性陷阱**：删掉检查后 `Unknown flag` 仍留在**解释该修复的注释里**，若不是预检，这轮变异会假绿 —— **这正是本项目记录在案的第六类失效**。
+
+**指挥窗口独立复验**：`--cosdec vp9` → **真实退出 2**（未用管道 —— 本窗口上一次就是用 `| tail` 读到 `tail` 的退出码、差点误判），错误消息列出 11 个已知 flag 且含三个内联读取的。全量 387→**389 passed, 2 skipped**。
+
+**已排除的既有残留（报告未删）**：`C:\Users\pc\AppData\Local\Temp\` 下两个 10 月 2 日的 Remotion 遗留（`remotion-v4.0.529-assetsw5235hsi3b` 4 KB、`remotion-webpack-bundle-pyY1Lw` 39 MB）—— **体积小，但形态正是能躲过全部清理逻辑的泄漏路径**，已记为未决项。
 
 ---
 
