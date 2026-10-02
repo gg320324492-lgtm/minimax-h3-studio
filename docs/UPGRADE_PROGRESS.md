@@ -241,13 +241,45 @@
 
 ---
 
-## P12 — Director Agent　状态：⬜
+## P12 — Director Agent　状态：⚠️ **勘察完成，实测结论「现在值得建 0 段」**
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 12.1 | BriefParser→ReferenceAnalyzer→StyleBible | ⬜ | |
-| 12.2 | ScenePlanner→Storyboard→showcase_v1.json | ⬜ | |
-| 12.3 | Asset Router（每 scene 判 Remotion/H3/Image/Existing/Hybrid） | ⬜ | |
+| 12.1 | BriefParser→ReferenceAnalyzer→StyleBible | ⬜ | **不建。** 解析侧已存在（`styleBible.tsx`），**生成侧零实现**；且生成侧若照 7 键 schema 走，默认就产出哑声明（见下） |
+| 12.2 | ScenePlanner→Storyboard→showcase_v1.json | ⬜ | **不建。** Storyboard 零实现（0 命中）；下游 `scene_graph.py` 已存在（`a55d03d` 起读 JSON Schema），**上游却无产出者** —— 应等生成侧先有契约 |
+| 12.3 | Asset Router（每 scene 判 Remotion/H3/Image/Existing/Hybrid） | ⬜ | **死头。** `visual_qa.py` 的 `missing_asset` 规则**实测已按 P11 收敛为 4 条硬编码 SFX 路径**（指挥窗口工单里写的「仍在读 3 个不可达字段」是过期的，执行 agent 纠正）；无资产判定需求可接 |
+
+**勘察记录**：`docs/DIRECTOR_SCOPE_VERDICT.md`（518 行，含全部 grep 与逐键表）。**守卫已交付**：`tests/test_style_bible_no_dumb_declarations.py`（12 条）+ `tests/style_bible_consumption.py`。
+
+**StyleBible 七键逐键三态**（判据是四段链：声明 → resolver 合并 → `useDesign()` 导出 → 场景解构，**四段全通才算可达**；**无一键是「直接读」**）：
+
+| 键 | 结论 | 消费方 |
+|---|---|---|
+| `palette` | 间接读 | 12 处（`Chart.tsx:161` / `FinanceShowcaseWide.tsx:121` / `KpiHero.tsx:28` 等） |
+| `typography` | 间接读 | 5 处 |
+| `spacing` | 间接读 | 5 处，经 `styleBible.tsx:71` → `useDesign().SPACE`（**非词频可判**） |
+| `motionLanguage` | 间接读 | 6 处 → `MOTION` |
+| `cameraLanguage` | 间接读 | **仅 1 处**（`CameraRig.tsx:149`） |
+| `chartLanguage` | **零消费** | 源码仅 2 行命中，全是 schema 声明 |
+| `audioLanguage` | **零消费** | 同上；与 P11「顶层 `audio` 永久不可达」同源 |
+
+**判读陷阱实测命中两处**（本项目已因此多次误报惰性字段）：
+① `camera` 既是 `useDesign()` 导出又是 `CameraRig` 的 prop —— 按词匹配得 6 个「消费方」，真实只有 **1** 个；
+② `grep -c director` 的 40 处命中里 **39 处是 `directory`**、1 处是散文 —— 必须按词形拆开数。
+
+**指挥窗口纠正了执行 agent 一条、也被执行 agent 纠正两处**：
+
+- **指挥窗口的工单错了**：「交付图谱设过 4 键」**实测只有 1 键**（`typography`）。另 3 键在 `7bef0a8` **已被删除 —— 因为它们是惰性的**；工单采信的那 4 键里有 3 键来自 `studio/public/jobs/`（gitignore 的 staging 副本）。**照 4 键设计会把三个已被判无效而删的键当成成功先例。**
+- **执行 agent 报告自己的守卫第一版读了自己的被测对象**：它把 `styleBible.tsx` 算作消费方，而 resolver 定义了全部 9 个导出、因而命名了全部 9 个。已修并写进注释。**这一条与 P11「治愈式重绑定」同族：守卫问错了对象。**
+- 另主动上报五条自身失误（第二版用词匹配判消费方造成 6 个假消费方、文档写坏 30 个中文字符、两处 grep 数字写错、node 探针 `npx` 路径失败等），均如实记录。
+
+**比工单所问更严重的反向缺陷（本项最重要发现）**：
+`styleBible.tsx:72/:73` 合并 `radius`/`depth`，`:98/:99` 合并 `shadow`/`depthCue`，场景**确实消费**——
+但**这四段都不在 7 键 schema 里**。指挥窗口独立 node 探针实测：
+`safeParse` 返回 **`success=true`**，而 `radius`/`shadow`/`depthCue`/`depth` **四段全部被静默剥掉**；对照组 `palette` 存活。**这是 P11 `audio` 缺陷转 90° —— 不是读了不可能发生的值，而是读了一个永远喂不进去的值**：这四段永远只能拿到 `tokens.ts` 的默认值。
+**修法未定**（补进 7 键 schema = 承认它们是图谱词汇，还是删掉这些合并 = 承认它们不是），**留待裁定**。
+
+**指挥窗口独立注入的变异**：在 `showcase_demo.json` 的 `style_bible` 里插 `ghostKey` → **2 条守卫红**（`ghostKey -> no-declaration` 与「图谱设的键必须可达」），均红在正确断言上；还原后 git 干净，三个工单基线 sha256 **逐字节相同**。全量 334→**346 passed, 2 skipped**（+12）。
 
 ---
 
