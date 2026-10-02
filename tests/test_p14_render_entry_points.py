@@ -6,7 +6,7 @@ building, but that verdict is only as good as the facts under it, and a verdict
 about what the system CANNOT do needs a pin: otherwise "the render paths were
 changed" turns a documented decision into a mystery.
 
-These guards therefore pin two things that are true right now and that any
+These guards therefore pin three things that are true right now and that any
 render-worker work would have to change deliberately:
 
   1. There is no scene-level and no frame-range render entry point. The only
@@ -14,6 +14,8 @@ render-worker work would have to change deliberately:
      both rest their verdicts on.
   2. `still.mjs` is a real, working single-frame entry point — and it REJECTS an
      out-of-range frame instead of silently writing a blank or clamped picture.
+  3. BOTH entry points REJECT an unknown flag. That was true of one and not the
+     other; see the REWRITE note on the flag guard below.
 
 WHY THESE ARE NOT ASSERTED AS "A FILE DOES NOT EXIST". This project has paid for
 that mistake: a guard written as `'mkdtemp' in source` matched the COMMENT that
@@ -107,9 +109,11 @@ def _unknown_flag_error(result: subprocess.CompletedProcess) -> str:
 
 
 #: Placeholder swapped for an absolute path before the command runs. render.mjs
-#: does NOT reject unknown flags, so a relative --out would drop a ~700 KB mp4
-#: into the repository root — which is exactly what this file did the first time
-#: it ran, before the fixture was noticed and removed.
+#: now rejects unknown flags BEFORE touching --out, so a relative path would be
+#: harmless — but this file's first version ran render.mjs when it ignored
+#: unknown flags, and a relative --out dropped a ~700 KB mp4 into the repository
+#: root. The placeholder stays: it costs nothing and the reason it was introduced
+#: has not been forgotten.
 ABS_OUT = '<abs-out>'
 
 
@@ -132,14 +136,22 @@ def test_a_scene_selector_does_not_exist_on_any_entry_point(
     Here the tool itself enumerates its flags, so the assertion is on what the
     tool accepts, not on what its source happens to spell.
 
-    THE TWO ENTRY POINTS DISAGREE ABOUT UNKNOWN FLAGS, and that difference is
+    THE TWO ENTRY POINTS DISAGREE ABOUT UNKNOWN FLAGS, and that difference was
     the finding rather than an inconvenience. still.mjs rejects one (exit 2) —
     it was fixed after `--frames` where `--frame` was meant fell through to a
-    default and silently selected a different frame. render.mjs has no such
-    check: it ignores `--scene`, renders the entire film, and exits 0. Both
-    outcomes are recorded, because both mean the same thing for this work
+    default and silently selected a different frame. render.mjs had no such
+    check: it ignored `--scene`, rendered the entire film, and exited 0. Both
+    outcomes were recorded, because both meant the same thing for this work
     order — a `--scene` cannot be addressed anywhere — and only one of them
-    tells the operator so.
+    told the operator so.
+
+    REWRITTEN, NOT DELETED, when render.mjs gained the check: the previous
+    version branched on which tool it was running and asserted the OPPOSITE of
+    this for render.mjs (exit 0, plus "150f" in the output, plus no "Unknown
+    flag"). That branch pinned the defect, not a fact, and its own message said
+    so — "That is a fix, not a regression — but this test pins the ABSENCE of
+    that fix". One assertion set now covers both tools, which is possible only
+    because they now agree.
     """
     args = [str(_SCRATCH / 'scene_probe.mp4') if a == ABS_OUT else a for a in required]
     entry = STUDIO / 'bin' / entry_name
@@ -158,39 +170,41 @@ def test_a_scene_selector_does_not_exist_on_any_entry_point(
             f'absent; the message is what carries the fact.\n{combined}'
         )
     else:
-        # render.mjs ignores it and still renders. The point of the assertion is
-        # that the result is NOT a scene render: the whole film is rendered,
-        # because 150 frames of Phase0Probe come out the other end.
-        assert r.returncode == 0, (
-            'render.mjs no longer ignores --scene; it now does something with it '
-            f'(exit {r.returncode}). Whatever it now does is scene granularity '
-            f'and the P13/P14 verdicts need re-measuring.\n{combined}'
+        # render.mjs NOW rejects --scene, exactly as still.mjs does. This branch
+        # used to assert the opposite — exit 0, "150f" in the output, and no
+        # "Unknown flag" — which pinned the defect rather than a fact. Kept as a
+        # separate branch only so a failure names the tool that regressed.
+        assert r.returncode == 2, (
+            f'render.mjs accepted --scene and exited {r.returncode}, expected 2. '
+            'Scene-level rendering may have landed; re-measure the P13/P14 '
+            'verdicts instead of deleting this assertion.'
         )
-        assert '150f' in combined, (
-            'render.mjs ignored --scene but did not render the whole '
-            f'composition (no "150f" in the output). Something is now narrowing '
-            f'the render, which is exactly the granularity P13 wanted.\n{combined}'
+        assert '--scene' in combined and 'Unknown flag' in combined, (
+            'render.mjs exited 2 but did not say which flag it rejected. The '
+            'exit code alone would not tell a reader that scene granularity is '
+            'absent; the message is what carries the fact.'
         )
 
 
-def test_render_mjs_silently_ignores_a_flag_it_does_not_understand(
+def test_render_mjs_rejects_a_flag_it_does_not_understand(
         scratch_env: dict[str, str]) -> None:
-    """Measured fact, recorded as a defect: the two entry points disagree.
+    """Direction (a): an unknown flag is fatal and NAMES ITSELF.
 
-    still.mjs rejects an unknown flag with exit 2 and a message naming the
-    flags it does accept. render.mjs parses with a `get(key, fallback)` helper
-    that never checks for leftovers, so ANY unknown flag is dropped: a typo,
-    a flag meant for another tool, or a flag a caller believes is working all
-    pass silently and the render proceeds.
+    This test used to assert the opposite — that render.mjs ignored `--frames
+    10`, rendered all 150 frames and exited 0. That was a recorded defect, and
+    the guard's own message said so: "this test pins the ABSENCE of that fix, so
+    it has to be rewritten deliberately rather than deleted." It is rewritten,
+    not deleted, and it now pins the fix.
 
-    This is the same class of defect still.mjs's own comment describes —
-    "`--frames` where `--frame` was meant fell through to a default" — and it
-    was fixed in one tool and not the other. It is recorded here rather than
-    fixed, because this work order authorises guards and not behaviour changes.
+    The flag used is still `--frames`, because that is the one still.mjs's
+    comment names ("`--frames` where `--frame` was meant fell through to a
+    default"). render.mjs has no frame flag at all, so `--frames` is still
+    unknown to it — and the whole film coming out the other end is what made the
+    original finding possible.
 
-    It is also the exact failure mode a future render worker would have to
-    inherit: a flag typo that silently renders the whole film instead of one
-    scene looks like success, and nothing downstream compares frames.
+    Two things are asserted, and the second is not decoration: a nonzero exit
+    AND the offending flag named in the message. An exit code with no message
+    does not tell a caller WHICH typo to go and fix.
     """
     out = _SCRATCH / 'unknown_flag.mp4'
     r = _node(RENDER, ['--comp', 'Phase0Probe', '--props', str(PROPS),
@@ -198,25 +212,145 @@ def test_render_mjs_silently_ignores_a_flag_it_does_not_understand(
               scratch_env, ROOT)
     combined = _unknown_flag_error(r)
 
-    assert r.returncode == 0, (
-        'render.mjs now rejects an unknown flag. That is a fix, not a '
-        'regression — but this test pins the ABSENCE of that fix, so it has to '
-        f'be rewritten deliberately rather than deleted.\n{combined}'
+    assert r.returncode != 0, (
+        f'render.mjs accepted --frames (exit {r.returncode}). A typo that '
+        'renders the whole film and exits 0 is indistinguishable from success, '
+        'and nothing downstream compares frames — this is the shape the QA gate '
+        f'had before it was fixed:\n{combined}'
     )
-    assert out.exists(), (
-        'render.mjs did not render at all with an unknown flag present, so this '
-        'test is no longer measuring what it claims. Check the flags before '
-        f'trusting it.\n{combined}'
+    assert '--frames' in combined, (
+        'render.mjs exited nonzero but did not name the flag it rejected, so a '
+        'caller cannot tell which argument to fix:\n'
+        f'{combined}'
     )
-    assert '150f' in combined, (
-        '--frames 10 was passed to render.mjs and it rendered something other '
-        'than the full 150 frames, which would mean the flag is no longer '
-        f'ignored.\n{combined}'
+    assert not out.exists(), (
+        f'render.mjs rejected --frames but still wrote {out}. A tool that '
+        'refuses an argument and renders anyway is worse than one that ignores '
+        f'it silently:\n{combined}'
     )
-    assert 'Unknown flag' not in combined, (
-        'render.mjs printed an unknown-flag error; it has gained the check '
-        f'still.mjs already had.\n{combined}'
+
+
+def test_a_typo_of_a_defaulted_flag_is_also_fatal(
+        scratch_env: dict[str, str]) -> None:
+    """The case `requireArg` can never catch, and so the one that mattered most.
+
+    A typo of a REQUIRED flag (`--prods`) still fails, because requiring `props`
+    finds it missing. A typo of a DEFAULTED flag has no such backstop: `--cosdec
+    vp9` (meant `--codec vp9`) leaves the h264 default in place, renders 150
+    frames, and exits 0. That was measured on this machine before the fix, and
+    ffprobe confirmed the output was h264 — a plausible, wrong film.
+
+    This is why the guard below asserts on the tool's OWN list of known flags
+    rather than on a hand-written one: the list is the thing that has to be
+    right, and it is the thing a typo would slip past.
+    """
+    out = _SCRATCH / 'typo_of_default.mp4'
+    r = _node(RENDER, ['--comp', 'Phase0Probe', '--props', str(PROPS),
+                       '--out', str(out), '--cosdec', 'vp9'],
+              scratch_env, ROOT)
+    combined = _unknown_flag_error(r)
+
+    assert r.returncode != 0, (
+        'render.mjs accepted --cosdec. A typo of a DEFAULTED flag leaves the '
+        'default in place with nothing to catch it, so this is the case that '
+        f'used to produce a wrong-but-plausible film (exit {r.returncode}):\n{combined}'
     )
+    assert '--cosdec' in combined, (
+        'render.mjs did not name the typo it rejected:\n'
+        f'{combined}'
+    )
+    assert not out.exists(), (
+        f'render.mjs rejected --cosdec but still wrote {out}:\n{combined}'
+    )
+
+
+def test_every_known_flag_still_renders(scratch_env: dict[str, str]) -> None:
+    """Direction (b), and the half a rejection-only guard cannot supply.
+
+    A guard that only asserts "unknown flag -> error" is satisfied by a tool
+    that errors on EVERYTHING. This project has shipped a guard satisfied by
+    `assert True`, so the working direction is pinned too, on the same tool:
+    all eleven known flags, passed explicitly, must render and exit 0.
+
+    `--crf` and `--bitrate` are NOT combined in one run: Remotion rejects them
+    together (`"crf" and "videoBitrate" can not both be set`) — a renderer
+    constraint, not a flag-parsing one, and unchanged by this fix. Each is
+    covered by its own run below.
+
+    The flags asserted here are the tool's own reported list, not a copy typed
+    into this file. A guard that hard-codes the list would keep passing while
+    render.mjs added a flag and this test never saw it; reading the list out of
+    the tool's rejection message means the two cannot drift apart silently.
+    """
+    known = _render_known_value_flags(scratch_env)
+    assert known, 'render.mjs did not report any known flags on an unknown one'
+
+    # Each entry: the flag name -> the value that is meaningful for it.
+    values = {
+        'codec': 'h264',
+        'crf': '30',
+        'bitrate': '8M',
+        'hw': 'disable',
+        'concurrency': '4',
+        'pixelfmt': 'yuv420p',
+        'imageformat': 'jpeg',
+        'colorspace': 'bt709',
+    }
+    missing = [f for f in known if f not in ('comp', 'props', 'out') and f not in values]
+    assert not missing, (
+        f'render.mjs reports {sorted(missing)} as known flags but this test has '
+        'no successful render for them. Add them, so "known" and "renders" '
+        'cannot drift apart.'
+    )
+
+    # One run per flag, each with only that flag set, so a failure names it and
+    # --crf/--bitrate never meet.
+    for flag in known:
+        if flag in ('comp', 'props', 'out'):
+            continue  # required; covered by every other run in this file
+        out = _SCRATCH / f'known_flag_{flag}.mp4'
+        r = _node(RENDER, ['--comp', 'Phase0Probe', '--props', str(PROPS),
+                           '--out', str(out), f'--{flag}', values[flag]],
+                  scratch_env, ROOT)
+        combined = _unknown_flag_error(r)
+        assert r.returncode == 0, (
+            f'render.mjs lists --{flag} as a known flag but rejected it '
+            f'(exit {r.returncode}). A flag that is advertised and then refused '
+            f'is a broken entry point:\n{combined}'
+        )
+        assert out.exists() and out.stat().st_size > 0, (
+            f'render.mjs exited 0 with --{flag} but wrote no mp4 at {out}. The '
+            f'exit code alone would not have shown this:\n{combined}'
+        )
+
+    # And the floor: the three required flags alone, with nothing optional.
+    out = _SCRATCH / 'required_only.mp4'
+    r = _node(RENDER, ['--comp', 'Phase0Probe', '--props', str(PROPS),
+                       '--out', str(out)], scratch_env, ROOT)
+    combined = _unknown_flag_error(r)
+    assert r.returncode == 0 and out.exists(), (
+        'render.mjs no longer renders with only the three required flags, so '
+        'every run in this file is broken rather than protected:\n'
+        f'{combined}'
+    )
+
+
+def _render_known_value_flags(env: dict[str, str]) -> set[str]:
+    """The flags render.mjs says it accepts, read out of the tool itself.
+
+    Measured by running it on an unknown flag and parsing its rejection
+    message — not by reading its source, and not by trusting a list typed here.
+    This project has been fooled five times by text-existence assertions, and a
+    guard that hard-codes the flag list would be the sixth: render.mjs could
+    add `--scene` and this would carry on passing.
+    """
+    r = _node(RENDER, ['--comp', 'Phase0Probe', '--props', str(PROPS),
+                       '--out', str(_SCRATCH / 'probe.mp4'),
+                       '--definitely-not-a-flag', 'x'], env, ROOT)
+    m = re.search(r'Known value flags: ([^:]+)', _unknown_flag_error(r))
+    if not m:
+        return set()
+    return {f.strip().lstrip('-') for f in m.group(1).split(',') if f.strip().startswith('--')}
 
 
 def test_the_rejected_flag_list_shows_scene_and_frame_range_are_absent(
