@@ -105,8 +105,16 @@ PINNED_LAYERS: dict[str, list[str]] = {
 #: the start of the task, so a later change to a rule's decision logic has to be
 #: made deliberately rather than by editing the file this work touched.
 UNTOUCHED: dict[str, str] = {
+    # UPDATED BY P19, deliberately and out loud. The P18 value was
+    # 9db0198e8db21bef696ead30114b1e242833cf2b39205880638fbded78565db3.
+    # P19 changed `rule_duplicate`'s DECISION — its cut moves off the
+    # cross-render 0.5 onto an exact identity cut, and its Finding stops
+    # crediting take_ranker for the number. That is a rule's decision logic, so
+    # it has to be a separate act and this is it. It changed nothing about the
+    # layer partition, which is what the rest of this file pins: `duplicate`
+    # stays in Motion, and `PINNED_LAYERS` is unchanged.
     'studio/scripts/visual_qa.py':
-        '9db0198e8db21bef696ead30114b1e242833cf2b39205880638fbded78565db3',
+        '6e842072159e0d5d21614e63733ccff90547e3471c545fb89a84e8542dcc7311',
     'studio/scripts/qa_report.py':
         '9e7e4725fcfcbe201caa14cdfe8f5cb6ea4a51bf3ea3b6bfe831b99c79b41f38',
 }

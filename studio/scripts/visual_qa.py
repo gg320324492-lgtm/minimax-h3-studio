@@ -63,9 +63,16 @@ THRESHOLDS, and the distribution each sits in:
                                               wide. THIN, stated as such. 8 corpus
                                               frames are exactly 1.0.
   freeze        difference == 0 (exact)       noise floor measured at exactly 0
-  duplicate     distance < 0.5                reused from take_ranker; P1 measured
-                                              the take distribution as {0.000} u
-                                              [34.5, 67.2], so 0.5 has 34.5x margin
+  duplicate     distance == 0 (exact)       a cross-render cut is wrong here:
+                                              --frame-pair hands it two CONSECU-
+                                              TIVE frames, for which "nearly
+                                              identical" is correct. Measured over
+                                              329 corpus frames the two populations
+                                              do not separate on this measure (best
+                                              balance 0.9969, and it rests on one
+                                              rerun pair); so this asks the
+                                              identity question and leaves the
+                                              cross-render cut to rank_takes.py
   blur          Laplacian variance < 2.0     corpus p5 is 11.5, so 5.75x; a blur
                                               ramp drops 58.0 -> 32.1 at radius 0.5
                                               and -> 10.5 at radius 1.0
@@ -116,6 +123,23 @@ WCAG_TEXT = 4.5
 WCAG_LARGE = 3.0
 BLACK_NONCONTENT = 0.9995
 FREEZE_DIFF = 0
+#: SIGNATURE IDENTITY CUT — the criterion `rule_duplicate` actually decides on.
+#:
+#: It is exact, and NOT 0.5. `rank_takes.DUP_THRESHOLD` (0.5, which shares this
+#: number) is a cross-RENDER cut; the `--frame-pair` entry point hands this rule
+#: two CONSECUTIVE frames of one render, a different population. Measured over
+#: the 329-frame corpus in out/p13_probe (320 consecutive pairs, 47796
+#: cross-scene pairs), no cut on signature distance separates them: the best
+#: balance is 0.9969 and it sits above exactly 0.000000, and it is carried by a
+#: SINGLE real rerun pair (fr_a/fr_b are two runs of one render). Every cut in
+#: between fires on pairs drawn from the wrong population — measured 152 of 320
+#: consecutive pairs FAIL at 0.5. So the cross-render question is left to
+#: rank_takes.py, where the measurement that produced 0.5 lives, and this rule
+#: decides the identity question its own entry point can be asked. See
+#: rule_duplicate for the separation arithmetic.
+SIGNATURE_EQUAL = 0.0
+#: Retained as the scale reference the rule reports, NOT as its cut. It is
+#: rank_takes.py's DUP_THRESHOLD, which is correct there.
 DUP_DISTANCE = 0.5
 BLUR_VARIANCE = 2.0
 
@@ -294,6 +318,10 @@ def signature(path: Path, size: tuple[int, int] = (64, 112)) -> np.ndarray:
     127.5 on take_ranker's: every pair read as a duplicate, including two frames
     of the same shot at visibly different animation states (distance 0.033 and
     0.055). Reusing a threshold means reusing the SCALE it was measured on.
+
+    The scale note outlived the reuse: rule_duplicate no longer cuts at 0.5 (see
+    its docstring), but it still reports distance on this 0..255 scale, so the
+    scale has to stay stated.
     """
     g = np.asarray(Image.open(path).convert('L')).astype(np.float32)
     return np.asarray(Image.fromarray(g.astype(np.uint8)).resize(size),
@@ -506,20 +534,43 @@ def rule_freeze(pa: Path, pb: Path) -> Finding:
 
 
 def rule_duplicate(pa: Path, pb: Path) -> Finding:
-    """Two renders of the same graph must not be near-identical.
+    """Did the sequence advance between these two frames?
 
-    Same measure and SAME threshold as `take_ranker` — mean absolute difference
-    of a 64x112 grayscale signature, duplicate below 0.5. P1 measured the real take
-    distribution as {0.000} u [34.5, 67.2], so 0.5 has 34.5x margin to the nearest
-    genuinely different pair. Reusing the number rather than inventing one is the
-    point: a second threshold for the same question is a second answer.
+    The instrument is unchanged and is take_ranker's: mean absolute difference of
+    a 64x112 grayscale signature on the 0..255 scale. The question, the CUT and
+    the docstring were not, and all three were wrong together.
+
+    It used to say the cut was 0.5 "SAME threshold as take_ranker", reusing the
+    margin to {0.000} u [34.5, 67.2]. That 0.5 is rank_takes.DUP_THRESHOLD, two
+    renders of one graph. `--frame-pair` feeds this rule two CONSECUTIVE frames
+    of one render, for which "nearly identical" is the CORRECT answer, so the
+    rule reported DUPLICATE on frames that were visibly moving — measured 152 of
+    320 consecutive pairs FAIL at 0.5.
+
+    The alternative is not "pick a better cut". Measured, the two populations do
+    not separate: scoring consecutive-pairs-should-PASS against
+    rerun-pairs-should-FAIL over the 329-frame corpus, the best cut on this
+    measure balances at 0.9969, it sits above exactly 0.000000, and it is carried
+    by ONE real rerun pair (fr_a/fr_b are two runs of one render, not two frames).
+    Cuts above it fire on pairs from the wrong population. So the cross-render
+    question belongs to rank_takes.py, where the measurement lives, and this rule
+    asks what its own entry point can be asked: are these two frames the SAME
+    frame — the interval that should report zero and hand the run to `freeze`,
+    which asks the continuous question this one cannot?
+
+    The cut is therefore EXACT: distance == 0, the same criterion and the same
+    kind of warrant `freeze` has, measured at exactly 0 rather than assumed.
     """
     dist = signature_distance(signature(pa), signature(pb))
-    verdict = FAIL if dist < DUP_DISTANCE else PASS
+    verdict = FAIL if dist <= SIGNATURE_EQUAL else PASS
     return Finding('duplicate', verdict, round(dist, 6),
-                   f'signature distance {dist:.6f}, duplicate threshold {DUP_DISTANCE} '
-                   f'(reused from take_ranker; P1 margin 34.5x)',
-                   extra={'threshold': DUP_DISTANCE})
+                   f'signature distance {dist:.6f}; identical-frame cut is exact '
+                   f'(<= {SIGNATURE_EQUAL}). Distances this small are the '
+                   f'consecutive-frame population: 152 of 320 measured '
+                   f'consecutive pairs fall below the 0.5 cross-render cut, '
+                   f'which belongs to rank_takes.py, not here',
+                   extra={'threshold': SIGNATURE_EQUAL,
+                          'reference_cut': DUP_DISTANCE})
 
 
 def rule_blur(a: np.ndarray) -> Finding:
