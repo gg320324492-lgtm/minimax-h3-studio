@@ -35,12 +35,13 @@
       "additionalProperties": false,
       "properties": {
         "width": {
+          "description": "`minimum: 16` was HERE, not in zod. zod says `z.number().int().positive()` — the floor is 1. Same rule as camera.perspective: the mirror follows the enforced side.",
           "type": "integer",
-          "minimum": 16
+          "minimum": 1
         },
         "height": {
           "type": "integer",
-          "minimum": 16
+          "minimum": 1
         },
         "fps": {
           "type": "integer",
@@ -166,8 +167,9 @@
       "additionalProperties": false,
       "properties": {
         "perspective": {
+          "description": "`exclusiveMinimum`, not `minimum`. zod says `z.number().positive()`, so 0 must be REJECTED: a perspective projection divides by it. Measured drift, not a reading — see tests/test_showcase_mirrors_agree_on_values.py.",
           "type": "number",
-          "minimum": 0,
+          "exclusiveMinimum": 0,
           "maximum": 20000
         },
         "translateX": {
