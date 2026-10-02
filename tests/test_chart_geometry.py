@@ -37,6 +37,9 @@ import chart_geometry as cg  # noqa: E402
 
 EXAMPLES = ROOT / 'pipeline' / 'examples'
 AUDIT = ROOT / 'out' / 'p11_threshold'
+#: The real design tokens, via the module that reads them — so the guard below
+#: and the tests that copy them cannot drift onto two different paths.
+TOKENS_TS = cg.TOKENS_TS
 
 
 def _graph(labels: list[str], n_bars: int = 5, width: int = 1920, height: int = 1080) -> dict:
@@ -163,8 +166,7 @@ def test_space_tokens_come_from_the_renderer():
     no longer exists.
     """
     import re
-    src = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase'
-           / 'design' / 'tokens.ts').read_text(encoding='utf-8')
+    src = TOKENS_TS.read_text(encoding='utf-8')
     sp = cg.space_tokens()
     for key in ('lg', 'md', 'xl'):
         m = re.search(r'\b' + key + r':\s*(\d+)', src)
@@ -286,45 +288,144 @@ def test_the_fitted_fallback_is_exercised_not_just_declared():
         chart_geometry.LAST_WIDTH_SOURCE = saved
 
 
-def test_a_changed_design_token_moves_the_geometry_with_it():
+def _tokens_copy(tmp_path: Path) -> Path:
+    """A private copy of the real design tokens.
+
+    The three tests below prove the instrument READS the source, and the only
+    way to see that is to change the source. They used to change the real one,
+    in place, restoring it in a `finally` — which is self-sustaining damage
+    rather than a safe temporary: the `finally` writes back the `original` it
+    captured, so once a run has been interrupted the file is already 88, the
+    next run's `replace(b'lg: 40', …)` matches nothing, and the `finally`
+    writes 88 back. Nothing has to fail twice.
+
+    So the evidence is a copy. The real tokens are read-only for this suite,
+    and the guard below proves it.
+    """
+    dst = tmp_path / 'tokens.ts'
+    dst.write_bytes(TOKENS_TS.read_bytes())
+    return dst
+
+
+@pytest.fixture(autouse=True)
+def _the_real_design_tokens_are_never_written():
+    """The source of truth must be byte-identical after this module runs.
+
+    Two earlier versions of this guard were insufficient and it is worth naming
+    why. Comparing only the token VALUE would pass on a polluted file: the
+    polluted file reads 88, and an assertion written as "lg is not 40" or even
+    "space_tokens still works" is satisfied by the damage. And the pre-existing
+    assertion `space_tokens()['lg'] == 40.0` did go red in a polluted state —
+    but at `assert after < before` (1620 vs 1620), while the line that claims to
+    catch it, `sp['lg'] == 88.0`, PASSED, because the file was already 88.
+
+    So this compares bytes, which has no reading of the content available to it.
+
+    WHAT IT CANNOT DO, stated so nobody relies on it: a post-run comparison does
+    not prevent the damage, it reports it. Reintroducing the in-place write as
+    a mutation was measured, and the file was left modified with `lg:` gone —
+    the run went red, but a red run whose process dies before the teardown
+    assertion executes leaves the repository broken exactly as before. The
+    defence that actually holds is structural: no test in this module holds a
+    writable path to the source (see _tokens_copy, and the test below that
+    proves the copy is what gets modified).
+    """
+    before = TOKENS_TS.read_bytes()
+    yield
+    after = TOKENS_TS.read_bytes()
+    assert after == before, (
+        f'{TOKENS_TS.name} was modified by this test run: '
+        f'{len(before)} bytes -> {len(after)} bytes. It is read-only evidence. '
+        f'"lg: 40" now appears {after.count(b"lg: 40")}x, "lg: 88" '
+        f'{after.count(b"lg: 88")}x.'
+    )
+
+
+def test_no_test_in_this_module_can_reach_the_real_tokens():
+    """The structural defence, asserted rather than promised.
+
+    Every other guard here reports damage after the fact. This one asks whether
+    the damage is reachable at all: the only writable path any test holds is
+    under `tmp_path`. The mutation that reintroduces the in-place write was
+    measured, and the file WAS modified — the suite went red, but a red suite
+    whose process is killed before teardown leaves the repository just as
+    broken. So the property worth having is "no test holds a writable handle",
+    not "a test notices afterwards".
+
+    The check is by usage, not by grep for a banned call: a `write_bytes` on a
+    `tmp_path` child is exactly the right thing and must not be flagged, and a
+    banned-string check would be satisfied by a comment. So it counts how many
+    distinct paths this module can write to.
+    """
+    src = Path(__file__).read_text(encoding='utf-8')
+    body = src.split('def test_no_test_in_this_module_can_reach_the_real_tokens', 1)[0]
+    writes = [ln for ln in body.splitlines()
+              if '.write_bytes(' in ln or '.write_text(' in ln]
+    assert writes, 'no writes at all — the assertion below would be vacuous'
+    # Every write must name a path derived from tmp_path. This started as a
+    # literal check for "tmp_path" in the line, and it flagged _tokens_copy's
+    # own `dst.write_bytes(...)` — a correct write, because dst IS
+    # tmp_path/'tokens.ts'. A guard that rejects correct code for using a
+    # variable is the same mistake as the assertion that fires for the wrong
+    # reason: both make the reader distrust the next red. So the rule is about
+    # the binding, not the spelling: every write's receiver must be one of the
+    # names this module binds to a tmp_path child.
+    for ln in writes:
+        receiver = ln.strip().split('.write_')[0]
+        assert receiver in {'dst', 'copy', 'probe'}, (
+            f'a write in this module targets {receiver!r}, which is not a '
+            f'tmp_path child: {ln.strip()!r}'
+        )
+    # and the real tokens are only ever READ
+    assert 'TOKENS_TS.write_bytes' not in body, 'the real tokens are written'
+    assert 'TOKENS_TS.write_text' not in body, 'the real tokens are written'
+
+
+def test_a_changed_design_token_moves_the_geometry_with_it(tmp_path):
     """Mutation 6 and 7 — SPACE hardcoded, or its absence tolerated.
 
     Both return the right NUMBERS today, so comparing values cannot see them:
     the test was checking the answer, not the act of reading. The only way to
-    observe that is to change the source and require the geometry to follow.
-    tokens.ts is patched in memory and restored in a finally, so a failure here
-    cannot leave the design tokens modified.
+    observe that is to change what the instrument reads and require the geometry
+    to follow — so it changes a COPY, and asserts both that the copy really
+    changed and that the instrument followed it.
     """
     import chart_geometry
-    tok = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase'
-           / 'design' / 'tokens.ts')
-    original = tok.read_bytes()
-    try:
-        tok.write_bytes(original.replace(b'lg: 40', b'lg: 88'))
-        sp = chart_geometry.space_tokens()
-        assert sp['lg'] == 88.0, (
-            f'SPACE.lg is {sp["lg"]} after the source was changed to 88 — the '
-            'module is not reading tokens.ts, so a design change would leave '
-            'every verdict here describing a layout that no longer exists'
-        )
-    finally:
-        tok.write_bytes(original)
+    copy = _tokens_copy(tmp_path)
+    original = copy.read_bytes()
+    copy.write_bytes(original.replace(b'lg: 40', b'lg: 88'))
+
+    # The copy must really have changed. "I called something that looks like a
+    # replacement" is not the same claim as "the bytes differ", and only the
+    # second one is falsifiable — see the fixture's docstring for the version
+    # of this test that could not tell.
+    assert copy.read_bytes() != original, (
+        'the copy was not actually modified — this test would prove nothing, '
+        'because an unmodified copy and a hardcoded literal agree'
+    )
+    assert copy.read_bytes().count(b'lg: 88') == 1, (
+        'the replacement did not produce exactly one "lg: 88" in the copy'
+    )
+
+    sp = chart_geometry.space_tokens(copy)
+    assert sp['lg'] == 88.0, (
+        f'SPACE.lg is {sp["lg"]} after the source was changed to 88 — the '
+        'module is not reading the file it was given, so a design change would '
+        'leave every verdict here describing a layout that no longer exists'
+    )
 
     # And the plot box itself must move with the token, not just the dict.
-    before = chart_geometry.plot_width({'width': 1920, 'height': 1080}).plot_w
-    try:
-        tok.write_bytes(original.replace(b'lg: 40', b'lg: 88'))
-        after = chart_geometry.plot_width({'width': 1920, 'height': 1080}).plot_w
-    finally:
-        tok.write_bytes(original)
-    assert after < before, (
-        f'plot.w unchanged at {before:.1f}px after a 48px wider gutter — the '
+    before_w = chart_geometry.plot_width({'width': 1920, 'height': 1080}).plot_w
+    copy.write_bytes(original.replace(b'lg: 40', b'lg: 120'))
+    after_w = chart_geometry.plot_width({'width': 1920, 'height': 1080},
+                                        space=chart_geometry.space_tokens(copy)).plot_w
+    assert after_w < before_w, (
+        f'plot.w unchanged at {before_w:.1f}px after a 80px wider gutter — the '
         'geometry does not depend on the design tokens'
     )
-    assert chart_geometry.space_tokens()['lg'] == 40.0, 'tokens.ts was not restored'
 
 
-def test_a_missing_design_token_is_an_error_not_a_silent_default():
+def test_a_missing_design_token_is_an_error_not_a_silent_default(tmp_path):
     """Mutation 7 — tolerating an absent SPACE key returned the old numbers.
 
     A module that cannot read the design should say so. Falling back to a
@@ -332,15 +433,11 @@ def test_a_missing_design_token_is_an_error_not_a_silent_default():
     confident geometry for a layout nobody has drawn.
     """
     import chart_geometry
-    tok = (ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase'
-           / 'design' / 'tokens.ts')
-    original = tok.read_bytes()
-    try:
-        tok.write_bytes(original.replace(b'lg: 40', b'lg:'))
-        with pytest.raises(ValueError, match='not found'):
-            chart_geometry.space_tokens()
-    finally:
-        tok.write_bytes(original)
+    copy = _tokens_copy(tmp_path)
+    copy.write_bytes(copy.read_bytes().replace(b'lg: 40', b'lg:'))
+    assert b'lg:' in copy.read_bytes(), 'the removal did not happen'
+    with pytest.raises(ValueError, match='not found'):
+        chart_geometry.space_tokens(copy)
 
 
 def test_the_gutter_constant_matches_the_rendered_plot_box():
@@ -357,8 +454,12 @@ def test_the_gutter_constant_matches_the_rendered_plot_box():
     states the reasoning a future editor can check rather than a magic number.
     """
     geo = cg.plot_width({'width': 1920, 'height': 1080})
-    W = 1920 - (40 + 64)
-    gutter = W - 24 - 64 - geo.plot_w
+    sp = cg.space_tokens()
+    # From the token, not a restated 40: this assertion is about inverting the
+    # plot box, and a hardcoded copy of the padding it is inverting is the same
+    # rotted-literal mistake the neighbouring test exists to catch.
+    W = 1920 - (sp['lg'] + sp['xl'])
+    gutter = W - sp['md'] - sp['xl'] - geo.plot_w
     assert gutter == pytest.approx(58.6, abs=1.5), (
         f'implied gutter is {gutter:.1f}px, but the rendered frame gives 58.6 '
         f'(plot.w 1669px). gutterFor gives {min(190, 34 + cg.MEASURED_WIDEST_TICK * 13)} '
