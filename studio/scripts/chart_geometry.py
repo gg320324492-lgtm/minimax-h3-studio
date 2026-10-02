@@ -56,6 +56,11 @@ GUTTER_BASE = 34
 GUTTER_PER_CHAR = 13
 LABEL_FONT_SIZE = 20
 
+#: The real design tokens. Named so that a test can assert this file is
+#: byte-identical after a run, and so a future edit has one place to move.
+TOKENS_TS = Path(__file__).resolve().parents[1] / 'src' / 'templates' \
+    / 'finance-showcase' / 'design' / 'tokens.ts'
+
 # Widest Y tick label for the demo's value range, solved from the rendered
 # frame: label centres give plot.w = 1669px, and plot.w = W - (gutter+md) - xl
 # inverts to gutter 58.6, which is gutterFor at 2 characters (34 + 2*13 = 60).
@@ -88,16 +93,23 @@ class LabelFit:
         return self.step - self.width
 
 
-def space_tokens() -> dict[str, float]:
+def space_tokens(path: 'Path | None' = None) -> dict[str, float]:
     """Read SPACE from tokens.ts so a design change is not silently ignored.
 
     The values below are only a fallback for when the file cannot be read; the
     point of reading is that a design change moves the geometry with it. A
     restated literal would keep the old numbers while every test stayed green,
     which is the specific failure this function exists to prevent.
+
+    `path` exists so a test can point this at a COPY and prove the reading
+    actually happens. It was added because the tests that need to prove this
+    were editing the real design tokens in place to do it — and an in-place edit
+    that is interrupted, or whose `finally` restores a copy that was itself
+    already modified, leaves the repository's spacing permanently changed. The
+    test's value is "the instrument reads the source", and the source is
+    evidence: nothing in this module should ever write to it.
     """
-    src = Path(__file__).resolve().parents[1] / 'src' / 'templates' \
-        / 'finance-showcase' / 'design' / 'tokens.ts'
+    src = Path(path) if path is not None else TOKENS_TS
     try:
         text = src.read_text(encoding='utf-8')
     except OSError:
@@ -121,7 +133,8 @@ def scale_for(width: int, height: int) -> float:
     return min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT)
 
 
-def plot_width(fmt: dict, show_axis: bool = True, widest_tick_chars: int | None = None) -> Geometry:
+def plot_width(fmt: dict, show_axis: bool = True, widest_tick_chars: int | None = None,
+               space: dict[str, float] | None = None) -> Geometry:
     """Reproduce ChartFrame's plot box and the band() step between mark centres.
 
     Mirrors: padX = SPACE.lg + SPACE.xl; W = DESIGN_WIDTH*s - padX;
@@ -134,8 +147,15 @@ def plot_width(fmt: dict, show_axis: bool = True, widest_tick_chars: int | None 
     range (ticks like "55.0M"), giving gutter 123px and plot.w 1669px. Guessing
     5 instead shifts plot.w to 1629px and every verdict with it, so the default
     is the measured value and MEASURED_WIDEST_TICK documents where it came from.
+
+    `space` is the token dict to use, defaulting to a fresh read of tokens.ts.
+    It exists so a caller holding tokens from somewhere else — a test with a
+    modified COPY — can ask what the layout would be, without the module
+    deciding to re-read the real file behind its back. Same reasoning as
+    `space_tokens(path)`: the source of truth is evidence, and evidence is
+    read-only.
     """
-    sp = space_tokens()
+    sp = space if space is not None else space_tokens()
     s = scale_for(int(fmt.get('width', DESIGN_WIDTH)), int(fmt.get('height', DESIGN_HEIGHT)))
     pad_x = (sp['lg'] + sp['xl']) * s
     W = DESIGN_WIDTH * s - pad_x
