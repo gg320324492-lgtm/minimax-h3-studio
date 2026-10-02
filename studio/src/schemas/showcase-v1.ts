@@ -166,10 +166,42 @@ export const TransitionSchema = z
   })
   .strict();
 
+/**
+ * OPEN on purpose — no `.strict()`. Undeclared keys are STRIPPED, not
+ * rejected, so a graph carrying one still returns `success: true`. That is the
+ * property `test_style_bible_merges_only_declared.py` exists to police from the
+ * render side; see that file for why a text-presence guard cannot catch it.
+ *
+ * `radius` / `shadow` / `depthCue` were declared here in P12. Until then the
+ * resolver merged all three, scenes read all three, and zod deleted the input on
+ * the way past — `success: true`, populated object, defaults only.
+ *
+ * Their shapes are NOT the open `z.record(z.string(), z.unknown())` used by the
+ * other seven, and the asymmetry is deliberate:
+ *
+ *  * `depthCue` is a LIST (`string[]`), not a bag. `mergeList` is all-or-nothing,
+ *    because a partial ramp would mis-index: a 3-element ramp asked for depth 4
+ *    would render the depth-1 shadow. Typing it as an open record would let that
+ *    shape through the schema and reject it at the merge instead.
+ *  * `radius` and `shadow` are `Record<string, number|string>` bags, same as
+ *    `spacing`/`palette`, and deliberately LOOSE in their value type: the merge
+ *    filters by the default's own keys and type-checks each value, so a bag whose
+ *    values are all `number` does not need a stricter schema to be safe —
+ *    and pinning `radius` to numbers would reject a value the merge would have
+ *    dropped anyway, turning a no-op into a hard error.
+ *
+ * `depth` is deliberately ABSENT. It has zero consumers and its input could never
+ * exist; see docs/STYLE_BIBLE_STRIPPED_SECTIONS.md for the ruling and the
+ * measurement.
+ */
 export const StyleBibleSchema = z.object({
   palette: z.record(z.string(), z.unknown()).optional(),
   typography: z.record(z.string(), z.unknown()).optional(),
   spacing: z.record(z.string(), z.unknown()).optional(),
+  radius: z.record(z.string(), z.unknown()).optional(),
+  /** one CSS shadow per depth step, far plane first; all-or-nothing */
+  depthCue: z.array(z.string()).optional(),
+  shadow: z.record(z.string(), z.unknown()).optional(),
   cameraLanguage: z.record(z.string(), z.unknown()).optional(),
   motionLanguage: z.record(z.string(), z.unknown()).optional(),
   chartLanguage: z.record(z.string(), z.unknown()).optional(),

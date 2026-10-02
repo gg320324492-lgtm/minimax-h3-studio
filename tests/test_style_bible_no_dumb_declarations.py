@@ -139,21 +139,34 @@ def test_reachability_of_every_declared_key():
 
     `audioLanguage` and `chartLanguage` are the two that die at link 2: the
     schema declares them, they are open records, and `resolveStyleBible` never
-    mentions either name. The other five reach a scene.
+    mentions either name. The other eight reach a scene.
+
+    WAS SEVEN. P12 declared `radius`, `shadow` and `depthCue`, so the three
+    that used to die at link 1 now run the whole chain; the two that die at
+    link 2 are untouched by that change and remain the whole of the
+    dumb-declaration set.
     """
     report = sbc.reachability_report()
     assert set(report) == {
-        'palette', 'typography', 'spacing', 'cameraLanguage',
-        'motionLanguage', 'chartLanguage', 'audioLanguage'}, sorted(report)
+        'palette', 'typography', 'spacing', 'radius', 'shadow', 'depthCue',
+        'cameraLanguage', 'motionLanguage', 'chartLanguage', 'audioLanguage',
+    }, sorted(report)
 
     states = {k: v[0] for k, v in report.items()}
     assert states == {
         'palette': 'reachable',
         'typography': 'reachable',
         'spacing': 'reachable',
+        # P12: declared, so these now survive the parser and run the chain.
+        # Before it they were `no-declaration` and every scene read a default.
+        'radius': 'reachable',
+        'shadow': 'reachable',
+        'depthCue': 'reachable',
         'cameraLanguage': 'reachable',
         'motionLanguage': 'reachable',
-        # declared by both mirrors, merged by nothing, read by nothing
+        # declared by both mirrors, merged by nothing, read by nothing.
+        # The P11 direction. Untouched by P12 — see
+        # docs/STYLE_BIBLE_STRIPPED_SECTIONS.md section 6.
         'chartLanguage': 'no-resolver-binding',
         'audioLanguage': 'no-resolver-binding',
     }, states
@@ -173,26 +186,35 @@ def test_the_two_unconsumed_keys_are_dumb_declarations_today():
     }
 
 
-def test_the_resolver_merges_four_sections_no_graph_can_reach():
-    """The inverse defect, and the strongest thing this measurement found.
+def test_no_merged_section_is_outside_the_schema_anymore():
+    """The inverse defect, now MEASURED AT ZERO. Read this as a tombstone.
 
-    `resolveStyleBible` merges `radius`, `shadow`, `depth` and `depthCue` into
-    the bible, and scenes destructure the corresponding `useDesign()` exports —
-    so this code looks wired end to end. But `StyleBibleSchema` declares none
-    of the four, zod strips them on parse, and the values that reach
-    `styleBible.tsx` are always the theme defaults.
+    `resolveStyleBible` used to merge `radius`, `shadow`, `depth` and `depthCue`
+    into the bible while `StyleBibleSchema` declared none of them. Scenes read
+    the corresponding `useDesign()` exports, so the code looked wired end to
+    end — but zod stripped the input on parse, `safeParse` returned
+    `success: true`, and every scene silently rendered the default.
 
     This is P11's `audio` defect rotated ninety degrees: not a read that cannot
-    happen, but a read that cannot be FED. It is invisible from both ends —
-    the graph author sees no error, and the renderer sees a populated object.
+    happen, but a read that cannot be FED. It was invisible from both ends —
+    the graph author saw no error, and the renderer saw a populated object.
 
-    Asserted here so that if someone declares these four keys, this test says
-    so out loud rather than the ledger quietly becoming wrong.
+    P12 closed it. `radius`, `shadow` and `depthCue` are declared on both
+    mirrors; `depth` had no consumer at all and its graph-facing plumbing was
+    deleted (`tokens.ts`'s `DEPTH` table survives — deleting a token is a
+    larger call). The difference this function measures is now EMPTY, and the
+    assertion says so out loud rather than letting the ledger quietly become
+    wrong in the other direction.
+
+    The live guard against this recurring is
+    `tests/test_style_bible_merges_only_declared.py`.
     """
-    assert sbc.resolver_sections_outside_the_schema() == {
-        'radius': 'radius', 'shadow': 'shadow',
-        'depth': 'depth', 'depthCue': 'depthCue',
-    }
+    assert sbc.resolver_sections_outside_the_schema() == {}, (
+        'a merged section is outside the schema again: '
+        f'{sbc.resolver_sections_outside_the_schema()}. Every one of these is '
+        'merged by the resolver, consumed by a scene, and STRIPPED on parse — '
+        'the graph sets it, safeParse succeeds, and the scene renders the '
+        'default. This is the P12 defect returning.')
 
 
 # -- 3. the delivered graphs ---------------------------------------------

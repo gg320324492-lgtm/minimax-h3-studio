@@ -247,6 +247,19 @@
         "spacing": {
           "type": "object"
         },
+        "radius": {
+          "type": "object"
+        },
+        "depthCue": {
+          "description": "One CSS shadow per depth step, far plane first. All-or-nothing: a partial ramp would mis-index. See docs/STYLE_BIBLE_STRIPPED_SECTIONS.md",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shadow": {
+          "type": "object"
+        },
         "cameraLanguage": {
           "type": "object"
         },

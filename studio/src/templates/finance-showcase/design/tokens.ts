@@ -112,37 +112,43 @@ export const RADIUS = {chip: 999, card: 20, window: 14, panel: 28} as const;
  * The honest state of this table, re-measured 2026-10-03 because the previous
  * wording here was wrong in a way that mattered:
  *
- * IT IS WIRED. It is imported at styleBible.tsx:3, merged over any graph
- * `b.depth` at styleBible.tsx:73, and republished as `useDesign().DEPTH` at
- * styleBible.tsx:173. So a style bible CAN override any of these five planes.
+ * P6.8 MEASURED IT AND DELIBERATELY DID NOT DECIDE. This note originally
+ * read "IT IS WIRED ... merge over b.depth ... republished as
+ * useDesign().DEPTH" right next to the measurement that nothing consumed it.
+ * Those two facts sat here together, which is why the note needed re-reading
+ * rather than trusting.
  *
- * AND NOTHING CONSUMES IT. Zero scenes read it. Measured, not inferred, by
- * enumerating the renderer (every .ts/.tsx under studio/src, excluding this
- * file and comment lines):
+ * P12 DECIDED: THE GRAPH PLUMBING WAS DELETED. styleBible.tsx no longer
+ * imports DEPTH, no longer merges b.depth, and useDesign() no longer
+ * republishes it. Two independent reasons, either one sufficient:
  *
- *     grep -rn "DEPTH\." --include=*.ts --include=*.tsx studio/src   -> 0 hits
- *     grep -rnE "\bDEPTH\b" --include=*.ts --include=*.tsx studio/src
- *         design/styleBible.tsx:3    (import)
- *         design/styleBible.tsx:73   (merge over b.depth)
- *         design/styleBible.tsx:173  (republish as useDesign().DEPTH)
- *         design/tokens.ts:147       (this definition)
+ *   1. Zero consumers. Measured, not inferred, by enumerating the renderer
+ *      (every .ts/.tsx under studio/src, excluding this file and comments):
+ *          grep -rn "DEPTH\." --include=*.ts --include=*.tsx studio/src -> 0 hits
+ *      Every hit was the wiring or the definition; none was a read.
+ *   2. The input could not exist. `depth` was not declared in
+ *      StyleBibleSchema, and that schema is an OPEN z.object, so zod
+ *      STRIPPED the key on every parse while safeParse still returned
+ *      success=true. `b.depth` was therefore permanently undefined and the
+ *      merge was a no-op that could not change any output - a channel
+ *      connected at one end and arriving empty at the other. It was the
+ *      clearest case in the repository of the failure family P12 closes.
  *
- * Every hit is the wiring or the definition; none is a read. That distinction
- * is the whole of P6.8: "wired but unconsumed" is a different defect from
- * "not wired", and the fix for the first is a consumer while the fix for the
- * second is the wiring itself.
+ * THE TABLE ITSELF STAYS. Deleting a token is a larger call than deleting a
+ * graph-facing binding; P6.8 said so here and P12 agreed. This is a reusable
+ * table of depth planes, not a graph channel. If a scene ever needs it, the
+ * fix is a CONSUMER plus a declaration - not reviving the binding on its own,
+ * which is precisely what produced a section nothing could feed.
  *
- * THE GRAPH CANNOT REACH IT. `depth` appears ZERO times in
- * pipeline/schemas/showcase-v1.schema.json, and no JSON in pipeline/ or
- * studio/public/ sets `depth` or `depthCue` anywhere. So this is a channel
- * that is connected at one end and arrives empty at the other: `b.depth` can
- * only ever be `undefined`, and the merge is a no-op. That is a property of
- * the SCHEMA, not of any author - there is no path to write one.
+ * `depthCue` IS a different key, and IS graph-reachable: a real consumed
+ * section (BrowserStack:293 -> depthCueAt), declared by P12. Do not let the
+ * two be conflated again. tests/test_depth_cue_layers.py pins both facts
+ * separately, because the previous version of that test used the substring
+ * assertion `'depth' not in schema_text`, which the word `depthCue` alone
+ * was enough to trip - a text-presence assertion, and the fifth of those in
+ * this project's history.
  *
- * Whether the graph SHOULD be able to reach it is a P6.8 decision, recorded
- * with its reasoning in the commit that added this note. What is kept here is
- * the measurement; what is NOT done is deleting the table, because removing a
- * token is a larger call than recording one.
+ * The full per-section ruling is docs/STYLE_BIBLE_STRIPPED_SECTIONS.md.
  */
 export const DEPTH = {
   z0: 'translateZ(0)',

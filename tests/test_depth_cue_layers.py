@@ -244,17 +244,43 @@ def test_depth_lookup_clamps_at_the_last_layer_and_does_not_wrap():
 
 
 def test_the_graph_cannot_set_depth_at_all():
-    """Recorded as a fact, because P6.8 was asked to decide about it.
+    """Recorded as a fact, because P6.8 was asked to decide about it. P12 closed it.
 
-    `DEPTH` is WIRED — styleBible.tsx imports it, merges `b.depth` over it and
-    republishes it as `useDesign().DEPTH` — and the graph still cannot reach it:
-    `depth` appears zero times in the JSON Schema. This test pins the zero, so
-    the day a schema does add it, this goes red and asks whether the comment
-    above DEPTH was updated with it.
+    `DEPTH` was WIRED — styleBible.tsx imported it, merged `b.depth` over it and
+    republished it as `useDesign().DEPTH` — and the graph still could not reach
+    it, because `depth` appeared zero times in the JSON Schema.
+
+    P12 ruled on it. Zero consumers, and an input that could not exist, so the
+    graph-facing plumbing was deleted: no `b.depth` merge, no `StyleBible.depth`
+    field, no `useDesign().DEPTH`. The `DEPTH` TABLE survives in tokens.ts —
+    removing a token is a larger call than removing a binding — and the docstring
+    above it now records the deletion instead of claiming the merge is live.
+
+    The zero is re-pinned here, DERIVED rather than by substring. The previous
+    version of this test was `assert 'depth' not in schema_text`, and it was
+    wrong in the most embarrassing way available: P12 added `depthCue` to the
+    schema and the substring `depth` inside `depthCue` tripped it. The
+    assertion was a fact about TEXT, not about the schema, so it reported a
+    breach of a rule the change had not broken. That is the fifth time this
+    project has been fooled by a text-presence assertion, and it is why this
+    one now parses the key set.
+
+    `depthCue` is deliberately still declared: it is a real consumed section
+    (BrowserStack:293) and the graph setting it is legitimate. The two must
+    never be confused again, which is the whole point of the derivation.
     """
-    schema_text = JSON_SCHEMA.read_text(encoding='utf-8')
-    assert 'depth' not in schema_text, (
-        'showcase-v1.schema.json now declares something called `depth`. If that '
-        'is a pathway to DEPTH, tokens.ts no longer needs to say the graph '
-        'cannot reach it — update the comment there in the same change.'
-    )
+    import json
+    doc = json.loads(JSON_SCHEMA.read_text(encoding='utf-8'))
+    keys = set(doc['definitions']['StyleBible']['properties'])
+
+    assert 'depth' not in keys, (
+        'the JSON Schema declares `depth` again. If that is a pathway to the '
+        'DEPTH table, tokens.ts needs the comment above it updated in the same '
+        'change — P12 deleted the merge on the grounds that nothing consumes '
+        'it. Declaring the key alone re-creates the stripped-section defect in '
+        'reverse: fed, never read.')
+    # the neighbouring key is the one that WAS made reachable, and this is the
+    # assertion that proves the substring rule above was the bug, not the change
+    assert 'depthCue' in keys, (
+        'depthCue should be declared — BrowserStack:293 consumes it and P12 '
+        'ruled it reachable. If this is red the schema lost a working key.')
