@@ -650,3 +650,126 @@ def test_the_delivered_report_props_still_carry_no_total_duration():
     )
     assert 'reportSections' not in d, 'sections are derived at render time, not stored'
     assert 3 + len(d['stats']) + len(d['takeaways']) == 9
+
+
+# --------------------------------------------------------------------------
+# CLI contracts (P11 steps 26-28)
+#
+# Three defects sat on P11's threshold and none of the 186 tests noticed: the
+# suite was green before the fix and green after it. A contract nobody guards is
+# a contract that can be reverted silently, so each one is pinned here — and each
+# pin names the mistake it exists to catch.
+#
+# Step 29 asked for a guard on step 22's "strategy 1" consumer. That code does
+# not exist — no planner, no repair module, nothing tracked — so the intent is
+# served by guarding the contracts that were actually delivered.
+# --------------------------------------------------------------------------
+
+def _run_cli(args, cwd=ROOT):
+    """Invoke the CLI as a subprocess: the bugs were in main(), not in a helper."""
+    return subprocess.run([sys.executable, str(ROOT / 'studio' / 'scripts' / 'visual_qa.py')]
+                          + [str(a) for a in args],
+                          capture_output=True, text=True, cwd=cwd)
+
+
+@pytest.fixture(scope='module')
+def qa_frame(tmp_path_factory):
+    """A frame with a known FAIL, built here rather than taken from out/.
+
+    out/ is gitignored, so a fixture pointing into it would make this test fail
+    on a fresh clone for a reason that has nothing to do with the contract.
+    """
+    from PIL import Image
+    p = tmp_path_factory.mktemp('cli') / 'f00001.png'
+    im = Image.new('RGB', (320, 180), (12, 12, 16))
+    for x in range(0, 320, 24):          # bright verticals touching the edge
+        for y in range(0, 180):
+            im.putpixel((x, y), (250, 250, 250))
+    im.save(p)
+    return p
+
+
+def test_the_cli_does_not_emit_the_unavailable_findings_twice(qa_frame):
+    """main() appended them a second time; the CLI counted 15 where the library counted 11.
+
+    A repair budget sized off the CLI number over-counts by four, which is the
+    whole reason these were found: the count feeds P11's accounting.
+    """
+    lib = vqa.run_on_frame(qa_frame, None, 1.0, None, None)
+    cli = _run_cli(['--frame', qa_frame])
+
+    def rules(text):
+        return re.findall(r'\[(\w+)\s*\]\s*(\w+)', text)
+
+    assert rules(cli.stdout) == rules('\n'.join(str(f) for f in lib)), (
+        'the CLI and the library must report the same findings in the same order; '
+        f'library has {len(lib)}, CLI printed {len(rules(cli.stdout))}'
+    )
+    per_rule = [r for v, r in rules(cli.stdout) if v == vqa.UNAVAILABLE]
+    assert len(per_rule) == len(set(per_rule)), (
+        f'UNAVAILABLE rules emitted more than once: {per_rule}'
+    )
+
+
+def test_the_props_only_branch_still_reports_the_unavailable_instruments():
+    """Guards the other half of step 26.
+
+    --props with no --frame never enters run_on_frame, so the four UNAVAILABLE
+    findings come from main(). Gating the duplicate append on `not args.frame`
+    is what keeps this branch intact; deleting the append outright would have
+    left this test with nothing to assert and the CLI silent about instruments
+    it cannot run.
+    """
+    props = ROOT / 'studio' / 'public' / 'jobs' / 'showcase_demo' / 'props.json'
+    if not props.exists():
+        pytest.skip('staged props absent; run scripts/stage_showcase.py')
+    r = _run_cli(['--props', props])
+    rules = re.findall(r'\[(\w+)\s*\]\s*(\w+)', r.stdout)
+    unavail = [rule for v, rule in rules if v == vqa.UNAVAILABLE]
+    assert sorted(unavail) == sorted(vqa.UNIMPLEMENTED), (
+        'every unimplemented rule must still be announced on the props-only path'
+    )
+
+
+def test_json_output_is_byte_level_parseable(qa_frame):
+    """--json died on json.load() twice, in two different ways.
+
+    A summary line followed the array ("Extra data"), and ensure_ascii=False
+    wrote real CJK through a GBK stdout on Windows, so the bytes were not valid
+    UTF-8 at all. Both were invisible to a test that only ever ran the library.
+
+    Decoding the raw bytes is the point: reading with the wrong encoding is how
+    a consumer would have met the second bug.
+    """
+    r = subprocess.run([sys.executable, str(ROOT / 'studio' / 'scripts' / 'visual_qa.py'),
+                        '--frame', str(qa_frame), '--json'],
+                       capture_output=True, cwd=ROOT)
+    raw = r.stdout
+    findings = json.loads(raw.decode('utf-8'))
+    assert isinstance(findings, list)
+    assert raw.decode('utf-8').isprintable() or True   # decodable is the assertion
+    assert 'findings:' not in raw.decode('utf-8'), 'the summary leaked into stdout'
+    assert b'findings:' in r.stderr, 'the human summary belongs on stderr'
+    for f in findings:
+        assert f['verdict'] in (vqa.PASS, vqa.FAIL, vqa.UNVERIFIABLE, vqa.UNAVAILABLE)
+
+
+def test_the_summary_does_not_merge_unverifiable_with_unavailable(qa_frame):
+    """One number for two different states.
+
+    "10 not measurable" counted both, and the instrument being absent is not the
+    same claim as the instrument running and unable to decide. Section 8 of the
+    handoff makes the four-value split a rule; the CLI summary was breaking it.
+    """
+    # Both output modes carry the summary, on different streams: without --json
+    # it is the last stdout line, with --json it is on stderr. Checking one and
+    # missing the other is how mutation 4 survived the first version of this
+    # guard -- the merged bucket was reintroduced on the branch not inspected.
+    plain = _run_cli(['--frame', qa_frame])
+    as_json = _run_cli(['--frame', qa_frame, '--json'])
+    for label, text in (('stdout', plain.stdout), ('stderr', as_json.stderr)):
+        tail = text.strip().splitlines()[-1]
+        assert 'not measurable' not in tail, f'the merged bucket came back ({label}): {tail!r}'
+        assert vqa.UNVERIFIABLE in tail and vqa.UNAVAILABLE in tail, (
+            f'the summary must name both states separately ({label}): {tail!r}'
+        )
