@@ -40,50 +40,87 @@ const concurrency = get('concurrency') ? Number(get('concurrency')) : undefined;
 
 const entryPoint = fileURLToPath(new URL('../src/index.ts', import.meta.url));
 
-const t0 = Date.now();
-console.log(`[render.mjs] bundling…`);
-const serveUrl = await bundle({
-  entryPoint,
-  onProgress: (p) => {
-    if (p % 25 === 0) {
-      console.log(`[render.mjs] bundle ${p}%`);
-    }
-  },
-});
-console.log(`[render.mjs] bundle done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+// The bundle is ~800 MB and it is scratch: it exists only while this process
+// runs. Left to itself `bundle()` writes it to os.tmpdir() via mkdtemp and
+// NEVER deletes it (prepareOutDir in @remotion/bundler), so every render leaks
+// one copy of studio/public onto the system drive — 118 of them filled a C:
+// TEMP to 46 GB. Passing an explicit outDir only MOVES the leak, so the
+// directory has to be ours and it has to be removed in a finally, including
+// when the render throws.
+//
+// mkdtemp under a repo-local .remotion/ (already gitignored): the scratch goes
+// on the drive the repo lives on rather than on C:, and a per-run name keeps
+// two concurrent renders from sharing one directory.
+const scratchRoot = process.env.REMOTION_SCRATCH_DIR
+  ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.remotion', 'bundle');
+fs.mkdirSync(scratchRoot, {recursive: true});
+const bundleDir = fs.mkdtempSync(path.join(scratchRoot, 'render-'));
 
-const inputProps = JSON.parse(fs.readFileSync(path.resolve(propsPath), 'utf8'));
+// A failure below must not leave an 800 MB directory behind, and neither must a
+// Ctrl-C: the exit handler runs on SIGINT, the finally does not.
+let cleanedUp = false;
+const cleanUp = () => {
+  if (cleanedUp) return;
+  cleanedUp = true;
+  fs.rmSync(bundleDir, {recursive: true, force: true});
+};
+process.on('exit', cleanUp);
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    cleanUp();
+    process.exit(130);
+  });
+}
 
-const t1 = Date.now();
-const composition = await selectComposition({serveUrl, id: comp, inputProps});
-console.log(
-  `[render.mjs] composition ${composition.width}x${composition.height}@${composition.fps} ` +
-    `${composition.durationInFrames}f, metadata in ${((Date.now() - t1) / 1000).toFixed(1)}s`
-);
+try {
+  const t0 = Date.now();
+  console.log(`[render.mjs] bundling…`);
+  const serveUrl = await bundle({
+    entryPoint,
+    outDir: bundleDir,
+    onProgress: (p) => {
+      if (p % 25 === 0) {
+        console.log(`[render.mjs] bundle ${p}%`);
+      }
+    },
+  });
+  console.log(`[render.mjs] bundle done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
-await renderMedia({
-  composition,
-  serveUrl,
-  codec,
-  inputProps,
-  outputLocation: path.resolve(out),
-  // Node API 不读 remotion.config.ts（仅 CLI 生效），必须显式传：
-  // jpeg 截帧默认产出 yuvj420p（full range），qa_final.py 要求 yuv420p。
-  pixelFormat: get('pixelfmt', 'yuv420p'),
-  imageFormat: get('imageformat', 'jpeg'),
-  // bt709 是 Phase 0 实测定稿：jpeg 截帧下把输出转为 yuv420p/tv range（否则 yuvj420p 挂 QA），
-  // 速度无损耗。基准数据见 BENCHMARK_20260929.md。
-  colorSpace: get('colorspace', 'bt709'),
-  ...(crf !== undefined ? {crf} : {}),
-  ...(bitrate !== undefined ? {videoBitrate: bitrate} : {}),
-  hardwareAcceleration: hw,
-  ...(concurrency !== undefined ? {concurrency} : {}),
-  onProgress: ({progress}) => {
-    const pct = Math.floor(progress * 100);
-    if (pct % 10 === 0) {
-      console.log(`[render.mjs] render ${pct}%`);
-    }
-  },
-});
+  const inputProps = JSON.parse(fs.readFileSync(path.resolve(propsPath), 'utf8'));
 
-console.log(`[render.mjs] DONE ${out} in ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
+  const t1 = Date.now();
+  const composition = await selectComposition({serveUrl, id: comp, inputProps});
+  console.log(
+    `[render.mjs] composition ${composition.width}x${composition.height}@${composition.fps} ` +
+      `${composition.durationInFrames}f, metadata in ${((Date.now() - t1) / 1000).toFixed(1)}s`
+  );
+
+  await renderMedia({
+    composition,
+    serveUrl,
+    codec,
+    inputProps,
+    outputLocation: path.resolve(out),
+    // Node API 不读 remotion.config.ts（仅 CLI 生效），必须显式传：
+    // jpeg 截帧默认产出 yuvj420p（full range），qa_final.py 要求 yuv420p。
+    pixelFormat: get('pixelfmt', 'yuv420p'),
+    imageFormat: get('imageformat', 'jpeg'),
+    // bt709 是 Phase 0 实测定稿：jpeg 截帧下把输出转为 yuv420p/tv range（否则 yuvj420p 挂 QA），
+    // 速度无损耗。基准数据见 BENCHMARK_20260929.md。
+    colorSpace: get('colorspace', 'bt709'),
+    ...(crf !== undefined ? {crf} : {}),
+    ...(bitrate !== undefined ? {videoBitrate: bitrate} : {}),
+    hardwareAcceleration: hw,
+    ...(concurrency !== undefined ? {concurrency} : {}),
+    onProgress: ({progress}) => {
+      const pct = Math.floor(progress * 100);
+      if (pct % 10 === 0) {
+        console.log(`[render.mjs] render ${pct}%`);
+      }
+    },
+  });
+
+  console.log(`[render.mjs] DONE ${out} in ${((Date.now() - t0) / 1000).toFixed(1)}s total`);
+} finally {
+  cleanUp();
+}
