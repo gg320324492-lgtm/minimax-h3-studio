@@ -30,6 +30,18 @@ permissive producer validator means a typo leaves the pipeline looking valid and
 fails only at render time. So the schema is now the authority here too: this
 file runs the schema at `SCHEMA_PATH` and reports what it says.
 
+WHICH SIDE IS THE AUTHORITY, WHEN THE TWO MIRRORS THEMSELVES DISAGREE.
+
+Wiring this file to `SCHEMA_PATH` created a question it could not answer on its
+own: zod and the JSON Schema were not always in agreement, so "defer to the
+schema" silently picks a side. The answer is zod, always, and the reason is
+which one is ENFORCED. `ShowcaseSchema.safeParse` is what the renderer calls;
+the JSON Schema file is a declaration that for most of this project's life did
+not compile in any validator. A declaration nobody runs is a wish, not a
+contract. `camera.perspective: 0` and `format.width: 8` are the two places this
+mattered; both were fixed in the schema, toward zod, and both are pinned by
+`tests/test_showcase_mirrors_agree_on_values.py`.
+
 WHY THE SCHEMA IS RUN BY CODE IN THIS FILE RATHER THAN BY `import jsonschema`.
 
 `jsonschema` is installed on Python 3.10 (4.26.0) and NOT on 3.12 — and 3.12 is
@@ -64,19 +76,28 @@ each has a consumer that breaks when it is dropped:
     only to objects, so `{"scenes": {"a": 1}}` satisfies `items` vacuously, and
     the per-scene loop below would then be iterating a dict.
 
-ONE PREVIOUS DISAGREEMENT WAS RESOLVED IN THE SCHEMA'S FAVOUR, NOT OURS.
+THE `camera.perspective: 0` DISAGREEMENT WAS RESOLVED TOWARD ZOD, NOT HERE.
 
-The old `_validate` rejected `camera.perspective: 0`; the zod mirror rejects it
-too (`.positive()`), but the JSON Schema says `minimum: 0` and therefore accepts
-it. So the two MIRRORS already disagreed, and the only tie-breaker available is
-the instruction this change was given: the schema is the authority the renderer
-enforces, so the producer catches up to it. `perspective: 0` is therefore
-ACCEPTED here, and that is a real (if minor) widening of what the pipeline lets
-through. It is recorded here and pinned by a test rather than absorbed
-silently, because the alternative — keeping the stricter check — would mean this
-file enforces a rule the renderer does not, which is the mirror image of the bug
-being fixed. No delivered graph sets `perspective: 0`; all ten in `charts_demo`
-use 1600.
+This file originally recorded that disagreement the other way round, and the
+recording was wrong — or rather, it applied the tie-breaker from the wrong side.
+At the time, the two MIRRORS already disagreed: zod said `z.number().positive()`
+(rejects 0), the JSON Schema said `minimum: 0` (accepts it), and the old
+hand-written `_validate` also rejected it. Facing two sides that disagreed, it
+deferred to "the schema is the authority the renderer enforces" and let
+`perspective: 0` through.
+
+But zod is the side the renderer actually enforces. `ShowcaseSchema.safeParse`
+is what `FinanceShowcaseWide.tsx` and `showcaseMeta.ts` run, and the JSON Schema
+was only ever a declaration — one that, for most of this project's life, could
+not even compile. So "the schema is the authority" was never a reason to prefer
+it over zod; it was a reason to stop looking. The schema now says
+`exclusiveMinimum: 0` and rejects 0, like zod, and this file follows the file.
+
+The same sweep that found it found a second instance of the identical shape:
+`format.width`/`height` carried `minimum: 16` in the JSON Schema while zod says
+`.int().positive()`. Both are now `minimum: 1`. `perspective: 0` is not merely
+meaningless in a perspective projection — it is a division by zero on the way to
+the screen. No delivered graph sets it: all ten in `charts_demo` use 1600.
 
 WHAT WAS DELETED, AND WHY IT WAS SAFE TO DELETE.
 
@@ -122,11 +143,21 @@ SCHEMA_PATH = Path(__file__).resolve().parent / 'schemas' / 'showcase-v1.schema.
 #: refuses to run against a schema that uses anything else, so an unsupported
 #: keyword can never be silently ignored — it stops the pipeline loudly, which is
 #: the opposite of the silent-skip failure this change exists to remove.
+#:
+#: `exclusiveMinimum` is here because `Camera.perspective` needs it. draft-07 has
+#: two spellings of "greater than 0" — `exclusiveMinimum: 0` and, in draft-06,
+#: `minimum: 1` — and the mirror uses the first because that is what zod's own
+#: `toJSONSchema` emits for `.positive()`. Spelled it the draft-06 way it would be
+#: indistinguishable from `Scene.durationInFrames`'s `minimum: 1`, and the two
+#: would then differ only in a number nobody re-reads. `exclusiveMaximum` is
+#: deliberately NOT here: nothing uses it, and
+#: `test_an_unsupported_keyword_stops_the_pipeline_rather_than_being_ignored`
+#: relies on it staying unsupported.
 SUPPORTED_KEYWORDS = frozenset({
     '$schema', '$ref', 'title', 'description', 'default', 'definitions',
     'type', 'properties', 'required', 'additionalProperties',
     'items', 'enum', 'const',
-    'minimum', 'maximum', 'minLength', 'minItems', 'maxItems',
+    'minimum', 'exclusiveMinimum', 'maximum', 'minLength', 'minItems', 'maxItems',
     'pattern', 'oneOf',
 })
 
@@ -399,6 +430,8 @@ class _Schema:
             # draft-06+: booleans are NOT numbers, and `True` is an int in Python.
             if 'minimum' in schema and value < schema['minimum']:
                 out.append(f'{at}: must be >= {schema["minimum"]}, got {value!r}')
+            if 'exclusiveMinimum' in schema and value <= schema['exclusiveMinimum']:
+                out.append(f'{at}: must be > {schema["exclusiveMinimum"]}, got {value!r}')
             if 'maximum' in schema and value > schema['maximum']:
                 out.append(f'{at}: must be <= {schema["maximum"]}, got {value!r}')
         elif isinstance(value, list):

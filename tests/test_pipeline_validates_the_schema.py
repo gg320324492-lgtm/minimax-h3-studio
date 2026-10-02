@@ -23,12 +23,27 @@ Measured over the 35 probe graphs below, before this change:
     unknown transitionIn key               reject  ACCEPT
     DUPLICATE scene id                     ACCEPT  reject
     perspective 0                          ACCEPT  reject
+    format.width 8                         ACCEPT  reject
 
 Eight graphs the schema rejects passed `scene_graph.load()`. Three of them --
 `motion.ease`, top-level `audio`, and a misspelled scene key -- are exactly the
 defect class the last three commits existed to remove: a field the graph can
 set, that nothing reads, that reports success anyway. The pipeline is where
 graphs are AUTHORED, so the permissive validator was on the producing side.
+
+THE TWO ROWS AT THE BOTTOM NOW READ THE OTHER WAY, AND THAT IS THE POINT.
+
+`perspective 0` and `format.width 8` were "the schema is wrong, the pipeline is
+right" and were left that way: the schema said `minimum: 0` and `minimum: 16`
+while zod said `.positive()` and `.int().positive()`. The old `_validate`
+rejected both, the schema accepted both, and the disagreement was RECORDED
+rather than resolved -- see the section in `scene_graph.py` that used to argue
+for deferring to the schema. That reasoning picked the wrong side: zod is the
+validator the renderer actually calls, and the JSON Schema was a declaration
+that could not even compile until the previous commit. Both bounds are now in
+the schema, and both probes are now agreed. `format.width 8` is the one nobody
+had found: the enumeration that surfaced `perspective` walked the numeric bounds
+of both mirrors and reported exactly one drift, and it walked straight past this.
 
 WHAT IS PROVEN HERE, AND WHAT IS NOT.
 
@@ -161,6 +176,14 @@ def _probes() -> list[tuple[str, dict]]:
         _scene(lambda d: d['scenes'].append({'id': 's01', 'type': 'logo', 'durationInFrames': 30})))
     add('perspective 0', _scene(lambda d: d['scenes'][0].update(camera={'perspective': 0})))
 
+    # -- the second drift the hand enumeration walked past ---------------------
+    # `format.width`/`height` carried `minimum: 16` in the schema while zod says
+    # `.int().positive()`. It is here so this file's own probe table matches the
+    # claim in its docstring, and so a future edit to either bound is measured
+    # here as well as in test_showcase_mirrors_agree_on_values.py.
+    add('format.width 8 (below the OLD schema minimum 16)',
+        _scene(lambda d: d['format'].update(width=8)))
+
     for path in sorted(EXAMPLES.glob('*.json')):
         add(f'delivered: {path.name}', json.loads(path.read_text(encoding='utf-8-sig')))
     return out
@@ -172,10 +195,16 @@ KNOWN_PIPELINE_ONLY_REJECTIONS = {'DUPLICATE scene id'}
 
 #: Probes the schema ACCEPTS and the pipeline must therefore accept too. If the
 #: pipeline ever becomes stricter here without a documented reason, these go red.
+#:
+#: `perspective 0` USED TO BE IN HERE, and its removal is the change the schema
+#: edit made. It was the pipeline's one documented opinion that the schema
+#: contradicted; the disagreement has since been settled toward zod, so the two
+#: now say the same thing and this list is a statement about the current state
+#: rather than a snapshot of the old one.
 SCHEMA_ACCEPTS = {
     'clean', 'meta key _note', 'free-form content bag', 'free-form layout bag',
     'unknown key in style_bible section', 'camera constant track',
-    'camera [from,to] track', 'motion known keys only', 'perspective 0',
+    'camera [from,to] track', 'motion known keys only',
     'delivered: charts_demo.json', 'delivered: showcase_demo.json',
 }
 
@@ -189,10 +218,11 @@ def _pipeline_accepts(doc: dict) -> bool:
 def test_the_probe_set_is_what_this_file_claims():
     """The anchors. Without this the rest could pass over a set that shrank."""
     names = [n for n, _ in _probes()]
-    assert len(names) == 35, f'the probe set changed size: {len(names)}'
+    assert len(names) == 36, f'the probe set changed size: {len(names)}'
     assert len(set(names)) == len(names), 'a probe name is duplicated'
     for required in ('clean', 'unknown top-level key', 'unknown scene key',
                      're-added inert field motion.ease', 'meta key _note',
+                     'perspective 0', 'format.width 8 (below the OLD schema minimum 16)',
                      'delivered: charts_demo.json', 'delivered: showcase_demo.json'):
         assert required in names, f'the probe {required!r} went missing'
 
