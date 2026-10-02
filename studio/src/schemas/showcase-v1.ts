@@ -8,6 +8,52 @@
 //  * the unit is a SCENE, not a shot (a scene may be pure motion graphics)
 //  * camera motion is separate from component motion
 //  * format is metadata-driven (P8): nothing hardcodes 1080p/24fps
+//
+// UNKNOWN KEYS ARE REJECTED, NOT SWALLOWED (P11, defect 3 — measured).
+//
+// Read this before adding `.passthrough()` anywhere below, because the two
+// mirrors used to return opposite verdicts on the same bytes:
+//
+//   * these `z.object(...)` calls had no `.strict()`, so zod silently STRIPPED
+//     any key it did not declare, and `safeParse` still returned `success: true`;
+//   * the document root and the `Scene` / `Camera` / `Motion` / `Transition`
+//     definitions all carried `additionalProperties: false` in the JSON Schema
+//     mirror, so the same graph was REJECTED there.
+//
+// Measured on the two delivered graphs, full strictness, at every depth: the only
+// key either mirror would reject is `showcase_demo.json`'s top-level `_note`.
+// `charts_demo.json` has none. So the disagreement was not theoretical — the
+// shipped showcase demo passed zod and failed the JSON Schema, and no test ran
+// the JSON Schema at all, because it could not even be compiled (see
+// `definitions/Track` in the mirror).
+//
+// That is the defect class the last three commits removed (`motion.ease`,
+// top-level `audio`, `chart.baseline`): a field the graph can set, that nothing
+// reads, that reports success anyway. Stripping is the worst variant, because it
+// is invisible in both directions — the author sees a clean parse, and the field
+// vanishes before any renderer could honour it.
+//
+// THE TRADE-OFF ACCEPTED: full strictness makes an unknown key a HARD ERROR. That
+// is a real cost — a graph authored against a slightly different draft now fails
+// to load instead of loading with a field quietly ignored — and it is paid
+// deliberately, because the alternative is a failure that is invisible and
+// therefore unfixable from the outside. It is not a bare `ZodError`:
+// `describeIssues` names the path (`scenes[0].motion: Unrecognized key: "ease"`),
+// and both `FinanceShowcaseWide.tsx` and `showcaseMeta.ts` report issues that way.
+//
+// `Track` carries NO modifier, and that is a measured equivalence rather than an
+// oversight. It is a shared leaf VALUE type, not a bag of author-supplied data,
+// and zod 4 gives a `z.tuple()` no `.strict()` at all: `z.tuple([a, b])` already
+// rejects `[a, b, c]`, `[[a], b]` and `{a: 1}`. Measured on zod 4.5.4 — `Track` is
+// therefore exactly as strict as a strict version of it would have been. An
+// earlier draft of this comment claimed a `.passthrough()` exception was needed
+// here; it was not, and the parity guard asserts the equivalence instead of
+// documenting a divergence that does not exist.
+//
+// The object-valued bags (`layout`, `content`, `audioEvents`, every
+// `StyleBible` section) are `z.record(...)` and stay open. Strictness applies to
+// the graph's OWN vocabulary — where a typo is most likely and most expensive —
+// not to the free-form payload the scene components interpret.
 
 import {z} from 'zod';
 
@@ -46,17 +92,19 @@ export const GENERATIVE_SCENE_TYPES = new Set<z.infer<typeof SceneType>>([
 /** A camera channel: constant, or [from, to] interpolated over the scene. */
 const Track = z.union([z.number(), z.tuple([z.number(), z.number()])]);
 
-export const CameraSchema = z.object({
-  perspective: z.number().positive().max(20000).optional(),
-  translateX: Track.optional(),
-  translateY: Track.optional(),
-  translateZ: Track.optional(),
-  rotateX: Track.optional(),
-  rotateY: Track.optional(),
-  rotateZ: Track.optional(),
-  scale: Track.optional(),
-  focus: Track.optional(),
-});
+export const CameraSchema = z
+  .object({
+    perspective: z.number().positive().max(20000).optional(),
+    translateX: Track.optional(),
+    translateY: Track.optional(),
+    translateZ: Track.optional(),
+    rotateX: Track.optional(),
+    rotateY: Track.optional(),
+    rotateZ: Track.optional(),
+    scale: Track.optional(),
+    focus: Track.optional(),
+  })
+  .strict();
 
 /**
  * Per-scene motion overrides. `preset` and `stagger` are READ; `ease` was
@@ -94,22 +142,29 @@ export const CameraSchema = z.object({
  *    in the graph for a lie the code performs, and it makes the guard unfalsifiable.
  *
  * Removing the declaration (not just the graph values) is what makes the fix
- *  stick: on the JSON Schema side `Motion` carries `additionalProperties:false`,
+ *  stick: BOTH mirrors now REJECT a re-added `ease` — the JSON Schema via
+ * `additionalProperties: false`, zod via `.strict()`. Before P11 defect 3 the two
+ * disagreed here, which is why the runtime test could assert a STRIP as though it
+ * were the contract. If the
  * so a re-added `ease` is REJECTED, while here zod would silently STRIP it. If the
  * declaration came back without a reader, the graph would be claiming an effect
- * again while `safeParse` still returned success — defect one, one level
+ * again while validation reported success — defect one, one level
  * down. `tests/test_motion_ease_is_not_a_claim.py` guards both halves.
  */
-export const MotionSchema = z.object({
-  preset: z.enum(['premium', 'energetic', 'cinematic', 'minimal']).optional(),
-  stagger: z.number().min(0).max(2).optional(),
-});
+export const MotionSchema = z
+  .object({
+    preset: z.enum(['premium', 'energetic', 'cinematic', 'minimal']).optional(),
+    stagger: z.number().min(0).max(2).optional(),
+  })
+  .strict();
 
-export const TransitionSchema = z.object({
-  in: z.string().optional(),
-  out: z.string().optional(),
-  durationInFrames: z.number().int().nonnegative().optional(),
-});
+export const TransitionSchema = z
+  .object({
+    in: z.string().optional(),
+    out: z.string().optional(),
+    durationInFrames: z.number().int().nonnegative().optional(),
+  })
+  .strict();
 
 export const StyleBibleSchema = z.object({
   palette: z.record(z.string(), z.unknown()).optional(),
@@ -121,40 +176,69 @@ export const StyleBibleSchema = z.object({
   audioLanguage: z.record(z.string(), z.unknown()).optional(),
 });
 
-export const SceneSchema = z.object({
-  id: z.string().regex(/^[a-z0-9_]+$/),
-  type: SceneType,
-  durationInFrames: z.number().int().positive(),
-  theme: z.string().optional(),
-  /**
-   * Per-scene overrides, merged over the document's style_bible AFTER the
-   * scene's theme is applied. This is the escape hatch for "one scene nudges one
-   * colour" without restating a palette — and it is why the provider moved
-   * inside the scene loop: resolution has to happen where the theme is declared.
-   */
-  style_bible: StyleBibleSchema.optional(),
-  layout: z.record(z.string(), z.unknown()).optional(),
-  camera: CameraSchema.optional(),
-  motion: MotionSchema.optional(),
-  content: z.record(z.string(), z.unknown()).optional(),
-  transitionIn: TransitionSchema.optional(),
-  transitionOut: TransitionSchema.optional(),
-  audioEvents: z.array(z.record(z.string(), z.unknown())).optional(),
-  notes: z.string().optional(),
-});
+export const SceneSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9_]+$/),
+    type: SceneType,
+    durationInFrames: z.number().int().positive(),
+    theme: z.string().optional(),
+    /**
+     * Per-scene overrides, merged over the document's style_bible AFTER the
+     * scene's theme is applied. This is the escape hatch for "one scene nudges one
+     * colour" without restating a palette — and it is why the provider moved
+     * inside the scene loop: resolution has to happen where the theme is declared.
+     */
+    style_bible: StyleBibleSchema.optional(),
+    layout: z.record(z.string(), z.unknown()).optional(),
+    camera: CameraSchema.optional(),
+    motion: MotionSchema.optional(),
+    content: z.record(z.string(), z.unknown()).optional(),
+    transitionIn: TransitionSchema.optional(),
+    transitionOut: TransitionSchema.optional(),
+    audioEvents: z.array(z.record(z.string(), z.unknown())).optional(),
+    notes: z.string().optional(),
+  })
+  .strict();
 
-export const ShowcaseSchema = z.object({
-  version: z.literal(1),
-  project: z.string().min(1),
-  style_bible: StyleBibleSchema.optional(),
-  format: z.object({
-    width: z.number().int().positive(),
-    height: z.number().int().positive(),
-    fps: z.number().int().min(1).max(120),
-  }),
-  bpm: z.number().min(40).max(240).default(126),
-  scenes: z.array(SceneSchema).min(1),
-});
+export const ShowcaseSchema = z
+  .object({
+    version: z.literal(1),
+    project: z.string().min(1),
+    /**
+     * Provenance comment for humans, accepted and DISCARDED. Declared here and
+     * in the JSON Schema mirror rather than smuggled through a hole: the
+     * leading-underscore prefix is this project's convention for meta and
+     * annotation, so it gets a named, typed home instead of riding on the
+     * difference between the two mirrors' unknown-key handling.
+     *
+     * It exists on exactly ONE graph — `showcase_demo.json`, whose value is a
+     * 53-character Chinese sentence about the reference film's 24-40s visual
+     * structure. Removing it instead of declaring it was the other option and
+     * was rejected: it is real authorship information, and two of the three
+     * graph writers in `pipeline/` (`prompt_compiler.py`,
+     * `migrate_shotspecs.py`) already emit `_note` under the same convention.
+     * Dropping one producer's note to satisfy a validator would have been the
+     * schema dictating to the authors what they are allowed to write down.
+     *
+     * Nothing reads it: it is stripped before the renderer sees the document, so
+     * declaring it cannot make an unread field look supported — the defect class
+     * this whole change is about is a field a graph can set AND that something
+     * might honour. A field nothing can read is a comment, and comments are
+     * allowed.
+     */
+    _note: z.string().optional(),
+    style_bible: StyleBibleSchema.optional(),
+    format: z
+      .object({
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+        fps: z.number().int().min(1).max(120),
+      })
+      .strict(),
+    bpm: z.number().min(40).max(240).default(126),
+    scenes: z.array(SceneSchema).min(1),
+  })
+  .strict();
 
 export type SceneType = z.infer<typeof SceneType>;
 export type Camera = z.infer<typeof CameraSchema>;

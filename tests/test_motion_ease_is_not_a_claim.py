@@ -100,11 +100,34 @@ def _ts_motion_keys() -> set[str]:
     worth more than one that cannot. Comments are stripped first, so the long
     comment above the schema (which names `preset` and `stagger` while explaining
     why `ease` is gone) cannot inject phantom keys.
+
+    The body pattern tolerates BOTH spellings of the declaration. P11 defect 3
+    wrapped the object so it could be `.strict()`ed, which moved the `{` onto the
+    next line:
+
+        export const MotionSchema = z.object({        <- was
+        export const MotionSchema = z                 <- now
+          .object({
+            preset: ...
+          })
+          .strict();
+
+    A parser pinned to the old one-line form fails with "could not find
+    MotionSchema" -- a guard that goes red on a REFACTOR and reads like a schema
+    problem. The body is bounded by "no intervening `export const`" rather than by
+    the first `})`, because `StyleBibleSchema` sits between here and the next
+    `.strict()`ed block and a non-greedy match walks straight past it.
     """
     src = _strip_comments(TS_MOTION.read_text(encoding='utf-8'))
-    m = re.search(r'export const MotionSchema = z\.object\(\{(.*?)\n\}\);', src, re.S)
-    assert m, 'could not find MotionSchema in showcase-v1.ts'
-    return set(re.findall(r'^\s{2}(\w+):', m.group(1), re.M))
+    m = re.search(
+        r'export const MotionSchema = [^=]*?\.object\(\{\r?\n'
+        r'((?:(?!export const)[\s\S])*?)'
+        r'\r?\n  \}\)\r?\n  \.strict\(\);', src, re.S)
+    assert m, (
+        'could not find MotionSchema in showcase-v1.ts. If the declaration was '
+        'reshaped again, update this parser -- and note that a parser which goes '
+        'red on a reformat is how a schema guard stops being read.')
+    return set(re.findall(r'^\s{4}(\w+):', m.group(1), re.M))
 
 
 def _read_motion_props(src: Path) -> set[str]:
@@ -276,19 +299,24 @@ console.log(JSON.stringify({
 
 
 @pytest.mark.skipif(_NPX is None, reason='node/npx not on PATH')
-def test_a_graph_setting_ease_still_validates_but_the_key_is_gone(tmp_path):
+def test_a_graph_setting_ease_is_rejected_not_stripped(tmp_path):
     """The measurement behind the decision, re-taken.
 
-    This is the shape of defect one, one level down, and it is why the DECLARATION
-    was removed and not merely the graph values:
+    This used to assert the OPPOSITE and the flip is the point. It read:
 
-      * `success` stays true -- zod strips the unknown key rather than rejecting,
-        so a re-added `ease` would fail LOUDLY nowhere at all;
-      * `easeSurvived` is false -- the key does not reach the renderer, so nothing
-        could honour it even if a reader existed.
+      * `success` is true -- zod strips the unknown key rather than rejecting,
+        so a re-added `ease` fails LOUDLY nowhere at all;
+      * `easeSurvived` is false -- the key never reaches the renderer.
 
-    If `success` ever flips to false, someone added `.strict()`: that is a
-    behaviour change and this test says so rather than quietly passing.
+    That is defect one, one level down, and it was the reason the DECLARATION had
+    to be removed rather than merely unwired: with a strip, removing the
+    declaration changed nothing observable, and a graph could set `ease` again.
+
+    P11 defect 3 made both mirrors strict, so the strip is gone and the guarantee
+    is now stronger than "the key does not reach the renderer": the graph does
+    not load at all. `motionKeys` is null because there is no parsed document to
+    read keys from, which is what `easeSurvived is False` used to be standing in
+    for.
     """
     probe = STUDIO / '__probe_ease.mts'
     try:
@@ -302,12 +330,13 @@ def test_a_graph_setting_ease_still_validates_but_the_key_is_gone(tmp_path):
         line = [l for l in proc.stdout.splitlines() if l.startswith('{')]
         assert line, f'no probe output:\n{proc.stdout}\n{proc.stderr}'
         got = json.loads(line[-1])
-        assert got['success'] is True, (
-            f'zod now REJECTS a graph that sets motion.ease: {got}')
-        assert got['easeSurvived'] is False, (
-            f'ease reached the renderer again: {got}')
-        assert sorted(got['motionKeys'] or []) == ['preset'], (
-            f'unexpected surviving motion keys: {got}')
+        assert got['success'] is False, (
+            f'zod ACCEPTS a graph that sets motion.ease: {got}. It is stripping '
+            'the key and reporting success, which is the original defect one '
+            'level down.')
+        assert got['easeSurvived'] is None, (
+            f'a document was parsed at all, so something is no longer strict: {got}')
+        assert got['motionKeys'] is None, got
     finally:
         probe.unlink(missing_ok=True)
 
