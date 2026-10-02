@@ -29,9 +29,9 @@ it, none of which are stylistic:
    them is how a QA gate ends up reporting a confident wrong answer, which is the
    failure this project has hit repeatedly.
 
-3. TWO RULES HAVE NO RELIABLE DETECTOR. `overflow` and `collision` are reported
-   `unavailable` with the reason attached and NO number. Three separate detectors
-   were tried and each failed differently:
+3. TWO RULES HAVE NO RELIABLE PIXEL DETECTOR. `overflow` and `collision` are
+   reported `unavailable` with the reason attached and NO number. Three separate
+   detectors were tried and each failed differently:
 
      - text bands + column runs: measures GLYPHS, and fuses labels precisely when
        they overlap — so it reports "0px overlap" BECAUSE the collision happened;
@@ -39,8 +39,14 @@ it, none of which are stylistic:
      - connected components: bars and gridlines form one 1668x745 component that
        swallows the label column.
 
-   Both need the mark layout from the chart options, not pixels. Recorded as
-   pending rather than approximated.
+   Both need the mark layout from the chart options, not pixels.
+
+   For `collision` that instrument now EXISTS — `chart_geometry.py` computes
+   each label's width against its centre spacing from the chart options, and
+   agrees with rendered frames to 0.2% at two different bar counts. The rule
+   stays `unavailable` anyway, because what is missing is a THRESHOLD rather
+   than a detector: the ledger names none and the delivered charts measure 0.278,
+   so any cut point would be invented. A measurement is not a verdict.
 
 THRESHOLDS, and the distribution each sits in:
 
@@ -142,9 +148,19 @@ UNIMPLEMENTED: dict[str, str] = {
                  'merges the axis; connected components swallow the label column '
                  'into the bar/gridline blob). Needs the mark layout from the '
                  'chart options, not pixels.'),
-    'collision': ('same cause as overflow — and worse, a run-based detector '
-                  'reports "0px overlap" BECAUSE the labels fused, so the rule '
-                  'would have inverted exactly when it mattered.'),
+    # The instrument now EXISTS — chart_geometry.py computes the label fit from
+    # the chart options and agrees with rendered frames to 0.2% at two bar
+    # counts. What is missing is not a detector but a THRESHOLD: the ledger
+    # names none, and the delivered charts sit at ratio 0.278, so any cut point
+    # would be invented rather than measured. It stays UNAVAILABLE on purpose.
+    # A measurement is not a verdict, and this rule is where that distinction
+    # has to be visible.
+    'collision': ('the instrument is built — chart_geometry.py measures label '
+                  'width against centre spacing from the chart options, '
+                  'validated against rendered frames (334px vs 333.6px at 5 '
+                  'bars, 104.5px vs 104.2px at 16). Still UNAVAILABLE because '
+                  'no threshold has been set: the delivered charts measure '
+                  '0.278, so any PASS/FAIL cut would be invented, not measured.'),
     'flicker': ('needs a luminance time-series instrument across a frame range, '
                 'which no existing render in out/ provides as a sequence.'),
     'broken_font': ('needs font-file validation, not pixels: a fallback face and '
