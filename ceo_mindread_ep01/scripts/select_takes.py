@@ -40,10 +40,23 @@ LOCK_CRF = str(_os.environ.get('EP01_LOCK_CRF', '12'))
 
 # P1: shared take ranking engine (graceful: falls back to hard failure, never T01)
 _RANKER = None
+# P20: the duplicate cut is ONE number, owned by rank_takes.DUP_THRESHOLD,
+# and imported here rather than retyped. This loop asked rank_takes:68 the
+# same question (are these two whole takes the same generation?) over the same
+# population (takes within one shot dir, compared with the same
+# take_ranker.signature_distance on the same 0..255 signature) and answered it
+# against a hardcoded 1.0. Measured on EP01's 7 within-shot pairs:
+# {0.000} u [34.543, 62.820] -- the same {0.000} atom rank_takes recorded, the
+# upper end lower. 0.5 and 1.0 both sit inside that empty gap, so no
+# measurement distinguishes them; a second number buys no tighter detection
+# (both catch only the 0.000 pair) and only widens the blind spot (a
+# near-duplicate at 0.7 is caught by 0.5 and missed by 1.0).
 try:
     _sys.path.insert(0, r'E:\Minimax-H3\studio\scripts')
     import take_ranker as _RANKER  # noqa: E402
+    from rank_takes import DUP_THRESHOLD as _DUP_THRESHOLD  # noqa: E402
 except Exception as _e:  # noqa: BLE001
+    _DUP_THRESHOLD = None
     print(f'[select_takes] WARNING: take_ranker unavailable ({_e}); '
           f'auto-ranking disabled', file=_sys.stderr)
 
@@ -87,7 +100,7 @@ def _auto_rank(shot_id, raw_root):
         for b in metrics[:i]:
             if b.redundant_with or b._sig is None:
                 continue
-            if _RANKER.signature_distance(a._sig, b._sig) < 1.0:
+            if _RANKER.signature_distance(a._sig, b._sig) < _DUP_THRESHOLD:
                 a.redundant_with = b.take_id
                 break
     metrics.sort(key=lambda m: (m.hard_fail is not None, m.redundant_with is not None, -m.score))
