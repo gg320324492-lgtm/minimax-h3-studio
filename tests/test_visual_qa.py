@@ -784,3 +784,165 @@ def test_the_summary_does_not_merge_unverifiable_with_unavailable(qa_frame):
         assert vqa.UNVERIFIABLE in tail and vqa.UNAVAILABLE in tail, (
             f'the summary must name both states separately ({label}): {tail!r}'
         )
+
+
+# --------------------------------------------------------------------------
+# Input validation: a gate that checks nothing must not report success.
+#
+# `main()` read `if args.props and args.props.exists():`, so a --props path
+# that did not exist was dropped without a word. `props` stayed None, the whole
+# `missing_asset` branch was skipped, and the run printed "0 FAIL, 0
+# UNVERIFIABLE" and exited 0 — identical to a clean pass. A typo in a path
+# turned QA into a no-op that CI reads as a green light.
+#
+# `ab_field.py:472`, one file over, has always done `ap.error()` on the same
+# flag: the same repo, the same flag, two opposite conventions. Anything that
+# read one of them was misled by the other.
+#
+# WHY THIS GUARD CALLS `main(argv)` IN-PROCESS RATHER THAN GREPPING THE SOURCE.
+# A guard of the form `assert 'ap.error' in source` passes against
+# `assert True`, against the word appearing in a COMMENT, and against a string
+# that is built at runtime from parts. This project has been fooled by text
+# existence five times, and the first version of the guard this one replaces
+# counted `assert` occurrences. So: call the entry point, read the RETURN
+# VALUE, and read the report it printed. The return value is the thing CI gates
+# on; the report is the thing a human reads. Both are asserted here.
+#
+# WHY BOTH DIRECTIONS ARE ASSERTED IN THE SAME PLACE. A guard that only checks
+# the failure case is satisfied by an implementation that always fails — the
+# tool would be "safe" and useless, and no assertion about the bad path could
+# tell the difference. `test_the_failure_direction_...` and
+# `test_the_healthy_direction_...` below are deliberately paired: mutation 2 in
+# the verification protocol injects exactly that always-fail implementation and
+# the healthy test is what kills it.
+# --------------------------------------------------------------------------
+
+def _main(argv, capsys):
+    """Call main(argv) in-process, returning (exit_code, stdout, stderr)."""
+    code = vqa.main([str(a) for a in argv])
+    cap = capsys.readouterr()
+    return code, cap.out, cap.err
+
+
+def _verdict_for(stdout: str, rule: str) -> str | None:
+    """The verdict the CLI printed for `rule`, or None if it never ran."""
+    for line in stdout.splitlines():
+        if not line.startswith('  ['):
+            continue
+        parts = line.split(']')
+        if len(parts) < 2:
+            continue
+        body = parts[1].split()
+        if body and body[0] == rule:
+            return parts[0].lstrip(' [').strip()
+    return None
+
+
+@pytest.fixture
+def real_props(tmp_path):
+    """A minimal READABLE graph, written by the test rather than borrowed.
+
+    Not `pipeline/examples/showcase_demo.json`: that is a real file whose
+    absence would be this test's problem to explain, and its content is
+    P13's business. The contract under test is "a file that exists and parses
+    is read, and the gate runs and exits 0" — nothing more.
+    """
+    p = tmp_path / 'props.json'
+    p.write_text(json.dumps({'format': {'width': 320, 'height': 180, 'fps': 30}}),
+                 encoding='utf-8')
+    return p
+
+
+def test_the_failure_direction_a_missing_props_file_is_unverifiable_not_silent(
+        tmp_path, capsys):
+    """A --props path that does not exist must not exit 0.
+
+    The return value is asserted directly. Nothing here reads the source, so an
+    implementation that merely MENTIONED the fix in a comment would not pass.
+    """
+    missing = tmp_path / 'no_such_graph.json'
+    assert not missing.exists()
+    code, out, _ = _main(['--props', missing], capsys)
+
+    assert code != 0, (
+        f'main() returned {code} for a --props path that does not exist. A QA '
+        'gate that cannot read its input must not report success: this is the '
+        f'state that reported "0 FAIL" while checking nothing.\n{out}'
+    )
+    assert _verdict_for(out, 'missing_asset') == vqa.UNVERIFIABLE, (
+        'the graph-reading rule must REPORT that it could not read the graph. '
+        'Dropping it (the old behaviour) and failing it (FAIL means "measured '
+        'and it is wrong") are both wrong: nothing was measured.\n'
+        f'{out}'
+    )
+
+
+def test_the_failure_direction_names_the_unreadable_path(tmp_path, capsys):
+    """The report has to say WHICH input was wrong.
+
+    A bare UNVERIFIABLE with no path would tell a caller that something is
+    wrong while leaving it to guess which of N inputs failed — which, with one
+    props file, means re-running the command by hand to find a typo.
+    """
+    missing = tmp_path / 'no_such_graph.json'
+    code, out, _ = _main(['--props', missing], capsys)
+    assert code != 0
+    assert str(missing) in out, (
+        f'the report does not name the path it could not read ({missing}); '
+        f'the caller cannot act on that:\n{out}'
+    )
+
+
+def test_the_healthy_direction_a_readable_props_file_still_runs_and_exits_zero(
+        real_props, capsys):
+    """The half that catches an always-fail implementation.
+
+    THIS TEST IS NOT OPTIONAL COVERAGE. The failure test above is satisfied by
+    `return 1` unconditionally, by an unconditional `raise`, and by anything
+    else that always fails. This is the assertion that distinguishes "refuses
+    to run on bad input" from "refuses to run". If you add a guard for the
+    missing-props case, keep this one in the same breath.
+    """
+    code, out, _ = _main(['--props', real_props], capsys)
+    assert code == 0, (
+        f'main() returned {code} for a readable, parseable props file. The '
+        'input validation must reject bad paths WITHOUT breaking good ones:\n'
+        f'{out}'
+    )
+    assert _verdict_for(out, 'missing_asset') == vqa.PASS, (
+        f'the graph-reading rule must still run on a readable graph:\n{out}'
+    )
+
+
+def test_the_healthy_direction_is_not_vacuous(real_props, capsys):
+    """The healthy run must actually produce findings.
+
+    `code == 0` plus no output is what a tool that returned early would give.
+    Asserting the count keeps the previous test from passing on an
+    implementation that exits 0 having done nothing.
+    """
+    code, out, _ = _main(['--props', real_props], capsys)
+    assert code == 0
+    assert len(re.findall(r'\[(\w+)\s*\]\s*(\w+)', out)) >= 1, (
+        f'the healthy props-only run printed no findings at all, so it is not '
+        f'evidence that the tool ran:\n{out}'
+    )
+
+
+def test_the_healthy_direction_survives_the_json_mode_too(real_props, capsys):
+    """The fix must hold on the output mode a machine reads.
+
+    `--json` puts the findings on stdout and the summary on stderr. A
+    validation error that only appeared in the human-readable branch would
+    leave a JSON consumer with an empty array and a non-zero exit — which is
+    better than the original silent pass, but still not a report explaining
+    itself. So the UNVERIFIABLE finding has to be IN the JSON.
+    """
+    code, out, err = _main(['--props', real_props.parent / 'no_such_graph.json', '--json'],
+                           capsys)
+    assert code != 0, f'main() returned {code} for a missing props file with --json'
+    findings = json.loads(out)
+    assert any(f['verdict'] == vqa.UNVERIFIABLE for f in findings), (
+        f'the JSON report carries no UNVERIFIABLE finding: {findings}'
+    )
+    assert 'findings:' in err, 'the summary belongs on stderr in --json mode'

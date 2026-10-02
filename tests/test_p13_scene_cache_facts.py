@@ -72,96 +72,149 @@ def _rules(stdout: str) -> set[str]:
 
 
 # ---------------------------------------------------------------------------
-# FACT 0 — a --props path that does not exist currently SILENTLY DISABLES the
-# only rule in visual_qa.py that reads the graph.
+# FACT 0 — a --props path that does not exist used to SILENTLY DISABLE the only
+# rule in visual_qa.py that reads the graph. FIXED; the tests below are
+# rewritten against the fixed behaviour.
 #
-# FOUND WHILE MEASURING, NOT ASKED FOR, and it is a real defect, so it is
-# recorded here as a measured fact about the system as it stands.
+# FOUND WHILE MEASURING, NOT ASKED FOR, and it is a real defect, so it was
+# recorded here as a measured fact about the system as it stood.
 #
-# `visual_qa.py:762` reads
+# `visual_qa.py:762` used to read
 #
 #     if args.props and args.props.exists():
 #
-# so a nonexistent path is dropped without a word. Measured, both invocations,
+# so a nonexistent path was dropped without a word. Measured, both invocations,
 # both exit 0:
 #
 #     --props <real>        -> 5 findings, `missing_asset` PASS
 #     --props <nonexistent> -> 4 findings, `missing_asset` ABSENT
 #
-# The tool therefore reports the same "0 FAIL, 0 UNVERIFIABLE" for "I checked
+# The tool therefore reported the same "0 FAIL, 0 UNVERIFIABLE" for "I checked
 # and it is fine" and "I checked nothing". A cache's entire value proposition is
 # deciding when to SKIP work, and this is the state a skip decision would be
 # made in.
 #
-# WHY THE ASSERTION BELOW PINS THE DEFECT INSTEAD OF ASKING FOR A FIX.
-# The work order for this item authorises guards, not fixes, and a green test
-# that only goes green after an unauthorised behaviour change would be a
-# different work order wearing this one's name. So these two tests assert what
-# the tool DOES, with the defect named in the failure message, and the moment
-# someone fixes `visual_qa.py` they go red and have to come back and rewrite
-# them deliberately — which is the correct direction for this to fail.
+# WHY THESE THREE TESTS WERE REWRITTEN RATHER THAN DELETED. The block comment
+# above the original versions said: "the moment someone fixes visual_qa.py they
+# go red and have to come back and rewrite them deliberately — which is the
+# correct direction for this to fail." They went red, for exactly that reason,
+# and the fix is now in. The pin did its job: it was not relaxed, and it was not
+# deleted, and neither is what replaced it. Deleting them would have taken out
+# the only statement that this behaviour was ever wrong; rewriting them keeps
+# that statement and adds the contract that replaced it.
 #
-# The repo already has the opposite convention one file over:
-# `ab_field.py:472` does `ap.error('--props not found')`. Two tools taking the
-# same flag disagreeing about a missing file is the inconsistency worth pinning.
+# WHAT CHANGED IN THE TOOL. `main()` now calls `rule_duplicate_check_props`,
+# which existed with zero call sites and already returned the right thing. A
+# missing path is reported as `missing_asset` / UNVERIFIABLE instead of being
+# dropped, and UNVERIFIABLE exits non-zero (`qa_report.py` has always done this:
+# "Exit 1 on any FAIL, and on any UNVERIFIABLE"). So the rule no longer
+# disappears — it changes verdict, which is the whole point: the report now
+# says WHY nothing ran instead of looking like a clean pass.
+#
+# The two tools had opposite conventions for this flag: `ab_field.py:472` does
+# `ap.error('--props not found')`. They now agree on the part that matters —
+# a missing `--props` does not exit 0.
 # ---------------------------------------------------------------------------
 
-#: The rule that reads the graph. Its disappearance is the whole defect.
+#: The rule that reads the graph. Its disappearance WAS the whole defect.
 GRAPH_READING_RULE = 'missing_asset'
 
+#: Must not exist; the tests below are about what the tool does with its absence.
+NO_SUCH_GRAPH = ROOT / 'out' / 'p13_no_such_graph_9d41.json'
 
-def test_a_missing_props_file_silently_disables_the_graph_check():
-    """Today's behaviour, stated exactly — see the block comment above.
 
-    If this goes red it means `visual_qa.py` was fixed. That is good news and it
-    is not this test's job to absorb: rewrite it against the new behaviour
-    rather than relaxing the assertion, or the pin is gone.
+def _verdict(stdout: str, rule: str) -> str | None:
+    """The verdict the CLI printed for one rule, or None if it never ran."""
+    for line in stdout.splitlines():
+        if not line.startswith('  ['):
+            continue
+        parts = line.split(']')
+        if len(parts) < 2:
+            continue
+        body = parts[1].split()
+        if body and body[0] == rule:
+            return parts[0].lstrip(' [').strip()
+    return None
+
+
+def test_a_missing_props_file_is_reported_as_unverifiable_not_dropped():
+    """The fixed form of the defect: the rule still runs, and says it cannot.
+
+    It used to be asserted the opposite way round. The message on the old
+    version named the transition — "replace it with the assertion that the tool
+    now says so out loud" — and this is that assertion.
     """
-    missing = ROOT / 'out' / 'p13_no_such_graph_9d41.json'
-    assert not missing.exists(), f'the fixture path exists: {missing}'
-    r = _run_qa('--props', str(missing))
+    assert not NO_SUCH_GRAPH.exists(), f'the fixture path exists: {NO_SUCH_GRAPH}'
+    r = _run_qa('--props', str(NO_SUCH_GRAPH))
 
-    real = _rules(_run_qa('--props', str(SHOWCASE_DEMO)).stdout)
-    assert GRAPH_READING_RULE in real, (
-        'the demo graph produced no missing_asset finding — the rule this file '
-        'pins the disappearance of has stopped running, so fix the rule before '
-        'reading this failure'
+    assert _verdict(r.stdout, GRAPH_READING_RULE) == 'UNVERIFIABLE', (
+        f'a --props path that does not exist must be reported UNVERIFIABLE by '
+        f'{GRAPH_READING_RULE}, not silently skipped and not FAIL. Got '
+        f'{_verdict(r.stdout, GRAPH_READING_RULE)!r} (exit {r.returncode}):\n'
+        f'{r.stdout}'
     )
-    assert GRAPH_READING_RULE not in _rules(r.stdout), (
-        f'visual_qa.py now reports the missing props file (exit {r.returncode}, '
-        f'{len(_rules(r.stdout))} rules). This test pinned the DEFECT; replace '
-        'it with the assertion that the tool now says so out loud.'
+    assert str(NO_SUCH_GRAPH) in r.stdout, (
+        'the report must name the path that could not be read, so a caller can '
+        f'tell WHICH input was wrong rather than having to infer it:\n{r.stdout}'
     )
 
 
-def test_that_gate_still_exits_zero_so_nothing_upstream_notices():
-    """The second half of the defect: a caller cannot tell by exit code alone.
+def test_that_gate_no_longer_exits_zero_on_a_missing_props_file():
+    """The second half of the defect, also fixed: a caller CAN tell by exit code.
 
-    This is why the defect survived: `qa_report.py` and CI gate on the return
-    code, and this returns 0.
+    This is why the defect survived — `qa_report.py` and CI gate on the return
+    code, and this used to return 0. It must not return 0 again.
+
+    Deliberately not written as "exit != 0": the sibling tests already pin WHICH
+    verdict produces it, so this one asserts only that the number moved. A test
+    that asserted a specific non-zero code would be a test of the exit constant.
     """
-    missing = ROOT / 'out' / 'p13_no_such_graph_9d41.json'
-    r = _run_qa('--props', str(missing))
+    assert not NO_SUCH_GRAPH.exists(), f'the fixture path exists: {NO_SUCH_GRAPH}'
+    r = _run_qa('--props', str(NO_SUCH_GRAPH))
+    assert r.returncode != 0, (
+        f'exit code is 0 for a --props path that does not exist. That is the '
+        'defect this file first recorded: a caller gating on the return code '
+        'cannot tell "checked and clean" from "checked nothing".'
+    )
+
+
+def test_a_readable_props_file_still_exits_zero_and_runs_the_rule():
+    """The other half, and the reason the previous test alone is not enough.
+
+    A guard that only asserts the failure case is satisfied by an
+    implementation that ALWAYS fails. That is not hypothetical — this project
+    shipped a first-version guard that counted `assert` occurrences and was
+    satisfied by `assert True`. So the passing direction is pinned here, in the
+    same file, against the same command line.
+    """
+    r = _run_qa('--props', str(SHOWCASE_DEMO))
+    assert _verdict(r.stdout, GRAPH_READING_RULE) == 'PASS', (
+        f'a readable graph must still report {GRAPH_READING_RULE} PASS (exit '
+        f'{r.returncode}):\n{r.stdout}'
+    )
     assert r.returncode == 0, (
-        f'exit code is now {r.returncode} for a --props path that does not '
-        'exist. Combined with the previous test this means visual_qa.py has been '
-        'fixed; both tests then need rewriting against the fixed behaviour.'
+        f'a readable graph must exit 0, and this one exits {r.returncode}. '
+        'The fix must not have turned the gate into one that always fails:\n'
+        f'{r.stdout}'
     )
 
 
-def test_the_unreadable_props_case_reports_fewer_rules_than_the_readable_one():
-    """The quantitative form of the same defect, kept separate from the verdict.
+def test_the_readable_and_unreadable_runs_differ_only_in_verdict():
+    """The quantitative form, kept separate from the verdict.
 
-    This is the assertion a reviewer can check without trusting prose: the run
-    that reads the graph reports MORE rules than the run that cannot read it.
+    This is the assertion a reviewer can check without trusting prose. The old
+    version asserted the two runs reported DIFFERENT RULE SETS, which was the
+    defect made visible: the rule vanished. It no longer vanishes, so the sets
+    are now expected to MATCH and the verdict is expected to differ. A set
+    mismatch in either direction is a regression.
     """
-    missing = ROOT / 'out' / 'p13_no_such_graph_9d41.json'
     readable = _rules(_run_qa('--props', str(SHOWCASE_DEMO)).stdout)
-    unreadable = _rules(_run_qa('--props', str(missing)).stdout)
-    assert GRAPH_READING_RULE in readable - unreadable, (
+    unreadable = _rules(_run_qa('--props', str(NO_SUCH_GRAPH)).stdout)
+    assert readable == unreadable, (
         f'readable graph reports {sorted(readable)}, unreadable reports '
-        f'{sorted(unreadable)} — the sets no longer differ by the graph rule, '
-        'so visual_qa.py changed behaviour'
+        f'{sorted(unreadable)}. The graph rule must now run in BOTH cases and '
+        'differ in verdict only — a set mismatch in either direction is a change '
+        'in behaviour that this test has not measured.'
     )
 
 
