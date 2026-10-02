@@ -561,17 +561,40 @@ def rule_missing_asset(props: dict) -> list[Finding]:
     and anything absent is reported. Mirrors the set-difference technique P3 used
     (disk glob against a manifest) — the comparison is exact, so there is nothing
     to tune.
+
+    WHICH FIELDS ARE READ, AND WHY THAT LIST IS SHORT (P11 defect 1).
+
+    This rule used to read `props['audio']`, `props['audioEvents']` and
+    `props['narration']`. Of those, the renderer can receive NONE from a
+    showcase-v1 graph, and that was not an oversight in this function — it was
+    this function checking for something structurally impossible:
+
+      * `audio` (top level) — NOT declared by `ShowcaseSchema`, which has no
+        `.passthrough()`, so zod strips it before the template sees it. P11
+        removed the template's read of it; see the header of
+        `FinanceShowcaseWide.tsx` for the measured evidence. No schema in the
+        studio declares it.
+      * `narration` — declared, but by a DIFFERENT schema
+        (`report-data.schema.json`, consumed by `ReportVertical.tsx`), not by
+        `showcase-v1`. It can never appear in a showcase graph.
+      * `audioEvents` — declared at `showcase-v1.ts:101` as a SCENE-level field,
+        but zero renderer source reads it, and the position this rule read it
+        from (top level) is not even the level it is declared at. Queued in the
+        ledger as an inert field; it is not read here either.
+
+    A rule that reads a field nothing can produce does not merely waste a scan —
+    it manufactures a false sense of coverage. It reported "all N declared assets
+    present" where N was always exactly 4, the hardcoded list below, and any
+    future `audio` block in a props file would have been checked against a field
+    the renderer ignores. Checking it would be checking a lie.
+
+    So the rule now checks only what can actually arrive. What remains is still
+    real work: these four SFX are hardcoded in the components, so nothing in the
+    graph reports a rename, and this is the only thing that would catch one. The
+    `narration` case for report-vertical props files is handled by that
+    template's own props path, not by guessing at a showcase field.
     """
     declared: list[str] = []
-    audio = props.get('audio') or {}
-    if isinstance(audio, dict) and audio.get('src'):
-        declared.append(str(audio['src']))
-    for ev in props.get('audioEvents') or []:
-        if isinstance(ev, dict) and ev.get('src'):
-            declared.append(str(ev['src']))
-    narration = props.get('narration') or {}
-    if isinstance(narration, dict) and narration.get('src'):
-        declared.append(str(narration['src']))
     # report-vertical's SFX are referenced by the component, not the props; they
     # are listed so a rename of an asset the template hardcodes is still caught
     declared += ['audio/sfx_whoosh.m4a', 'audio/sfx_impact.m4a',
