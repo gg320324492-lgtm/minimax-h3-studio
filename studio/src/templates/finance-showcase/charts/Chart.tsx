@@ -38,6 +38,10 @@ export type ChartSpec = {
   /** slope only */
   before?: number[];
   after?: number[];
+  /** volume only — the y value the bars hang from, off `content.chart` ONLY.
+   *  Not an option (it is data) and not readable anywhere else; see the
+   *  argument above `normaliseChart`. */
+  baseline?: number;
   /** every option in ChartOptions may appear here */
   [key: string]: unknown;
 };
@@ -78,6 +82,52 @@ const pickOptions = (raw: Record<string, unknown>): Partial<ChartOptions> => {
   return out as Partial<ChartOptions>;
 };
 
+/**
+ * EVERY chart field is read off `content.chart`. There is no second level.
+ *
+ * `baseline` used to be read off `content` itself — one level ABOVE its
+ * siblings — so the value that WORKED was `content.baseline` and
+ * `content.chart.baseline` was silently discarded. That is the worst shape a
+ * field can have, because nothing is wrong with the name: an author writing
+ * `baseline` next to `values` and `labels`, where every other chart field goes,
+ * got silence. It is not a lie the reader can see, like the audio and
+ * `motion.ease` cases; it is a lie that reads correctly. And because `content`
+ * is `z.record(z.string(), z.unknown())` in showcase-v1.ts, NEITHER level was
+ * declared, so both were accepted with no error to trace — the delivered graph
+ * set both to 40 and the film was correct by coincidence.
+ *
+ * WHY `content.chart` WINS, on evidence rather than taste:
+ *
+ *  1. options.ts states the project's own rule — "Options live on the SCENE's
+ *     `content.chart`, never scattered through a component's props" — and
+ *     `baseline` is exactly a chart input. The working level was the one
+ *     violating the rule the file 40 lines away already declares.
+ *  2. THE MOVE COSTS NOTHING ON THE LOCK LEDGER. `locked_fields.iter_locked`
+ *     walks the whole content subtree rather than the top level, so it already
+ *     found the value at BOTH levels
+ *     (`scenes[7].content.chart.baseline` and `scenes[7].content.baseline`).
+ *     `baseline` is locked as a fact — "a comparison point is a claim about the
+ *     past" — and it stays locked, because the walker matches on the leaf key,
+ *     not the path. Dropping the duplicate loses no coverage; keeping it would
+ *     have kept a second lock on a value nothing reads.
+ *  3. `spec` is already the normalised bag for this component, and the spread
+ *     below means every other field reaches its mark that way. Reading
+ *     `baseline` off `spec` is the first one to arrive like its siblings rather
+ *     than through a raw cast on `c`.
+ *
+ * The alternative was to keep `content.baseline` and make the trap visible.
+ * Rejected on the ledger's own terms: a visible trap is still a second way to
+ * write the same field, and the moment the graph is hand-edited the wrong level
+ * is one keystroke away with no loud failure. The level an author reaches for by
+ * reflex must be the level that works, or the trap is not closed, only labelled.
+ *
+ * `baseline` is typed on `ChartSpec` and not folded into `ChartOptions`: it is
+ * DATA (a value on the y axis, the thing the ledger locks), and options.ts's own
+ * rule says "Nothing that changes the data belongs here."
+ *
+ * tests/test_chart_baseline_is_read.py pins this from both sides: the working
+ * level must render, and the inert level must be refused rather than tolerated.
+ */
 export const normaliseChart = (raw: unknown): ChartSpec => {
   const c = (raw ?? {}) as Record<string, unknown>;
   const series = Array.isArray(c.series)
@@ -87,7 +137,8 @@ export const normaliseChart = (raw: unknown): ChartSpec => {
         sizes: s.sizes ? numArray(s.sizes) : undefined,
       }))
     : undefined;
-  return {...c, type: asChartType(c.type), series, values: numArray(c.values)} as ChartSpec;
+  return {...c, type: asChartType(c.type), series, values: numArray(c.values),
+    baseline: typeof c.baseline === 'number' ? c.baseline : undefined} as ChartSpec;
 };
 
 /** Places a sparkline at the frame's left edge — it is a mark, not a scene. */
@@ -185,7 +236,7 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
             items={spec.items ?? values.map((v, i) => ({label: spec.labels?.[i] ?? String(i + 1), value: v}))}
           />
         ) : null}
-        {type === 'volume' ? <VolumeBars values={values} baseline={typeof c.baseline === 'number' ? c.baseline : undefined} /> : null}
+        {type === 'volume' ? <VolumeBars values={values} baseline={spec.baseline} /> : null}
         {/*
           sparkline is normally an INLINE mark — the metric inside a browser
           window, a stat card — not a full-frame scene, and no declared scene
