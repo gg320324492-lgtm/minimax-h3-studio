@@ -199,6 +199,26 @@
 
 <br>**惰性字段全量复核完成（10-02，含运行时验证）**：全量枚举后**真正惰性的是 6 个，不是交接文档记的 18 个** —— `scene.notes`、`scene.audioEvents`、`scene.transitionOut`、`camera.focus`、`motion.ease`、`content.chart.baseline`。**六个全部经 grep 零命中验证**（`focus`/`ease` 的命中数不为零，但全是同名诱饵：前者是生命周期阶段名 `focus`，后者是内置 `MOTION.profiles` 表的键，没有一处读图谱的值）。**这六个 schema 全部静默接受**——zod 无 `.passthrough()`，作者设了不报错，只是被忽略。<br>**最值得处理的一条不是这六个**：`FinanceShowcaseWide.tsx:99` 读顶层 `doc.audio` 并在 `:135` 渲染 `<Audio>`，**但 `ShowcaseSchema` 根本没声明 `audio`**。运行时实测：`safeParse` 返回 `success: true`，解析后键为 `version,project,format,bpm,scenes`，**`audio survived?: false`** —— zod 剥掉未知键，所以那个 `<Audio>` 分支**永久不可达**，任何今天写的带 `"audio": {"src": ...}` 的图谱都会**渲染静音且校验通过**。当前两份交付图谱都没有顶层 `audio`，所以**尚未造成实际损失**。<br>**六个里唯一被交付图谱主动设置的是 `motion.ease`**（`showcase_demo.json` 设 2 次、`studio/public/jobs/showcase_demo.json` 设 3 次）——作者有充分理由相信那些场景的缓动由它决定，而 `common/primitives.tsx:183` 把 bezier 硬编码成 `cubicBezierEase(0.16, 1, 0.3, 1)`，全仓无一处读 `motion.ease`。<br>**「18」的差异解释**：那个数字统计的是更大的面 —— 跨两个 schema（Python JSON Schema + TypeScript）、含 `style_bible` 子区（其中 `chartLanguage`/`audioLanguage` 解析 nowhere）、以及 Python 管线自己那层未接线的 chart-spec 字段（`chart.width`/`chart.height`/`color`/`timing`，这些字段今天在两份 schema 里都不存在）。**两个数字都不错，是问的不是同一批东西** —— 要合成一个数字，得先裁定 `style_bible` 的两个语言区与管线字段是否在审计范围内。
 
+
+---
+
+## 五之附二：三个「会骗人的字段」已修复（10-02，三笔独立复验通过）
+
+惰性字段审计的结论不是「有 6 个死字段」，而是**其中三个不是死的，是在说谎**。三者都已修复，各带可失败的守卫。
+
+**一、顶层 `audio` 永久不可达（`62f3249`）**：`FinanceShowcaseWide.tsx` 曾读 `doc.audio` 并渲染 `<Audio>`，而 `ShowcaseSchema` **从未声明该字段**、且无 `.passthrough()`。运行时实测：`safeParse` 返回 `success: true`、解析后键为 `version,project,format,bpm,scenes`、**`audio survived?: false`** —— zod 剥掉未知键，故该分支永久不可达，今天写带 `"audio"` 的图谱会**渲染静音且校验通过**。**已删除分支而非接线**，依据三条：① 没有任何生产者会生成它；② `pipeline/schemas/showcase-v1.schema.json` 是 `additionalProperties: false` 且只声明 6 键，**只在 zod 里接线会直接破坏 parity**；③ `beat/sfxProfile.check.ts` 断言「没有映射声音是 bgm」而 beat grid 是**从 `bgm_beats.json` 推导**的——对本模板 BGM 是节拍参考而非音床，接线会给每部片子铺一层音乐。`visual_qa.py` 的 `missing_asset` 同步收窄（它原本检查三个渲染器收不到的字段）。
+
+**二、`motion.ease` 图谱在设、渲染器从不读（`e74e285`）**：交付图谱两处设 `"ease": "expo-out"`，而全仓**没有任何 `expo-out` 解析器**——调用点要的是四个数字（`cubicBezierEase(0.16, 1, 0.3, 1)`），图谱给的是一个**名字**。**接线需要发明一张 name→curve 表**，那是设计决定不是修 bug；改类型的折中更糟，会把今天所有图谱判为非法。**已清理**（删图谱取值 + 删 schema 声明，两份镜像同步）。附带发现 `design/tokens.ts` 的 `MOTION.profiles[].ease` **同样无人读**——`profileOf()` 只取 `.stagger` 与 `.spring`，两个惰性字段共用一个名字。
+
+**三、`baseline` 生效在一层之上（`74852de`）**：前两个是「没人读」，这个是**能读但层错了**——生效的是 `content.baseline`，而作者写在看起来更自然的 `content.chart.baseline`（与 `values`/`labels` 并排）**静默失效**；交付图谱 volume-chart **两处都设 40**，故成片从来看不出来。像素级实测（同值、帧 59）：`chart.baseline=40` → 柱顶 **402.7**；不设 → **770.5**；旧层 `content.baseline=40` → **770.5**，**与不设完全相同**。**已改为从 `spec.baseline` 读**并删掉图谱里的惰性副本。依据不是口味：`options.ts:14` 早已写明「Options live on the SCENE's `content.chart`, never scattered through a component's props」——**规则就写在离读取点 40 行处**，而代码违反了它。且移动后 `baseline` **仍是锁定的 fact**（`locked_fields` 按叶子键匹配而非按路径），**零锁定覆盖损失**；若会损失，保留别扭的层才是对的。
+
+**两笔未被授权修、但已记录的问题**：
+- **两份 schema 镜像严格性不一致**：zod 的 `MotionSchema` 无 `.strict()`（**静默剥离**未知键），JSON Schema 的 `Motion` 有 `additionalProperties: false`（**拒绝**）。运行时验证：重新加 `motion.ease`，zod 给 `success: true` 且键消失，JSON Schema 会拒绝——**同一份图谱两种相反裁决**。修它要先定「哪边权威」，是设计决定。
+- **`pipeline/scene_graph.py:25` 声明 `SCHEMA_PATH` 却从不校验**，Python 的 `_validate` 是手写的、不认识 `ease` 已消失 —— JSON Schema 目前只是由测试维持同步的镜像。
+
+**三次任务共同的形态**：都不是「代码没写」，而是**代码在说谎**。三个都由**测量**钉住，不是读代码猜出来的。
+
+
 ## P11 — Auto Repair Loop　状态：⬜（1/3：**11.2 完全闭环**；11.1 **前置仪器已建成、修复器未写**；11.3 未开始）。**
 
 **11.1 的前置条件已建成，但修复器本身还没有。**新增 `studio/scripts/chart_geometry.py`：**从图表选项的几何算标签间隔，不靠像素**——这正是 P10 审计结论「Needs the mark layout from the chart options, not pixels」指的方向。对着渲染真值校准（**5 根柱 334px vs 333.6px，16 根柱 104.5px vs 104.2px，误差 0.2%**）；宽度用真实字体逐字符量（标签字体里 `i` 是 5.3px、`W` 是 20.4px，同长度差 4 倍，数字数会误判）。九个变异八个杀。
