@@ -79,6 +79,29 @@ export const FONT_NUM =
  */
 export const TRAFFIC_LIGHTS = ['#FF5F57', '#FEBC2E', '#28C840'] as const;
 
+/**
+ * Spacing scale: 8 x Fibonacci (1, 2, 3, 5, 8, 13, 21).
+ *
+ * The ratios, not the absolute numbers, are the design. 1:2:3:5:8:13:21 keeps
+ * adjacent steps perceptually even as they grow — doubling the gap reads as
+ * one clear move at every size, which an arithmetic 8/16/24/32/... step does
+ * not do above the first few rungs. Any edit has to keep that property; see
+ * tests/test_space_scale.py.
+ *
+ * `xs` (8), `xxl` (104) and `hero` (168) are DEAD STEPS: nothing reads them.
+ * Measured 2026-10-03 by enumerating `SPACE.<key>` across every .ts/.tsx under
+ * studio/src (excluding tokens.ts itself and comment lines); zero hits for
+ * those three, sm 1, md 5, lg 6, xl 6. No computed access (SPACE['k']),
+ * destructuring, spread or Object.values(SPACE) reaches them either — the
+ * one indirect path, styleBible.tsx:71 `{...SPACE}` into bible.spacing, is
+ * read nowhere downstream. They are kept, not deleted: they are the top of the
+ * ladder a future hero layout would reach for, and removing a token is a
+ * larger decision than recording one.
+ *
+ * What is NOT true of this table: it is not a "4…96" scale. There is no such
+ * requirement anywhere in this repository — see docs/SPACING_SCALE_VERDICT.md.
+ * Every value here is a multiple of 4 already; that is arithmetic, not a spec.
+ */
 export const SPACE = {xs: 8, sm: 16, md: 24, lg: 40, xl: 64, xxl: 104, hero: 168} as const;
 
 export const RADIUS = {chip: 999, card: 20, window: 14, panel: 28} as const;
