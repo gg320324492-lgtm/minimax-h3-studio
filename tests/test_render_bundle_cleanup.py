@@ -29,17 +29,24 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'studio' / 'scripts'))
 
+# Both entry points bundle. Fixing one and not the other is how "the disk leak
+# is fixed" can be true of the code and false of the work: an audit leans on
+# still.mjs and renders one frame per data point, so a threshold sweep leaks
+# once per measurement — which is exactly how out/p11_rounds filled TEMP.
+ENTRY_POINTS = ('render.mjs', 'still.mjs')
 RENDER = ROOT / 'studio' / 'bin' / 'render.mjs'
 
 
-def _src() -> str:
-    return RENDER.read_text(encoding='utf-8')
+def _src(name: str = 'render.mjs') -> str:
+    return (ROOT / 'studio' / 'bin' / name).read_text(encoding='utf-8')
 
 
-def _code() -> str:
+def _code(name: str = 'render.mjs') -> str:
     """render.mjs with comments stripped.
 
     Comments in this file explain each guard by naming the exact token it
@@ -47,7 +54,7 @@ def _code() -> str:
     that token in the prose even when the code it describes is gone. One
     mutation (fixed path instead of mkdtemp) survived a guard written that way.
     """
-    s = _src()
+    s = _src(name)
     s = re.sub(r'/\*.*?\*/', '', s, flags=re.S)
     return re.sub(r'//.*', '', s)
 
@@ -165,4 +172,48 @@ def test_the_bundler_never_cleans_up_after_itself():
     assert 'rmSync' not in prepare and 'rm(' not in prepare, (
         'prepareOutDir now removes the directory it creates — the workaround in '
         'render.mjs has become redundant and should be dropped, not layered on'
+    )
+
+
+# ---------------------------------------------------------------------------
+# still.mjs got the same treatment, one commit later, because the leak was found
+# there first: a threshold sweep renders one frame per data point, so the session
+# that produced out/p11_rounds leaked one 800 MB bundle per frame rendered.
+# Measured on the same machine, old still.mjs: 0 -> 1 -> 2 bundles in TEMP after
+# two renders; the fixed one: 0.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize('entry', ENTRY_POINTS)
+def test_every_entry_point_cleans_up_its_bundle(entry):
+    """One sweep, so a third bundling entry point cannot be added and forgotten."""
+    code = _code(entry)
+    # Assert the removal names the BUNDLE directory, not merely that the file
+    # contains an rmSync. still.mjs already had one for --clean, so the weaker
+    # form was satisfied by pre-existing code and deleting the bundle cleanup
+    # entirely left every test green — mutation S2.
+    assert re.search(r'\.rmSync\s*\(\s*bundleDir\b', code), (
+        f'{entry} never removes its bundle directory. Check for rmSync(bundleDir), '
+        'not for the presence of rmSync: an unrelated cleanup can satisfy that.'
+    )
+    assert re.search(r'\bmkdtempSync\s*\(', code), f'{entry} uses a shared scratch path'
+    assert re.search(r'outDir:', code), f'{entry} lets Remotion pick os.tmpdir()'
+    assert 'finally' in code, f'{entry} does not clean up when it throws'
+    assert 'SIGINT' in code and 'SIGTERM' in code, f'{entry} leaks on Ctrl-C'
+
+
+@pytest.mark.parametrize('entry', ENTRY_POINTS)
+def test_no_entry_point_bundles_without_its_own_out_dir(entry):
+    """Guards the exact shape of the original defect.
+
+    Matching on 'outDir' anywhere in the file is too weak — the comment
+    explaining the leak contains the word too, which is how mutation 2 survived
+    the first version of the per-run guard. So this looks inside the bundle()
+    call itself.
+    """
+    code = _code(entry)
+    assert 'bundle({' in code, f'{entry} no longer has a bundle() call — re-find it'
+    call = code.split('bundle({', 1)[1].split('})', 1)[0]
+    assert 'outDir' in call, (
+        f'{entry} calls bundle() without outDir, so Remotion mkdtemps into '
+        'os.tmpdir() and never deletes it'
     )

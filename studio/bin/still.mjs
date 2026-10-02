@@ -119,23 +119,54 @@ if (args.publicDir && needsStatic) {
   process.exit(2);
 }
 
-const t0 = Date.now();
-const serveUrl = await bundle({entryPoint, publicDir, onProgress: undefined});
-console.log(`[still] bundle ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+// Same leak as render.mjs, and this tool is the one an audit leans on: a
+// threshold sweep renders one frame per data point, so the working session that
+// produced out/p11_rounds leaked one 800 MB bundle per frame. `bundle()` with no
+// outDir mkdtemps into os.tmpdir() and prepareOutDir never deletes it — with or
+// without an explicit outDir, so passing one only relocates the leak unless
+// something removes it.
+const scratchRoot = process.env.REMOTION_SCRATCH_DIR
+  ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.remotion', 'bundle');
+fs.mkdirSync(scratchRoot, {recursive: true});
+const bundleDir = fs.mkdtempSync(path.join(scratchRoot, 'still-'));
 
-const composition = await selectComposition({serveUrl, id: comp, inputProps});
-console.log(
-  `[still] ${composition.id} ${composition.width}x${composition.height}@${composition.fps} ` +
-    `${composition.durationInFrames} frames`
-);
-
-fs.mkdirSync(outDir, {recursive: true});
-const written = [];
-for (const frame of frames) {
-  const name = `f${String(frame).padStart(5, '0')}.png`;
-  const output = oneFile ? path.resolve(outArg) : path.join(outDir, name);
-  await renderStill({composition, serveUrl, output, frame, inputProps, imageFormat: 'png'});
-  written.push(output);
-  console.log(`[still] frame ${frame} -> ${output}`);
+// A failed render must not leave 800 MB behind, and neither must a Ctrl-C: the
+// exit handler runs on SIGINT, the finally does not.
+let cleanedUp = false;
+const cleanUp = () => {
+  if (cleanedUp) return;
+  cleanedUp = true;
+  fs.rmSync(bundleDir, {recursive: true, force: true});
+};
+process.on('exit', cleanUp);
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    cleanUp();
+    process.exit(130);
+  });
 }
-console.log(`[still] wrote ${written.length} file(s) to ${outDir}`);
+
+try {
+  const t0 = Date.now();
+  const serveUrl = await bundle({entryPoint, publicDir, outDir: bundleDir, onProgress: undefined});
+  console.log(`[still] bundle ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+  const composition = await selectComposition({serveUrl, id: comp, inputProps});
+  console.log(
+    `[still] ${composition.id} ${composition.width}x${composition.height}@${composition.fps} ` +
+      `${composition.durationInFrames} frames`
+  );
+
+  fs.mkdirSync(outDir, {recursive: true});
+  const written = [];
+  for (const frame of frames) {
+    const name = `f${String(frame).padStart(5, '0')}.png`;
+    const output = oneFile ? path.resolve(outArg) : path.join(outDir, name);
+    await renderStill({composition, serveUrl, output, frame, inputProps, imageFormat: 'png'});
+    written.push(output);
+    console.log(`[still] frame ${frame} -> ${output}`);
+  }
+  console.log(`[still] wrote ${written.length} file(s) to ${outDir}`);
+} finally {
+  cleanUp();
+}
