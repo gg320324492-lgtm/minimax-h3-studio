@@ -456,7 +456,57 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 18.1 | Technical / Layout / Motion / Visual 四层门禁 | ⬜ | |
+| 18.1 | Technical / Layout / Motion / Visual 四层门禁 | ⬜ |**裁定 B：不值得建（缺的不是规则、不是分层、不是总闸）。** 记录文档 `docs/P18_QA_LAYERS.md`，分类数据 `studio/scripts/qa_layers.py`，守卫 `tests/test_p18_qa_layer_partition.py`（20 条）。全量 395→**415 passed, 2 skipped**。 |
+
+**实测分布是 3/3/2/2，不是四个可比的分桶** —— 「四层」读起来像均匀四份，实际是 3+3 和 2+2。
+
+| 层 | 规则 |
+|---|---|
+| Technical | `aspect` / `black_frame` / `missing_asset` |
+| Layout | `safe_area` / `clipping` / `font_size` |
+| Motion | `freeze` / `duplicate` |
+| Visual | `blur` / `contrast` |
+
+**分类基于规则函数实际 emit 的 `Finding.rule` 名**（调用全部 11 个函数得出），**不是函数名** —— `rule_duplicate_check_props` **emit 的是 `missing_asset`**，按函数名分类会给一条规则两个主人。
+
+**工单的怀疑「总闸可能不存在」被推翻**：`visual_qa.py:855` `return 1 if hard or unver else 0`，`6e86b46` 让 UNVERIFIABLE 也非零。**实测退出码（无管道）：`--frame`→1、`--frame-pair`→1、`--props <不存在>`→1。总闸存在且已对齐。**
+
+**但真正的问题是「永久红的闸和没有闸无法区分」**：
+
+- `rule_contrast()` **零参数**、同一张 24 对表 → **333 帧全部 FAIL** → `--frame` 永远不可能 exit 0。**不是强制，是噪声。**
+- `rule_missing_asset` **从不读 props** → `--props` 路径的绿灯里 4/5 findings 是 UNAVAILABLE 占位符，**唯一那条规则不检查交付物**。
+
+**指挥窗口独立复现了这条（实测，非采信）**：把图谱里**每一个字符串**毒化成 `POISONED_…`（含 4 个 scene 的全部内容）—— **QA 报告逐字节相同、退出码相同（0）**；且**干净图谱也是退出 0**。**这条路径既不拦错误、也不拦正确，是完全的装饰。**
+
+**没人会预料到的盲点**：`flicker` 既是 Motion 规则又是 UNAVAILABLE —— **四层里唯一缺席的层成员，恰好是该层语义上本该存在的那条**。
+
+**真正缺口按严重度**（最小设计已给但**未实施**）：
+
+1. **不读产物的规则就通过了**（2/10 条描述的是仓库和主题文件，不是渲染）
+2. **永久红的闸** —— 不是强制，是噪声
+3. **没有基线** —— `--frame-pair` 跨场景 exit 0 是「通过」的最接近形态，但**那取决于你指了哪两个 PNG**
+
+**建议**：per-job 基线文件 + **任何偏离即拦**，而不是任何绝对 FAIL —— 同时解掉 2 和 3。
+
+**本项抓到的最深一条失效（值得单列）**：守卫第一版从 `LAYER_OF` **派生**分层，于是所有结构断言都在**校验从被守卫对象派生出来的结构** —— 变异 M1（`blur` 从 Visual 改到 Technical）**首轮存活 16 passed**。**不是守卫写错了，是守卫从它要守卫的东西里派生出来** —— **那是本项目被骗六次的那个形状，从另一扇门进来**。已反转派生方向：`PINNED_LAYERS` 在测试文件里**独立写死**，`LAYER_OF` 反过来从写出的分组派生。**三条变异最终零存活。**
+
+**它诚实报了一条杀不掉的漏洞**：`PINNED_LAYERS` 若在同一处一起改，变异就能活 —— **pin 按定义可以移动**；它**没有造 contrived 输入去补这个洞**，并说明那是 pin 的正确边界。
+
+**执行 agent 自报五条失误，其中三条是本项目记录在案的复发**：
+
+① **写了假测量，且它看起来像结果** —— 探针 80×120、内容落在 `EDGE=40` 内 → `safe_area` 两个输入都 UNVERIFIABLE → `static: True`，**读起来像「这条规则不看输入」，实际是「这个探针什么都测不出」**。已加 `probe_is_sensitive()`；
+② **在 docstring 里断言了一个会被推翻的数字** —— 写 `duplicate` 对相邻帧「报 FAIL」，实测是 20/40；还写了从未测过的区间。最终注明实测值（53956 对，两侧 0.498465 / 0.500140）；
+③ **整文件行尾污染** —— `qa_layers.py` 经多次 `python -c` `write_text` 后变成 **459 行 CRLF**，而全仓是裸 LF，**一行的改动会显示成 459 行 diff**。实测才发现；
+④ 把长跑探针**管道进 `tail`**，十分钟里读的是 `tail` 的缓冲，**差点把空当「没发现」**；
+⑤ 333 次 `subprocess` 扫描没在 15 分钟内跑完，改进程内后约一分钟完成。
+
+**未决项（提请裁定）**：
+
+1. **`duplicate` 阈值与其输入错配**（20/40 相邻帧对报 DUPLICATE）—— **最高价值发现**，**它没有动阈值**（`visual_qa.py` sha256 未变）；
+2. `contrast` 永久失败 —— 主题级缺陷被当成逐帧门禁失败；
+3. `--props` 路径不检查任何交付物；
+4. `flicker` 是缺失的 Motion 规则；
+5. 总计划的「四层」行现在有实测分布 3/3/2/2，**是否要更新措辞**。
 
 ---
 
