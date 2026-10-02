@@ -399,14 +399,25 @@ def test_aspect_is_an_exact_comparison():
 
 
 def test_missing_asset_is_a_set_difference(tmp_path):
-    good = vqa.rule_missing_asset({'audio': {'src': 'audio/bgm_main.m4a'}})[0]
+    """The rule is a set difference over the four SFX the components hardcode.
+
+    It used to drive its difference from `props['audio']` — a top-level field
+    `ShowcaseSchema` does not declare, so nothing a renderer can receive ever
+    reached it. That case is now pinned as IGNORED rather than removed, so the
+    rule cannot silently go back to trusting a field that cannot arrive.
+    """
+    good = vqa.rule_missing_asset({})[0]
     assert good.verdict in (vqa.PASS, vqa.FAIL)
     assert good.value == 0, good.detail
 
-    bad = vqa.rule_missing_asset({'audio': {'src': 'audio/definitely_absent.m4a'}})[0]
-    assert bad.verdict == vqa.FAIL, bad.detail
-    assert bad.value == 1
-    assert 'definitely_absent.m4a' in bad.detail
+    # A props file that DOES carry an audio block is still checked against the
+    # four hardcoded SFX, and the impossible field contributes nothing.
+    absent_ignored = vqa.rule_missing_asset(
+        {'audio': {'src': 'audio/definitely_absent.m4a'}})[0]
+    assert absent_ignored.verdict == vqa.PASS, absent_ignored.detail
+    assert absent_ignored.value == 0
+    assert 'definitely_absent' not in absent_ignored.detail
+    assert 'definitely_absent' not in absent_ignored.extra['checked']
 
 
 # ── the four rules with no detector must say so, not invent a number ─────────

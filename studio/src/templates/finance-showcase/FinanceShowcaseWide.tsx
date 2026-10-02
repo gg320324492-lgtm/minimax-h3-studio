@@ -1,5 +1,5 @@
 import React, {useMemo} from 'react';
-import {AbsoluteFill, Audio, Sequence, staticFile} from 'remotion';
+import {AbsoluteFill, Sequence} from 'remotion';
 import {ShowcaseSchema, resolveScenes, describeIssues, type Scene, type Showcase} from '../../schemas/showcase-v1';
 import {resolveShowcaseMeta} from '../../schemas/showcaseMeta';
 import {KpiHero} from './scenes/KpiHero';
@@ -21,6 +21,55 @@ import {EnsureFonts} from '../common/EnsureFonts';
  *
  * P8 requirement honoured here: width/height/fps come from the graph through
  * calculateMetadata, never from the Composition registration.
+ *
+ *
+ * ── Why this film has NO background music layer (P11 defect 1) ──────────────
+ *
+ * This component used to read a top-level `doc.audio` and render
+ * `<Audio src={staticFile(audio.src)} volume={audio.volume ?? 0.9} />`. That
+ * branch was DEAD, and it was dead in the expensive way: `ShowcaseSchema` never
+ * declared `audio` and has no `.passthrough()`, so zod stripped the key on every
+ * parse. Measured, not inferred — a graph carrying
+ * `"audio": {"src": "audio/bgm_main.m4a", "volume": 0.4}` gave
+ * `safeParse success: true`, keys `version,project,format,bpm,scenes`, and
+ * `audio survived?: false`. An author could write a film with a music bed,
+ * watch it validate clean, and get silence out. No error, anywhere.
+ *
+ * The repair was chosen to DELETE, not to wire, and the reason is not that
+ * wiring is hard — it is that wiring would be wrong. Four measured facts:
+ *
+ *   1. NO PRODUCER. Of the 17 tracked .json files, exactly one has a top-level
+ *      `audio`, and it is `piyao_2026/09_final/delivery_manifest.json`, where
+ *      `audio` is the free-text string `"AAC 48kHz stereo, loudnorm -14 LUFS"`.
+ *      Not a graph, not a `src`. Neither delivered showcase graph sets it.
+ *   2. THE PYTHON MIRROR FORBIDS IT. `pipeline/schemas/showcase-v1.schema.json`
+ *      carries `additionalProperties: false` and lists
+ *      `bpm/format/project/scenes/style_bible/version` — no `audio`. Declaring
+ *      it in zod alone would make the two sides disagree, which is the one thing
+ *      `tests/test_showcase_schema_parity.py` exists to prevent. The Python
+ *      mirror is the authoring side; zod is the rendering side.
+ *   3. IT WOULD CONTRADICT A GUARDED DESIGN DECISION. `beat/sfxProfile.check.ts`
+ *      asserts "no mapped sound is a bgm — a table of event sounds must not map
+ *      to a background track", and `beat/beatGrid.ts` derives the beat grid
+ *      *from* `public/audio/bgm_beats.json`. For THIS template the track is a
+ *      TIMING REFERENCE. Its sound design is per-event SFX. Wiring `audio`
+ *      reachable would put a music bed under every film that set the field,
+ *      contradicting a decision the project has already made and tested.
+ *   4. THE DEFAULT WAS WRONG ANYWAY. `volume ?? 0.9` is a near-full-scale bed.
+ *      A field whose out-of-the-box value is an unasked-for 0.9 mix is not a
+ *      capability anyone designed; it is a number that happened to be typed.
+ *
+ * Deleting also removes a hazard that wiring would have kept: `staticFile()` on
+ * a graph-supplied path means the graph chooses what gets decoded. The SFX table
+ * resolves names against the audio directory in `sfxProfile.check.ts` — a typo
+ * fails there, at a check, instead of becoming a 404 inside `<Audio>` at render
+ * time, which is silence rather than an error.
+ *
+ * If a music bed is genuinely wanted here, that is a DESIGN change and it is not
+ * a one-line repair: decide the mix alongside `EVENT_SFX`, declare `audio` on
+ * BOTH schema sides so the parity test stays meaningful, and give it a sane
+ * default. `tests/test_undeclared_field_reads.py` is written to go red the day
+ * this comes back — so a reintroduction cannot be quiet.
  */
 
 const SCENE_RENDERERS: Record<string, React.FC<{scene: Scene}>> = {
@@ -96,8 +145,6 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
 
   const resolved = useMemo(() => resolveScenes(doc, false), [doc]);
 
-  const audio = (doc as unknown as { audio?: { src: string; volume?: number } }).audio;
-
   return (
     <EnsureFonts>
       {/* The ground behind the sequences. Every scene paints a full-frame
@@ -132,7 +179,6 @@ export const FinanceShowcaseWide: React.FC<Record<string, unknown>> = (rawProps)
             </Sequence>
           );
         })}
-        {audio ? <Audio src={staticFile(audio.src)} volume={audio.volume ?? 0.9} /> : null}
       </AbsoluteFill>
     </EnsureFonts>
   );
