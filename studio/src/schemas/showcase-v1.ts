@@ -167,46 +167,75 @@ export const TransitionSchema = z
   .strict();
 
 /**
- * OPEN on purpose — no `.strict()`. Undeclared keys are STRIPPED, not
- * rejected, so a graph carrying one still returns `success: true`. That is the
- * property `test_style_bible_merges_only_declared.py` exists to police from the
- * render side; see that file for why a text-presence guard cannot catch it.
+ * STRICT (P12, third deliverable). `.strict()` was added here to close the root
+ * of the "silently stripped" family, and the addition was MEASURED first: an
+ * undeclared key is now a hard error instead of a value that vanishes, so the
+ * question is not "is this safe" but "what does it cost", and the answer is
+ * below.
  *
- * `radius` / `shadow` / `depthCue` were declared here in P12. Until then the
- * resolver merged all three, scenes read all three, and zod deleted the input on
- * the way past — `success: true`, populated object, defaults only.
+ * THE COST, MEASURED, NOT ASSUMED. Every JSON in the repository was swept for a
+ * `style_bible` carrying a key this schema does not declare: 563 files parsed,
+ * 3 carried a `style_bible`, and every key in them is declared. So `.strict()`
+ * breaks nothing that exists TODAY. That is NOT the same claim as "breaks
+ * nothing", and the difference is the entire reason the change is worth making:
  *
- * Their shapes are NOT the open `z.record(z.string(), z.unknown())` used by the
- * other seven, and the asymmetry is deliberate:
+ *   * "breaks nothing today"  — a snapshot. True until the first graph ships a
+ *                               section nobody declared.
+ *   * "cannot break later"     — the actual point. Before this, a typo or a
+ *                               not-yet-implemented section was a clean parse
+ *                               plus a silently ignored field. The author got a
+ *                               success and a render that ignored them, and
+ *                               nothing in the toolchain could tell them apart
+ *                               from a section that worked.
  *
- *  * `depthCue` is a LIST (`string[]`), not a bag. `mergeList` is all-or-nothing,
+ * The failure it removes is not hypothetical — it is the one P12 just closed at
+ * the instance level. `radius` / `shadow` / `depthCue` were merged by the
+ * resolver, read by real scenes, and deleted by zod on the way past: `success:
+ * true`, a fully populated `StyleBible` on the renderer side, defaults only on
+ * screen. `test_style_bible_merges_only_declared.py` guards "merged but not
+ * declared"; it structurally CANNOT catch "declared by an intermediate layer
+ * and stripped before the schema sees it", because by then the evidence is
+ * gone. Only strictness at the parser catches that.
+ *
+ * WHAT `.strict()` DOES NOT CLOSE. It governs the TOP-LEVEL keys of the style
+ * bible only, and nothing about the bag VALUES:
+ *
+ *  * `palette.card`, `spacing.gutter` and any other sub-key remain free-form.
+ *    Verified by running it: `safeParse({palette: {nope: 1}})` succeeds. This is
+ *    load-bearing, not an oversight — `mergeSection` filters incoming values
+ *    against the default's own keys and type-checks each one, so an unknown
+ *    sub-key inside a section is dropped by the merge with the rest, and the
+ *    two cross-mirror tests that pin this openness
+ *    (`test_pipeline_validates_the_schema.py`'s "style_bible open bag" and
+ *    `test_showcase_mirrors_agree_on_values.py`'s "unknown key in style_bible
+ *    section") would go red if it closed.
+ *  * `depthCue` stays a `string[]`, not a bag. `mergeList` is all-or-nothing,
  *    because a partial ramp would mis-index: a 3-element ramp asked for depth 4
  *    would render the depth-1 shadow. Typing it as an open record would let that
  *    shape through the schema and reject it at the merge instead.
- *  * `radius` and `shadow` are `Record<string, number|string>` bags, same as
- *    `spacing`/`palette`, and deliberately LOOSE in their value type: the merge
- *    filters by the default's own keys and type-checks each value, so a bag whose
- *    values are all `number` does not need a stricter schema to be safe —
- *    and pinning `radius` to numbers would reject a value the merge would have
- *    dropped anyway, turning a no-op into a hard error.
+ *  * `radius` / `shadow` value types stay loose, for the same reason: pinning
+ *    `radius` to numbers would reject a value the merge would have dropped
+ *    anyway, turning a no-op into a hard error.
  *
- * `depth` is deliberately ABSENT. It has zero consumers and its input could never
- * exist; see docs/STYLE_BIBLE_STRIPPED_SECTIONS.md for the ruling and the
- * measurement.
+ * `depth` remains deliberately ABSENT — zero consumers, and an absent key is now
+ * a loud error rather than a silent strip. See
+ * docs/STYLE_BIBLE_STRIPPED_SECTIONS.md for the ruling and the measurement.
  */
-export const StyleBibleSchema = z.object({
-  palette: z.record(z.string(), z.unknown()).optional(),
-  typography: z.record(z.string(), z.unknown()).optional(),
-  spacing: z.record(z.string(), z.unknown()).optional(),
-  radius: z.record(z.string(), z.unknown()).optional(),
-  /** one CSS shadow per depth step, far plane first; all-or-nothing */
-  depthCue: z.array(z.string()).optional(),
-  shadow: z.record(z.string(), z.unknown()).optional(),
-  cameraLanguage: z.record(z.string(), z.unknown()).optional(),
-  motionLanguage: z.record(z.string(), z.unknown()).optional(),
-  chartLanguage: z.record(z.string(), z.unknown()).optional(),
-  audioLanguage: z.record(z.string(), z.unknown()).optional(),
-});
+export const StyleBibleSchema = z
+  .object({
+    palette: z.record(z.string(), z.unknown()).optional(),
+    typography: z.record(z.string(), z.unknown()).optional(),
+    spacing: z.record(z.string(), z.unknown()).optional(),
+    radius: z.record(z.string(), z.unknown()).optional(),
+    /** one CSS shadow per depth step, far plane first; all-or-nothing */
+    depthCue: z.array(z.string()).optional(),
+    shadow: z.record(z.string(), z.unknown()).optional(),
+    cameraLanguage: z.record(z.string(), z.unknown()).optional(),
+    motionLanguage: z.record(z.string(), z.unknown()).optional(),
+    chartLanguage: z.record(z.string(), z.unknown()).optional(),
+    audioLanguage: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
 
 export const SceneSchema = z
   .object({

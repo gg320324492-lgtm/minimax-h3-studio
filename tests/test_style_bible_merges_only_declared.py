@@ -349,20 +349,36 @@ def test_mutation_remove_a_declared_and_consumed_key_is_caught():
 
     `spacing` is used rather than `radius` so the mutation cannot be confused
     with the P12 change under test.
+
+    THE ANCHOR IS INDENTATION-AGNOSTIC, and that is a fix rather than a style
+    preference. This used to delete the line by its exact two-space prefix, which
+    was correct while `StyleBibleSchema` was a one-line `z.object({...})`. P12
+    wrapped the object to attach `.strict()`, the keys moved to four spaces, and
+    the same `str.replace` then removed only TWO leading spaces: the `spacing`
+    line vanished as intended, the following key was left at six, and the parser
+    — which matched keys at a fixed width — stopped seeing `radius`. The
+    mutation then reported `radius` as an undeclared section and this test went
+    red on a phantom of its own making. Matching up to the key name instead
+    makes the mutation independent of how the object happens to be indented.
     """
     assert sbc.declared_style_bible_keys().__contains__('spacing')
     assert sbc.reachability('spacing')[0] == 'reachable'
 
     body = SCHEMA_TS.read_bytes()
-    needle = b'  spacing: z.record(z.string(), z.unknown()).optional(),\r\n'
-    assert body.count(needle) == 1, (
-        'the mutation anchor is gone — showcase-v1.ts is not the CRLF file the '
-        'work order expected, or the key was renamed. Update the mutation; do '
-        'not read the miss as a pass.')
+    needle = re.compile(rb'\r?\n[ \t]+spacing: z\.record\(z\.string\(\), '
+                        rb'z\.unknown\(\)\)\.optional\(\),')
+    hits = needle.findall(body)
+    assert len(hits) == 1, (
+        f'the mutation anchor matched {len(hits)} times, expected 1. '
+        'showcase-v1.ts may not be CRLF, or the key was renamed. Update the '
+        'mutation; do not read the miss as a pass.')
+    old = hits[0]
+    new = needle.sub(b'', body, count=1)
+    assert new != body, 'the mutation did not land'
     try:
-        SCHEMA_TS.write_bytes(body.replace(needle, b'', 1))
+        SCHEMA_TS.write_bytes(new)
         landed = SCHEMA_TS.read_bytes()
-        assert needle not in landed, 'THE MUTATION DID NOT LAND — stop and check the write'
+        assert old not in landed, 'THE MUTATION DID NOT LAND — stop and check the write'
 
         assert 'spacing' not in sbc.declared_style_bible_keys(), (
             'the declaration is still parsed as present; the schema parser and '

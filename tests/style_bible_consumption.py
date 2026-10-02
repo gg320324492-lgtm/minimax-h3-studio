@@ -28,13 +28,22 @@ every link to hold:
       --[4. a production .tsx names the export]-->        drives a render decision
 
 All four links are required. Link 1 is the one that is easy to forget and it is
-not decorative: `StyleBibleSchema` is an OPEN `z.object` with no `.strict()`,
-so a key it does not name is silently dropped on parse — and `styleBible.tsx`
-happily binds four sections (`radius`, `shadow`, `depth`, `depthCue`) that no
-declared key can ever populate. Those four are consumed by scenes and are still
-unreachable from a graph, which is the same defect as P11's `audio` in the
-opposite direction: not a read that cannot happen, but a read that cannot be
+not decorative. It WAS open — `StyleBibleSchema` was a bare `z.object` with no
+`.strict()`, so a key it did not name was silently dropped on parse, and
+`styleBible.tsx` bound four sections (`radius`, `shadow`, `depth`, `depthCue`)
+that no declared key could populate. Those four were consumed by scenes and
+still unreachable from a graph: the same defect as P11's `audio` in the
+opposite direction, not a read that cannot happen but a read that cannot be
 fed.
+
+P12 closed both ends of that in sequence. `836f532` declared the three sections
+that had consumers and deleted the plumbing for `depth`, which had none.
+`StyleBibleSchema` is now `.strict()`, so link 1 rejects rather than strips —
+which is why the section below no longer treats an open bible as the premise,
+and why the guards in this module measure REACHABILITY, not the parser's
+leniency. Strictness moved the failure from "invisible" to "loud"; it did not
+make any key reachable on its own, which is why links 2-4 are still measured
+rather than assumed.
 
 WHAT IS DELIBERATELY NOT PROVEN HERE.
 
@@ -99,14 +108,41 @@ def declared_style_bible_keys() -> set[str]:
     `test_undeclared_field_reads.py` gives: a guard that needs a node runtime
     cannot fail when node is missing, and this suite must stay runnable with
     nothing but pytest.
+
+    THE BODY IS MATCHED NON-GREEDILY, and that is load-bearing. Attaching
+    `.strict()` means `z.object({` is no longer on the same line as the
+    `export const`, so the body used to be matched from `z.object({` with a
+    greedy `.*?` — which runs to the LAST `});` in the file, SceneSchema's, and
+    sweeps Motion/Camera/Transition keys into this set. The result is not a
+    wrong answer, it is a wrong QUESTION: every caller believes it is asking
+    about StyleBible. Twelve tests went red on the day `.strict()` landed
+    because of it, and every one of them went red in `assert`, which is the
+    worst possible shape for a refactor to present as.
+
+    The opening is therefore `z\\s*\\n?\\s*\\.object\\(\\{` — accepting both the
+    one-line and the wrapped spelling — and the body is non-greedy, so it stops
+    at the first `}` at the object's own indentation. This is the same trap
+    `test_motion_ease_is_not_a_claim.py` had to solve for `_ts_motion_keys`,
+    and it is solved the same way.
+
+    KEY INDENTATION IS MATCHED AS `^[ \\t]+`, NOT AS A FIXED COUNT. A fixed
+    width looks harmless and is not: when P12 wrapped this object to attach
+    `.strict()`, the keys moved from two spaces to four, and a mutation in
+    `test_style_bible_merges_only_declared.py` that deletes the `spacing` line
+    by its two-space anchor then deleted only TWO of the four leading spaces.
+    The next key was left at six, the fixed-width pattern stopped matching it,
+    and `radius` was reported as an UNDECLARED section that had never been
+    removed — a mutation test failing on a phantom produced by its own parser.
+    Indentation is a formatting fact; the declaration is not.
     """
     src = SCHEMA_TS.read_text(encoding='utf-8')
     m = re.search(
-        r'export const StyleBibleSchema\s*=\s*z\s*\.object\(\{\s*\n(.*?)\n\}\);', src, re.S)
+        r'export const StyleBibleSchema\s*=\s*z\s*\n?\s*\.object\(\{\s*\n(.*?)\n\s*\}\)',
+        src, re.S)
     assert m, ('could not find StyleBibleSchema in showcase-v1.ts; if it was '
                'reshaped, update this parser rather than reading the failure as '
                'a schema problem.')
-    return set(re.findall(r'^\s{2}(\w+):', m.group(1), re.M))
+    return set(re.findall(r'^[ \t]+(\w+):', m.group(1), re.M))
 
 
 def style_bible_is_strict() -> bool:
@@ -115,10 +151,19 @@ def style_bible_is_strict() -> bool:
     False means an undeclared key is STRIPPED rather than rejected: the graph
     validates clean and the value vanishes before any renderer sees it. That is
     the structural reason link 1 of the chain exists at all.
+
+    IMPORTANT: this is a TEXT predicate and it is NOT what the P12 strictness
+    guard uses. `tests/test_style_bible_schema_is_strict.py` calls `safeParse`
+    and asserts the returned value, because a substring test cannot tell a
+    `.strict()` in code from a `.strict()` in this repository's own prose. This
+    helper survives only because
+    `test_style_bible_no_dumb_declarations.py` still needs a runtime-free
+    premise anchor -- and that file's own docstring says so. If you are adding a
+    strictness check, add it there, not here.
     """
     src = SCHEMA_TS.read_text(encoding='utf-8')
-    m = re.search(r'export const StyleBibleSchema\s*=\s*z\s*\.object\(\{.*?\}\s*\)'
-                  r'(\.\w+\([^()]*\))*;', src, re.S)
+    m = re.search(r'export const StyleBibleSchema\s*=\s*z\s*\n?\s*\.object\(\{'
+                  r'.*?\}\s*\)(\.\w+\([^()]*\))*;', src, re.S)
     assert m, 'could not locate the StyleBibleSchema declaration'
     return '.strict()' in m.group(0)
 
