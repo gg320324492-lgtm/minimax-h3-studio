@@ -504,7 +504,60 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 1. ~~**`duplicate` 阈值与其输入错配**~~ → **已修（`fa6cbb5`，P19）**，见下。
 2. `contrast` 永久失败 —— 主题级缺陷被当成逐帧门禁失败；
-3. `--props` 路径不检查任何交付物；
+3. ~~`--props` 路径不检查任何交付物~~ → **已修（`8a2b090`，P21）**，见下；
+
+---
+
+## P21 — `--props` 路径从装饰变成闸门　状态：✅
+
+守卫 `tests/test_p21_props_path_gates_the_deliverable.py`（12 条）。全量 431→**443 passed, 3 skipped**。
+
+**裁定 C（部分），且两个半边的答案不同 —— 执行 agent 明确指出指挥窗口工单的前提在「有判别力的那一半」上是错的。**
+
+### 半边一（B）：那三个样式段**不该**接受文件存在性检查 —— 已实测
+
+它用 `npx tsx` 跑真实 `resolveStyleBible`、三个段全部毒化后实测：
+
+- **`radius` 根本装不下路径** —— `mergeSection` 只在 `typeof v === typeof base[key]` 时保留值，而 `RADIUS` 全是数字；毒化成 `url("../../assets/NOPE.png")` 后**解析结果与默认值逐字节相同**，**在任何文件能被命名之前就被丢掉了**。`spacing` 同理；
+- **`shadow` / `depthCue` 确实会让字符串通过** —— **而这正是检查在那儿错的原因，不只是没必要**：它们是交给 `boxShadow` 的 CSS 声明，**`url()` 目标缺失是浏览器解析的绘制失败，不是这条闸门该管的缺失交付物**。
+
+**账本早已裁定过同一件事**：`:250` 的 12.3（Asset Router）正是因此被记为死头。**本次把该「缺失」钉成了断言，防止它被悄悄翻案。**
+
+### 半边二（A）：这条路径现在检查的东西 —— **一个阈值都不需要**
+
+`MissingScene`（`FinanceShowcaseWide.tsx:95`）是任何 `SCENE_RENDERERS` 未命中的类型的兜底，**它渲染出类型名加上「not implemented in P4」**。实测：**22 个类型已声明、13 个有渲染器、9 个落在中间**（`video` / `browser-window` / `stat-card` / `card-grid` / `data-table` / `quote` / `data-plane-3d` / `logo` / `outro`）。
+
+**与 `collision` 不同，这里没有需要发明的判断** —— 问题就是**「有没有渲染器」这个存在与否**，**直接从渲染器派发的那个 map 上读出来**。
+
+**⚠️ 这是同一缺陷的第二次发作**：`:80-83` 的注释记着上一次 —— **P7.1 修了七个图表类型**（它们「从 P3 起就在 schema 里、却没有渲染器，所以要图表的图谱拿到一帧写着 not implemented 的画面 —— **schema 承诺了没人交付的能力」**）。**那七个修完了，剩下九个非图表类型还在。**
+
+**实测能拦住什么（跑出来的，不是断言的）**：把交付图谱的四个 scene 全改成 `quote` →
+
+```
+[FAIL] graph_scene_renderable value=4  → 退出 1
+  4 scene(s) have NO renderer and will render the MissingScene placeholder
+  ("not implemented in P4"): scenes[0]=quote, …
+干净图谱: [PASS] value=0 → 退出 0
+```
+
+**这九个类型是被报告，不是被修** —— 那是一个渲染器决定，超出本项范围。
+
+**指挥窗口独立复验**：同上（4 个 `quote` → 退出 1 并逐个指名 scene；干净图谱 → 退出 0），**报告差异逐行可查**。并复现了它指出的那半边：`SCENE_RENDERERS` **确实只有 13 个键**（`:75-93`），`:115-116` 确认未命中即走 `MissingScene`。
+
+**为新规则付出的三处成本，全部更新、无一删除**（这是本项目的既定做法）：
+
+- P18 的 `UNTOUCHED` 哈希 + `PINNED_LAYERS`（**Technical 3→4**，所以头条从 3/3/2/2 变成 **4/3/2/2**）；
+- P13 的 `readable == unreadable` → 改成严格**子集**关系（需要图谱的规则没有图谱就跑不了），**并断定了方向**，使那条测试本来要抓的「反向消失」仍然会红；
+- `test_visual_qa.real_props` 原本是个**不含 `scenes` 的格式桩**（**无效**，因为 `scenes` 是 `min(1)`）—— 现在带一个可渲染 scene。
+
+**执行 agent 上报的两条自身失误**：
+
+① **它在确认变异是否生效之前就宣称「变异存活」** —— 第一次注入变异三时它把 `gaps` 的定义注释掉了，产出的是 `NameError` 而不是行为变异。**这正是工单点名的那个错误。** 它靠直接调用（而非套件）抓到，上移到 `gaps` 计算之前后才被杀；
+② **它在 `UNTOUCHED` 里先填了一个占位 sha256** 才去测 —— 正是工单要求的那条（先证明、再断言），顺序反了。已换成实测值。
+
+**变异 4 是「无效变异」而非存活**：从 `SceneType` 删九个类型，**它没有被本守卫杀掉，是 schema 的 parity 守卫先杀** —— 因为 **schema 编辑不可能单独发生，Python 镜像必须同动**。**它如实记为真实缺口而没有糊过去。**
+
+**第三把尺子与 `unavailable_findings()` 均未动**；`rule_duplicate_check_props` / `SIGNATURE_EQUAL` / `DUP_THRESHOLD` / schema / `FinanceShowcaseWide.tsx` 全部**与 HEAD 字节相同**。
 4. `flicker` 是缺失的 Motion 规则；
 5. 总计划的「四层」行现在有实测分布 3/3/2/2，**是否要更新措辞**。
 
