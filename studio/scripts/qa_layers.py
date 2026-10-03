@@ -95,7 +95,12 @@ PIPELINES = {
 #:    "classified once" is not the same claim as "classified correctly".
 #:  * `contrast` is classified Visual. It is a palette lookup with no frame
 #:    input at all, which makes it the one rule in this table whose verdict
-#:    does not describe the artefact under inspection.
+#:    does not describe the artefact under inspection. P22 split it: the palette
+#:    half is now `theme_contrast` and is not emitted on the `--frame` path at
+#:    all, and the per-frame half is `rule_contrast_frame`, UNAVAILABLE because no
+#:    instrument for it exists. Both stay Visual — the layer is about what the
+#:    question concerns, and both ask about how the design reads, not about
+#:    pixels or layout.
 #:
 #: THE ASSIGNMENT ITSELF LIVES IN `build_report()`, not here. An earlier version
 #: kept `LAYER_OF` as a module constant and built the per-layer groupings by
@@ -115,7 +120,7 @@ PIPELINES = {
 #: THE HEADLINE FINDING OF P18 is this 3/3/2/2 distribution, not the existence of
 #: four layers. Every layer does have rules, so the partition is exhaustive — but
 #: "four layers" in the master plan reads like four comparable buckets and it is
-#: two of three and two of two. No layer is empty; two are thin.
+#: three of four and two of three. No layer is empty; one is thin.
 #:
 #: Motion is also the most expensive layer per rule, because both its rules take
 #: a PAIR of rendered frames — a single `--frame` run executes neither. That is
@@ -123,16 +128,26 @@ PIPELINES = {
 #: rules a one-frame run can reach, and `duplicate` shares `freeze`'s input.
 #: It is counted here, so Motion is 2.
 #:
-#: Visual is 2, but one of the two (`contrast`) has no input at all: a palette
-#: lookup that fails identically on every artefact. So Visual holds one rule
-#: that reads the artefact and one that reads the theme file.
+#: P22 DROPPED the Visual entry from this table, and that is a finding rather
+#: than an omission. Visual held 2 rules, one of which (`contrast`) was a palette
+#: lookup identical on every artefact — so the layer COUNTED as full while only
+#: `blur` could return a verdict about a frame. Splitting `contrast` into
+#: `theme_contrast` (a fact about the theme, reported off the frame path) and
+#: `contrast_frame` (the per-frame rule, UNAVAILABLE because the instrument does
+#: not exist) took Visual to 3, which pushed it out of the `<= 2` thin set on a
+#: COUNT — so the count stopped being a proxy for coverage and the proxy was
+#: dropped rather than restated.
+#:
+#: WHAT THAT HIDES, and why the count is still not the thing to read: Visual now
+#: holds 3 rules and exactly ONE of them can say anything about a frame. The
+#: layer got fuller and the coverage did not. A "thin layer" note that reported
+#: "Visual: 3 rules, fine" would be the same mistake as the one P22 exists to
+#: fix, one level up, so Visual is absent from THIN_LAYERS while this paragraph
+#: says plainly that it is the least covered layer in the table.
 THIN_LAYERS: dict[str, str] = {
     'Motion': ('2 rules, and BOTH take a pair of rendered frames, so this is '
                'the one layer a single --frame run never reaches — and the '
                'most expensive per rule in the tool.'),
-    'Visual': ('2 rules, one of which (`contrast`) takes no input at all: it '
-               'is a palette lookup, identical on every artefact. Effectively '
-               'one rule here reads the thing being judged.'),
 }
 
 #: Entries whose layer is defensible both ways, with the reading NOT taken.
@@ -183,10 +198,30 @@ MEASURED_NOTE: dict[str, str] = {
                '0 (the same frame rendered twice is array_equal). Costs two '
                'rendered frames — the most expensive input here — and on a '
                'single-frame run it never executes.'),
-    'contrast': ('rule_contrast() takes NO arguments and returns the same 24-pair '
-                 'table on every invocation. It is FAIL on all 333 corpus frames '
-                 'because the palette is the palette, so a --frame run can never '
-                 'exit 0 — the gate is permanently red on this rule alone.'),
+    'theme_contrast': ('P22. rule_contrast() takes NO arguments and returns the '
+                     'same 24-pair table on every invocation — it describes '
+                     'design/themes.ts, not an artefact. It used to be emitted '
+                     'into every --frame report, which made that path exit 1 on '
+                     'all 333 corpus frames for a constant. It is now reported '
+                     'by --theme-contrast only, and the per-frame path carries '
+                     'rule_contrast_frame instead, which is UNAVAILABLE because the '
+                     'instrument does not exist (measured: 97.8% of corpus '
+                     'pixels sit in contrast [1.0,1.5) against the gradient '
+                     'Backdrop paints, so a pixel-census rule fires on 333/333 '
+                     'frames and the population has no valley a cut could sit '
+                     'in). The partition keeps both: one is a fact about the '
+                     'theme, the other is a hole where a per-frame fact should '
+                     'be.'),
+    'contrast_frame': ('UNAVAILABLE on every frame, by measurement rather than by '
+                       'choice. The question it would answer — "is this frame\'s '
+                       'type readable" — needs a foreground/background ROLE per '
+                       'pixel, and a frame\'s pixels carry none: a glyph stem, a '
+                       'hairline and the backdrop ramp are all just a pixel. '
+                       'Measured over 531,100,800 corpus pixels the contrast '
+                       'distribution has no valley between gridline and ink, so '
+                       'any cut either misses the gridlines or fires on every '
+                       'frame. Same missing input `overflow` names: the mark '
+                       'layout from the chart options, not pixels.'),
     'blur': ('30 of 333 corpus frames FAIL, not because any render is broken but '
              'because BLUR_VARIANCE = 2.0 sits below every frame this project has '
              'produced: corpus p5 is 11.5, a 5.75x margin ABOVE the threshold. The '
@@ -278,6 +313,12 @@ def _emitted_names() -> dict[str, list[str]]:
             try:
                 if name == 'rule_contrast':
                     r = fn()
+                elif name == 'rule_contrast_frame':
+                    # P22: the per-frame half. Needs a frame, so it is probed
+                    # with the same synthetic content every other frame rule
+                    # gets. It is UNAVAILABLE and the probe records the emitted
+                    # name, which is what the partition is keyed on.
+                    r = fn(content)
                 elif name in ('rule_freeze', 'rule_duplicate'):
                     r = fn(png_a, png_b)
                 elif name == 'rule_aspect':
@@ -402,15 +443,28 @@ def build_report() -> dict:
                                 'graph_scene_renderable'], 'notes': {}},
         'Layout': {'rules': ['safe_area', 'clipping', 'font_size'], 'notes': {}},
         'Motion': {'rules': ['freeze', 'duplicate'], 'notes': {}},
-        'Visual': {'rules': ['blur', 'contrast'], 'notes': {}},
+        'Visual': {'rules': ['blur', 'contrast_frame', 'theme_contrast'], 'notes': {}},
     }
     content, flat = _probe_content(), _probe_flat()
 
     behaviour = {
         # Same call twice: a rule with no input cannot differ between calls.
-        'contrast': {
+        # P22 renamed this row's subject: `rule_contrast` now emits
+        # `theme_contrast` and is not on the per-frame path at all, so the
+        # partition records it under the name the report shows.
+        'theme_contrast': {
             'behaves_like_static': (_verdict_of(vqa.rule_contrast)
                                     == _verdict_of(vqa.rule_contrast)),
+            'reads_graph': False,
+            'requires_pair': False,
+        },
+        # P22. The per-frame half. Measured, not asserted: it is UNAVAILABLE on
+        # every frame because the instrument does not exist, and `requires_frame`
+        # is true of it while `reads_graph` is false — it reads pixels and the
+        # pixels cannot answer the question.
+        'contrast_frame': {
+            'behaves_like_static': (_verdict_of(vqa.rule_contrast_frame, content)
+                                    == _verdict_of(vqa.rule_contrast_frame, flat)),
             'reads_graph': False,
             'requires_pair': False,
         },

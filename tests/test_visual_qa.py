@@ -222,7 +222,17 @@ def test_font_size_reports_unverifiable_without_a_declared_size():
 def test_contrast_is_red_on_this_palette_and_counts_its_pairs():
     f = vqa.rule_contrast()[0]
     assert f.verdict == vqa.FAIL, 'the audit measured 8 of 24 pairs below 4.5:1'
-    assert f.value == 8, f'expected 8 failing pairs, got {f.value}'
+    # P22: `value` now counts the pairs below the LARGE-text bar (4 of 24),
+    # because that is the bar a role needs to clear at any size; the 8 pairs
+    # below the 4.5 text bar are still reported, under their own key. Both
+    # numbers are asserted, so neither can be quietly changed to make the other
+    # look right.
+    assert len(f.extra['failing_text_bar']) == 8, (
+        f'expected 8 pairs below the 4.5:1 text bar, got '
+        f'{f.extra["failing_text_bar"]}')
+    assert f.value == len(f.extra['failing_large_bar']) == 4, (
+        f'expected 4 pairs below the 3.0:1 large-text bar, got {f.value} '
+        f'{f.extra["failing_large_bar"]}')
     assert len(f.extra['pairs']) == 24, 'every theme x background x role must be tested'
     worst = min(f.extra['pairs'], key=lambda p: p['ratio'])
     assert worst['ratio'] == 2.16, worst

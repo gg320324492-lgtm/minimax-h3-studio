@@ -51,6 +51,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -97,7 +98,13 @@ PINNED_LAYERS: dict[str, list[str]] = {
                   'graph_scene_renderable'],
     'Layout': ['safe_area', 'clipping', 'font_size'],
     'Motion': ['freeze', 'duplicate'],
-    'Visual': ['blur', 'contrast'],
+    # P22, deliberately and out loud. `contrast` was ONE entry and is now two:
+    # `contrast_frame` (the per-frame rule, UNAVAILABLE because no instrument for
+    # it exists) and `theme_contrast` (the palette table, reported off the frame
+    # path). Both stay Visual — the layer is about what the question concerns,
+    # and both ask about how the design reads. Visual therefore grows 2 -> 3 and
+    # the 3/3/2/2 headline in `docs/P18_QA_LAYERS.md` becomes 4/3/2/3.
+    'Visual': ['blur', 'contrast_frame', 'theme_contrast'],
 }
 
 #: Files that must stay byte-identical to HEAD. This task is analysis only: it
@@ -125,17 +132,57 @@ UNTOUCHED: dict[str, str] = {
     # byte-identical. P21 also ADDED a rule to the partition, which is why
     # `PINNED_LAYERS` above grows by one entry and why `docs/P18_QA_LAYERS.md`'s
     # 3/3/2/2 headline becomes 4/3/2/2.
+    #
+    # UPDATED BY P22, the same way and for the same reason. P22 changed a rule's
+    # DECISION — but not by moving a threshold. `contrast` was emitted into every
+    # `--frame` report while reading no frame, which made that path exit 1 on all
+    # 333 corpus frames for a constant; P22 split it into `theme_contrast`
+    # (reported by `--theme-contrast` only, on its own exit code) and
+    # `contrast_frame` (UNAVAILABLE on the frame path, because the per-frame
+    # instrument does not exist — measured, in the rule's docstring). So
+    # `PINNED_LAYERS` grows Visual by one entry: 4/3/2/2 becomes 4/3/2/3.
+    #
+    # WHAT P22 DID NOT DO, which is the part this file exists to keep honest:
+    # `WCAG_TEXT` is still 4.5 and `WCAG_LARGE` is still 3.0, and no value in
+    # `design/themes.ts` changed. The palette is exactly as red as it was; what
+    # changed is WHICH PATH reports it. A reviewer who only diffed the numbers
+    # would call this harmless, and would be wrong to.
     'studio/scripts/visual_qa.py':
-        '03a3f8c070f8e76250b24a4bf88a39869538865f8249ba73418f509f49eb6e42',
+        'P22_RUNTIME_CHECKED',
     'studio/scripts/qa_report.py':
         '9e7e4725fcfcbe201caa14cdfe8f5cb6ea4a51bf3ea3b6bfe831b99c79b41f38',
 }
 
 
 def test_the_two_qa_scripts_are_byte_identical_to_head():
-    """P18 changed no rule's decision logic. Verified on the bytes, not the diff."""
+    """P18 changed no rule's decision logic. Verified on the bytes, not the diff.
+
+    P22 DELETED this pin for `visual_qa.py` rather than re-baselining it, and
+    the reason matters more than the mechanism.
+
+    The pin's job was to catch "a rule's decision changed during a task whose
+    deliverable was a classification". Re-baselining it to the post-P22 bytes
+    would keep that job — but only for the NEXT task, and only if whoever
+    rebaselined it had a reason. P22's actual deliverable IS a decision change,
+    so re-baselining would have recorded a hash and no argument, and the next
+    reader could not tell P22 apart from a rule quietly retuned.
+
+    So `qa_report.py` keeps its pin — P22 did not touch it, and that is still
+    worth asserting — and `visual_qa.py` is asserted instead by the properties
+    that matter, each checked by RUNNING the code rather than by hashing it:
+
+      * no threshold moved           -> test_p22_...::test_neither_wcag_threshold_moved
+      * no palette value moved       -> test_p22_...::test_the_palette_itself_is_untouched
+      * the rule still reads no frame-> test_p22_...::test_the_palette_rule_still_takes_no_arguments
+      * the partition is unchanged for every OTHER rule -> PINNED_LAYERS above
+
+    A hash proves "nothing changed". Those four prove "nothing changed that
+    matters", which is the stronger claim and the one this defect was about.
+    """
     import hashlib
     for rel, expected in UNTOUCHED.items():
+        if expected == 'P22_RUNTIME_CHECKED':
+            continue
         actual = hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()
         assert actual == expected, (
             f'{rel} changed during a task whose deliverable was a layer '
@@ -297,18 +344,33 @@ def test_the_four_layer_names_are_the_ones_the_master_plan_spell():
 def test_contrast_really_takes_no_input_and_really_fails(report):
     """It is the one rule whose verdict describes the palette, not the artefact.
 
-    This is why a --frame run can never exit 0, and it is the single most
-    important thing about the current gate. Asserted by CALLING it twice.
+    P22 KEPT the measurement and REMOVED the consequence. This still asserts
+    that `rule_contrast` takes no input and still FAILs — both are true, and
+    both are what the diagnosis rested on. What changed is that it is no longer
+    emitted on the `--frame` path, so "the palette is red" no longer means
+    "this frame is broken". See `tests/test_p22_contrast_is_not_a_per_frame_gate.py`
+    for the exit-code half, which is asserted by RUNNING `main(argv)`.
+
+    The row is keyed `theme_contrast` because that is the name the finding
+    EMITS, and this file partitions on emitted names for a reason recorded at
+    `qa_layers.EMITTED_BY` — one function emits a name that is not its own.
     """
     import inspect
     assert not inspect.signature(vqa.rule_contrast).parameters, (
         'rule_contrast now takes arguments; the whole claim that it is a '
-        'constant lookup, and therefore that --frame can never pass, must be '
-        're-measured')
+        'constant lookup, and therefore that it cannot describe a frame, must '
+        'be re-measured')
     a = vqa.rule_contrast()
     b = vqa.rule_contrast()
     assert a[0].verdict == b[0].verdict == vqa.FAIL
-    assert report['behaviour']['contrast']['behaves_like_static'] is True
+    assert a[0].rule == 'theme_contrast'
+    assert report['behaviour']['theme_contrast']['behaves_like_static'] is True
+    # And the per-frame half, which took the rule's place on the frame path,
+    # takes a frame and cannot FAIL.
+    import inspect as _i
+    assert len(_i.signature(vqa.rule_contrast_frame).parameters) == 1
+    assert vqa.rule_contrast_frame(
+        np.zeros((40, 60, 3), dtype=int)).verdict == vqa.UNAVAILABLE
 
 
 def test_the_two_pair_taking_rules_really_need_two_paths(report):
