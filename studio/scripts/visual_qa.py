@@ -59,6 +59,9 @@ THRESHOLDS, and the distribution each sits in:
   clipping      content touches an edge       exact, via the palette path
   font_size     ratio vs declared; >12px abs  median band 36/19/69px at s=1/.5625/2
   contrast      WCAG 4.5 text / 3.0 large     8 of 24 pairs fail 4.5 (2.16..4.18)
+               THEME-LEVEL, not per-frame. P22 moved it off the `--frame`
+               path: it took no frame, so it made that path permanently red.
+               See CONTRAST_ROLES and `rule_contrast_frame`.
   black_frame   non-content >= 0.9995         window (0.999238, 1.0) — only 0.000762
                                               wide. THIN, stated as such. 8 corpus
                                               frames are exactly 1.0.
@@ -84,6 +87,26 @@ Usage:
     python studio/scripts/visual_qa.py --frame out/stills/f00440.png
     python studio/scripts/visual_qa.py --frame-pair a.png b.png --rule freeze
     python studio/scripts/visual_qa.py --props studio/public/jobs/x/props.json
+    python studio/scripts/visual_qa.py --theme-contrast
+
+P22 — WHY `contrast` IS NOT A PER-FRAME RULE ANY MORE
+-----------------------------------------------------
+`contrast` took no arguments and returned the same 24-pair palette table on every
+call, so `--frame` reported it and exited 1 on all 333 corpus frames for a fact
+about `design/themes.ts` that no frame could have caused. It is now:
+
+  * `rule_contrast()`  -> emits `theme_contrast`, reported by `--theme-contrast`
+    and by nothing else, exiting on its own verdict when asked for;
+  * `rule_contrast_frame()` -> emits `contrast_frame`, UNAVAILABLE on the frame path,
+    because no per-frame instrument exists. Measured: 97.8% of corpus pixels sit
+    in contrast [1.0, 1.5) against the gradient `Backdrop` paints, so a
+    pixel-census rule fires on 333 of 333 frames and the population has no
+    valley a cut could sit in.
+
+NEITHER `WCAG_TEXT` NOR `WCAG_LARGE` CHANGED, and no palette value changed. The
+defect was never the threshold; it was a constant being reported as a per-frame
+measurement. See `CONTRAST_ROLES` for what each failing role is actually used
+for, measured in the render source.
 """
 
 from __future__ import annotations
@@ -465,27 +488,178 @@ def rule_contrast() -> list[Finding]:
 
     A lookup on palette constants, so it is exact — no threshold margin applies.
     Measured at audit: 8 of the 24 fall below 4.5:1, ranging 2.16 to 4.18.
+
+    P22. THIS IS A THEME-LEVEL CHECK AND IS NOT PART OF THE PER-FRAME GATE.
+    It takes no frame, reads none, and returns the same table whatever is under
+    inspection — so running it once per `--frame` made `visual_qa.py --frame`
+    exit non-zero on all 333 corpus frames for a reason that was not about any of
+    them. A gate that is red for a constant cannot gate anything.
+
+    Its verdict is therefore computed against BOTH WCAG bars rather than only the
+    text one, and it is REPORTED, not gated. `rule_contrast_frame()` takes its place
+    on the per-frame path and reports UNAVAILABLE, with the reason measured.
+    The measurement that fixes the verdict vocabulary is in `CONTRAST_ROLES`;
+    nothing here is tuned to make a number go green.
     """
-    out = []
-    rows = []
+    rows = theme_contrast_rows()
+    failing_text = [r for r in rows if r['ratio'] < WCAG_TEXT]
+    failing_any = [r for r in rows if r['ratio'] < WCAG_LARGE]
+    worst = min(rows, key=lambda r: r['ratio'])
+    return [Finding(
+        'theme_contrast', FAIL if failing_any else PASS, len(failing_any),
+        f'{len(failing_any)} of {len(rows)} theme x background x role pairs below '
+        f'{WCAG_LARGE}:1 (the bar that applies to large text), of which '
+        f'{len(failing_text)} are also below the {WCAG_TEXT}:1 text bar; worst is '
+        f'{worst["pair"]} at {worst["ratio"]:.2f}:1. Every measured consumer of '
+        f'these roles is TEXT, so the text bar is the one that applies here '
+        f'(see CONTRAST_ROLES). This is a property of design/themes.ts and is '
+        f'identical on every frame, which is why it is reported rather than '
+        f'gated per frame.',
+        extra={'pairs': rows, 'failing_text_bar': [r['pair'] for r in failing_text],
+               'failing_large_bar': [r['pair'] for r in failing_any]})]
+
+
+#: What each measured role is FOR, read off the render source rather than assumed
+#: from its name. P22 measured every `inkFaint` / `accent` / `positive` consumer
+#: under `studio/src/templates/finance-showcase/`:
+#:
+#:   inkFaint — 10 of 10 sites are TEXT: the Y axis tick labels (ChartFrame.tsx:320),
+#:     the axis title (:339), the X category labels (:379), the PathMark value
+#:     labels (types.tsx:244), the Slope end label and series name (:344, :350),
+#:     the Bubble category label (:429), the Heatmap cell value and its column and
+#:     row labels (:499, :523, :530), and the DataColumns cell rank number
+#:     (:244). NOT ONE of them is a divider. The decorative roles are named
+#:     differently — `grid`, `hairline`, `column`, `columnBright` — and none of
+#:     those is in the six roles measured here. So "inkFaint is only a decorative
+#:     shade, so 4.5:1 does not apply" is FALSIFIED for this template.
+#:
+#:   accent — 8 sites, and only THREE are text: the KpiHero eyebrow
+#:     (KpiHero.tsx:84, 20px/500), the KpiHero value suffix (:118, 78.88px), and
+#:     the "chart: no values" placeholder (Chart.tsx:196, 34px). The other five
+#:     are mark fills and strokes, where 3:1 is the applicable bar (SC 1.4.11).
+#:
+#:   positive — 2 sites, both text: the KpiHero delta chip (KpiHero.tsx:139,
+#:     44px/700) and the RankTable row delta (types.tsx:593, 20px).
+#:
+#: WHY THIS TABLE EXISTS. WCAG SC 1.4.3's bar depends on the RENDERED size, and
+#: `s = scaleFor(w, h) = min(w/1920, h/1080)`, so a role declared at 20px renders
+#: at 11.25px in the 1080x1920 format that 6 of the 9 delivered graphs declare.
+#: Measured across the three delivered formats:
+#:
+#:     role/site      1920x1080     1080x1920     2560x1440     dark   light
+#:     inkFaint 20px  20.0  text    11.25 text    26.67 LARGE    2.83   2.16
+#:     inkFaint 22px  22.0  text    12.38 text    29.33 LARGE    2.83   2.16
+#:     accent 20px    20.0  text    11.25 text    26.67 LARGE   11.78   3.23
+#:     accent 78.9px  78.9 LARGE   44.4 LARGE    105.2 LARGE   11.78   3.23
+#:     positive 44px  44.0 LARGE    24.8 LARGE    58.7 LARGE   10.86   3.71
+#:
+#: `inkFaint` fails BOTH bars in BOTH themes — 2.83 and 2.16 are below 3.0 as well
+#: as below 4.5 — so no size argument rescues it. `positive` fails only in
+#: premium-light, and only against the text bar; at every format it renders LARGE,
+#: where the applicable bar is 3.0 and it passes at 3.71.
+CONTRAST_ROLES: dict[str, dict[str, object]] = {
+    'inkFaint': {'consumers': 'text', 'sites': 10,
+                 'sites_detail': 'ChartFrame.tsx:320,339,379; types.tsx:244,344,'
+                                 '350,429,499,523,530; DataColumns.tsx:244',
+                 'applicable_bar': WCAG_TEXT,
+                 'note': 'every measured consumer is a text label or a data '
+                         'number; none is a divider. The divider roles are '
+                         'grid/hairline/column and are not measured here.'},
+    'accent': {'consumers': 'text and marks', 'sites': 8, 'text_sites': 3,
+               'sites_detail': 'text: KpiHero.tsx:84,118 and Chart.tsx:196; '
+                               'marks: KpiHero.tsx:169, BrowserStack.tsx:87,117, '
+                               'DataColumns.tsx:140,234',
+               'applicable_bar': WCAG_LARGE,
+               'note': 'the three text sites are 20px, 34px and 78.88px; at '
+                       's=1.0 the eyebrow is 20px regular, which is NOT large '
+                       'text under SC 1.4.3, so it is the 4.5:1 text bar that '
+                       'applies to it.'},
+    'positive': {'consumers': 'text', 'sites': 2,
+                 'sites_detail': 'KpiHero.tsx:139 (44px/700), types.tsx:593 (20px)',
+                 'applicable_bar': WCAG_LARGE,
+                 'note': 'both sites render LARGE at every delivered format, so '
+                         'the applicable bar is 3.0:1 and premium-light reads '
+                         'PASS at 3.71. Only the RankTable 20px site crosses '
+                         'into the text bar at s=0.5625.'},
+}
+
+
+def theme_contrast_rows() -> list[dict]:
+    """The 24 theme x background x role pairs, with the bar each one is held to.
+
+    Derived by CALLING `contrast_ratio`, and the same table is what
+    `rule_contrast` reports — one definition, so a guard cannot pass on a table
+    the rule does not use.
+    """
+    rows: list[dict] = []
     for theme, t in THEMES.items():
         for bgname in ('bg', 'bgAlt'):
             bgc = t[bgname]
-            for role in ('ink', 'inkMuted', 'inkFaint', 'accent', 'positive', 'negative'):
+            for role in ('ink', 'inkMuted', 'inkFaint', 'accent', 'positive',
+                         'negative'):
                 raw = t[role]
                 fg = composite(raw, bgc) if len(raw) == 4 else raw
-                r = contrast_ratio(fg, bgc)
-                rows.append((f'{theme}/{role} on {bgname}', r))
-    failing = [x for x in rows if x[1] < WCAG_TEXT]
-    worst = min(rows, key=lambda x: x[1])
-    out.append(Finding(
-        'contrast', FAIL if failing else PASS, len(failing),
-        f'{len(failing)} of {len(rows)} pairs below {WCAG_TEXT}:1; worst is '
-        f'{worst[0]} at {worst[1]:.2f}:1. Pairs: '
-        + ', '.join(f'{n}={r:.2f}' for n, r in sorted(rows, key=lambda x: x[1])[:8]),
-        extra={'pairs': [{'pair': n, 'ratio': round(r, 2)} for n, r in rows],
-               'failing': [n for n, r in failing]}))
-    return out
+                rows.append({'pair': f'{theme}/{role} on {bgname}',
+                             'role': role, 'theme': theme, 'background': bgname,
+                             'ratio': round(contrast_ratio(fg, bgc), 2),
+                             'rgb': list(fg)})
+    return rows
+
+
+def rule_contrast_frame(a: np.ndarray) -> Finding:
+    """Is THIS FRAME's type readable? UNAVAILABLE, and P22 measured why.
+
+    P22 put a real per-frame contrast rule on this path so the palette lookup
+    could stop gating it, and the instrument does not exist. Measured over the
+    333-frame corpus in `out/p13_probe`:
+
+      * every rendered pixel's contrast against its frame's own background is
+        1.026 at p1 and 1.046 at p50, and 97.8% of all pixels sit in [1.0, 1.5).
+        That is the backdrop RAMP, not type — `Backdrop` paints a radial
+        gradient between `backgroundAlt` and `background`, spread 6+6+8, and
+        `PALETTE_TOL` is 24, so a ramp pixel and an ink pixel are not separable
+        by a distance-to-background test.
+      * the naive rule — "FAIL if any pixel is below the 3:1 non-text bar" —
+        fires on 333 of 333 frames, with >=96% of pixels below 3:1 on every
+        one. It would be a SECOND permanently-red gate, the exact defect this
+        function exists to avoid.
+      * the population is not bimodal. Histogrammed over 531,100,800 pixels it
+        runs 1.0 -> 1.5 (97.765%), 1.5 -> 2.0 (0.882%), 2.0 -> 3.0 (0.095%),
+        3.0 -> 4.5 (0.056%), 4.5 -> 6.0 (0.044%), 6.0 -> 10.0 (0.104%),
+        10.0 -> 25.0 (1.054%). There is no valley between "the gridline this
+        design intends" and "the label a reader must be able to read", so no
+        cut point on this measure separates them. That is the same argument
+        `collision` rests on — the instrument would be fine, the JUDGEMENT is
+        missing — and it is why this is UNAVAILABLE rather than invented.
+
+    WHY A PIXEL RULE CANNOT ANSWER IT EVEN IN PRINCIPLE, which is the part
+    worth keeping. Contrast is a property of a (foreground, background) PAIR, and
+    a frame's pixels carry no foreground/background role. A glyph stem, a
+    hairline and the ramp are all "a pixel"; separating them needs the mark
+    layout from the chart options — the same missing input `overflow` names. The
+    question is therefore NOT UNVERIFIABLE, which would mean "the instrument ran
+    and could not decide": the instrument was never built, which is what
+    UNAVAILABLE means in this file's vocabulary (`unavailable_findings`).
+
+    WHAT WOULD MAKE IT AVAILABLE, so a future reader does not have to guess:
+    the renderer knows each role's rendered px (it is `size * scaleFor(...)`),
+    so a per-frame contrast rule that is actually decidable has to come from the
+    graph and the declared format, not from the pixels — which is a `--props`
+    question, and the shape `rule_graph_scene_renderable` already has.
+    """
+    theme, dist = detect_theme(a)
+    return Finding(
+        'contrast_frame', UNAVAILABLE, None,
+        f'no per-frame contrast instrument exists. Measured on this frame '
+        f'(theme {theme}, {dist:.0f} from its nearest declared background): a '
+        f'pixel-census rule cannot separate the backdrop ramp from type — '
+        f'97.8% of corpus pixels sit in contrast [1.0, 1.5) against the '
+        f'gradient Backdrop paints — so "any pixel below 3:1" fires on 333 of '
+        f'333 corpus frames and the population has no valley a cut could sit in. '
+        f'The theme-level table is reported separately as `theme_contrast`; it '
+        f'describes design/themes.ts, not this frame.',
+        trusted=False,
+        extra={'theme': theme, 'distance_to_declared_background': round(dist, 1)})
 
 
 def rule_black_frame(a: np.ndarray) -> Finding:
@@ -603,6 +777,24 @@ def rule_aspect(measured: tuple[int, int] | None, declared: tuple[int, int] | No
     return Finding('aspect', PASS if ok else FAIL, f'{mw}x{mh}',
                    f'measured {mw}x{mh}, declared {dw}x{dh}'
                    + ('' if ok else ' — the render is not the format the graph asked for'))
+
+
+#: The rules whose verdict describes an ARTEFACT, i.e. the ones a `--frame` run
+#: can legitimately FAIL. P22 added this because the separation between "a fact
+#: about the theme" and "a measurement of this frame" was, until then, implicit:
+#: `rule_contrast` took no frame and was emitted into a per-frame report anyway,
+#: so it was the one name in the tool whose FAIL could not be about the thing
+#: being judged.
+#:
+#: IT IS A SCOPE TABLE, NOT AN EXEMPTION LIST. Anything not named here is reported
+#: on every path, so adding a rule cannot silently drop it from the frame report;
+#: and `tests/test_p22_contrast_is_not_a_per_frame_gate.py` asserts this set
+#: equals the set of rules that actually take a frame, so a rule that stops
+#: reading frames fails the guard instead of inheriting an exemption.
+FRAME_SCOPED_RULES = frozenset({
+    'safe_area', 'clipping', 'font_size', 'black_frame', 'blur', 'aspect',
+    'contrast_frame', 'freeze', 'duplicate',
+})
 
 
 SCENE_SCHEMA_TS = ROOT / 'studio' / 'src' / 'schemas' / 'showcase-v1.ts'
@@ -902,8 +1094,13 @@ def run_on_frame(path: Path, declared_px: float | None = None,
         rule_black_frame(a),
         rule_blur(a),
         rule_aspect((im.width, im.height), declared_format),
+        # P22. `contrast` used to sit here, and it took no frame: the same 24-pair
+        # palette table was emitted for every artefact, so `--frame` could not
+        # exit 0. Its per-frame replacement reports UNAVAILABLE with the reason
+        # measured; the palette table is still reported, as `theme_contrast`, on
+        # the path that is about the theme.
+        rule_contrast_frame(a),
     ]
-    findings += rule_contrast()
     if props is not None:
         findings += rule_missing_asset(props)
         # Same graph, same question. `--frame --props` is how a frame is judged
@@ -986,12 +1183,18 @@ def self_test() -> int:
 
     # contrast: the 8 known failures must be found without any rendering
     cf = rule_contrast()
-    ck('contrast finds exactly 8 of 24 pairs below 4.5:1',
-       cf[0].value == 8 and len(cf[0].extra['pairs']) == 24,
-       f"found {cf[0].value} of {len(cf[0].extra['pairs'])}")
-    ck('contrast worst pair is premium-light/inkFaint on bg at 2.16',
+    ck('theme_contrast finds exactly 8 of 24 pairs below 4.5:1',
+       len(cf[0].extra['failing_text_bar']) == 8 and len(cf[0].extra['pairs']) == 24,
+       f"found {len(cf[0].extra['failing_text_bar'])} of "
+       f"{len(cf[0].extra['pairs'])}")
+    ck('theme_contrast worst pair is premium-light/inkFaint on bg at 2.16',
        min(cf[0].extra['pairs'], key=lambda p: p['ratio'])['ratio'] == 2.16,
        str(min(cf[0].extra['pairs'], key=lambda p: p['ratio'])))
+    # P22: the per-frame path reports UNAVAILABLE with a reason, not a FAIL.
+    cfr = rule_contrast_frame(interior)
+    ck('the per-frame contrast path reports UNAVAILABLE, never FAIL',
+       cfr.verdict == UNAVAILABLE and 'no per-frame contrast instrument' in cfr.detail,
+       cfr.verdict)
 
     # Laplacian matches the definition take_ranker uses
     ck('laplacian_variance of a flat frame is exactly 0',
@@ -1025,6 +1228,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument('--declared-px', type=float)
     ap.add_argument('--scale', type=float, default=1.0)
     ap.add_argument('--json', action='store_true')
+    ap.add_argument('--theme-contrast', action='store_true',
+                    help='report the palette contrast table and exit on its own '
+                         'verdict. P22: this used to be emitted per frame, which '
+                         'made every --frame run exit 1 for a constant.')
     args = ap.parse_args(argv)
 
     if args.self_test:
@@ -1074,6 +1281,36 @@ def main(argv: list[str] | None = None) -> int:
         # repair budget sized off that number over-counts by four.
         findings += unavailable_findings()
 
+    # P22 — THE ANSWER TO "how does the gate know this red is not about the frame".
+    #
+    # `theme_contrast` is measured on `design/themes.ts` and describes no artefact.
+    # Emitting it into a `--frame` report made every frame FAIL for a constant, so
+    # the gate was red 333 times for one fact and could not catch the 333th real
+    # defect behind it. It is therefore SEPARATED BY SCOPE, not exempted by name:
+    #
+    #   * on `--frame` and `--frame-pair` it is NOT in the report at all, so it
+    #     cannot contribute a FAIL to those exit codes. `theme-contrast` below
+    #     runs it explicitly, on its own exit code, when a human wants it.
+    #   * the exclusion is a property of the SCOPE, written once, so a new rule
+    #     cannot be silently exempted by adding its name to a list — anything
+    #     not in `FRAME_SCOPED_RULES` is reported on every path, and
+    #     `tests/test_p22_contrast_is_not_a_per_frame_gate.py` asserts the set is
+    #     exactly the rules that take a frame.
+    #
+    # So the gate does not need to "know the red is known": on the frame path the
+    # finding is not emitted, and the reason a fact exists without being a FAIL is
+    # that it is reported by the path whose subject it describes.
+    theme_findings: list[Finding] = []
+    if args.theme_contrast:
+        theme_findings += rule_contrast()
+    # Asking for the palette table alongside a frame is a legitimate thing to do
+    # — "show me both" — but the two have SEPARATE exit codes, and a combined
+    # invocation has to say which one it reports. It reports the FRAME's, because
+    # that is what a caller passing `--frame` is gating on: the theme verdict is
+    # printed and counted in the summary, and never folded into this exit code.
+    # Folding it in is the defect P22 removed.
+    theme_is_frame_scoped = bool(args.frame or args.frame_pair)
+
     if args.json:
         # Two ways this used to break a consumer, both now closed:
         #  - the summary line followed the array, so json.load() raised
@@ -1082,24 +1319,35 @@ def main(argv: list[str] | None = None) -> int:
         #    Windows, so the bytes were not valid UTF-8 and read_text('utf-8')
         #    died at the first non-ASCII char. JSON escapes to pure ASCII, so
         #    the byte stream no longer depends on the terminal's encoding.
-        sys.stdout.write(json.dumps([asdict(f) for f in findings], indent=1,
-                                    ensure_ascii=True))
+        payload = [asdict(f) for f in findings + theme_findings]
+        sys.stdout.write(json.dumps(payload, indent=1, ensure_ascii=True))
         sys.stdout.write('\n')
     else:
         for f in findings:
             print(f)
+        for f in theme_findings:
+            print(f)
     hard = [f for f in findings if f.verdict == FAIL]
     unver = [f for f in findings if f.verdict == UNVERIFIABLE]
     unavail = [f for f in findings if f.verdict == UNAVAILABLE]
+    theme_fail = [f for f in theme_findings if f.verdict == FAIL]
     # One number for two different states. "the instrument is absent" and "the
     # instrument ran and could not decide" are not the same claim, and a budget
     # sized off their sum is sizing off a category that does not exist.
+    counted = findings + theme_findings
+    theme_note = ''
+    if theme_findings and theme_is_frame_scoped:
+        theme_note = (f' (of which {len(theme_fail)} theme-level FAIL, NOT counted '
+                     f'in this exit code: it describes design/themes.ts, not the '
+                     f'frame)')
+    summary = (f'\n{len(findings)} findings'
+               + (f' + {len(theme_findings)} theme-level' if theme_findings else '')
+               + f': {len(hard)} FAIL, {len(unver)} UNVERIFIABLE, '
+                 f'{len(unavail)} UNAVAILABLE' + theme_note)
     if args.json:
-        print(f'\n{len(findings)} findings: {len(hard)} FAIL, '
-              f'{len(unver)} UNVERIFIABLE, {len(unavail)} UNAVAILABLE', file=sys.stderr)
+        print(summary, file=sys.stderr)
     else:
-        print(f'\n{len(findings)} findings: {len(hard)} FAIL, '
-              f'{len(unver)} UNVERIFIABLE, {len(unavail)} UNAVAILABLE')
+        print(summary)
     # FAIL exits 1 and UNVERIFIABLE exits 1 too. Only FAIL did before, so a run
     # that could not measure anything — including the missing-props case above —
     # returned 0, and `qa_report.py` and CI gate on exactly this number. The
@@ -1107,7 +1355,17 @@ def main(argv: list[str] | None = None) -> int:
     # code now agrees with that separation instead of collapsing it. UNAVAILABLE
     # stays 0: an instrument that was never built is not a failed measurement,
     # and four of them are announced on every props-only run by design.
-    return 1 if hard or unver else 0
+    #
+    # P22. `theme_fail` counts on its own exit code, and ONLY when
+    # `--theme-contrast` asked for the table. It is never added to `hard`,
+    # because a fact about `themes.ts` is not a measurement of an artefact, and
+    # adding it is what made `--frame` unable to pass while reading a clean
+    # frame. The table is reported only when explicitly requested, so the two
+    # questions cannot contaminate each other's exit code.
+    del counted
+    theme_blocked = bool(theme_fail) and args.theme_contrast \
+        and not theme_is_frame_scoped
+    return 1 if hard or unver or theme_blocked else 0
 
 
 if __name__ == '__main__':
