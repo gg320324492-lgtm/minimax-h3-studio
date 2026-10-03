@@ -1,7 +1,11 @@
 # P17 — Showcase Demo：能不能做出来，以及做出来会被什么拦住
 
 > 结论 **B**，含 **C** 的一半。下面每一个数字都是本次实测，不是引述。
-> 配套守卫：`tests/test_p17_showcase_demo_verdict.py`（16 项，本次新增）。
+> 配套守卫：`tests/test_p17_showcase_demo_verdict.py`（本次新增 16 项，现 **17 项**）。
+>
+> ⚠️ **2026-10-03 修订（P25 之后）**：第③条判定已被 P25（`ad23a6c`）改写，
+> 详见 **第 3.5 节**与 **第五节**。**第①、②条不变**（无 H3 渲染器、
+> premium 不可判定），它们没有被 P25 推翻。
 
 ---
 
@@ -16,6 +20,12 @@
 
 > **「如果有人今天就交付一份 demo，它会被什么判定拦住？」**
 > → **只有 H3 shot 那一条会拦住。其余全部拦不住。**
+
+**⚠️ 这一句在 2026-10-03 之后要加一个限定**：
+**H3 那一条现在不止"手动跑得到"，它已经接进了渲染路径**
+（`--gate-props`，默认关，见 3.5）——
+**但时长 / 分辨率 / 帧率 / "premium" 四条仍然一条都拦不住，
+逐帧那一层也仍然一条都拦不住。**
 
 ---
 
@@ -141,19 +151,23 @@ schema 侧也没有上限：`Scene.durationInFrames` 是
 （`test_p8_format_scale.py` 钉的是"模板**读** format 读得对不对"，
 **不是**"片子**有**没有这个 format"—— 两回事，前者已过，后者无人过。）
 
-### 3.2 实测：这道门**没有被任何生产路径调用**
+### 3.2 实测（**2026-10-03 前**）：这道门**没有被任何生产路径调用**
 
 工单问"如果有人今天交付会被什么拦住"。我把这个问题反过来做了一遍 ——
 **不是去读 `pipeline_manifest.yaml` 的 `enforced: false` 注释，
 而是把全仓扫了一遍并断言结果**：
 
 - 对 `tests/`、`out/`、`node_modules/` 之外的 `.py`/`.mjs`/`.sh`/`.json`/`.yaml`
-  扫 `visual_qa`��**生产代码里零调用点**。
+  扫 `visual_qa`——**生产代码里零调用点**。
 - **`studio/bin/render.mjs` —— 所有渲染必经的那个文件 —— 里没有任何 QA 调用。**
 
 `pipeline_manifest.yaml:198-204` 用仓库自己的话说：
 **「质量门禁（当前全部无自动执行 —— P0 接线）」/ `enforced: false`**，
 并把 `qa_report.py` 标为**「零调用方」**。实测与这句话一致。
+
+> ⚠️ **本小节的两条结论在 P25 之后都不再成立**，改写见 3.5。
+> 保留原文是为了让"它曾经成立过"这件事留在纸上 ——
+> 本项目记录的是**判断何时改变**，不是只记录最后的结论。
 
 ### 3.3 ⚠️ "premium product film"：**不可判定，不给它编指标**
 
@@ -186,6 +200,74 @@ P13 已实测「产物不可复现」，P24 进一步实测
 **同一次渲染的两次运行之间 801 帧里有 220 帧像素不同** ——
 **在一个不可复现的产物上，"premium" 更无从谈起。**
 
+### 3.5 ⚠️ 第③条判定已被 P25 改写（2026-10-03）
+
+**这一节是本次修订的核心。** P25（`ad23a6c`）把 3.2 断言为真的事实改掉了，
+所以第③条判定必须跟着改，**否则这份文档就在说一件不再为真的事**。
+
+**改后的第③条判定，一句话：**
+
+> **props 级门禁已可接进渲染路径（`--gate-props`，默认关闭）；
+> 逐帧门禁未接，且按现有仪器不应接。**
+> 时长 / 分辨率 / 帧率 / "premium" 四条**仍然一条都拦不住**，
+> 与 P25 之前完全一样。
+
+| 层 | P25 之前 | P25 之后 | 依据 |
+|---|---|---|---|
+| `graph_scene_renderable` / `missing_asset` | 手动跑才拦得住 | **渲染路径里能拦（默认关）** | `--gate-props` |
+| 时长 45–60s | 拦不住 | **仍拦不住** | 未测（`--props` 对 1s / 300s 均 EXIT=0，见 3.1） |
+| 分辨率 / 帧率 | 拦不住 | **仍拦不住** | 同上 |
+| "premium product film" | **不可判定** | **仍不可判定** | P25 未碰；第②条**不变** |
+| 逐帧层（黑帧 / 模糊 / 安全区 / 裁切） | 拦不住 | **仍拦不住，且接了会更糟** | 见下 |
+
+#### 3.5.1 为什么说"已接进渲染路径"
+
+P25 实测（同机同 commit，数字逐条列在 `docs/P25_QA_IN_RENDER_PATH.md`）：
+
+| 事件 | 实测 |
+|---|---|
+| 被拒图谱 + `--gate-props` | **0.41 s** 退出，非零，**一个 mp4 都不留** |
+| 正常图谱 + `--gate-props` | **0.20 s**（渲染的 **1%**），随后 exit 0、mp4 产出 |
+| 关掉 flag（默认路径） | 行为与 P25 之前完全一致 |
+
+**⚠️ 默认关，这是一个必须一起记下的事实。**
+`--props` 也吃非图谱的 timeline / report props，
+那类会被 `graph_scene_renderable` 报 UNVERIFIABLE 而非零退出（`6e86b46` 立的规矩），
+**默认开会让每一个非 showcase 渲染都红，红的原因与片子无关**。
+⇒ **"能接"和"默认开着"是两回事，本文档只认前者。**
+
+#### 3.5.2 为什么逐帧门禁"不应接"（这是钉住的裁定，不是"还没做"）
+
+| 事实 | 实测 |
+|---|---|
+| 全片 801 帧逐帧 `run_on_frame` | **801/801 帧退出码非零，能过的帧 0** |
+| 这些红里有多少来自这次渲染 | **0 条**。801 `aspect` + 801 `font_size` UNVERIFIABLE 是**调用方没传 `--props` / `--declared-px`**；P25 实测补上两个参数后**同一帧 exit 0** |
+| 50 `black_frame` / 60 `blur` FAIL | 集中在 scene 之间的**纯色过渡帧**；`black_frame` 阈值窗口只有 **0.000762** 宽，**分不出"刻意的转场空帧"和"渲染卡死的空帧"** |
+| 成本 | **21.5–21.8 min / 次**，整片渲染 19.6–22.5 s ⇒ **57–69 倍** |
+| 瓶颈 | **不是解码**（全片解码 1.324 s），是 `rule_black_frame` 的 `np.unique`（1.18 s / 帧） |
+
+**⇒ 接了 = 每一次渲染都红，红的原因 100% 来自仪器没建、0% 来自片子。**
+**这正是 P22 修掉的"永久红的闸"，只是入口从 `--frame` 换成了 `render.mjs`。**
+
+**⚠️ 什么情况下这条判定要重新裁定**（写明，以免它变成一条
+"永不失效因此毫无意义"的守卫）：
+成本出在 `rule_black_frame` 里那个**精确计数 `distinct_colours`** 上，
+**不在任何一条判定上**。
+等哪天把它从"精确计数"改成"超过 N 就是 flat"，
+逐帧闸的成本会掉一个数量级 —— **那时以 P25 的这份实测为依据重新裁定。**
+
+#### 3.5.3 这一条改写**没有**推翻什么
+
+- **第①条（H3 cinematic shot 不能有）不变** —— P25 一行没改
+  `FinanceShowcaseWide.tsx`，也没给 `video` / `data-plane-3d` 注册渲染器。
+- **第②条（"premium" 不可判定）不变** —— P25 没有为它编任何指标。
+- **3.1（`--props` 对 1s / 300s / 640×480@24 全 EXIT=0）不变** ——
+  这是**本次未重测**的，来自 P17 原测；P25 只改了渲染路径的接线，
+  没有改 `visual_qa.py`（sha256 一字未变，见 `docs/P25_QA_IN_RENDER_PATH.md` 第 5 节）。
+- **`pipeline_manifest.yaml` 的 `enforced: false` 仍然成立**，
+  它指的是 `qa_report.py` / `check_contract.py` 那两个**零调用方**的工具，
+  不是 props 闸；守卫 `test_the_manifest_says_the_gates_are_not_enforced` 仍在跑、仍绿。
+
 ---
 
 ## 四、裁定
@@ -197,8 +279,15 @@ P13 已实测「产物不可复现」，P24 进一步实测
 | 16:9 / 1920×1080 / 60fps | ✅ **已达** | 实测两份图谱均 1920×1080@60 |
 | 45–60s | ⚠️ **可建但差 12.5s**，且无判据 | 实测 32.5s 最长；45.0s 图谱实测 EXIT=0；schema 无上限 |
 | **1–3 个 H3 cinematic shot** | ❌ **不能建（硬缺口）** | 实测无 H3 渲染器；两 generative 类型实测 EXIT=1 / "not implemented in P4" |
-| **"明显达到 premium product film"** | 🚫 **不可判定** | 无判据、无仪器、无正负类；**未编造指标** |
-| （隐含）**判据存在** | ❌ **不存在** | 实测 `--props` 对 1s/300s/640×480@24 均 EXIT=0；`render.mjs` 零 QA 调用 |
+| **"明显达到 premium product film"** | 🚫 **不可判定** | 无判据、无仪器、无正负类；**未编造指标**（P25 未推翻） |
+| （隐含）**判据存在** | ❌ **不存在** | 实测 `--props` 对 1s/300s/640×480@24 均 EXIT=0；**⚠️ P25 已把这一格的"零调用"改掉**：props 闸现接在渲染路径上（默认关），但**时长/规格/premium 三条依然一条都拦不住** |
+| （P25 新增）**props 门禁接线** | ✅ **已接**（默认关） | `--gate-props`，红 0.41 s / 绿 0.20 s，被拒图谱不留 mp4（3.5.1） |
+| （P25 新增）**逐帧门禁** | 🚫 **不应接** | 801/801 帧全红且红不来自渲染；21.5–21.8 min = 渲染的 57–69×（3.5.2） |
+
+**⚠️ 裁定仍然是 B，理由没有被 P25 削弱。**
+P25 让 H3 那一条从"手动跑才拦得住"变成"渲染路径里拦得住（默认关）"，
+**它没有让 P17 变得可建**：H3 渲染器仍然不存在，
+而时长 / 规格 / premium 三条的"拦不住"与 P17 实测时**逐字相同**。
 
 **选 B 而不是 C 的理由**：C 会说"时长可建，H3 不可建，拆开做"。
 但**时长那一条的"可建"是有条件的** ——
@@ -211,10 +300,13 @@ P13 已实测「产物不可复现」，P24 进一步实测
 
 **前置（P0，缺了后面都白做）：**
 
-1. **接线**：`render.mjs`（或 `render_with_remotion.py`）在渲染后调用
-   `visual_qa.py --props`，**并 gate 在退出码上**。
-   —— 这是本次实测的最大单点缺口：**门是好的，只是没人叫它。**
-   （`pipeline_manifest.yaml:198` 已标 `P0 接线`。）
+1. ~~**接线**：`render.mjs` 在渲染后调用 `visual_qa.py --props`，
+   **并 gate 在退出码上**。~~ ✅ **P25 已完成**（`--gate-props`，默认关）。
+   —— 原判据里"渲染**后**"这一处**没有照做，也不需要照做**：
+   P25 接在 bundle **之前**，于是"QA 红了片子已经产出"这个问题不存在了
+   （被拒的图谱一个 mp4 都不留）。
+   **仍未做、仍是缺口的**是 3.1 那三格：**时长 / 分辨率 / 帧率仍然无判据**。
+   （`pipeline_manifest.yaml:198` 当年标的 `P0 接线` 已由 P25 结清。）
 2. **时长/规格判据**：为「45–60s / 1920×1080@60」写**带阈值**的规则。
    这一条**可以有阈值**（与 premium 不同）：45–60s 是计���里写死的数字，
    `durationInFrames` 又有 `minimum: 1` 的现成下界语境，
@@ -244,7 +336,7 @@ P13 已实测「产物不可复现」，P24 进一步实测
 
 ## 五、守卫：真的跑了，并断言了判定
 
-`tests/test_p17_showcase_demo_verdict.py`，**16 项，本次新增**。
+`tests/test_p17_showcase_demo_verdict.py`，**原 16 项，现 17 项**（P25 后新增 1 项）。
 
 **没有一条断言"源码里有 `premium`"或"某个数字出现了"。**
 每一条能力断言都走 `vqa.main(argv)`，读**返回值**和**打印的报告**。
@@ -262,11 +354,34 @@ tests/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_m
 tests/test_p17_showcase_demo_verdict.py::test_a_one_second_film_passes_the_graph_gate
 tests/test_p17_showcase_demo_verdict.py::test_a_five_minute_film_passes_the_graph_gate
 tests/test_p17_showcase_demo_verdict.py::test_a_640x480_at_24fps_film_passes_the_graph_gate
-tests/test_p17_showcase_demo_verdict.py::test_no_production_script_invokes_a_showcase_qa_gate
-tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_no_qa_gate
 ```
-**⇒ ���不住的（实测 EXIT==0 / 零调用点）** —— 这几条是**钉住"什么都拦不住"这个事实**，
-正是工单要求的那个答案。
+**⇒ 拦不住的（实测 EXIT==0）** —— 这几条是**钉住"时长 / 规格 / premium 拦不住"这个事实**，
+正是工单要求的那个答案。**P25 没有推翻它们，也没有碰它们。**
+
+### 5.1.1 ⚠️ 2026-10-03：两条守卫被**重写**，不是被删掉
+
+```
+tests/test_p17_showcase_demo_verdict.py::test_the_only_production_caller_of_the_showcase_gate_is_the_render_path
+tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+```
+**它们原来断言的是相反的事**（生产路径零调用点 / `render.mjs` 零 QA 调用），
+P25 把那两个事实改掉了，它们因此转红 —— **那是正确的行为**。
+按 P14 的先例**就地改写**，不改写成"什么都行"：
+
+| 原断言 | 现断言 |
+|---|---|
+| `unexpected == []`（零调用方） | `production_callers == ['studio/bin/render.mjs']` —— **恰好一个，且只能是渲染路径** |
+| `QA_NAME.findall(code) == []` | `QA_NAME.findall(code) == ['visual_qa']` **且**闸命令里带 `--props` **且**闸被真的 `spawn` 了 |
+
+**第三条新守卫**：
+
+```
+tests/test_p17_showcase_demo_verdict.py::test_the_frame_gate_is_not_wired_and_must_not_be
+```
+**⇒ 钉住"逐帧门禁不应接"这个裁定**，而不是让它作为一条没人注意的空白留着
+（理由见 3.5.2：801/801 全红且红不来自渲染；成本 57–69 倍）。
+它带**校准**：一条合不上的 sweep 会永远报零，所以测试里断言
+"一段真实的整片帧闸代码能被这套标记认出来"。
 
 ### 5.2 变异（每条都先 assert 变异落地，再跑 pytest）
 
@@ -344,6 +459,66 @@ e426a88febd9dd5ee6138381c2638f0f94b2abaea83678e42efcf845e1a36ed4  studio/src/tem
 fd7e6927b8af11ecc4aabc7b412ac5a73cc0dac74007a0c6593efe5206140d21  pipeline_manifest.yaml
 ```
 
+### 5.3 变异（2026-10-03，为 5.1.1 那三条新判定而做）
+
+**协议同 5.2：先 `MUTATION LANDED = True` + sha 读回，再读 pytest。**
+
+| # | 变异 | 落地证明 | 期望 | 结果 |
+|---|---|---|---|---|
+| **M1** | 移除 props 闸接线：`if (argv.includes('--gate-props'))` → `if (false)`，且闸命令里的 `--props` → `--nope` | `LANDED=True`，`120b11da…` → `fe0ad9f9…` | 红 | ✅ **被杀**，1 项（**且这一项是本项目被骗九次里最典型的一种**） |
+| **M2** | 把整片逐帧闸**接上**（新增 `--frame-gate`：ffmpeg 解码成帧 → 逐帧 `visual_qa.py --frame` → 非零即 `exit 1`），并登记进 `BOOL_FLAGS` | `LANDED=True`，`120b11da…` → `50610508…` | 红 | ✅ **被杀**，2 项 |
+
+**M1 的原始 `-rf` 输出**
+```
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+1 failed, 16 passed in 6.93s
+```
+```
+E       AssertionError: the command render.mjs builds no longer runs the gate on the props
+E       path. `--props` occurring elsewhere in the file does not count — it is also an
+E       argument of the spawn. The props path is the only one that can judge a scene
+E       graph before any pixels exist; without it the file carries a name and no decision.
+E       assert False
+E        +  where False = _gate_command_judges_the_props("...
+tests\test_p17_showcase_demo_verdict.py:620: AssertionError
+```
+
+**M2 的原始 `-rf` 输出**
+```
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_frame_gate_is_not_wired_and_must_not_be
+2 failed, 15 passed in 6.85s
+```
+```
+E       AssertionError: a whole-film frame gate is now WIRED into a production path: studio/bin/render.mjs
+E       Measured on the delivered 801-frame render, all 801 frames exit non-zero and none
+E       of those reds come from the render (801 aspect + 801 font_size UNVERIFIABLE for want
+E       of --props/--declared-px), and the cost is 21.5-21.8 min against a 19.6-22.5 s render.
+E       If that has changed, re-measure before unpinning this.
+E       assert ['studio/bin/render.mjs'] == []
+E         Left contains one more item: 'studio/bin/render.mjs'
+E         Use -v to get more diff
+tests\test_p17_showcase_demo_verdict.py:694: AssertionError
+```
+
+**⚠️ M1 为什么值得单独记：** **它第一次跑时是绿的。**
+第一版重写只问"`render.mjs` 里有没有 `visual_qa` 和 `--props`"，于是
+- 死掉的 `if (false) { … }` 块**仍然在文件里**，
+- `--props` **仍然**作为 `spawnSync` 的实参出现在那一块里，
+- 于是"命名即通过"的守卫在**接线已经被拆掉**的情况下报了绿。
+
+加上 `const runGates =` 之后**它仍然是绿的** ——
+直到断言改成**闸命令本身**（`GATE_COMMAND` 捕获那个模板字符串）才被杀。
+**⇒ 文本共现不是守卫；被判定的必须是那个被构造出来、并且被执行的东西。**
+这与 P25 的 M3（"名字在、标记在、stdout 里 QA GATE 也在"，
+文本断言全绿、被真跑一次杀掉）是同一个失败形状的第二次出现。
+
+**⚠️ M2 的红在一处别的地方**：它同时触发了
+`test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment`，
+红在 `FRAME_PATH` 那条断言上（`render.mjs` 出现了 `--frame`）。
+**承重的是 `test_the_frame_gate_is_not_wired_and_must_not_be`** ——
+它红在 `offenders == []`，即"逐帧闸被接上了"这个判定本身。
+
 ---
 
 ## 六、本项的失误（如实记录）
@@ -372,14 +547,53 @@ fd7e6927b8af11ecc4aabc7b412ac5a73cc0dac74007a0c6593efe5206140d21  pipeline_manif
    `definitions`）、以及一个指向不存在目录的占位 fixture。
    都在首次运行时暴露并已修。
 
+### 6.1 2026-10-03（P25 之后改写第③条时）的失误
+
+5. **⚠️ 第一版重写的守卫在 M1 下是绿的 —— 而 M1 正是"拆掉接线"那条变异。**
+   详见 5.3：**死掉的 `if (false)` 块仍在文件里，`--props` 仍是它的 spawn 实参**，
+   于是"名字共现"的守卫在接线已被拆掉时报了绿。**我第一次读到 `17 passed`
+   时以为 M1 被杀错了人，又回去重跑才确认它本来就该绿。**
+   这条与 P25 的 M3 是同一个失败形状的第二次出现。
+   修法是把断言从"两个词在文件里"改成"**闸命令里带 `--props` 且闸被执行**"。
+
+6. **帧闸 sweep 的第一版校准样本漏了解码那一步**，
+   于是 `decode` 标记匹配不上校准样本，测试第一次跑就是红的。
+   **是校准自己抓住了不一致**，不是测试主体的断言。
+   ⇒ 已把校准样本补成一段真实的整片帧闸（ffmpeg → 逐帧 `--frame` → 非零即退）。
+
+7. **文本通道在本次编辑里造出 4 处 U+FFFD**（中文被通道弄坏）。
+   全部定位并修复 —— **本文件开工前已有 5 处 U+FFFD（P17 原始那次编辑留下的），
+   本次未扩大它们，也未新增**，下面的计数写的是**收尾实测值**，
+   而非"全部为 0"（`docs/P25_QA_IN_RENDER_PATH.md` 修过一轮全仓 FFFD，
+   `docs/P17_SHOWCASE_DEMO.md` 的这 5 处不在那一轮的文件清单里）。
+
 ---
 
 ## 七、测试数字
 
 | | 结果 |
 |---|---|
-| **改动前基线**（实测） | `478 passed, 3 skipped in 207.63s` |
-| **改动后**（实测） | **`494 passed, 3 skipped in 201.06s`，退出码 0** |
+| **P17 原始基线**（实测） | `478 passed, 3 skipped in 207.63s` |
+| **P17 改动后**（实测） | `494 passed, 3 skipped in 201.06s`，退出码 0 |
+| **P25 改动后**（P25 实测，无并发改动） | `2 failed, 500 passed, 3 skipped in 270.78s` —— 那 2 红就是本文件 5.1.1 那两条 |
+| **本次改写后**（实测，无并发改动） | **`503 passed, 3 skipped in 273.56s`，退出码 0** |
+
+**500 + 2 = 502 ⇒ 503**：P25 交付时那 2 红由本文件 5.1.1 的两条重写守卫接住
+（不是删掉它们换来的绿），**另加 1 项是本次新增的**
+`test_the_frame_gate_is_not_wired_and_must_not_be`。
+
+**⚠️ 一条必须写下来的测量事故**：本次**第一次**跑全量套件报了
+`3 failed, 500 passed, 3 skipped`，红的 3 项全在 `test_visual_qa.py`，
+而我**一个字没改过那个文件**。
+原因是我给 pytest 进程设了 `PYTHONIOENCODING=utf-8`：
+它被继承到 `test_visual_qa.py` 派生的 `visual_qa.py` 子进程，
+子进程于是按 UTF-8 输出，而那个测试自己按 **GBK** 解码子进程输出
+（`UnicodeDecodeError: 'gbk' codec can't decode byte 0x94`）。
+**⇒ 那 3 红是我的环境变量造成的，不是回归。**
+判据：`test_visual_qa.py` 单独跑（38 passed, 3 skipped），
+用**标准跑法**重跑全量 = 503 passed / exit 0。
+**记在这里是因为本项目已经作废过一次被自己的变异污染的套件数字**，
+这一次差点又作废一次 —— **区别是这次作废的是一次，而不是一次结论。**
 
 478 + 16 = 494，**与新增的 16 项守卫逐项吻合**，无回归。
 
@@ -393,12 +607,22 @@ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
 
 ## 八、改动文件清单
 
+**P17 原始交付：**
+
 | 文件 | 性质 |
 |---|---|
 | `tests/test_p17_showcase_demo_verdict.py` | **新增**，16 项守卫 |
 | `docs/P17_SHOWCASE_DEMO.md` | **新增**，本文件 |
 
-**未改动任何生产代码。** 未实现 H3 渲染器，未改
-`FinanceShowcaseWide.tsx` 的 `resolved.map`，未改 `GENERATIVE_SCENE_TYPES`，
-未渲染任何成片（`render.mjs:83` 的 46 GB TEMP 记录未去触碰），
-未动 P19–P24 的成果，未改账本。
+**2026-10-03 第③条改写（P25 之后）：**
+
+| 文件 | 性质 |
+|---|---|
+| `tests/test_p17_showcase_demo_verdict.py` | **改写两条 + 新增一条**（16 → 17 项）；未删任何一条 |
+| `docs/P17_SHOWCASE_DEMO.md` | 改写第 3.2 / 3.5 / 四 / 五 节 |
+
+**本次改写未改动任何生产代码。** 未动 `visual_qa.py`、
+未动 `frame_baseline.py`、**未动 `render.mjs` 的接线**（M1/M2 只在变异窗口内改过，
+复原后 sha256 与 `ad23a6c` 一致）、未动 `render.mjs` 的清理逻辑（`:95-108`）、
+未实现 H3 渲染器，未改 `FinanceShowcaseWide.tsx` 的 `resolved.map`，
+未改 `GENERATIVE_SCENE_TYPES`，未渲染任何成片，未动 P19–P25 的任何成果，未改账本。
