@@ -515,9 +515,112 @@ tests\test_p17_showcase_demo_verdict.py:694: AssertionError
 
 **⚠️ M2 的红在一处别的地方**：它同时触发了
 `test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment`，
-红在 `FRAME_PATH` 那条断言上（`render.mjs` 出现了 `--frame`）。
+红在 `FRAME_PATH` 那条断言上（`render.mjs 出现了 --frame`）。
 **承重的是 `test_the_frame_gate_is_not_wired_and_must_not_be`** ——
 它红在 `offenders == []`，即"逐帧闸被接上了"这个判定本身。
+
+### 5.4 ⚠️ 一个**真漏洞**，以及为什么它不能靠再加一条正则修掉
+
+**这是指挥窗口在复验时注入并实测存活的：**
+
+```
+注入: 把 render.mjs 第 160 行的
+  const gate = spawnSync(pyArgs[0], [...pyArgs.slice(1), qaScript,
+改写成
+  if (false) { const gate = spawnSync(pyArgs[0], [...pyArgs.slice(1), qaScript,
+结果: 17 passed（存活）
+```
+
+**根因（本项自己也写错过一次的那个洞的下一层）**：5.3 那条守卫里的
+`RUN_GATES` / `_gate_command_judges_the_props` / `LIVE_GATE`
+**全是正则匹配文本**，而 `if (false) { … spawnSync(…) }` 在文本上
+三者**全部满足**：它定义了就 spawn 了，只是被死代码包住。
+
+**⇒ 死代码在文本上和活代码没有区别。再加一条正则只会把洞换一层。**
+本文件的 docstring 早就写着「a command that is built and never executed is
+not a gate」——**现在要判的是"被构建了、在死代码里执行"**。
+
+**修法不是正则，是一个动态观测**：`tests/_p17b_reach.mjs`。
+
+```
+它做的事：把 render.mjs 自己的顶层代码放进一个 vm 沙箱跑一遍，
+        spawnSync 换成记录器，fs 和 Remotion 渲染器换成桩，
+        然后报告它**实际上**有没有 spawn 过闸。
+        ESM 的 import 改写成 require 打到桩上；
+        import.meta 和 await 各做一次机械替换（await 全部在闸之后）。
+        任何没配桩的 import 会直接抛错，而不是安静地回答"不可达"。
+```
+
+| 形态 | 观测结果 |
+|---|---|
+| 真实接线 | `qaSpawnCount: 1`，argv 里带 `--props` |
+| 不传 `--gate-props` | `qaSpawnCount: 0`（P25 的"默认关"也成了被观测的事实） |
+| **spawn 被 `if (false) { }` 包住** | **`qaSpawnCount: 0`** |
+
+**为什么是动态的**：死代码**spawn 不出任何东西**。
+这条性质与源码长什么样无关，所以"再加一种写法"骗不过它。
+
+**为什么不用 Node 自己的 parser**：Node 不在没有 acorn 的情况下把
+parser 暴露给用户代码，而本仓库没有、也不该为了一个测试去依赖 acorn。
+**⇒ 记录在案，不要重试。**
+
+**⚠️ 两次失败的做法也记录在案**（都在探测器的注释里）：
+① 先写了一个**手写词法分析器**放在 Python 测试里 —— 它吞掉了每一个模板字面量
+及其之后的全部内容，而且**丢掉了 `runGates()` 那唯一一次真实调用**
+（它在 `${…}` 洞里）；② 先写了个**"死分支正则"** ——
+先撞上 `render.mjs` 里 `if (0)` 那行**在注释里**，
+改完之后又因为**先删后并**把行结构粘在一起，让一句英文读成了 `import p from ...`，
+最后干脆把注释里的 `import` 单词也扫了进来。
+**三条都记下来了，因为"再加一条正则"正是这个坑的形状本身。**
+
+### 5.5 新判据的两条变异（证明它不是空转）
+
+| # | 变异 | 落地证明 | 期望 | 结果 |
+|---|---|---|---|---|
+| **M3** | **指挥窗口那个变异**：spawn 被移进 `if (false) { … }`（补一个 `let gate = {status:0…}` 让文件仍可解析） | `LANDED=True`，`120b11da…` → `97ede5e3…` | 红 | ✅ **被杀**，2 项 |
+| **M5** | **真调用被移除**：spawn 整段改名成 `Object.assign({status:0…}, {…})`，**`runGates` / `--props` / `QA GATE` / `spawnSync` 这个词全部留下** | `LANDED=True`，`120b11da…` → `edcd2900…`；`node --check` 通过 | 红 | ✅ **被杀**，2 项 |
+
+**M3 的原始 `-rf` 输出**
+```
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_probe_observes_the_real_render_path
+2 failed, 18 passed in 27.04s
+```
+```
+E       AssertionError: render.mjs ran its own top-level code with --gate-props on its command
+E       line and spawned no QA gate. The gate is defined, the command is built, the spawn is
+E       spelled out — and it does not run. That is what dead code looks like, and no amount of
+E       text matching can see it (measured: wrapping the spawn in `if (false) { ... }` was green
+E       on every text-based version of this assertion).
+E       assert 0 >= 1
+tests\test_p17_showcase_demo_verdict.py:732: AssertionError
+```
+
+**M5 的原始 `-rf` 输出**
+```
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_probe_observes_the_real_render_path
+2 failed, 18 passed in 26.83s
+```
+```
+E               AssertionError: with --gate-props on the command line, render.mjs spawned no QA
+E               gate: []
+E               assert 0 >= 1
+tests\test_p17_showcase_demo_verdict.py:795: AssertionError
+```
+
+**M5 这条尤其关键**：它把 `spawnSync` 这个**词**留在 import 里、
+留在注释里，`runGates`、`--props`、`QA GATE` 一个不少 ——
+**所有基于文本的断言全部照常通过**，而闸实际上已经不再跑了。
+**新判据红在 `assert 0 >= 1`（一个数上），不是红在任何文本匹配上。**
+
+**⚠️ 一条变异"存活"及其判定**（按规矩记，不造 contrived 输入去杀它）：
+**M4** —— 只把 `console.log(\`… ${runGates()}\`)` 里的那次 `runGates()` 调用去掉，
+**整个文件 20 passed**。
+**判定：无毒变异。** 它并没有删掉闸，只是让工具**不再打印**闸命令；
+闸在下一行照常 spawn。**这条守卫守的是"闸跑没跑"，不是"某处有没有出现
+`runGates` 这个名字"** —— 这正是它该有的性质。
+M5 才是"真调用被移除"，它被杀。
 
 ---
 
@@ -567,6 +670,42 @@ tests\test_p17_showcase_demo_verdict.py:694: AssertionError
    而非"全部为 0"（`docs/P25_QA_IN_RENDER_PATH.md` 修过一轮全仓 FFFD，
    `docs/P17_SHOWCASE_DEMO.md` 的这 5 处不在那一轮的文件清单里）。
 
+### 6.2 2026-10-03 修那个真漏洞时的失误
+
+8. **⚠️ 我先试了两个错的东西当"修法"，都不该那么写。**
+   ① **手写 JS 词法分析器**（放在 Python 测试里）：它吞掉了每一个模板字面量
+   及其之后的全部内容，**并且丢掉了 `runGates()` 那唯一一次真实调用**
+   ——那一次调用在 `` `${runGates()}` `` 的洞里，而我为了不让 `}` 破坏
+   花括号配平**把模板文本全涂白了**，于是洞里的代码也没了。
+   ② **"断言文件里不出现 `if (false)`"**：这条**在干净文件上就是错的** ——
+   实测 `render.mjs` 的**注释里**就有一行 `if (0)`，第一版标记把它数成了死分支。
+   ⇒ 两者都已删除，换成 `tests/_p17b_reach.mjs` 的**动态观测**。
+   **写下来是因为它们正是"再加一条正则"这个动作的两种形状。**
+
+9. **探测器自己也错了六次**，全部记在 `tests/_p17b_reach.mjs` 的注释里，
+   其中两次值得在这里点出来：
+   - **`String.replace` 的回调拿到的是 `(match, p1…pn, offset, whole)`，
+     没有 groups 数组。** 我把整个 `match` 当 groups 传进去，
+     于是"模块 id"读成了 `p` —— 看起来像 import 匹配写错了，
+     实际是回调参数用错了。**连续两次卡在这里。**
+   - **`spawnSync(cmd, [...spread], opts)` 到达记录器时，`args[1]` 是一个数组**。
+     我用 `String()` 把它拍平成一个逗号串，于是 `includes('--props')`
+     在**干净文件上**返回 false —— **探测器一度在正确的代码上报"闸没有传
+     `--props`"**。**一个只会说"否"的探测器比没有更坏**，这条与 5.4 里
+     "探测不了不许读成不可达"是同一条规矩。
+
+10. **⚠️ 我用 Python 打补丁把 `tests/test_p17_showcase_demo_verdict.py`
+    整个文件变成了 CRLF（1101 个 CR，HEAD 是 0）。**
+    `p.write_text()` 在 Windows 上默认翻转行尾，而我没有显式 `newline=''`。
+    **P23 栽在 `grep -c` 上、P22 栽在 Edit 上，这次栽在我自己的脚本上。**
+    收尾用**字节计数**核对（不是 `grep`）：`CR=0 / LF=1101`，已修回 LF。
+    **⚠️ 而且它是在全量套件跑完之后才发现的** —— 也就是说那次
+    `506 passed` 是在一个 CRLF 文件上跑出来的。修完 LF 后**重跑了全量**，
+    数字见下。
+
+11. **M4 存活，我判定它无毒，没有为了杀它造 contrived 输入。**
+    理由写在 5.5：它删的是"打印"，不是"闸"。
+
 ---
 
 ## 七、测试数字
@@ -576,11 +715,19 @@ tests\test_p17_showcase_demo_verdict.py:694: AssertionError
 | **P17 原始基线**（实测） | `478 passed, 3 skipped in 207.63s` |
 | **P17 改动后**（实测） | `494 passed, 3 skipped in 201.06s`，退出码 0 |
 | **P25 改动后**（P25 实测，无并发改动） | `2 failed, 500 passed, 3 skipped in 270.78s` —— 那 2 红就是本文件 5.1.1 那两条 |
-| **本次改写后**（实测，无并发改动） | **`503 passed, 3 skipped in 273.56s`，退出码 0** |
+| **第③条改写后**（实测，无并发改动） | `503 passed, 3 skipped in 273.56s`，退出码 0 |
+| **修掉那个真漏洞后**（实测，无并发改动，**LF 修回之后重跑**） | **`506 passed, 3 skipped in 294.50s`，退出码 0** |
 
 **500 + 2 = 502 ⇒ 503**：P25 交付时那 2 红由本文件 5.1.1 的两条重写守卫接住
-（不是删掉它们换来的绿），**另加 1 项是本次新增的**
+（不是删掉它们换来的绿），**另加 1 项是新增的**
 `test_the_frame_gate_is_not_wired_and_must_not_be`。
+
+**503 + 3 = 506**：新增的三项是
+`test_the_probe_observes_the_real_render_path`、
+`test_the_gate_is_dead_code_when_it_is_never_executed`、
+`test_the_gate_can_be_proved_live_by_running_it_and_the_p17_guards_say_so`。
+
+**`test_p17_showcase_demo_verdict.py` 单独跑：20 passed**（16 → 17 → 20）。
 
 **⚠️ 一条必须写下来的测量事故**：本次**第一次**跑全量套件报了
 `3 failed, 500 passed, 3 skipped`，红的 3 项全在 `test_visual_qa.py`，
@@ -620,6 +767,14 @@ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
 |---|---|
 | `tests/test_p17_showcase_demo_verdict.py` | **改写两条 + 新增一条**（16 → 17 项）；未删任何一条 |
 | `docs/P17_SHOWCASE_DEMO.md` | 改写第 3.2 / 3.5 / 四 / 五 节 |
+
+**2026-10-03 修 5.4 那个真漏洞：**
+
+| 文件 | 性质 |
+|---|---|
+| `tests/test_p17_showcase_demo_verdict.py` | **再新增两项**（17 → 20 项）；第②条重写的守卫加了动态可达性断言；未删、未放松任何一条 |
+| `tests/_p17b_reach.mjs` | **新增**：把 render.mjs 自己的顶层代码跑一遍并观测闸有没有被 spawn 的探测器 |
+| `docs/P17_SHOWCASE_DEMO.md` | 新增第 5.4 / 5.5 / 6.2 节，改写第七节数字 |
 
 **本次改写未改动任何生产代码。** 未动 `visual_qa.py`、
 未动 `frame_baseline.py`、**未动 `render.mjs` 的接线**（M1/M2 只在变异窗口内改过，
