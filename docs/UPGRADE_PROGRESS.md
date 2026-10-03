@@ -448,7 +448,7 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 17.1 | 16:9 / 1920×1080 / 60fps / 45–60s 商业级 demo | ⬜ | 含 1–3 个 H3 cinematic shot |
+| 17.1 | 16:9 / 1920×1080 / 60fps / 45–60s 商业级 demo | ⬜ |**裁定 B：现在做不出来**（时长那半边可建，见下）。**硬缺口：没有 H3 渲染器** —— 渲染树里 `H3`/`h3_` 只有两处命中，**一处是注释**（`showcase-v1.ts:86`）、**一处是模板标题字符串**（`Phase0Probe.tsx:33`）；`video` 与 `data-plane-3d` 都在 9 个「无渲染器」类型里 → 落 `MissingScene`；**运行时确认：四个 `video` 场景的图谱给出 `graph_scene_renderable FAIL`、退出 1。** **⇒ 若 P17 要「含 1–3 个 H3 cinematic shot」，那将是第一批渲染成 "not implemented in P4" 的内容。** 另：**「明显达到 premium product film」被记为不可判定** —— 无仪器、无语料、无正类；**比 `collision`/`flicker`/`contrast_frame` 更彻底**（那三个至少还有不分离/不双峰的总体可测）。**没有为它编造任何指标。** |
 
 ---
 
@@ -653,6 +653,46 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 ⑤ 守卫要跑 11 分钟 → 降到一个**已断言的 85 次测量采样**（约 50 秒），全量数字单独测。
 
 **⇒ P18 的五项未决至此全部处理完毕**（1 已由 P19 修、2 由 P22 拆、3 由 P21 修、4 由 P23 处理、5 由本项关闭）。
+
+---
+
+## P17 — Showcase Demo：做不出来，且**做出来了也没有东西拦它**　状态：⬜（裁定 B）
+
+记录 `docs/P17_SHOWCASE_DEMO.md`，守卫 `tests/test_p17_showcase_demo_verdict.py`（16 条）。全量 478→**494 passed, 3 skipped**。**未渲染任何成片，未改任何生产代码。**
+
+### 规格逐条（指挥窗口实测 + 执行 agent 复核）
+
+| 要求 | 现状 |
+|---|---|
+| 16:9 / 1920×1080 / 60fps | **已达标**（两份已交付图谱都是 1080p@60） |
+| 45–60s | **最长的 `charts_demo` 是 32.5s**，离下限差 12.5 秒（schema 无时长上限，**45s 的图谱能写出来**） |
+| **1–3 个 H3 cinematic shot** | **硬缺口：没有 H3 渲染器** |
+| 「明显达到 premium product film」 | **无任何可测量判据** |
+
+### 真正致命的那条：**没有任何东西拦得住一份 demo**
+
+实测（不是引述）：**`--props` 对 1.0s 的片子、300.0s 的片子、以及 640×480@24 都退出 0**；**没有任何生产路径调用 `visual_qa`**；**`render.mjs` —— 每一次渲染都必经的那个文件 —— 不含任何 QA 调用**。
+
+**⇒ 「一份 45s、1080p60 的 demo 今天就能写出来，但无法被察觉。**`pipeline_manifest.yaml:198-204` 本来就写着「质量门禁（当前全部无自动执行）」/`enforced: false`。
+
+**执行 agent 选 B 而不是 C 的理由值得记**：「一份 45 秒的 demo 在没有任何验收标准的情况下交付，**那是一个文件，不是 P17 的一半**」——**时长的缺口可补，验收的缺口补不了。**
+
+**⇒ P18 提的 per-job 基线（已由 P24 建）恰好能解这一条**：**基线不需要"正确的阈值"，只需要"上一次是什么样"**，而 P24 实测**判定可复现 1356/1356 = 100%**。
+
+### ⚠️ 执行 agent 收窄了自己的一个主张（这一点比结论更值得记）
+
+它最初写「没有任何东西在拦」，随后**主动收窄**：`ceo_mindread_ep01` / `third_lantern` 的 `qa_final.py` **确实**被它们自己的 `run_post_chain.sh:133` 调用。**⇒ 它的断言被改成可验证的那部分**：**没有任何东西运行那套能审判 showcase 图谱的门禁。**
+
+**指挥窗口独立复核**：`qa_final.py` 有**三个副本，全在其他管线的目录里**（`ceo_mindread_ep01` / `piyao_2026` / `third_lantern`），调用方是它们自己的 `render_with_remotion.py` 与 `run_post_chain.sh` —— **没有一条路径能审判 showcase 图谱。收窄后的主张成立。**
+
+### 执行 agent 自报的两条失误（都是本项目记录在案的形状）
+
+① **它的第一版守卫数到了一条注释** —— `render.mjs:141` 的注释里写着 `qa_final.py`，于是它被算成了一个调用点。**这与本项目已付过钱的 `Unknown flag` 缺陷同一形状**。它自己发现并收窄了主张；
+② **第一次全仓扫描漏了 `out/`** —— **Windows 路径分隔符不匹配 `startswith('out/')`**，**这让一个 30fps 的探针一度被读成 65s 的片子**。**指挥窗口实测的真值：最长 32.5s @60fps。**
+
+**四条变异全部杀掉**（每条都在跑 pytest 前先在文件里确认落地、事后按 sha256 复原），**红都落在 `assert 'PASS' == 'FAIL'` —— 判定本身。**
+
+**未动**：`FinanceShowcaseWide.tsx` 的 `resolved.map` 那一行（P15 记录的「`generative` 差一行就能到达每个组件」—— **它确认那条线索至今未修**，并按工单要求没碰）；`GENERATIVE_SCENE_TYPES`；P19–P24 的成果。
 
    **分布已随 P21/P22 变为 4/3/2/3**（见下两节）。
 
