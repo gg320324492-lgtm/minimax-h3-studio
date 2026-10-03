@@ -133,14 +133,19 @@ def test_setting_a_threshold_requires_editing_this_file():
     )
 
 
-def test_the_other_three_rules_keep_their_original_reasons():
-    """Only collision's reason changed.
+def test_the_other_rules_keep_their_original_reasons():
+    """overflow and broken_font keep their reasons; flicker moved in P23.
 
-    Guarding against a well-meaning edit that rewrites all four and loses the
-    detail that made them un-fakeable.
+    Only `collision` and `flicker` were rewritten, each by a work order that
+    measured why, and each under its own behavioural guard. This file pins
+    the other two, whose reasons still stand. flicker used to appear here as
+    ('flicker', 'time-series') -- a substring check on prose that pinned a
+    sentence which P23 measured to be FALSE (the corpus does provide a
+    sequence). Pinning a false sentence is worse than pinning none, so it was
+    removed rather than re-worded; tests/test_p23_flicker_stays_unavailable
+    .py now guards that rule behaviourally.
     """
     for rule, needle in (('overflow', 'three attempts failed'),
-                         ('flicker', 'time-series'),
                          ('broken_font', 'font-file')):
         detail = vqa.UNIMPLEMENTED[rule]
         assert needle in detail, f'{rule} reason was rewritten: {detail!r}'

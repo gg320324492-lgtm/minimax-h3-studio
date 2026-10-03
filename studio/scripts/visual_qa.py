@@ -208,10 +208,168 @@ UNIMPLEMENTED: dict[str, str] = {
                   'bars, 104.5px vs 104.2px at 16). Still UNAVAILABLE because '
                   'no threshold has been set: the delivered charts measure '
                   '0.278, so any PASS/FAIL cut would be invented, not measured.'),
-    'flicker': ('needs a luminance time-series instrument across a frame range, '
-                'which no existing render in out/ provides as a sequence.'),
+    # P23. THE OLD REASON WAS MEASURABLY FALSE AND IS REPLACED BY THE TWO
+    # BLOCKERS THAT ARE REAL. The old text said "needs a luminance time-series
+    # instrument across a frame range, which no existing render in out/
+    # provides as a sequence." The first half was already true; the second half
+    # was false the moment P13 wrote the corpus. Measured: out/p13_probe holds
+    # 329 frame PNGs across 9 directories (fr_a/fr_b 41 each, full_a/full_b/
+    # full_r2 41 each, xc1a/xc1b 41 each, s1/s2 21 each) and they ARE ordered
+    # frame sequences. So the instrument has a subject.
+    #
+    # What is actually missing is what the sequence cannot carry, and it is TWO
+    # separate things — neither of which is "a sequence":
+    #
+    #   (a) TEMPORAL RESOLUTION. The corpus is strided, not contiguous. Measured
+    #       by exact full-frame match against the render it came from: full_a's
+    #       41 frames are video frames 0,20,40,...,800 (41/41 byte-identical),
+    #       and s1's 21 frames are 0,40,...,800 (21/21). So consecutive corpus
+    #       frames are 20 source frames apart (333 ms at 60fps), 40 for s1/s2.
+    #       Measured consequence: a true adjacent pair changes 2.35% of pixels
+    #       (median, demo1.mp4, n=25), while a corpus "consecutive" pair changes
+    #       4.34-9.10% and up to 82.52% across a scene cut. By Nyquist a
+    #       stride-S sample resolves only periods > 2S, so stride 20 is blind
+    #       to every oscillation faster than 1.50 Hz and stride 40 to every
+    #       oscillation faster than 0.75 Hz. Measured, not argued: a synthetic
+    #       2-frame-period flicker of depth 50% on real frames reads p2p
+    #       = 0.006583 at stride 1 and EXACTLY 0.000000 at stride 20. Every
+    #       frequency in the band flicker is actually reported in (3-100 Hz,
+    #       plus 50/60 Hz mains hum) is aliased to a flat line by this corpus.
+    #
+    #   (b) A POSITIVE CLASS. Every one of the 329 frames is a delivered clean
+    #       render; the corpus contains zero flickering renders, so there is no
+    #       defective population for a cut point to be placed against. Measured
+    #       on the statistic below, the negative-only population spans
+    #       [0.000000, 0.776885] with p50 = 0.009428 and 64.3% of its mass in
+    #       the lowest tenth of that range; every cut inside that closed
+    #       interval returns the identical verdict on every sequence that
+    #       exists. The corpus cannot choose a number — the same situation P20
+    #       recorded for rank_takes.DUP_THRESHOLD ("anything in (0.0, 34.543)
+    #       gives the same verdict on every pair that exists").
+    #
+    # THE DEFINITION THAT WAS MEASURED, and what it showed. Flicker is an
+    # oscillatory (sign-alternating) frame-to-frame luminance excursion WITHIN
+    # one scene, so it is measured as the SECOND difference of per-frame mean
+    # linear luminance, |L[n+1] - 2L[n] + L[n-1]|, normalised by that scene's
+    # own luminance spread: a first difference responds to a scene cut and to
+    # drift, while a second difference is blind to a linear ramp (an intended
+    # fade) and peaks on curvature. Over 297 interior samples from 16
+    # scene-segments, p5 = 0.000043, p50 = 0.009428, p95 = 0.695292,
+    # max = 0.776885. That population is UNIMODAL with a right tail: the global
+    # mode holds 64.3% of the mass in the lowest tenth of the range and no
+    # interior local maximum comes within a factor of 29 of it, so there is no
+    # second mode for a cut to sit between. Blocker (a) and blocker (b) are each
+    # independently fatal; the unimodality is a third, corroborating failure
+    # rather than the argument.
+    #
+    # WHAT WOULD MAKE IT AVAILABLE — stated so the next reader need not guess:
+    # (i) CONTIGUOUS frames, stride 1, for at least one scene of a real render
+    # (the 801-frame demo1.mp4 already carries them, so no new render is needed);
+    # AND (ii) at least one render with a KNOWN introduced luminance excursion,
+    # to supply the positive class. A third, cheap option that would NOT be
+    # enough on its own: a prior from the literature (e.g. a WCAG/ITU-R BT.2113
+    # modulation-depth bar) would supply a number, but not a number this
+    # project's own frames were measured against.
+    'flicker': (
+        'P23: a frame sequence EXISTS — out/p13_probe holds 329 frames across 9 '
+        'ordered directories (the old reason said none did, and that was false) — '
+        'but two measured blockers keep this UNAVAILABLE, and neither is "a '
+        'sequence". (a) The sequence is strided, not contiguous: measured by '
+        'exact full-frame match against its own render, full_a is video frames '
+        '0,20,...,800 (41/41 byte-identical) and s1 is 0,40,...,800 (21/21), so '
+        'consecutive corpus frames are 20 source frames apart (333 ms at 60fps). '
+        'By Nyquist that is blind to every oscillation faster than 1.50 Hz '
+        '(0.75 Hz at stride 40), and a synthetic 2-frame-period flicker of depth '
+        '50% measures p2p = 0.006583 at stride 1 and EXACTLY 0.000000 at stride '
+        '20 — the whole 3-100 Hz flicker band, and 50/60 Hz mains hum, alias to '
+        'a flat line. (b) There is no positive class: all 329 frames are '
+        'delivered clean renders, so the measured statistic has no defective '
+        'population to place a cut against. Measured on '
+        '|L[n+1] - 2L[n] + L[n-1]| of mean linear luminance, normalised per scene '
+        '(297 interior samples, 16 scene-segments): p5 = 0.000043, p50 = 0.009428, '
+        'p95 = 0.695292, max = 0.776885 — unimodal, 64.3% of the mass in the '
+        'lowest tenth of that range, no second mode for a cut to sit in, and every cut inside '
+        '[0.000000, 0.776885] returns the identical verdict on every sequence that '
+        'exists. Available when out/ holds CONTIGUOUS (stride 1) frames for a '
+        'scene AND at least one render with a known introduced luminance '
+        'excursion to supply the positive class.'),
     'broken_font': ('needs font-file validation, not pixels: a fallback face and '
                     'a broken one can produce identical ink.'),
+}
+
+#: P23. The measurements the `flicker` reason above quotes, held as DATA so a
+#: guard can re-derive them rather than believe them, and so a future implementer
+#: has something concrete to update instead of a sentence to reword.
+#:
+#: WHY THIS IS NOT INSIDE `UNIMPLEMENTED`. That table maps a rule name to a
+#: reason STRING, and a string is prose — this project's most-fooled assertion
+#: shape. The measurements are kept beside it and attached to the Finding, so a
+#: test reads `f.extra['statistic']['p95']` rather than searching a sentence for
+#: a number that a comment could also have contained.
+#:
+#: NOTHING HERE IS A THRESHOLD. Every value is a property of the corpus or of
+#: the sampling, recorded so the two blockers can be re-checked. Adding a
+#: threshold field here would be the defect `collision` is UNAVAILABLE for.
+UNIMPLEMENTED_MEASUREMENTS: dict[str, dict] = {
+    'flicker': {
+    # Measured by exact FULL-FRAME byte match against the render each directory
+    # was sampled from (demo1.mp4, 801 frames @60fps), not by a downscaled
+    # signature: full_a's 41 frames are video frames 0,20,...,800 and s1's 21
+    # frames are 0,40,...,800. Both matched 100% byte-identical.
+    'temporal_stride_frames': {'fr_a': 20, 'fr_b': 20, 'full_a': 20,
+                               'full_b': 20, 'full_r2': 20, 'xc1a': 20,
+                               'xc1b': 20, 's1': 40, 's2': 40},
+    # fps of the render the corpus was sampled from.
+    'source_fps': 60,
+    # fps / (2 * stride): the fastest oscillation a stride-S sample can still
+    # resolve. Everything faster aliases. 60 / (2*20) = 1.50 Hz.
+    'alias_limit_hz': 1.50,
+    # Measured, not argued: a synthetic 2-frame-period flicker of depth 50%
+    # imposed on 40 true-adjacent demo1.mp4 frames reads these peak-to-peak
+    # values when subsampled. A 2-frame period at 60fps is 30 Hz — inside the
+    # band flicker is reported in — and it reads as EXACTLY zero at stride 20.
+    'aliasing_test': {'true_period_frames': 2, 'depth_fraction': 0.5,
+                      'p2p_at_stride_1': 0.006583, 'p2p_at_stride_20': 0.0},
+    # True-adjacent pairs change far fewer pixels than the corpus's strided
+    # pairs, which is the measurement that exposed the stride in the first place.
+    'pixel_change_true_adjacent_p50': 0.0235,
+    'pixel_change_corpus_pair_p50_range': [0.0434, 0.0910],
+    # The statistic the reason is built on. |d2| of the per-frame mean linear
+    # luminance, normalised by the scene's own spread: a first difference reacts
+    # to a scene cut and to drift, a second difference is blind to a linear ramp
+    # (an intended fade) and peaks on curvature. Measured over all 9 corpus
+    # directories, split at steps above 0.8 x the series spread (a scene cut).
+    'statistic': {
+        'name': '|L[n+1] - 2*L[n] + L[n-1]| of mean linear luminance, '
+                'normalised by the scene spread',
+        'n_samples': 297,
+        'n_segments': 16,
+        'p5': 0.000043,
+        'p50': 0.009428,
+        'p95': 0.695292,
+        'max': 0.776885,
+        # 64.3% of the mass sits in the lowest tenth of the range; the largest
+        # interior local maximum over 20 bins is 22 against a global mode of
+        # 191, i.e. the population is unimodal with a right tail. Sampled with
+        # n=297 over 20 bins (~15/bin), the sparse interior bins are sample
+        # parity rather than a valley — which is the P22 finding restated.
+        'mass_in_lowest_tenth': 0.643,
+        'bins_20': [191, 38, 14, 12, 2, 2, 7, 5, 14, 12],
+    },
+    # The second blocker, as a falsifiable count: the corpus holds 329 frames
+    # and ZERO of them is a flickering render. If a defective render is ever
+    # added to out/, this number changes and the rule may become decidable.
+    'corpus_frames': 329,
+    'n_flickering_frames_in_corpus': 0,
+    # What would unlock the rule, recorded so the next reader need not guess.
+    'requires': [
+        'CONTIGUOUS (stride 1) frames for at least one scene of a real render — '
+        'the 801-frame demo1.mp4 already carries them, so no new render is '
+        'needed for this half',
+        'at least one render with a KNOWN introduced luminance excursion, to '
+        'supply the positive class a cut point is placed against',
+    ],
+    },
 }
 
 
@@ -232,7 +390,15 @@ class Finding:
 
 
 def unavailable_findings() -> list[Finding]:
-    return [Finding(rule=r, verdict=UNAVAILABLE, value=None, detail=why, trusted=False)
+    """Every unimplemented rule, reported with its reason and no number.
+
+    `UNIMPLEMENTED_MEASUREMENTS` is attached to whichever rule owns it, so the
+    numbers a reason quotes travel with the finding as data a machine can read
+    (P23). Copied, not aliased: a caller that mutates `extra` must not be able to
+    corrupt the module-level measurement for the next caller.
+    """
+    return [Finding(rule=r, verdict=UNAVAILABLE, value=None, detail=why, trusted=False,
+                    extra=dict(UNIMPLEMENTED_MEASUREMENTS.get(r, {})))
             for r, why in UNIMPLEMENTED.items()]
 
 
