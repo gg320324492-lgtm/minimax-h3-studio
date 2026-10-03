@@ -323,7 +323,7 @@ implementation: the diff that moves a rule must touch the guard too.
 4. **`flicker` is a Motion rule that does not exist** (§2.2). If Motion is ever
    to be a real layer, this is the rule it is missing.
 5. **The master plan's "四层" row is now written down** and its distribution is
-   3/3/2/2. That row may deserve updating to match.
+   3/3/2/2 as measured at P18. Two of its three open items have since been closed and the distribution has moved twice: P21 added a rule that examines the deliverable (4/3/2/2), and P22 split contrast so the palette lookup no longer gates any frame and added an UNAVAILABLE per-frame rule in its place (4/3/2/3). Item 3 below is therefore closed; item 1 (per-job baseline) and item 4 (flicker) are not.
 
 ---
 
