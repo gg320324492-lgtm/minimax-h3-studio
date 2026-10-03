@@ -93,7 +93,8 @@ def report() -> dict:
 # ---------------------------------------------------------------------------
 
 PINNED_LAYERS: dict[str, list[str]] = {
-    'Technical': ['black_frame', 'aspect', 'missing_asset'],
+    'Technical': ['black_frame', 'aspect', 'missing_asset',
+                  'graph_scene_renderable'],
     'Layout': ['safe_area', 'clipping', 'font_size'],
     'Motion': ['freeze', 'duplicate'],
     'Visual': ['blur', 'contrast'],
@@ -113,8 +114,19 @@ UNTOUCHED: dict[str, str] = {
     # it has to be a separate act and this is it. It changed nothing about the
     # layer partition, which is what the rest of this file pins: `duplicate`
     # stays in Motion, and `PINNED_LAYERS` is unchanged.
+    #
+    # UPDATED BY P21, also deliberately and also out loud. P21 added a rule —
+    # `graph_scene_renderable` — which is new decision logic on this file by any
+    # reading, so the "P18 changed no rule's decision logic" invariant does not
+    # hold across it and the pin is updated in the same commit rather than
+    # deleted. What P21 did NOT do is change any EXISTING rule's decision:
+    # `missing_asset` keeps its four hardcoded paths (its docstring gained a
+    # record of what was measured and rejected), and every other rule is
+    # byte-identical. P21 also ADDED a rule to the partition, which is why
+    # `PINNED_LAYERS` above grows by one entry and why `docs/P18_QA_LAYERS.md`'s
+    # 3/3/2/2 headline becomes 4/3/2/2.
     'studio/scripts/visual_qa.py':
-        '6e842072159e0d5d21614e63733ccff90547e3471c545fb89a84e8542dcc7311',
+        '03a3f8c070f8e76250b24a4bf88a39869538865f8249ba73418f509f49eb6e42',
     'studio/scripts/qa_report.py':
         '9e7e4725fcfcbe201caa14cdfe8f5cb6ea4a51bf3ea3b6bfe831b99c79b41f38',
 }
