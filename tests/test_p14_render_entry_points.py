@@ -295,6 +295,13 @@ def test_every_known_flag_still_renders(scratch_env: dict[str, str]) -> None:
         'pixelfmt': 'yuv420p',
         'imageformat': 'jpeg',
         'colorspace': 'bt709',
+        # P25 added --py alongside the --gate-props wiring: it selects the
+        # interpreter the QA gate runs under, and it is the reason that flag is
+        # not optional in practice. `--py python` is the value that works
+        # WITHOUT the gate (the gate is off by default), so this run exercises
+        # the flag's own parsing rather than the gate it configures —
+        # `tests/test_p25_qa_in_render_path.py` covers the two together.
+        'py': 'python',
     }
     missing = [f for f in known if f not in ('comp', 'props', 'out') and f not in values]
     assert not missing, (
