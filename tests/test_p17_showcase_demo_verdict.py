@@ -119,6 +119,9 @@ sys.path.insert(0, str(SCRIPT.parent))
 import visual_qa as vqa  # noqa: E402
 
 EXAMPLES = ROOT / 'pipeline' / 'examples'
+#: The delivered graph, named once so the witness test and every other
+#: "is the deliverable present?" check cannot drift apart.
+DEMO = EXAMPLES / 'showcase_demo.json'
 TEMPLATE = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase'
 RENDER_MJS = ROOT / 'studio' / 'bin' / 'render.mjs'
 
@@ -419,19 +422,12 @@ GATE_COMMAND = re.compile(r'const\s+runGates\s*=\s*\(\)\s*=>\s*`([^`]*)`')
 
 #: A gate that is actually EXECUTED. `runGates()` and the arguments handed to
 #: `spawnSync` are what separate a gate from a string naming one.
+#:
+#: ⚠️ THIS IS NOT SUFFICIENT, and it is kept only so the mutation that proved it
+#: so has something to be measured against. `if (false) { … spawnSync(…) }`
+#: satisfies it — dead code is the same text as live code. Reachability is
+#: decided dynamically, by `_observe_gate_reach` below.
 LIVE_GATE = re.compile(r'runGates\s*\(\)|spawnSync\s*\(')
-
-
-def _gate_command_judges_the_props(code: str) -> bool:
-    """Does the command render.mjs BUILDS run the gate on the props path?
-
-    Shape-independent enough to survive a rename of the helper variable, tight
-    enough that a gate switched off leaves nothing to find: if `runGates` is gone
-    there is no command, and if its literal no longer carries `--props` the
-    command it builds is not the props gate.
-    """
-    m = GATE_COMMAND.search(code)
-    return bool(m) and '--props' in m.group(1)
 
 #: A production file that wires the FRAME gate looks like: it decodes the film to
 #: frames and hands them to `visual_qa.py --frame`. Requiring the spawn, the
@@ -473,6 +469,105 @@ def _strip_comments(text: str, suffix: str) -> str:
     elif suffix in {'.sh', '.yaml', '.yml'}:
         text = re.sub(r'(?m)^\s*#.*$', '', text)
     return text
+
+
+def _render_mjs_at_head() -> str | None:
+    """render.mjs as committed, or None outside a git checkout.
+
+    Used as the UNMUTATED reference by the dead-code regression test. Reading
+    the working tree there would make the test read a mutant as its own
+    baseline, which is how it failed for the wrong reason on its first run.
+    """
+    import subprocess
+    try:
+        proc = subprocess.run(
+            ['git', 'show', 'HEAD:studio/bin/render.mjs'], cwd=str(ROOT),
+            capture_output=True, text=True, encoding='utf-8',
+            errors='replace', timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return None
+    return proc.stdout
+
+
+def _gate_command_judges_the_props(source: str) -> bool:
+    """Does the command render.mjs BUILDS run the gate on the props path?
+
+    Shape-independent enough to survive a rename of the helper variable, tight
+    enough that a gate switched off leaves nothing to find: if `runGates` is gone
+    there is no command, and if its literal no longer carries `--props` the
+    command it builds is not the props gate.
+
+    It reads the RAW source, not a comment-stripped or blanked form: the command
+    is a template literal, and blanking template text — which a scanner must do
+    so a stray `}` cannot unbalance a brace walk — also hides the flag from the
+    search. Reading the raw file is also the more honest place to look: the
+    command is a STRING, and a string is not code.
+    """
+    m = GATE_COMMAND.search(source)
+    return bool(m) and '--props' in m.group(1)
+
+
+#: The observer. It has to be JavaScript, because the question is whether
+#: render.mjs's top-level code CALLS the gate, and the only honest way to answer
+#: that is to let it run and watch what it does.
+#:
+#: Two earlier attempts are recorded in that file's header and should not be
+#: retried: a hand-written lexer inside this file, which swallowed every template
+#: literal and everything after it (and lost the one real `runGates()` call,
+#: which lives inside a `${…}` hole); and Node's own parser, which Node does not
+#: expose to user code without acorn.
+REACH_PROBE = Path(__file__).resolve().parent / '_p17b_reach.mjs'
+
+#: Where `_observe_gate_reach` puts its mutated copies. E: is where the repo
+#: lives; the probe writes nothing of its own, but the temp copy must not land
+#: on C: and must not be mistaken for a deliverable.
+SCRATCH_ROOT = ROOT / 'out'
+SCRATCH_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+def _observe_gate_reach(*, flag: bool = True, source: str | None = None
+                         ) -> dict:
+    """Run render.mjs's own top-level code and report what it actually did.
+
+    `source` overrides the file's text, so a test can hand the observer a
+    mutated copy WITHOUT touching `studio/bin/render.mjs`. The copy runs exactly
+    as the real file would, with `spawnSync` replaced by a recorder and the
+    filesystem and the Remotion renderer stubbed.
+
+    Every failure mode returns `ok: False` with a reason, and every caller
+    treats that as a FAILURE. A probe that could not run must never be read as
+    "the gate is not reachable" — that would be the always-passes guard again,
+    one level up.
+    """
+    import json
+    import subprocess
+    import tempfile
+
+    with tempfile.TemporaryDirectory(dir=str(SCRATCH_ROOT)) as td:
+        target = Path(td) / 'render.mjs'
+        target.write_text(
+            source if source is not None
+            else RENDER_MJS.read_text(encoding='utf-8'),
+            encoding='utf-8')
+        args = ['node', str(REACH_PROBE), str(target)]
+        if not flag:
+            args.append('off')
+        proc = subprocess.run(args, capture_output=True, text=True,
+                              encoding='utf-8', errors='replace', timeout=120)
+
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return {'ok': False, 'qaSpawnCount': 0, 'passedProps': False,
+                'qaSpawnArgv': [],
+                'runError': (proc.stderr or proc.stdout
+                             or f'exit {proc.returncode}').strip()}
+    try:
+        observation = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        return {'ok': False, 'qaSpawnCount': 0, 'passedProps': False,
+                'qaSpawnArgv': [], 'runError': f'unparseable output: {exc}'}
+    return observation
 
 
 def test_the_comment_stripper_separates_a_call_from_a_mention():
@@ -603,15 +698,33 @@ def test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment():
     asserted here — that is decided by running the entry point and reading the
     exit code, in `tests/test_p25_qa_in_render_path.py`.
 
-    ⚠️ THE GUARD REACHES, it does not merely NAME. Two versions of this test
-    that asked only "does render.mjs mention `visual_qa` and `--props`?" were
-    MEASURED to survive removing the wiring outright: render.mjs keeps a
-    `qaScript` path constant, and `--props` also appears in the `spawnSync`
-    argument list of the dead block. So the assertion is about the gate COMMAND
-    (`_gate_command_judges_the_props`) and about it being EXECUTED, not about
-    two words appearing somewhere in the file.
+    ⚠️ THE GUARD REACHES, it does not merely NAME — and the second half of that is
+    a STRUCTURAL fact, not a text one. Three versions of this test were MEASURED
+    to be wrong in sequence, each caught by a mutation and each one a deeper
+    layer of the same hole:
+
+      v1  "does render.mjs mention `visual_qa`?"        — killed by a path
+          constant and by a dead block. Fixed with a CONJUNCTION.
+      v2  "does it mention `visual_qa` and `--props`?"   — killed by
+          `if (false) { … }`, because `--props` is also an argument of the
+          spawn inside the dead block. Fixed by asserting the gate COMMAND.
+      v3  "the command is built and `spawnSync` appears"  — ALSO killed by
+          `if (false) { const gate = spawnSync(…) }`. MEASURED 2026-10-03 by the
+          command window: dead code is TEXTUALLY IDENTICAL to live code, so no
+          further regex can close this. Fixed structurally, below.
+
+    The structural half: `_observe_gate_reach` RUNS render.mjs's own top-level
+    code — with `spawnSync` replaced by a recorder and the filesystem and the
+    Remotion renderer stubbed — and reports whether the gate was actually
+    spawned. Dead code cannot spawn anything, so no mutation of the "wrap the
+    spawn in `if (false)`" shape can survive it, whatever it looks like in the
+    source. `test_the_probe_observes_the_real_render_path` holds the probe
+    against the real file and requires two runs that DISAGREE, so it cannot be
+    a constant; `test_the_gate_is_dead_code_when_it_is_never_executed` holds it
+    against the mutation that defeated every text-based version.
     """
-    text = _strip_comments(RENDER_MJS.read_text(encoding='utf-8'), '.mjs')
+    raw = RENDER_MJS.read_text(encoding='utf-8')
+    text = _strip_comments(raw, '.mjs')
     hits = QA_NAME.findall(text)
     assert hits == ['visual_qa'], (
         f'render.mjs does not name exactly the showcase gate in code; found '
@@ -623,19 +736,199 @@ def test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment():
         'while its leftovers would otherwise keep a text-presence guard green '
         '(measured: an earlier version of this test was green under exactly '
         'that mutation, twice, before the command itself was checked).')
-    assert _gate_command_judges_the_props(text), (
+    assert _gate_command_judges_the_props(raw), (
         'the command render.mjs builds no longer runs the gate on the props '
         'path. `--props` occurring elsewhere in the file does not count — it is '
         'also an argument of the spawn. The props path is the only one that can '
         'judge a scene graph before any pixels exist; without it the file '
         'carries a name and no decision.')
-    assert LIVE_GATE.search(text), (
-        'render.mjs defines a gate runner but never SPAWNS it. A command that is '
-        'built and never executed is not a gate; the tool can report one while '
-        'the render path checks nothing.')
+
+    observation = _observe_gate_reach()
+    assert observation['ok'], (
+        'the reachability observation could not be completed: '
+        f'{observation.get("runError")!r}. A probe that cannot run says NOTHING '
+        'about the gate — it must not be read as unreachable and must not be '
+        'read as reachable.')
+    assert observation['qaSpawnCount'] >= 1, (
+        'render.mjs ran its own top-level code with --gate-props on its command '
+        'line and spawned no QA gate. The gate is defined, the command is built, '
+        'the spawn is spelled out — and it does not run. That is what dead code '
+        'looks like, and no amount of text matching can see it (measured: '
+        'wrapping the spawn in `if (false) { ... }` was green on every '
+        'text-based version of this assertion).')
+    assert observation['passedProps'], (
+        'the gate ran but not on the props path: '
+        f'{observation["qaSpawnArgv"]!r}. The props path is the only one that '
+        'can judge a scene graph before any pixels exist.')
+
     assert FRAME_PATH.search(text) is None, (
         'render.mjs names `--frame` in CODE. That is the per-frame gate entry '
         'point; P25 measured it and refused to wire it (see the next test).')
+
+
+def test_the_probe_observes_the_real_render_path():
+    """The probe is held to the file that is actually in the repository.
+
+    A probe that is only ever fed a sample it happens to handle is the exact
+    shape of the always-passes guard this file exists to prevent. So the real
+    render.mjs is observed twice, and the two runs must DISAGREE:
+
+      * with `--gate-props` on the command line, the gate must be spawned, and
+        with `--props` in its argv — that is the wiring this file asserts;
+      * with the flag absent, nothing must be spawned at all — that is P25's
+        "off by default", and it is what makes the first observation mean
+        something rather than being a constant that always says yes.
+
+    If both runs agree, the probe is not observing the flag and every conclusion
+    drawn from it is void. Stated here rather than assumed.
+    """
+    with_flag = _observe_gate_reach()
+    without = _observe_gate_reach(flag=False)
+
+    for label, observation in (('with --gate-props', with_flag),
+                               ('without the flag', without)):
+        assert observation['ok'], (
+            f'the probe could not observe render.mjs {label}: '
+            f'{observation.get("runError")!r}. An unrunnable probe says nothing '
+            'about the gate.')
+
+    assert with_flag['qaSpawnCount'] >= 1, (
+        'with --gate-props on the command line, render.mjs spawned no QA gate: '
+        f'{with_flag["qaSpawnArgv"]!r}')
+    assert with_flag['passedProps'], (
+        'the gate was spawned but not on the props path: '
+        f'{with_flag["qaSpawnArgv"]!r}')
+    assert without['qaSpawnCount'] == 0, (
+        'the gate ran WITHOUT --gate-props being asked for: '
+        f'{without["qaSpawnArgv"]!r}. P25 wired it off by default deliberately '
+        '(a timeline/report props file is not a scene graph and would red for a '
+        'reason unrelated to the film), and this is the observation that keeps '
+        'that a fact rather than a comment.')
+
+
+def test_the_gate_is_dead_code_when_it_is_never_executed():
+    """THE regression test for the hole the command window measured.
+
+    `if (false) { … spawnSync(…, qaScript, '--props', propsPath) … }` satisfies
+    every text-based version of the guard: the gate name is there, the command
+    is built, the spawn is spelled out, the file still parses. It is still not a
+    gate, and no regex can see the difference, because dead code and live code
+    are the same text.
+
+    So this mutates a COPY of render.mjs — never the file itself — and asserts
+    the probe says the gate is gone. The copy is written into the scratch
+    directory this file already uses and deleted in a `finally`.
+    """
+    original = RENDER_MJS.read_text(encoding='utf-8')
+    anchor = '  const gate = spawnSync(pyArgs[0], [...pyArgs.slice(1), qaScript,'
+    closing = '  });\n  if (gate.stdout) process.stdout.write(gate.stdout);'
+    # When the working tree is ITSELF under mutation this test would read the
+    # mutant rather than the real file, find no anchor, and fail for the wrong
+    # reason — measured: that is exactly what happened the first time, and the
+    # failure was an anchor miss, not a reachability finding. So the reference
+    # text is `git show HEAD:…` whenever this file is inside a repository,
+    # which is the state the shipped wiring is in.
+    reference = _render_mjs_at_head()
+    assert reference is not None, (
+        'no committed render.mjs to use as the unmutated reference; this test '
+        'cannot distinguish "the gate is dead" from "the file I read was '
+        'already a mutant"')
+    source = reference
+
+    assert source.count(anchor) == 1, (
+        f'the gate spawn anchor is not where this test expects it '
+        f'(found {source.count(anchor)}). Teach the test the new shape rather '
+        'than letting it mutate nothing — a mutation that does not land is the '
+        'failure mode this project has been bitten by seven times.')
+
+    dead = source.replace(
+        anchor,
+        '  let gate = {status: 0, stdout: \'\'};\n'
+        '  if (false) {\n'
+        '  gate = spawnSync(pyArgs[0], [...pyArgs.slice(1), qaScript,')
+    assert dead.count(closing) == 1, 'the gate call closing anchor moved'
+    dead = dead.replace(
+        closing, '  });\n  }\n  if (gate.stdout) process.stdout.write(gate.stdout);')
+
+    # sanity: the mutant must still be the same shape as the original in every
+    # way a TEXT guard can see, or this test would pass for the wrong reason
+    assert dead.count('visual_qa') == source.count('visual_qa')
+    assert '--props' in dead
+    assert 'runGates' in dead
+
+    mutant = _observe_gate_reach(source=dead)
+    assert mutant['ok'], (
+        f'the probe could not observe the mutant: {mutant.get("runError")!r}. '
+        'Without an observation this test proves nothing.')
+    assert mutant['qaSpawnCount'] == 0, (
+        'a gate wrapped in `if (false) { ... }` spawned anyway: '
+        f'{mutant["qaSpawnArgv"]!r}. The probe is not distinguishing dead code '
+        'from live code, so every claim this file makes about reachability is '
+        'void.')
+
+    # …and the unmodified text must still be seen as reaching it, so the
+    # assertion above is not satisfied by a probe that always says zero.
+    baseline = _observe_gate_reach(source=source)
+    assert baseline['ok'], (
+        f'the probe could not observe the unmutated file: '
+        f'{baseline.get("runError")!r}')
+    assert baseline['qaSpawnCount'] >= 1, (
+        f'the probe reports no gate on the UNMUTATED render.mjs '
+        f'({baseline["qaSpawnArgv"]!r}), so it cannot be used to report one on '
+        'a modified file either')
+
+
+
+def test_the_gate_can_be_proved_live_by_running_it_and_the_p17_guards_say_so():
+    """The structural claim has a behavioural witness, and they must agree.
+
+    Everything above reasons about source text. This runs the entry point and
+    reads its stdout and exit code, which no amount of source reasoning can
+    fake: if `runGates()` were unreachable, `QA GATE` could not appear and a
+    rejected graph could not exit non-zero with no mp4 written.
+
+    It is deliberately a WITNESS and not the primary guard. Running it costs a
+    bundle, which is why P25's file is the one that does that routinely; here it
+    exists so the reachability criterion has a second opinion that is not a
+    regex, and so a future edit that satisfies the scanner while breaking the
+    gate has somewhere to show up.
+
+    Skips when the deliverable graph is absent — a skip is stated, never a
+    silent pass.
+    """
+    if not DEMO.exists():
+        pytest.skip('pipeline/examples/showcase_demo.json absent; the '
+                    'behavioural witness cannot run')
+
+    import os
+    import shutil
+    import subprocess
+
+    scratch = ROOT / 'out' / 'p17b_witness_scratch'
+    if scratch.exists():
+        shutil.rmtree(scratch, ignore_errors=True)
+    scratch.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ, REMOTION_SCRATCH_DIR=str(scratch))
+    out = scratch / 'witness.mp4'
+    try:
+        r = subprocess.run(
+            ['node', str(RENDER_MJS), '--comp', 'FinanceShowcaseWide',
+             '--props', str(DEMO), '--out', str(out), '--gate-props'],
+            cwd=str(ROOT), env=env, capture_output=True, text=True,
+            encoding='utf-8', errors='replace', timeout=900)
+        combined = (r.stdout or '') + (r.stderr or '')
+        assert 'QA GATE' in combined, (
+            'the gate is declared reachable and the tool agrees it exists, but '
+            'running it printed nothing — the two witnesses disagree, and the '
+            f'structural one is wrong:\n{combined}')
+        assert r.returncode == 0, (
+            f'the delivered graph was rejected by the gate (exit {r.returncode}) '
+            f'so the gate is stricter than P25 measured:\n{combined}')
+        assert out.exists() and out.stat().st_size > 0, (
+            f'exit 0 but no mp4 at {out}; the witness is inconclusive:\n'
+            + combined)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def test_the_frame_gate_is_not_wired_and_must_not_be():
