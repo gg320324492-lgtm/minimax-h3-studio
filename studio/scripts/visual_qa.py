@@ -605,6 +605,172 @@ def rule_aspect(measured: tuple[int, int] | None, declared: tuple[int, int] | No
                    + ('' if ok else ' — the render is not the format the graph asked for'))
 
 
+SCENE_SCHEMA_TS = ROOT / 'studio' / 'src' / 'schemas' / 'showcase-v1.ts'
+SHOWCASE_TEMPLATE_TSX = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' \
+    / 'FinanceShowcaseWide.tsx'
+
+
+def declared_scene_types() -> set[str]:
+    """Every value `SceneType` declares, read from the zod enum.
+
+    Read as TEXT, and that is the one concession this rule makes, stated here
+    rather than hidden: the alternative is a node subprocess, and a guard that
+    cannot run without a node runtime cannot fail when node is missing. The
+    suite must stay runnable with nothing but pytest — the same reasoning
+    `tests/style_bible_consumption.py` gives for parsing `StyleBibleSchema` the
+    same way. What this file does NOT do is assert that a string appears in a
+    source file and call that a behaviour: the verdict below is reached by
+    running `main(argv)` and reading the report and the exit code.
+    """
+    try:
+        src = SCENE_SCHEMA_TS.read_text(encoding='utf-8')
+    except OSError as exc:  # pragma: no cover - the schema is not optional
+        raise ValueError(f'{SCENE_SCHEMA_TS} unreadable: {exc}') from exc
+    m = re.search(r'export const SceneType\s*=\s*z\.enum\(\[(.*?)\]\)', src, re.S)
+    if not m:
+        raise ValueError(
+            f'SceneType enum not found in {SCENE_SCHEMA_TS.name}. If the enum was '
+            'reshaped, teach this rule the new shape rather than reading the '
+            'failure as a schema problem — a rule that silently sees zero '
+            'declared types would report every graph as having unrendered scenes, '
+            'or none.'
+        )
+    body = re.sub(r'//[^\n]*', '', m.group(1))
+    return {x.strip().strip('\'"') for x in body.split(',') if x.strip()}
+
+
+def rendered_scene_types() -> set[str]:
+    """Every scene type `SCENE_RENDERERS` can actually draw.
+
+    The KEY is what matters and the value is not read: a type is "rendered"
+    exactly when the map names it, whatever component it routes to. Nine types
+    route to `ChartScene`, which dispatches on the graph's own `chart.type`, so
+    the value is a component name and says nothing about coverage.
+
+    A key absent from the map is not an error — it routes to `MissingScene`,
+    which renders the type's own name and the words "not implemented in P4".
+    That is the entire fact this rule reports, and it is read here rather than
+    inferred, because the fallback is three lines of JSX in the template and
+    the difference between "no renderer" and "a renderer that says it is
+    missing" is the difference between a blank frame and a labelled one.
+    """
+    try:
+        src = SHOWCASE_TEMPLATE_TSX.read_text(encoding='utf-8')
+    except OSError as exc:  # pragma: no cover - the template is not optional
+        raise ValueError(f'{SHOWCASE_TEMPLATE_TSX} unreadable: {exc} from') from exc
+    m = re.search(
+        r'const SCENE_RENDERERS: Record<string, React\.FC<\{scene: Scene\}>> = \{(.*?)\n\};',
+        src, re.S)
+    if not m:
+        raise ValueError(
+            f'SCENE_RENDERERS not found in {SHOWCASE_TEMPLATE_TSX.name}. Same rule '
+            'as above: teach this function the new shape. Returning an empty set '
+            'here would mark all 22 declared types unrendered and turn the gate '
+            'permanently red.'
+        )
+    keys: set[str] = set()
+    for line in m.group(1).split('\n'):
+        line = re.sub(r'//.*$', '', line).strip().rstrip(',')
+        if not line or ':' not in line:
+            continue
+        keys.add(line.split(':', 1)[0].strip().strip('\'"'))
+    return keys
+
+
+def rule_graph_scene_renderable(props: dict) -> Finding:
+    """Does every scene the graph asks for have a renderer? A lookup, no cut.
+
+    P21. The `--props` path had exactly one rule (`missing_asset`) and that rule
+    ignored its argument: poisoning all 49 strings of the delivered showcase
+    graph produced a byte-identical report and the same exit code (0), and so
+    did the clean graph. A path that cannot tell a right graph from a wrong one
+    is decoration that reports green.
+
+    THIS RULE IS THE PART OF THAT PATH WHICH HAS A MEASURED ANSWER.
+
+    `MissingScene` in `FinanceShowcaseWide.tsx:95` is the fallback for any scene
+    type the map does not name, and what it renders is the type's own name plus
+    the words "not implemented in P4". Measured over the two schema mirrors:
+    `SceneType` declares 22 values, `SCENE_RENDERERS` names 13, and the 9 in
+    between are `video`, `browser-window`, `stat-card`, `card-grid`,
+    `data-table`, `quote`, `data-plane-3d`, `logo`, `outro`.
+
+    WHY THAT IS A DEFECT AND NOT A TODO. The ledger's line for step 3.2 reads
+    "20 种 scene 类型注册" with the list of twenty spelled out beside it, struck
+    through as done. Sixteen of those twenty reach a real renderer today; the
+    ledger does not say so, and `visual_qa.py --props` exits 0 on a graph made
+    entirely of the four that do not. A schema that validates a scene type the
+    template cannot draw is the same defect class this file's header is about —
+    "a field the graph can set and that reports success anyway" — one level up,
+    and the level where it costs the viewer a whole film.
+
+    WHY THERE IS NO THRESHOLD, which is what makes this different from
+    `collision` (still UNAVAILABLE: the instrument is built, the judgement is
+    missing). Here there is no judgement to invent. The question is not "how
+    wrong is a gap" but "does this scene type have a renderer", and the answer
+    is read off the map the renderer dispatches on. One absence is one absent
+    component. A cut point here would be a number about nothing.
+
+    WHAT IT IS DELIBERATELY NOT. It does not claim a gap is a BUG in the
+    graph — nine types are declared ahead of their renderers on purpose, and
+    `video` / `data-plane-3d` are routed to H3 by design. It claims the graph
+    promises a frame the film cannot contain, which is exactly the claim a
+    `--props` run should be able to make and currently cannot. And it is
+    deliberately NOT a file-existence check: see `rule_missing_asset` for why
+    the style bible's sections are the wrong place to look for paths.
+    """
+    scenes = props.get('scenes')
+    if not isinstance(scenes, list):
+        return Finding('graph_scene_renderable', UNVERIFIABLE, None,
+                       'props carry no `scenes` array, so there is nothing to '
+                       'resolve against the renderer map. That is not a FAIL — '
+                       'nothing was measured and found wrong; it is the same '
+                       'state a graph that could not be opened produces.',
+                       trusted=False)
+
+    declared = declared_scene_types()
+    rendered = rendered_scene_types()
+    # A type in the graph that the SCHEMA does not declare is zod's business,
+    # not this rule's: the template will reject the graph at parse time, and a
+    # rule that reported it would be reporting a different defect twice.
+    unknown = sorted({s.get('type') for s in scenes
+                      if isinstance(s, dict)
+                      and isinstance(s.get('type'), str)
+                      and s['type'] not in declared})
+    used = [(i, s['type']) for i, s in enumerate(scenes)
+            if isinstance(s, dict) and isinstance(s.get('type'), str)]
+    gaps = [(i, t) for i, t in used if t not in rendered]
+
+    detail_parts = [f'{len(used)} scene(s), {len(rendered)} of {len(declared)} '
+                    f'declared scene types have a renderer']
+    if gaps:
+        names = ', '.join(sorted({t for _, t in gaps}))
+        where = ', '.join(f'scenes[{i}]={t}' for i, t in gaps[:4])
+        more = f' (+{len(gaps) - 4} more)' if len(gaps) > 4 else ''
+        detail_parts.append(
+            f'{len(gaps)} scene(s) have NO renderer and will render the '
+            f'MissingScene placeholder ("not implemented in P4"): {where}{more}')
+        if names:
+            detail_parts.append(f'type(s) involved: {names}')
+    else:
+        detail_parts.append('every scene in this graph has a renderer')
+    if unknown:
+        detail_parts.append(
+            f'{len(unknown)} type(s) are not declared by SceneType at all '
+            f'({", ".join(unknown)}) — zod rejects the graph, which this rule '
+            f'does not duplicate')
+
+    return Finding(
+        'graph_scene_renderable', FAIL if gaps else PASS, len(gaps),
+        '; '.join(detail_parts),
+        extra={'scenes': len(used),
+               'declared_types': sorted(declared),
+               'rendered_types': sorted(rendered),
+               'unrendered_types': sorted(declared - rendered),
+               'gaps': [{'index': i, 'type': t} for i, t in gaps],
+               'undeclared_types': unknown})
+
+
 def rule_missing_asset(props: dict) -> list[Finding]:
     """Declared assets against what is on disk. A set difference, no threshold.
 
@@ -644,6 +810,37 @@ def rule_missing_asset(props: dict) -> list[Finding]:
     graph reports a rename, and this is the only thing that would catch one. The
     `narration` case for report-vertical props files is handled by that
     template's own props path, not by guessing at a showcase field.
+
+    WHAT THE P21 WORK ORDER ASKED, AND WHAT CAME BACK (measured, not inferred).
+
+    The order asked whether `radius` / `shadow` / `depthCue` — declared by
+    `StyleBibleSchema` since `836f532` — offer a "the graph declares a path and
+    the disk does not have it" check, and it does not. Three reasons, all
+    measured, and the third is the one that settles it:
+
+      1. `radius` CANNOT carry a path. `mergeSection` keeps an incoming value
+         only when `typeof v === typeof base[key]`, and `RADIUS` is
+         `{chip: 999, card: 20, ...}` — numbers. Measured: poisoning `radius`
+         with `'border-radius: url("../../assets/NOPE.png")'` leaves the
+         resolved `radius` byte-identical to the defaults. The value is
+         dropped before any file could be named.
+      2. `spacing` is the same shape and drops for the same reason.
+      3. `shadow` and `depthCue` DO pass their strings through — and that is
+         exactly why a file-existence check is WRONG there, not merely
+         unnecessary. They are CSS declarations handed to `boxShadow`. A
+         missing `url()` target is a paint failure the browser resolves, not a
+         missing deliverable this gate owns, and the same class of check would
+         fire on `rgba(0,0,0,0.62)` if it were written by extension.
+
+    So the style bible is the wrong instrument for an asset-existence question,
+    and the ledger already says so — `docs/UPGRADE_PROGRESS.md:250` records step
+    12.3 (Asset Router) as a dead end for exactly this reason.
+
+    This rule therefore keeps its four hardcoded paths and is honest about what
+    that is: a repository check wearing a props argument. The `--props` path's
+    real coverage now comes from `rule_graph_scene_renderable`, which does read
+    the graph and answers a question with a measured answer rather than a chosen
+    threshold.
     """
     declared: list[str] = []
     # report-vertical's SFX are referenced by the component, not the props; they
@@ -709,6 +906,12 @@ def run_on_frame(path: Path, declared_px: float | None = None,
     findings += rule_contrast()
     if props is not None:
         findings += rule_missing_asset(props)
+        # Same graph, same question. `--frame --props` is how a frame is judged
+        # against the graph that asked for it, so a scene with no renderer has
+        # to be visible on that path too — the frame will otherwise render as
+        # "not implemented in P4" and every pixel rule will pass it honestly,
+        # because the frame really is well inside the safe area.
+        findings.append(rule_graph_scene_renderable(props))
     findings += unavailable_findings()
     return findings
 
@@ -863,6 +1066,7 @@ def main(argv: list[str] | None = None) -> int:
         findings.append(rule_duplicate(*args.frame_pair))
     if props is not None and not args.frame:
         findings += rule_missing_asset(props)
+        findings.append(rule_graph_scene_renderable(props))
     if not args.frame:
         # run_on_frame appends these itself, with the reason each instrument is
         # missing. Appending them here too emitted every one of them twice, so

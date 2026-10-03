@@ -846,10 +846,24 @@ def real_props(tmp_path):
     absence would be this test's problem to explain, and its content is
     P13's business. The contract under test is "a file that exists and parses
     is read, and the gate runs and exits 0" — nothing more.
+
+    ONE SCENE, NOT ZERO (changed by P21). This fixture used to carry only a
+    `format` block, which is not a scene graph at all — `ShowcaseSchema.scenes`
+    is `z.array(SceneSchema).min(1)`. P21 added `graph_scene_renderable`, and a
+    props file with no `scenes` is UNVERIFIABLE on that rule, which exits
+    non-zero by this file's own convention. So the fixture now carries one
+    scene whose type (`kpi-hero`) has a renderer, which keeps it a graph that
+    can be checked ALL the way through rather than a stub the rule must excuse.
+    The two healthy-direction tests below assert exactly that: a readable graph
+    runs its rules and exits 0.
     """
     p = tmp_path / 'props.json'
-    p.write_text(json.dumps({'format': {'width': 320, 'height': 180, 'fps': 30}}),
-                 encoding='utf-8')
+    p.write_text(json.dumps({
+        'version': 1,
+        'project': 'p11_probe',
+        'format': {'width': 320, 'height': 180, 'fps': 30},
+        'scenes': [{'id': 's01', 'type': 'kpi-hero', 'durationInFrames': 120}],
+    }), encoding='utf-8')
     return p
 
 

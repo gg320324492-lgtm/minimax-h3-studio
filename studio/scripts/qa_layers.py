@@ -213,7 +213,25 @@ MEASURED_NOTE: dict[str, str] = {
                       'removed and checking "props" does not appear, and by calling '
                       'it with three unrelated dicts and getting an identical '
                       'Finding. The four checked paths are hardcoded. It is a '
-                      'repository check wearing a props argument.'),
+                      'repository check wearing a props argument. STILL TRUE after '
+                      'P21, which added a rule that genuinely reads the graph '
+                      'alongside it rather than changing this one.'),
+    'graph_scene_renderable': ('Technical by the same argument as `missing_asset` and '
+                              '`aspect`: it asks whether the render pipeline can produce '
+                              'what the graph requested — a declared-vs-delivered '
+                              'question, not a position, a time or a pixel question. '
+                              'Added in P21. Before it, the `--props` path could not '
+                              'tell a correct graph from a broken one: poisoning all 49 '
+                              'strings of the delivered showcase graph produced a '
+                              'byte-identical report and the same exit code as the clean '
+                              'graph, and 0 for both. It is the only rule on that path '
+                              'whose verdict changes with the graph (measured by '
+                              'calling it on two different graphs). MEASURED: 22 scene '
+                              'types declared by SceneType, 13 named by '
+                              'SCENE_RENDERERS, 9 in between rendering the MissingScene '
+                              'placeholder. No threshold — the question is presence or '
+                              'absence of a renderer, and a cut point would be a number '
+                              'about nothing.'),
     'font_size': ('UNVERIFIABLE on all 333 corpus frames when no --declared-px is '
                   'supplied, because a ratio needs both sides. It is Layout in what '
                   'it MEASURES, and it is dead in this CLI as shipped.'),
@@ -266,6 +284,16 @@ def _emitted_names() -> dict[str, list[str]]:
                     r = fn((PROBE_W, PROBE_H), (PROBE_W, PROBE_H))
                 elif name == 'rule_missing_asset':
                     r = fn({})
+                elif name == 'rule_graph_scene_renderable':
+                    # The ONLY rule here that reads a graph, so it is the one
+                    # that has to be handed one. Called with an empty `scenes`
+                    # list rather than `{}`: an absent `scenes` is UNVERIFIABLE,
+                    # which is a true answer to "what does this rule say with
+                    # nothing to say about" and not the answer we want to record
+                    # here. The probe is about what the rule EMITS, and both
+                    # spellings emit the same name — see the note on
+                    # `emitted_names`.
+                    r = fn({'scenes': []})
                 elif name == 'rule_duplicate_check_props':
                     r = fn(props_path)
                 elif name == 'rule_font_size':
@@ -370,7 +398,8 @@ def build_report() -> dict:
     stated once, in one place, and everything else reads it.
     """
     layers: dict[str, dict] = {
-        'Technical': {'rules': ['black_frame', 'aspect', 'missing_asset'], 'notes': {}},
+        'Technical': {'rules': ['black_frame', 'aspect', 'missing_asset',
+                                'graph_scene_renderable'], 'notes': {}},
         'Layout': {'rules': ['safe_area', 'clipping', 'font_size'], 'notes': {}},
         'Motion': {'rules': ['freeze', 'duplicate'], 'notes': {}},
         'Visual': {'rules': ['blur', 'contrast'], 'notes': {}},
@@ -428,6 +457,24 @@ def build_report() -> dict:
                             != vqa.rule_missing_asset(
                                 {'scenes': [{'id': 'x'}]})[0].verdict),
             'behaves_like_static': True,
+            'requires_pair': False,
+        },
+        # P21. The same differential, on the rule that DOES read the graph. Two
+        # graphs differing only in a scene type: one the renderer map names, one
+        # it does not. Measured by calling, for the same reason as the row
+        # above — a body that merely MENTIONS `props` reads the same on both.
+        #
+        # This column is now non-trivial for the first time in the repo. Before
+        # P21 every `reads_graph` on the props path was False, which is what
+        # `docs/P18_QA_LAYERS.md` §1.4 measured and what P21's own defect report
+        # turned on.
+        'graph_scene_renderable': {
+            'reads_graph': (
+                vqa.rule_graph_scene_renderable(
+                    {'scenes': [{'id': 'a', 'type': 'kpi-hero'}]}).verdict
+                != vqa.rule_graph_scene_renderable(
+                    {'scenes': [{'id': 'a', 'type': 'quote'}]}).verdict),
+            'behaves_like_static': False,
             'requires_pair': False,
         },
     }
