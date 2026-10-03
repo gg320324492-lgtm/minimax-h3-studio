@@ -160,6 +160,14 @@ That is why it is UNAVAILABLE (the instrument was never built) rather than
 UNVERIFIABLE (an instrument ran and could not decide). The distinction is this
 file's whole vocabulary.
 
+A third measurement points the same way
+(`out/p22_probe/measure_frame_ink.py`): restricting the population to pixels
+that are clearly a MARK rather than the ramp — contrast ≥ 2.0 against the
+frame's own background — **32 of the 333 frames have fewer than 0.1% such
+pixels**, i.e. no type at all. A rule of the form "how much of this frame is
+readable ink" therefore has no defined value on a tenth of the corpus, quite
+apart from not separating ink from gridline where type does exist.
+
 **What would make it available**, so the next reader does not have to guess: the
 renderer knows each role's rendered px (`size * scaleFor(...)`), so a decidable
 per-frame contrast rule has to come from the graph and the declared format —
