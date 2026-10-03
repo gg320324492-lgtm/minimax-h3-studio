@@ -25,24 +25,49 @@ Measured answer, and it is not the one the plan assumed. Of the four clauses:
     rather than as a film.
 
   * THE OTHER THREE ARE NOT GATED. Not by `visual_qa.py --props`, not by
-    `qa_report.py`, not by the render entry point. There is no clause anywhere in
-    the repository that requires 45-60s, that requires 1920x1080@60, and no
+    `qa_report.py`, not by the frame path. There is no clause anywhere in the
+    repository that requires 45-60s, that requires 1920x1080@60, and no
     measurable criterion at all for "premium product film".
 
-    This is not a gap in a tool that was built and mis-tuned. `pipeline_manifest.yaml`
-    line 204 says so in the repository's own words: `enforced: false`, under the
-    heading 「质量门禁（当前全部无自动执行 —— P0 接线）」. Measured: no file outside
-    `tests/` invokes `visual_qa.py`, and `render.mjs` — the one thing every
-    render goes through — contains no QA call at all.
+    ⚠️ THIRD VERDICT REWRITTEN 2026-10-03 (P25). This file's first two guards said
+    "no production path runs `visual_qa`, and `render.mjs` names no QA gate in
+    code". P25 (`ad23a6c`) wired the props gate into `render.mjs` behind
+    `--gate-props`, so those two went red — correctly. They are not deleted and
+    not relaxed; they now assert the fact as it stands, and one of them was given
+    a second, opposite claim to pin:
+
+      * the props gate IS wired into the render path, and the wiring is in CODE
+        (comments stripped) — `test_the_render_entry_point_calls_the_props_gate`;
+      * the whole-repository sweep no longer reports ZERO callers: `render.mjs` is
+        the one production file that runs `visual_qa`, and that is the point;
+      * the FRAME gate is not wired, and must not be — see below.
+
+WHY THE FRAME GATE IS ASSERTED AS ABSENT AND NOT JUST ABSENT-BY-OMISSION.
+
+P25 measured, on a real 801-frame render of the delivered `showcase_demo.json`:
+
+  * every one of the 801 frames exits non-zero through `visual_qa.py --frame`,
+    and none of those reds come from the render — 801 `aspect` + 801 `font_size`
+    UNVERIFIABLE because the caller supplied no `--props` and no `--declared-px`
+    (P25 measured the same frame exiting 0 once both were passed), plus 50
+    `black_frame` and 60 `blur` FAILs concentrated on the flat transition frames
+    between scenes;
+  * running the frame gate over the film costs 21.5–21.8 min against a whole-film
+    render of 19.6–22.5 s — 57x to 69x — and the bottleneck is the instrument
+    (`rule_black_frame`, 1.18 s of the 1.615 s per frame, an `np.unique` over
+    1920x1080x3), not decoding (1.324 s for all 801 frames).
+
+So wiring it would make EVERY render red for reasons that are not about the film
+— P22's permanently-red gate with a different entrance. The guard
+`test_the_frame_gate_is_not_wired_and_must_not_be` pins that as a verdict rather
+than leaving it as an absence nobody would notice the day somebody wired it.
 
 WHY THE `enforced: false` CLAIM IS MEASURED HERE AND NOT QUOTED.
 
 The plan's own success clause for P18 is 「全过」 on four layers of gates that
 `qa_layers.py` reports as `enforced: false`. Reading a comment is how this project
-has been fooled seven times. So `test_the_graph_gate_is_not_wired_into_any_
-delivery_path` executes the search and asserts on the result, and
-`test_the_render_entry_point_calls_no_qa_gate` reads `render.mjs` and asserts the
-absence of every QA invocation. Either one going quiet is a fact, not a pass.
+has been fooled seven times. So the two sweeps below execute the search and
+assert on the result. Either one going quiet is a fact, not a pass.
 
 WHAT IS DELIBERATELY NOT ASSERTED.
 
@@ -56,10 +81,19 @@ WHAT IS DELIBERATELY NOT ASSERTED.
   * No assertion that the H3 renderer should or should not be built. That is a
     judgement for docs/. This file measures whether one could be RENDERED today.
 
-  * No test asserting the absence of a word. The one source-reading test here
-    asserts an ABSENCE (`render.mjs` names no QA gate), which is the one thing
-    source-reading can decide, and its own matcher is anchored by a positive
-    control in `test_the_qa_call_sweep_finds_a_real_invocation`.
+  * No assertion that `--gate-props` is on by default. It is off by default, by
+    P25's deliberate choice, because `--props` also carries timeline/report props
+    that are not scene graphs and those report UNVERIFIABLE, which exits non-zero
+    per `6e86b46`. Whether the flag's default should change is a decision for
+    `docs/`, not a measurement, so this file states the fact in prose and does not
+    assert it. `tests/test_p25_qa_in_render_path.py` pins the current default
+    against the tool's own behaviour.
+
+  * No claim that the frame gate is unfixable. P25 says it is unaffordable AT ITS
+    CURRENT COST and that the cost is in one statistic (`distinct_colours`, an
+    exact `np.unique` count) rather than in any verdict. Cheapen that statistic
+    and the verdict must be re-made. So the guard pins today's measurements, not
+    an eternity.
 
 A NOTE ON HOW THESE TESTS REACH THE GATE.
 
@@ -340,7 +374,13 @@ def test_the_healthy_direction_survives_in_the_same_file(capsys):
             f'graphs without rejecting good ones.\n{report}')
 
 
-# ── the load-bearing finding: the gate is not wired to anything ──────────────
+# ── the load-bearing finding: WHAT is wired, and what is not ─────────────────
+#
+# ⚠️ REWRITTEN 2026-10-03. This section asserted "nothing is wired"; P25 wired the
+# props gate. The two guards it produced went red, which was the correct
+# behaviour, and the P14 precedent applies: an assertion that became false is
+# rewritten to the new fact, in place, with the fact it used to assert recorded
+# in its docstring.
 
 #: A QA gate being NAMED, as opposed to being MENTIONED. The distinction is the
 #: whole point of this section, and this file already got it wrong once:
@@ -355,6 +395,66 @@ QA_NAME = re.compile(r'\b(visual_qa|qa_report|qa_layers|qa_final|check_contract)
 #: The showcase graph gate specifically — the only one of the five that can judge
 #: a `pipeline/examples/*.json` scene graph.
 SHOWCASE_GATE = re.compile(r'\bvisual_qa\b')
+
+#: The props path of that gate, which is the one P25 wired and the only one that
+#: can judge a graph without pixels existing.
+PROPS_PATH = re.compile(r'--props\b')
+
+#: The per-frame path — `visual_qa.py --frame`, which is what a whole-film frame
+#: gate would run once per frame. P25 measured it end to end and refused to wire
+#: it; the guard below pins that refusal.
+FRAME_PATH = re.compile(r'--frame\b')
+
+#: The generated-code anchor P25's own guard uses: a QA run assembled as a
+#: command, not mentioned in a sentence. A comment cannot contain this, and a
+#: path constant on its own cannot either.
+RUN_GATES = re.compile(r'const\s+runGates\s*=')
+
+#: The gate COMMAND itself, captured whole. `--props` has to be inside this
+#: literal, not merely somewhere else in the file: `--props` also appears in the
+#: `spawnSync` argument list, and a dead `if (false)` block keeps that argument
+#: list intact, so a file-wide search reports a gate that no longer runs as one
+#: that does.
+GATE_COMMAND = re.compile(r'const\s+runGates\s*=\s*\(\)\s*=>\s*`([^`]*)`')
+
+#: A gate that is actually EXECUTED. `runGates()` and the arguments handed to
+#: `spawnSync` are what separate a gate from a string naming one.
+LIVE_GATE = re.compile(r'runGates\s*\(\)|spawnSync\s*\(')
+
+
+def _gate_command_judges_the_props(code: str) -> bool:
+    """Does the command render.mjs BUILDS run the gate on the props path?
+
+    Shape-independent enough to survive a rename of the helper variable, tight
+    enough that a gate switched off leaves nothing to find: if `runGates` is gone
+    there is no command, and if its literal no longer carries `--props` the
+    command it builds is not the props gate.
+    """
+    m = GATE_COMMAND.search(code)
+    return bool(m) and '--props' in m.group(1)
+
+#: A production file that wires the FRAME gate looks like: it decodes the film to
+#: frames and hands them to `visual_qa.py --frame`. Requiring the spawn, the
+#: per-frame call and the decode to co-occur means a file that merely DOCUMENTS
+#: the refusal (as `render.mjs` does, at length, in a comment) cannot be
+#: mistaken for one that violates it. Every entry below is stripped of comments
+#: first; a comment can neither add an entry nor remove one, so the conjunction
+#: is decided by CODE alone.
+#:
+#: `scripts/visual_qa.py` itself matches all four — it is the instrument, it takes
+#: `--frame`, and its docstring example decodes — so it is excluded by name
+#: below. Measured, not assumed: the sweep is asserted to have found the four
+#: markers together in a calibration sample, and the instrument is the only file
+#: in the repository that matched before any mutation existed.
+FRAME_GATE_MARKERS = {
+    'spawn': re.compile(r'spawnSync|spawn|execFileSync|execFile|child_process'),
+    'qa_call': re.compile(r'visual_qa\.py'),
+    'per_frame': re.compile(r"--frame['\",\s]"),
+    'decode': re.compile(r'ffmpeg|-frames:v|select=.*eq\('),
+}
+#: The only file that may legitimately contain a whole frame gate today, and it
+#: is here because it is the file the guard sweeps over — not an exemption.
+FRAME_GATE_ALLOWED: frozenset[str] = frozenset()
 
 
 def _strip_comments(text: str, suffix: str) -> str:
@@ -395,17 +495,35 @@ def test_the_comment_stripper_separates_a_call_from_a_mention():
         'the sweep cannot see a real invocation — it reports zero forever')
 
 
-def test_no_production_script_invokes_a_showcase_qa_gate():
-    """Measured, not quoted: no production path runs the showcase graph gate.
+def test_the_only_production_caller_of_the_showcase_gate_is_the_render_path():
+    """Measured, not quoted — and no longer zero.
 
-    `visual_qa.py --props` is the ONLY gate in this repository that can judge a
-    `pipeline/examples/*.json` scene graph, and this proves nothing outside
-    `tests/` runs it.
+    WHAT THIS USED TO ASSERT, verbatim: "a production file now runs or imports
+    `visual_qa` outside the test suite" with `unexpected == []`. It went red on
+    2026-10-03 with exactly one entry, `studio/bin/render.mjs`, which P25 wired.
+    The assertion was correct when it was written and the fact has since changed;
+    per the P14 precedent it is rewritten in place rather than deleted.
+
+    WHAT IT ASSERTS NOW, and this is the narrower and more useful claim:
+
+      1. the set of production files that INVOKE the gate is EXACTLY
+         `{studio/bin/render.mjs}` — not zero, not "a few". A second wiring is a
+         decision that has to be made on the record, because every entry added
+         here is another place where a delivery can be stopped;
+      2. and "invokes" means more than "names". A file counts only when
+         `visual_qa` and `--props` co-occur in CODE. `render.mjs` also carries a
+         bare `qaScript` path constant, which is a name, not a decision; without
+         the conjunction this sweep would have called a file with the gate
+         DISABLED a caller, and removal of the wiring would leave it green.
+
+    The sweep's own coverage is asserted first, so a filter that stopped matching
+    (a renamed directory, a suffix change) cannot turn this into a vacuous pass.
+    Comments are stripped before every match, as everywhere in this file.
 
     The scope is deliberately the SHOWCASE GATE and not "no QA at all", because
-    the broader claim is false and asserting it would have been a false red. The
-    first version of this sweep searched for all five gate names and returned
-    eleven "offenders", of which the honest ones were:
+    the broader claim was false when this sweep was first written and asserting
+    it would have been a false red. The first version searched for all five gate
+    names and returned eleven "offenders", of which the honest ones were:
 
       * `ceo_mindread_ep01|third_lantern|liaozhai_demo/scripts/qa_final.py` and
         two of their `run_post_chain.sh` — real invocations (measured:
@@ -416,14 +534,11 @@ def test_no_production_script_invokes_a_showcase_qa_gate():
         `pipeline/examples/`.
       * `ceo_mindread_ep01/scripts/select_takes.py` and
         `studio/scripts/check_contract.py` — comment mentions only.
-      * `studio/bin/render.mjs` — a comment mention only.
-
-    So the finding this file rests on is narrower and specific: nothing runs the
-    gate that can judge a showcase graph.
     """
     skip_dirs = {'tests', 'out', 'node_modules', '.git', '__pycache__',
                  'acestep-env', 'ffmpeg-7.1.1-full_build'}
-    callers: list[str] = []
+    invokers: list[str] = []
+    namers_only: list[str] = []
     scanners = 0
     for path in ROOT.rglob('*'):
         if not path.is_file() or path.suffix not in {
@@ -439,8 +554,11 @@ def test_no_production_script_invokes_a_showcase_qa_gate():
         except OSError:
             continue
         scanners += 1
-        if SHOWCASE_GATE.search(_strip_comments(text, path.suffix)):
-            callers.append(rel.as_posix())
+        code = _strip_comments(text, path.suffix)
+        if not SHOWCASE_GATE.search(code):
+            continue
+        (invokers if PROPS_PATH.search(code) else namers_only).append(
+            rel.as_posix())
 
     assert scanners > 100, f'only {scanners} files scanned; the sweep is vacuous'
 
@@ -453,27 +571,161 @@ def test_no_production_script_invokes_a_showcase_qa_gate():
         'studio/scripts/frame_baseline.py',   # cites it as a related gate
         'studio/scripts/mutation_harness.py', # harness for its own mutation contract
     }
-    unexpected = sorted(set(callers) - instruments)
-    assert unexpected == [], (
-        'a production file now runs or imports `visual_qa` outside the test '
-        'suite: ' + ', '.join(unexpected)
-        + '\nIf that is a deliberate wiring, the P17 verdict changes: a gate '
-          'that runs is a gate that can stop a delivery.')
+    production_callers = sorted(set(invokers) - instruments)
+    assert production_callers == ['studio/bin/render.mjs'], (
+        'the set of production files INVOKING the props gate is no longer exactly '
+        f'the render path: {production_callers}. Naming the instrument without '
+        'deciding anything is not a caller — files that do that: '
+        f'{sorted(set(namers_only) - instruments)}. Adding a real caller is a '
+        'decision that belongs on the record (it is another place a delivery can '
+        'stop), and losing the render path one undoes P25 and restores the '
+        'original P17 finding: nothing gates a render.')
 
 
-def test_the_render_entry_point_calls_no_qa_gate():
-    """`render.mjs` is the one thing every render goes through. It gates nothing.
+def test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment():
+    """`render.mjs` — the one thing every render goes through — calls the gate.
 
-    Comments are stripped first, and that is the load-bearing detail: line 141 of
-    this file names `qa_final.py` in a comment explaining why `--pixelfmt` is
-    passed, and the first version of this test counted that as a call and went
-    red. A gate that ran after the render would have to appear in CODE.
+    WHAT THIS USED TO ASSERT, verbatim: `hits == QA_NAME.findall(text)`, i.e.
+    `render.mjs` names NO QA gate in code. It went red on 2026-10-03 with
+    `['visual_qa']`, which is P25's wiring. Rewritten in place, per P14.
+
+    Comments are stripped first, and that is the load-bearing detail, now twice
+    over: the P25 wiring sits BELOW an eighty-line comment block explaining the
+    gate, so an assertion that did not strip would pass on prose alone; and
+    `render.mjs:141` names `qa_final.py` in a comment explaining why
+    `--pixelfmt` is passed, which is what made this file's first version red.
+    `_strip_comments` is anchored by `test_the_comment_stripper_separates_a_call_
+    from_a_mention` in this same file and by an independent control in
+    `tests/test_p25_qa_in_render_path.py`.
+
+    The assertion is a POSITIVE (the wiring is code), because that is the one
+    thing source-reading can decide. Whether the gate can actually say no is not
+    asserted here — that is decided by running the entry point and reading the
+    exit code, in `tests/test_p25_qa_in_render_path.py`.
+
+    ⚠️ THE GUARD REACHES, it does not merely NAME. Two versions of this test
+    that asked only "does render.mjs mention `visual_qa` and `--props`?" were
+    MEASURED to survive removing the wiring outright: render.mjs keeps a
+    `qaScript` path constant, and `--props` also appears in the `spawnSync`
+    argument list of the dead block. So the assertion is about the gate COMMAND
+    (`_gate_command_judges_the_props`) and about it being EXECUTED, not about
+    two words appearing somewhere in the file.
     """
     text = _strip_comments(RENDER_MJS.read_text(encoding='utf-8'), '.mjs')
     hits = QA_NAME.findall(text)
-    assert hits == [], (
-        f'render.mjs now names a QA gate in code: {hits}. The finding that '
-        'nothing gates a render changes and this file must be re-measured.')
+    assert hits == ['visual_qa'], (
+        f'render.mjs does not name exactly the showcase gate in code; found '
+        f'{hits}. Expected exactly one instrument, `visual_qa`. If that is a '
+        'deliberate change, the P17 verdict changes with it.')
+    assert RUN_GATES.search(text), (
+        'render.mjs no longer defines `runGates` in CODE, so it has no gate '
+        'command to build. This is the shape removal takes — the wiring is gone '
+        'while its leftovers would otherwise keep a text-presence guard green '
+        '(measured: an earlier version of this test was green under exactly '
+        'that mutation, twice, before the command itself was checked).')
+    assert _gate_command_judges_the_props(text), (
+        'the command render.mjs builds no longer runs the gate on the props '
+        'path. `--props` occurring elsewhere in the file does not count — it is '
+        'also an argument of the spawn. The props path is the only one that can '
+        'judge a scene graph before any pixels exist; without it the file '
+        'carries a name and no decision.')
+    assert LIVE_GATE.search(text), (
+        'render.mjs defines a gate runner but never SPAWNS it. A command that is '
+        'built and never executed is not a gate; the tool can report one while '
+        'the render path checks nothing.')
+    assert FRAME_PATH.search(text) is None, (
+        'render.mjs names `--frame` in CODE. That is the per-frame gate entry '
+        'point; P25 measured it and refused to wire it (see the next test).')
+
+
+def test_the_frame_gate_is_not_wired_and_must_not_be():
+    """The verdict is NOT "we did not get to it". It is "do not wire it".
+
+    P25 measured this rather than assuming it, on a real 801-frame render of
+    `pipeline/examples/showcase_demo.json`:
+
+      * 801/801 frames exit non-zero through `visual_qa.py --frame` and NONE of
+        those reds come from the render: 801 `aspect` + 801 `font_size`
+        UNVERIFIABLE because no `--props` and no `--declared-px` was supplied
+        (the same frame exits 0 once both are), and the 50 `black_frame` /
+        60 `blur` FAILs are the flat transition frames between scenes;
+      * cost is 21.5-21.8 min per film against a 19.6-22.5 s render — 57x to 69x
+        — and the bottleneck is `rule_black_frame` at 1.18 s of 1.615 s per
+        frame, i.e. the instrument, not the decoding (1.324 s for all 801).
+
+    So this test pins a DECISION. Wiring the frame gate does not merely fail a
+    guard; it converts every render into a failure whose cause is not the film,
+    which is P22's permanently-red gate through a new entrance.
+
+    Both halves are needed:
+
+      * the sweep, so "nobody wired it" is measured across the repository and
+        not merely unobserved inside `render.mjs`;
+      * the calibration, because a sweep that cannot be made to fail is a sweep
+        that reports zero forever. A frame gate is recognised only when the spawn,
+        the per-frame call, the decode and the instrument co-occur in CODE; a file
+        that merely discusses the refusal — and `render.mjs` does, at length —
+        is not one. Comments are stripped first, so the discussion cannot
+        manufacture a violation either.
+
+    REVISIT WHEN: the cost is in `distinct_colours`, an exact `np.unique` count
+    inside `rule_black_frame`, and not in any verdict. Cheapen that statistic and
+    this verdict must be re-made from measurements — the guard's own message says
+    so. It is deliberately NOT written to survive that: a guard that outlived its
+    reason would be the permanent-red gate all over again.
+    """
+    skip_dirs = {'tests', 'out', 'node_modules', '.git', '__pycache__',
+                 'acestep-env', 'ffmpeg-7.1.1-full_build'}
+    wired: list[str] = []
+    scanned: list[str] = []
+    for path in ROOT.rglob('*'):
+        if not path.is_file() or path.suffix not in {'.py', '.mjs', '.sh'}:
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        if any(p in skip_dirs for p in path.relative_to(ROOT).parts):
+            continue
+        try:
+            code = _strip_comments(path.read_text(encoding='utf-8', errors='replace'),
+                                   path.suffix)
+        except OSError:
+            continue
+        scanned.append(rel)
+        if all(p.search(code) for p in FRAME_GATE_MARKERS.values()):
+            wired.append(rel)
+
+    assert len(scanned) > 40, (
+        f'only {len(scanned)} executable files scanned; the sweep is vacuous')
+
+    offenders = sorted(set(wired) - FRAME_GATE_ALLOWED)
+    assert offenders == [], (
+        'a whole-film frame gate is now WIRED into a production path: '
+        + ', '.join(offenders)
+        + '\nMeasured on the delivered 801-frame render, all 801 frames exit '
+          'non-zero and none of those reds come from the render (801 aspect + '
+          '801 font_size UNVERIFIABLE for want of --props/--declared-px), and the '
+          'cost is 21.5-21.8 min against a 19.6-22.5 s render. If that has '
+          'changed, re-measure before unpinning this.')
+
+    # ── the sweep's calibration: it must be ABLE to find one ─────────────────
+    # A realistic whole-film frame gate: decode the film to per-frame PNGs, then
+    # hand each one to the instrument. Written in full because a calibration that
+    # is easier than the thing it calibrates is how a sweep reports zero forever —
+    # and the first version of this one was exactly that: it omitted the decode
+    # step, so the `decode` marker was unmatched and the calibration caught it.
+    calibration = (
+        "import {spawnSync} from 'node:child_process';\n"
+        "spawnSync('ffmpeg', ['-i', mp4, '-vsync', '0', frames + '/%04d.png']);\n"
+        "for (const f of frames) {\n"
+        "  const gate = spawnSync('py', ['-3.12', 'scripts/visual_qa.py',\n"
+        "    '--frame', f, '--props', propsPath], {encoding: 'utf8'});\n"
+        "  if (gate.status !== 0) process.exit(1);\n"
+        "}\n"
+    )
+    matched = all(p.search(calibration) for p in FRAME_GATE_MARKERS.values())
+    assert matched, (
+        'the frame-gate sweep cannot recognise a frame gate, so it would report '
+        f'zero forever. Markers unmatched: '
+        f'{[n for n, p in FRAME_GATE_MARKERS.items() if not p.search(calibration)]}')
 
 
 
