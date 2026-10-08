@@ -144,14 +144,18 @@ def test_the_failure_direction_a_graph_with_no_renderer_is_reported_and_exits_no
         tmp_path, capsys):
     """The one question this whole work order asks: does `--props` notice?
 
-    `quote` is declared by `SceneType` and absent from `SCENE_RENDERERS`, so a
-    scene of that type renders the MissingScene placeholder — the type's own
-    name and the words "not implemented in P4" — for the whole of its duration.
-    The report must say so and the exit code must be non-zero, because a
-    delivered film made of that frame is not the film the graph asked for.
+    ⚠️ REWRITTEN 2026-10-09 (P26). This fixture used `quote` as the example of a
+    declared type with no renderer. P26 gave `quote` a real renderer (and
+    `outro`, `card-grid`, and four others), so that example became false and this
+    test went red — correctly. Per the P14 precedent the fixture is rewritten to
+    a type that STILL has no renderer, and the ruling that leaves one there is
+    pinned in `test_p26_scene_type_coverage.py`. `video` is a member of
+    `GENERATIVE_SCENE_TYPES` and is deliberately left to `MissingScene` (no
+    generative renderer exists; P17). The ASSERTIONS are unchanged: a graph whose
+    only scene type has no renderer must be reported FAIL and must exit non-zero.
     """
     doc = _clean_graph()
-    doc['scenes'] = [{'id': 'g_one', 'type': 'quote', 'durationInFrames': 120,
+    doc['scenes'] = [{'id': 'g_one', 'type': 'video', 'durationInFrames': 120,
                       'content': {'text': 'hello'}}]
     p = _props(tmp_path, 'gap.json', doc)
 
@@ -172,15 +176,20 @@ def test_the_failure_direction_a_graph_with_no_renderer_is_reported_and_exits_no
 
 
 def test_the_failure_direction_names_the_offending_scene_and_type(tmp_path, capsys):
-    """A count is not enough: with 10 scenes, "1 FAIL" does not say which."""
+    """A count is not enough: with 10 scenes, "1 FAIL" does not say which.
+
+    ⚠️ REWRITTEN 2026-10-09 (P26), same reason and same shape as the test above:
+    the fixture's `outro` now has a renderer, so it was swapped for
+    `data-plane-3d`, which is still left to `MissingScene`.
+    """
     doc = _clean_graph()
-    doc['scenes'].append({'id': 'g_gap', 'type': 'outro', 'durationInFrames': 60})
+    doc['scenes'].append({'id': 'g_gap', 'type': 'data-plane-3d', 'durationInFrames': 60})
     p = _props(tmp_path, 'one_gap.json', doc)
 
     code, report = _main(['--props', p], capsys)
 
     assert _verdict_for(report, RULE) == vqa.FAIL, report
-    assert 'outro' in report, f'the offending type is not named:\n{report}'
+    assert 'data-plane-3d' in report, f'the offending type is not named:\n{report}'
     assert code != 0
 
 
@@ -285,7 +294,11 @@ def test_the_rule_reads_the_graph_rather_than_wearing_a_props_argument(tmp_path,
     """
     good = _props(tmp_path, 'good.json', _clean_graph())
     bad_doc = _clean_graph()
-    bad_doc['scenes'][1]['type'] = 'card-grid'
+    # ⚠️ REWRITTEN 2026-10-09 (P26): was `card-grid`, which P26 gave a renderer.
+    # Swapped for `video`, which is still deliberately unrendered. The claim is
+    # unchanged: a rule that reads the graph produces different output for two
+    # different graphs.
+    bad_doc['scenes'][1]['type'] = 'video'
     bad = _props(tmp_path, 'bad.json', bad_doc)
 
     code_good, report_good = _main(['--props', good], capsys)

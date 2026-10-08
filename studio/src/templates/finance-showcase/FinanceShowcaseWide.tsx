@@ -5,6 +5,11 @@ import {resolveShowcaseMeta} from '../../schemas/showcaseMeta';
 import {KpiHero} from './scenes/KpiHero';
 import {BrowserStack} from './scenes/BrowserStack';
 import {CalendarGrid, DataColumns} from './scenes/DataColumns';
+import {CardGrid, StatCard} from './scenes/Cards';
+import {DataTable} from './scenes/DataTable';
+import {Quote} from './scenes/Quote';
+import {BrowserWindow} from './scenes/BrowserWindow';
+import {Logo, Outro} from './scenes/Brand';
 import {ChartScene} from './charts/Chart';
 import {PALETTE} from './design/tokens';
 import {StyleBibleProvider, useDesign} from './design/styleBible';
@@ -90,6 +95,56 @@ const SCENE_RENDERERS: Record<string, React.FC<{scene: Scene}>> = {
   heatmap: ChartScene,
   'volume-chart': ChartScene,
   'sparkline-chart': ChartScene,
+  // P26. Nine types were declared in showcase-v1 from P3 and had NO renderer,
+  // so a graph asking for one rendered the `MissingScene` placeholder — the type
+  // name and the words "not implemented in P4" — for its whole duration. The
+  // ledger's 3.2 line ("20 种 scene 类型注册") had been read as done; "registered"
+  // was mistaken for "renderable". Seven of the nine are pure programmatic and
+  // now route to real scenes (see docs/P26_MISSING_RENDERERS.md for the per-type
+  // ruling and the render evidence). The other two are NOT rendered, on purpose:
+  // see UNRENDERED_SCENE_TYPES below.
+  'browser-window': BrowserWindow,
+  'stat-card': StatCard,
+  'card-grid': CardGrid,
+  'data-table': DataTable,
+  quote: Quote,
+  logo: Logo,
+  outro: Outro,
+};
+
+/**
+ * The declared scene types that are DELIBERATELY left to `MissingScene`.
+ *
+ * This is a DECISION TABLE, not a TODO list. P26's guard
+ * (`tests/test_p26_scene_type_coverage.py`) requires every value of `SceneType`
+ * to be either a key of `SCENE_RENDERERS` or a key HERE — so a type added to the
+ * schema with neither is a red guard rather than a film that renders
+ * "not implemented in P4", and a renderer quietly deleted from the map is red
+ * too. The map exists because "no renderer" and "a renderer we chose not to
+ * build" are different facts and only one of them is acceptable to ship.
+ *
+ * BOTH ENTRIES NEED AN ENGINE THIS TEMPLATE DOES NOT HAVE (see
+ * docs/P26_MISSING_RENDERERS.md):
+ *
+ *  - `video` — a MiniMax-H3 shot. There is no H3 renderer anywhere in the render
+ *    source; P17 measured it and ruled B.
+ *  - `data-plane-3d` — a 3D data surface. It is routed to H3 by
+ *    `GENERATIVE_SCENE_TYPES`, and the master plan's Three.js boundary
+ *    (`@remotion/three`) is ALSO unmet: `three` is not a dependency. Neither
+ *    path can render it today.
+ *
+ * A renderer for either would be a frame with no content behind it, which is the
+ * exact failure P26 was written to prevent. They are named here so that the gap
+ * is a recorded decision a guard can see, not a silence.
+ */
+export const UNRENDERED_SCENE_TYPES: Readonly<Record<string, string>> = {
+  // The reason strings are kept free of the literal engine name on purpose:
+  // `test_p17_showcase_demo_verdict.py::test_no_h3_renderer_exists_in_the_render_source`
+  // forbids that token in this file's CODE (comments stripped) precisely so a
+  // newly added renderer cannot hide behind a name drop. The reasons live in the
+  // comment block above and in docs/P26_MISSING_RENDERERS.md.
+  video: 'needs a MiniMax generative shot; no generative renderer exists (P17: verdict B)',
+  'data-plane-3d': 'needs a 3D surface; routed to the generative set and @remotion/three is not a dependency',
 };
 
 const MissingScene: React.FC<{scene: Scene}> = ({scene}) => (
