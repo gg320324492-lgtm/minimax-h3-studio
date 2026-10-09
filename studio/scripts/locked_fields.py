@@ -7,7 +7,9 @@ number to make a collision go away — produces a video that is wrong and looks
 right. That failure is worse than the collision it was repairing.
 
 Why a path list and not a type. `content` is `z.record(z.string(), z.unknown())`
-in showcase-v1.ts:100, so there is no type boundary to lean on: every field in
+in `showcase-v1.ts` (line 256 today; the type, not the line number, is the
+claim — a line number here would rot the moment the schema grows and nothing
+would notice), so there is no type boundary to lean on: every field in
 every scene is `unknown`, including the ones that must not move. A lock therefore
 has to be written down explicitly, and the cost of writing it down is that it can
 be incomplete — which is why `LOCK_RULES` is exported and counted in the tests,
@@ -23,10 +25,14 @@ Three kinds, from the ledger's three nouns:
     scene, not a field. It is locked as a SCENE, by a different mechanism than
     the other two (see `LOCKED_SCENE_TYPES`), because `_RULES_BY_KEY` matches a
     content key in EVERY scene and a brand lock must not apply to a scene that
-    merely happens to carry a key called `name`. Two things are locked: the
-    scene's `type`, so a repair cannot reroute it to a chart to make it fit, and
+    merely happens to carry a key called `name`. THREE things are locked per brand
+    scene: its `type`, so a repair cannot reroute it to a chart to make it fit;
     its `content.name`, the wordmark, so it cannot buy the same clearance by
-    renaming. Both come back as ordinary `LockedField`s.
+    renaming; and its `content.tagline`, which P31 added on the same ruling that
+    added `outro` — the outro shows the same lockup, so leaving its tagline
+    editable while its name is locked would have been the identical hole one
+    key over. The first comes from `_SCENE_TYPE_RULE`, the other two from
+    `BRAND_CONTENT_KEYS`. All three come back as ordinary `LockedField`s.
 
 Deliberately NOT locked, and the reason is the audit rather than taste:
 `durationInFrames`, `camera`, `motion`, `layout`, `style_bible`, `format` and

@@ -14,6 +14,22 @@ there is no poisoned-baseline hazard to guard against — but the test file IS
 the mutation target, so it is restored from the snapshot taken at entry, and
 the end-of-run check compares against it for the same reason as before: a
 harness that restores a stale snapshot writes the damage back on the next run.
+
+TWO ANCHORS HERE WERE DEAD UNTIL P34, AND THE LEDGER COUNTED THEM AS KILLED.
+`diff_always_empty` and `drop_second_emit` anchored on lines P30 deleted when
+it rewrote `diff_locked`. The anchor check caught it — "ANCHOR NOT FOUND", exit
+1 — which is the correct behaviour, and it also means neither mutation had run
+since P30 while a "4/4 killed" line still counted them. Repaired in place, with
+the reasoning at each anchor. Both are now killed by real tests AND verified to
+move `diff_locked`'s actual output, because a red suite proves nothing about a
+guard if the mutation was inert.
+
+WHAT THIS HARNESS DOES NOT HAVE, AND THE BRAND ONE DOES: a `_probe()` that
+measures the lock's behaviour before and after. `returncode` and a list of
+FAILED lines cannot tell a live mutation from one that landed and changed
+nothing. Verified out of band for P34; adding the probe here is the obvious
+next step and is not done because it is a behaviour change to a harness whose
+output other ledger entries are quoted against.
 """
 from __future__ import annotations
 
@@ -54,18 +70,31 @@ MUTATIONS: dict[str, tuple[Path, str, str]] = {
         "",
     ),
     # 3. diff_locked never reports anything.
+    #    ANCHOR REPAIRED (P34): this used to anchor on
+    #    `b_by_path = {p: v for _, _, p, _, v in iter_locked(before)}`, which P30
+    #    deleted when it rewrote `diff_locked` into the two-pass `emit()` form.
+    #    The harness correctly refused it ("ANCHOR NOT FOUND"), so this mutation
+    #    had not run since P30 while the ledger still counted it in "4/4 killed".
+    #    The intent — the whole diff is suppressed — is now anchored on the
+    #    function's own return, which is the only line every version has had.
     'diff_always_empty': (
         LOCKED,
-        "    b_by_path = {p: v for _, _, p, _, v in iter_locked(before)}\n",
-        "    return []  # MUTATION\n"
-        "    b_by_path = {p: v for _, _, p, _, v in iter_locked(before)}\n",
+        "def diff_locked(before: dict, after: dict) -> list[LockedField]:\n",
+        "def diff_locked(before: dict, after: dict) -> list[LockedField]:\n"
+        "    return []  # MUTATION: diff_locked never reports anything\n",
     ),
     # 4. the second emit() is removed. diff_locked(a, b) and diff_locked(b, a)
     #    then find different counts, which is the bidirectional invariant.
+    #    ANCHOR REPAIRED (P34): P30 turned the two 3-argument `emit()` calls into
+    #    four 5-argument ones (two walks x two directions), so the old anchor
+    #    `emit(before, after, primary=True)` / `emit(after, before, primary=False)`
+    #    stopped existing too. This now removes the reverse pass of the FIRST
+    #    walk only — dropping all four would also kill the brand lock and would
+    #    no longer be the bidirectional-invariant mutation it claims to be.
     'drop_second_emit': (
         LOCKED,
-        "    emit(before, after, primary=True)\n    emit(after, before, primary=False)\n",
-        "    emit(before, after, primary=True)  # MUTATION: second pass removed\n",
+        "    emit(after, before, False, iter_locked, field_seen)\n",
+        "    # MUTATION: the reverse pass of the content walk is removed\n",
     ),
     # 5. the zero-consumer self-check is deleted: the guard can no longer notice
     #    itself being weakened.

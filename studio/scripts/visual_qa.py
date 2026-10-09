@@ -1152,7 +1152,7 @@ def rule_missing_asset(props: dict) -> list[Finding]:
       * `narration` — declared, but by a DIFFERENT schema
         (`report-data.schema.json`, consumed by `ReportVertical.tsx`), not by
         `showcase-v1`. It can never appear in a showcase graph.
-      * `audioEvents` — declared at `showcase-v1.ts:101` as a SCENE-level field,
+      * `audioEvents` — declared at `showcase-v1.ts:259` as a SCENE-level field,
         but zero renderer source reads it, and the position this rule read it
         from (top level) is not even the level it is declared at. Queued in the
         ledger as an inert field; it is not read here either.

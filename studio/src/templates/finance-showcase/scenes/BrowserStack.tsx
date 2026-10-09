@@ -5,7 +5,7 @@ import {CameraRig, useCameraState} from '../common/CameraRig';
 import {cssXForScreenX, screenScaleFor} from '../common/projection';
 // Fonts and scaling are NOT theme-scoped, so importing them is correct.
 // Everything that IS theme-scoped (palette, type, spacing, shadow) must come
-// from useDesign() — see tests/test_design_system.py.
+// from useDesign() — see tests/test_showcase_schema_parity.py::test_scenes_do_not_import_design_values_directly
 import {FONT_NUM, FONT_SANS, TRAFFIC_LIGHTS, scaleFor} from '../design/tokens';
 import {useDesign} from '../design/styleBible';
 import {Stagger} from '../common/primitives';
