@@ -19,9 +19,14 @@ Three kinds, from the ledger's three nouns:
     it is simultaneously the data and the thing a collision repair wants to
     shorten. 11.2 exists mostly to say that does not happen.
   * 核心文案 — the sentences that carry the message.
-  * 品牌 — `logo` is a scene TYPE in showcase-v1.ts:36, so the brand mark is a
-    scene, not a field. Locking the type is what stops a repair from rerouting
-    it to a chart to make it fit.
+  * 品牌 — `logo` is a scene TYPE in showcase-v1.ts:82, so the brand mark is a
+    scene, not a field. It is locked as a SCENE, by a different mechanism than
+    the other two (see `LOCKED_SCENE_TYPES`), because `_RULES_BY_KEY` matches a
+    content key in EVERY scene and a brand lock must not apply to a scene that
+    merely happens to carry a key called `name`. Two things are locked: the
+    scene's `type`, so a repair cannot reroute it to a chart to make it fit, and
+    its `content.name`, the wordmark, so it cannot buy the same clearance by
+    renaming. Both come back as ordinary `LockedField`s.
 
 Deliberately NOT locked, and the reason is the audit rather than taste:
 `durationInFrames`, `camera`, `motion`, `layout`, `style_bible`, `format` and
@@ -44,7 +49,8 @@ from pathlib import Path
 from typing import Any, Iterator
 
 __all__ = [
-    'LockRule', 'LOCK_RULES', 'LockedField', 'iter_locked',
+    'LockRule', 'LOCK_RULES', 'LockedField', 'iter_locked', 'iter_scene_locked',
+    'LOCKED_SCENE_TYPES', 'BRAND_CONTENT_KEYS',
     'diff_locked', 'locked_paths', 'coverage_report', 'main',
 ]
 
@@ -85,8 +91,10 @@ LOCK_RULES: tuple[LockRule, ...] = (
     LockRule('month', 'copy', 'a date label is a fact about time'),
 
     # --- 品牌 -------------------------------------------------------------
-    # `logo` is a scene type; locking it here is a no-op on content and the rule
-    # is kept so the ledger's third noun has a machine-checkable counterpart.
+    # Nothing in this tuple locks the brand, and that is deliberate: `logo` is a
+    # scene TYPE, so the key `name` under its `content` is indistinguishable here
+    # from any other scene's `content.name` — `LOCK_RULES` matches a key in every
+    # scene. The brand lock is `LOCKED_SCENE_TYPES` + `BRAND_CONTENT_KEYS`, below.
     LockRule('highlight', 'copy', 'the one element the scene points at'),
 
     # --- 身份 -------------------------------------------------------------
@@ -96,8 +104,60 @@ LOCK_RULES: tuple[LockRule, ...] = (
 _RULE_BY_KEY: dict[str, LockRule] = {r.key: r.key for r in LOCK_RULES}
 _RULES_BY_KEY: dict[str, LockRule] = {r.key: r for r in LOCK_RULES}
 
-# Scene types that carry brand meaning and must survive a repair.
+# --------------------------------------------------------------------------
+# The brand lock. A scene TYPE, plus the content keys that are the brand ON a
+# scene of that type. Read by `diff_locked` via `iter_scene_locked` — P11 wrote
+# this constant and three tests read it, and no production code did, so until
+# P30 the third noun in the ledger had no rule behind it and `by_kind['brand']`
+# was `[]` by construction rather than by measurement.
+# --------------------------------------------------------------------------
+
+#: Scene types that carry brand meaning and must survive a repair: they may not
+#: be rerouted to another type, and see `BRAND_CONTENT_KEYS` for what they carry.
 LOCKED_SCENE_TYPES: frozenset[str] = frozenset({'logo'})
+
+#: The `content` keys that ARE the brand, on a scene whose `type` is in
+#: LOCKED_SCENE_TYPES. `name` is the wordmark — Brand.tsx defines a lockup as
+#: "a MARK (procedural, derived from tokens), a WORDMARK (the brand line from
+#: content), optionally a TAGLINE". The mark is procedural, so `content.name` is
+#: the only part of the lockup the graph owns and a repair could edit.
+#:
+#: `tagline` is deliberately NOT here: the renderer calls it optional, and
+#: "the brand" does not obviously include the positioning line. That is a
+#: product call, not a measurement — see the note below.
+BRAND_CONTENT_KEYS: tuple[str, ...] = ('name',)
+
+_SCENE_TYPE_RULE = LockRule(
+    'type', 'brand',
+    'rerouting a brand scene to a chart is the move this lock exists to stop')
+_BRAND_RULES: dict[str, LockRule] = {
+    k: LockRule(k, 'brand',
+                'the wordmark is the claim; shortening or substituting it to '
+                'make a collision go away is the brand version of dropping a '
+                'chart label')
+    for k in BRAND_CONTENT_KEYS
+}
+
+# ── WHAT A READER STILL HAS TO DECIDE, and why it is not decided here ──────
+#
+# 1. Is `outro` a brand scene? MEASURED: `pipeline/graphs/
+#    p29_new_renderer_showcase.json` gives `outro` the same `content.name`, and
+#    Brand.tsx renders it through the same `Lockup` component, so the wordmark
+#    IS displayed there. It is not in LOCKED_SCENE_TYPES because the ledger says
+#    「品牌 logo」 and this constant has said `{'logo'}` since P11. Adding it is a
+#    one-word edit, and `tests/test_brand_lock_wiring.py` keeps passing as it
+#    stands — but it widens the lock
+#    from "the logo scene" to "the brand wherever it appears", which is a
+#    product decision. Until it is made, a repair that edits ONLY the outro's
+#    wordmark is not caught.
+#
+# 2. Should `content.tagline` be locked? Same shape: Brand.tsx lists it as
+#    optional, the ledger does not name it, and locking it is defensible either
+#    way. Adding it to BRAND_CONTENT_KEYS is the whole change.
+#
+# Both are recorded as open rather than guessed, because a guess here reads as
+# settled the moment it is code — and the thing this repository keeps getting
+# wrong is a comment that outlives the decision it was standing in for.
 
 
 @dataclass(frozen=True)
@@ -150,6 +210,33 @@ def iter_locked(graph: dict) -> Iterator[tuple[int, str, str, LockRule, Any]]:
                 yield i, sid, path, rule, value
 
 
+def iter_scene_locked(graph: dict) -> Iterator[tuple[int, str, str, LockRule, Any]]:
+    """Yield the same 5-tuple `iter_locked` yields, for SCENE-level locks.
+
+    Two things are locked per brand scene: its `type` (so it cannot be rerouted)
+    and each key in BRAND_CONTENT_KEYS (so it cannot be renamed). Same tuple
+    shape as `iter_locked` on purpose — `diff_locked` runs both passes through
+    one `emit()`, so there is one place where a lock becomes a `LockedField`,
+    and no second return path for a caller to forget to check. The P21 lesson
+    was two call sites holding one constant and only one of them reading it.
+    """
+    scenes = graph.get('scenes') or []
+    for i, scene in enumerate(scenes):
+        if not isinstance(scene, dict):
+            continue
+        stype = scene.get('type')
+        if stype not in LOCKED_SCENE_TYPES:
+            continue
+        sid = str(scene.get('id', f'#{i}'))
+        yield i, sid, f'scenes[{i}].type', _SCENE_TYPE_RULE, stype
+        content = scene.get('content')
+        if not isinstance(content, dict):
+            continue
+        for key, rule in _BRAND_RULES.items():
+            if key in content:
+                yield i, sid, f'scenes[{i}].content.{key}', rule, content[key]
+
+
 def locked_paths(graph: dict) -> dict[str, Any]:
     """path -> value, for logging or for a report."""
     return {path: value for _, _, path, _, value in iter_locked(graph)}
@@ -188,18 +275,17 @@ def diff_locked(before: dict, after: dict) -> list[LockedField]:
     Union of both graphs' locked paths, so a repair that DELETES a locked field
     is caught as well as one that edits it — deletion is the move most likely to
     make a collision disappear, and it is exactly as much a lie as editing.
+
+    Two passes run through ONE `emit()`: `iter_locked` for content fields, and
+    `iter_scene_locked` for the brand scene-type lock. They keep separate `seen`
+    sets on purpose — see the note in `emit`.
     """
-    b_by_path = {p: v for _, _, p, _, v in iter_locked(before)}
-    a_by_path = {p: v for _, _, p, _, v in iter_locked(after)}
-
-    # A path can change shape when its parent list changes length, so anchor on
-    # (scene_index, leaf-rule) rather than on the path string alone.
     out: list[LockedField] = []
-    seen: set[tuple[int, str, str]] = set()
 
-    def emit(scenes: dict, other: dict, primary: bool) -> None:
-        for idx, sid, path, rule, value in iter_locked(scenes):
-            anchor = (idx, rule.key, path.rsplit('.', 1)[-1])
+    def emit(scenes: dict, other: dict, primary: bool,
+             walk: Any, seen: set[tuple[int, str, str]]) -> None:
+        for idx, sid, path, rule, value in walk(scenes):
+            anchor = _anchor(idx, path, rule)
             if anchor in seen:
                 continue
             counterpart = _counterpart_path(other, idx, rule, path)
@@ -218,9 +304,28 @@ def diff_locked(before: dict, after: dict) -> list[LockedField]:
                         path=leaf_path if primary else counterpart or path,
                         rule=rule, before=lo, after=hi))
 
-    emit(before, after, primary=True)
-    emit(after, before, primary=False)
+    field_seen: set[tuple[int, str, str]] = set()
+    emit(before, after, True, iter_locked, field_seen)
+    emit(after, before, False, iter_locked, field_seen)
+    scene_seen: set[tuple[int, str, str]] = set()
+    emit(before, after, True, iter_scene_locked, scene_seen)
+    emit(after, before, False, iter_scene_locked, scene_seen)
     return out
+
+
+def _anchor(idx: int, path: str, rule: LockRule) -> tuple[int, str, str]:
+    """Identity for "have I already reported this?", per pass.
+
+    Content paths anchor on the leaf key, exactly as before P30. Scene-level
+    paths anchor on the WHOLE path, which is what keeps the two namespaces from
+    colliding: `content.chart.type` and a scene's own `type` are different
+    claims about one scene, and if they shared an anchor the second one to be
+    walked would be silently dropped. A lock that loses a finding because of an
+    internal cache is the same failure as a lock that was never written.
+    """
+    if path.startswith(f'scenes[{idx}].content'):
+        return (idx, rule.key, path.rsplit('.', 1)[-1])
+    return (idx, rule.key, path)
 
 
 def _counterpart_path(other: dict, idx: int, rule: LockRule, path: str) -> str | None:
@@ -228,8 +333,15 @@ def _counterpart_path(other: dict, idx: int, rule: LockRule, path: str) -> str |
     scenes = other.get('scenes') or []
     if idx >= len(scenes):
         return None
-    tail = path.split(f'scenes[{idx}].content', 1)[-1]
-    return f'scenes[{idx}].content{tail}'
+    marker = f'scenes[{idx}].content'
+    if not path.startswith(marker):
+        # A scene-level path (`scenes[3].type`) is already absolute — there is no
+        # content subtree to rebase. Returning it unchanged is what lets a
+        # DELETED brand scene report: `other` is shorter, this returns None, and
+        # `_diff_values('logo', None, ...)` records the loss.
+        return path
+    tail = path.split(marker, 1)[-1]
+    return f'{marker}{tail}'
 
 
 def _lookup(graph: dict, path: str) -> Any:
@@ -254,18 +366,54 @@ def coverage_report(graphs: dict[str, dict]) -> dict[str, Any]:
 
     A lock list is only as good as its blind spots, and an unexercised rule is
     indistinguishable from a correct one until something tries to move it.
+
+    `unexercised` still means "a `LOCK_RULES` key that no graph hits" and nothing
+    else — it is an asserted contract (`test_every_rule_is_exercised_by_the_
+    shipped_graphs`) and the ledger records it as zero, so widening it would
+    silently redefine a number that is already cited elsewhere. The brand lock
+    is not in `LOCK_RULES` and would therefore be INVISIBLE here, which is the
+    one failure this function exists to prevent — so it gets its own section,
+    `scene_locks`, with the same exercised/unexercised vocabulary.
     """
     used: dict[str, list[str]] = {}
+    keys_used: dict[str, list[str]] = {}
+    types_hit: set[str] = set()
     for name, g in graphs.items():
         for _, _, path, rule, _ in iter_locked(g):
             used.setdefault(rule.key, []).append(f'{name}:{path}')
+        for _idx, _sid, path, rule, value in iter_scene_locked(g):
+            if rule is _SCENE_TYPE_RULE:
+                # A scene TYPE is reported by its own NAME ('logo') — that is
+                # what a reader checks against LOCKED_SCENE_TYPES. Its rule key
+                # is 'type', and counting the two in one namespace made every
+                # graph report the logo scene as unexercised.
+                if isinstance(value, str):
+                    types_hit.add(value)
+            else:
+                keys_used.setdefault(rule.key, []).append(f'{name}:{path}')
     return {
         'rules': len(LOCK_RULES),
         'exercised': len(used),
         'unexercised': sorted({r.key for r in LOCK_RULES} - set(used)),
         'hit_counts': {k: len(v) for k, v in sorted(used.items())},
-        'by_kind': {k: sorted(r.key for r in LOCK_RULES if r.kind == k)
-                    for k in ('fact', 'copy', 'brand', 'identity')},
+        # 'brand' was a reserved kind from P11 with zero rules in it — the
+        # reason the ledger could only ever report "fact 9 / copy 4 / identity 1".
+        # No fourth kind was needed; the slot was already built.
+        'by_kind': {
+            k: (sorted([_SCENE_TYPE_RULE.key, *_BRAND_RULES]) if k == 'brand'
+                else sorted(r.key for r in LOCK_RULES if r.kind == k))
+            for k in ('fact', 'copy', 'brand', 'identity')
+        },
+        'scene_locks': {
+            'locked_scene_types': sorted(LOCKED_SCENE_TYPES),
+            'locked_content_keys': sorted(BRAND_CONTENT_KEYS),
+            'exercised_scene_types': sorted(types_hit),
+            'exercised_content_keys': sorted(keys_used),
+            'unexercised': sorted(
+                (set(LOCKED_SCENE_TYPES) - types_hit)
+                | (set(BRAND_CONTENT_KEYS) - set(keys_used))),
+            'hit_counts': {k: len(v) for k, v in sorted(keys_used.items())},
+        },
     }
 
 

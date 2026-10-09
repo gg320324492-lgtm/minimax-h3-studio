@@ -36,6 +36,25 @@ def _graph(name: str) -> dict:
     return json.loads((ROOT / 'pipeline' / 'examples' / name).read_text(encoding='utf-8'))
 
 
+def _brand_graph() -> dict:
+    """The only shipped graph carrying a `logo` scene.
+
+    `pipeline/examples/*` has none — measured — so every assertion about the
+    brand lock has to name this file explicitly or it is asserting against a
+    fixture that cannot fail.
+    """
+    return json.loads(
+        (ROOT / 'pipeline' / 'graphs' / 'p29_new_renderer_showcase.json')
+        .read_text(encoding='utf-8'))
+
+
+def _brand_scene_index(graph: dict) -> int:
+    idx = [i for i, s in enumerate(graph['scenes']) if s.get('type') == 'logo']
+    assert idx, ('no scene of type "logo" — the brand fixture is wrong, and every '
+                 'brand assertion below would pass because nothing happened')
+    return idx[0]
+
+
 @pytest.fixture(scope='module')
 def charts():
     return _graph('charts_demo.json')
@@ -178,12 +197,33 @@ def test_every_rule_is_exercised_by_the_shipped_graphs():
 
 
 def test_the_three_kinds_from_the_ledger_are_all_present():
-    """核心文案 / 品牌 / 数值事实 — the ledger's nouns, as machine-checkable kinds."""
+    """核心文案 / 品牌 / 数值事实 — the ledger's nouns, as machine-checkable kinds.
+
+    ⚠️ Until P30 this ended in `assert lf.LOCKED_SCENE_TYPES == {'logo'}`, and
+    that line is the trap the whole P30 item is about. Pinning a constant's
+    VALUE says the constant is spelled correctly; it says nothing about whether
+    anything reads it. It stayed green for a year while `diff_locked` rerouted a
+    `logo` scene to a `bar-chart` without complaint and `by_kind['brand']` was
+    `[]`. So the brand half now moves the lock and reads what comes back — the
+    full behavioural guard is `tests/test_brand_lock_wiring.py`.
+    """
     kinds = {r.kind for r in lf.LOCK_RULES}
     assert {'fact', 'copy', 'identity'} <= kinds, kinds
-    assert lf.LOCKED_SCENE_TYPES == {'logo'}, (
-        'the ledger names 品牌 logo; it is a scene type in showcase-v1.ts:36, so '
-        'locking the type is the only thing a field-rule system can check'
+
+    graph = _brand_graph()
+    i = _brand_scene_index(graph)
+    after = copy.deepcopy(graph)
+    after['scenes'][i]['type'] = 'bar-chart'
+
+    bad = lf.diff_locked(graph, after)
+    assert bad, (
+        'the ledger names 品牌 logo and this moved one; diff_locked said '
+        'nothing. The brand kind exists as a bucket in by_kind but no rule '
+        'ever reaches it.'
+    )
+    assert any(f.rule.kind == 'brand' for f in bad), (
+        f'brand reroute reported as {sorted({f.rule.kind for f in bad})}; the '
+        'ledger has a third noun and it needs its own kind'
     )
 
 
