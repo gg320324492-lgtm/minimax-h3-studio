@@ -189,6 +189,20 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
     return (i: number, n: number) => (n > 0 ? (i + 0.5) / n : 0.5);
   }, [spec.labels, type]);
 
+  /**
+   * VOLUME spans `baseline + values`, so that is what the domain must cover.
+   *
+   * Deliberately NOT folded into `values` above. That array is handed to
+   * `<VolumeBars values={values}>` a few lines down, and the mark adds the
+   * baseline itself -- shifting here too made every bar's top `yOf(2*baseline +
+   * value)`. Measured: the bars went to 176 on an axis ending at ~141 and the
+   * frame was still clipped. `values` stays the mark's data.
+   */
+  const domainValues = useMemo<readonly number[] | undefined>(() => {
+    if (type !== 'volume' || typeof spec.baseline !== 'number') return undefined;
+    return (spec.values ?? []).map((v) => spec.baseline + v);
+  }, [spec, type]);
+
   if (!values.length) {
     return (
       <CameraRig camera={scene.camera} motion={scene.motion} durationInFrames={scene.durationInFrames}>
@@ -211,6 +225,7 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
         chart={type}
         options={pickOptions(spec as unknown as Record<string, unknown>)}
         values={values}
+        domainValues={domainValues}
         zeroBased={zeroBased}
         xLabels={type === 'bar' || type === 'volume' ? spec.labels : undefined}
         rowLabels={type === 'heatmap' ? spec.rowLabels : undefined}
