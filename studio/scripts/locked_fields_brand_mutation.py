@@ -1,6 +1,6 @@
 """P30 mutation harness for the brand lock guard.
 
-Usage:  py -3.12 E:/Minimax-H3/_p30_mutation_run.py [name|all]
+Usage:  py -3.12 studio/scripts/locked_fields_brand_mutation.py [name|all]
 
 Protocol, in the order this project has been burned in:
   1. snapshot the target BYTES at entry
