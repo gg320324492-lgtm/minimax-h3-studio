@@ -1248,6 +1248,73 @@ M1 从豁免清单删 `durationInFrames` | **杀** —— 探针移动：`exempt
 1. **`lock_a_legitimate_lever` 从「4 全杀」里移出** —— 改为：**「P32 之前是惰性的，只被规则列表上的集合算术接住、没有行为证据链（已用中和两处接住它的断言确认）；现由 `locked_fields_p32_mutation.py` 的 M1/M2/M3 取代。」**
 2. **补记 P32 的发现**：`iter_locked` 只从 `content` 进、七个杠杆是顶层键 ⇒ 以杠杆命名的规则永不触发；已由**加宽遍历 + 在代码里点名豁免**修复。
 3. **记下方向裁定与其警告**：**豁免不是"遍历时悄悄跳过"** —— **那会让那条变异重新变成惰性**；**它是被守卫强制的已声明常量**（守卫为每个杠杆注入一条规则、要求豁免正是让它沉默的那个东西）。
+
+---
+
+## P33 — `Brand.tsx` 的假注释，以及一簇比它更大的　状态：✅（注释已修，整簇待裁定）
+
+守卫 `tests/test_brand_lock_comment_honesty.py`（5 条）。`Brand.tsx` **仅注释改动**（12+/12-、**行数中性 223 行 = HEAD**）。全量 **632 passed, 4 skipped**。`visual_qa.py` `7e7d586a…` **未动**。
+
+### ⚠️⚠️ 本轮最大的发现：**一个注释把读者指向 8 个从未存在过的测试**
+
+**指挥窗口独立复现**：`tests/test_design_system.py` **不在磁盘、`git log --all` 全历史无记录** ⇒ **它从未存在过**；而 **8 个源文件**的注释引用它：`Brand.tsx` / `BrowserStack.tsx` / `BrowserWindow.tsx` / `Cards.tsx` / `DataColumns.tsx` / `DataTable.tsx` / `KpiHero.tsx` / `Quote.tsx`。
+
+**⚠️ 而它不是"过期"，是「下达指令」**（`Quote.tsx:5-7` 与 `Cards.tsx:5-7` 逐字相同）：
+
+```
+// Fonts and scaling are NOT theme-scoped, so importing them is correct.
+// Everything that IS theme-scoped (palette, type, spacing, shadow) must come
+// from useDesign() — see tests/test_design_system.py.
+```
+
+**⇒ 读它的人会去找那个守卫、找不到、然后不知道该信什么。**
+**⇒ 而 P26 造那七个新组件时，每个都复制了这条引用 —— 一次不存在的引用被复制了七遍。**
+**⇒ 它从未失败过，因为注释不参与任何测试。**
+
+**⚠️ 而它要传达的规则其实是有守卫的** —— `tests/test_showcase_schema_parity.py:290-297` 断言场景模块**不得 `import design/tokens`**。**⇒ 假注释指向一个不存在的文件，而它要传达的规则由另一个文件守着。**
+
+**执行 agent 正确地没有只改一处** —— 改 1/8 会造成不一致，**而它也不知道正确的替代是哪个**（`tests/` 下有五个 style_bible 相关测试）。**它报请整类裁定。**
+
+### 其余逐条核对（全部「自己去代码里核对过，没有一条只靠 grep」）
+
+| # | 位置 | 断言 | 实际 | 判断 |
+|---|---|---|---|---|
+| A1 | `Brand.tsx:17-18` | `LOCKED_SCENE_TYPES = frozenset({'logo'})` | `{'logo','outro'}` | **假 — 已改** |
+| A2 | `Brand.tsx:19` | `logo` 在 `showcase-v1.ts:36` | **:36 讲 Zod 严格性**；`logo` 在 **:82**、`outro` 在 **:83** | **假 — 已改**（**工单没提，是新发现**） |
+| A3 | `Brand.tsx:29` | "锁未被改动 / 那条测试仍钉住它" | P30 接线；P30 把守卫从断言常量改成**断言行为** | **假 — 已改** |
+| A4 | `locked_fields.py:26-29` | "**两**样被锁：`type` 与 `content.name`" | P31 后是**三**个：`type`/`name`/`tagline` | **假（活的少报，不是历史陈述）— 未改，待裁定** |
+| A5 | `locked_fields.py:170` | "承载品牌含义、必须挺过修复的场景类型" | **现在为真**（实测改道报 1 条 brand 违规） | **真** |
+| A6 | `locked_fields.py:10` | `content` 在 `showcase-v1.ts:100` | **:100 是 `rotateX`**；`content` 在 **:256** | **假 — 未改，待裁定** |
+| A7 | `locked_fields.py:347` | 「`type` 与 `BRAND_CONTENT_KEYS` 里的每个键」 | 措辞通用，P31 后仍成立 | **真** |
+| B1 | 8 个源文件 | 指向 `tests/test_design_system.py` | **该文件从未存在** | **假 — 见上** |
+| B2 | `visual_qa.py:1155` | `audioEvents` "declared at `showcase-v1.ts:101`" | **:101 是 `rotateX`**；`audioEvents` 在 **:259** | **假 — 未改** |
+| B3 | `locked_fields_brand_mutation.py:3` | Usage 指向 `E:/Minimax-H3/_p30_mutation_run.py` | **该文件不存在也未被跟踪** | **假 — 未改** |
+| B4 | `locked_fields_mutation.py` | 两个变异锚点 | **均已死**（P30 重写了 `diff_locked`）——**好消息：该 harness 找不到锚点会大声失败并返回 1，不是静默失效** |
+| B5 | `showcase-v1.ts:242-260`（P32 新写） | 七个杠杆键在该区间 | **为真** | **真** |
+
+### 守卫：判据从代码推导，测试文件里没有写死任何期望值
+
+`locked_fields.py` 的常量在**测试运行时读出**。
+⚠️ **M3 用「原始 P26 文本逐字」作 fixture** —— **证明判据不是只能看见今天文本的死分支**。
+
+**六条变异全杀**：M1 改成三个类型（注释不动）→ 红，**错误消息直接并列「注释说 / 代码持有」**；M2 改错类型名 → 红；M3 判据被中和 → 红；M4 行号回退到 `:36` → 红；M5 整段注释删掉 → 红 2 条；**M6 注释加长 35 行 → 红**。
+
+### ⚠️ 执行 agent 自报：它**差点亲手制造 8 条新的假注释**
+
+**第一版改写给 `Brand.tsx` 加了 35 行**，而 `locked_fields.py` 用**行号**引用 `Brand.tsx`（`:93` 是 `{name}`、`:156-157` 是 `Outro` 的 `c.name`/`c.tagline`）。加 35 行后**这些引用全部落进新注释的中间** —— **仍然"能解析"、仍然读起来像可信断言、没有任何东西失败**。
+**是审计 agent 抓到的，不是它自己。** 它因此把改写压回**行数中性**，并加了 M6 那条守卫。
+
+**⇒ 这就是 P33 的真正教训：写注释时，别的文件正按行号引用它。**
+**⇒ 而那正是 `locked_fields.py:347` 那个注释的原型** —— 它用 `:93` / `:156-157` 指 `Brand.tsx`。
+
+其余三条：守卫第一次**红在了错的地方**（`comment_blocks` 只处理 `//` 与 `/* */`、读不了 Python 的 `#`，导致新加的引用守卫报"找不到引用"—— **解析漏洞不是真问题，已改用 `tokenize`**）；一次 shell 误报（`${f##*:}` 把 `E:` 的冒号吃掉、4 个文件全报 DIFFERS，**实际是引号 bug**，已用 sha256 复核）；**中途发现 HEAD 变了**（P32 在它跑测试期间提交 `16c8a88`）—— 它**重新对着 P32 最终版复跑守卫并复验了 3 处引用**。
+
+### 提请裁定（本项一律未动）
+
+1. **B1 整簇**（8 处指向不存在的测试）—— 正确替代是哪个文件？**执行 agent 没有猜，它说它不知道**；
+2. **A4 / A6 / B2** 三处行号与计数漂移（`locked_fields.py:26-29`、`:10`、`visual_qa.py:1155`）—— **`visual_qa.py` 在工单里禁碰**；
+3. **B3** `locked_fields_brand_mutation.py` 的 Usage 指向不存在的文件；
+4. **B4** `locked_fields_mutation.py` 的两个死锚点 —— **harness 会大声失败，但那些变异实际上已不再运行**。
 ---
 
 ## P25 — 门禁接进渲染路径（props 级），逐帧级**实测接不上**　状态：✅
