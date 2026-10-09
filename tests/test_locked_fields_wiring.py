@@ -316,17 +316,32 @@ def test_the_zero_consumer_assertion_can_actually_see_a_consumer():
     assert not probe.exists(), 'the probe was left behind'
 
 
-def test_the_module_under_test_still_declares_what_the_contract_assumes():
-    """Lock kinds and the scene-type carve-out, pinned by behaviour.
+def test_the_module_under_test_still_declares_what_the_contract_assumptions():
+    """Lock kinds and the scene-type carve-out, pinned by BEHAVIOUR.
 
     `logo` is a scene TYPE, not a content field, so it cannot be a LockRule and
-    is handled by LOCKED_SCENE_TYPES. A contract that quietly stopped covering
-    the brand mark would leave the guard green: nothing here moves a logo scene.
+    is handled by `LOCKED_SCENE_TYPES` + `BRAND_CONTENT_KEYS`.
+
+    ⚠️ Until P30 this read `assert 'logo' in lf.LOCKED_SCENE_TYPES` — while its
+    own docstring claimed the values were "pinned by behaviour", which is the
+    claim this project has been wrong about seven times. Its own message said the
+    danger: "nothing in this file moves a logo scene". So it now moves one.
     """
     import locked_fields as lf
-    assert 'logo' in lf.LOCKED_SCENE_TYPES, (
-        'the brand scene type is no longer locked; nothing in this file would '
-        'notice, because no test here moves a logo scene'
+    graph = json.loads(
+        (EXAMPLES.parent / 'graphs' / 'p29_new_renderer_showcase.json')
+        .read_text(encoding='utf-8'))
+    idx = [i for i, s in enumerate(graph['scenes']) if s.get('type') == 'logo']
+    assert idx, (
+        'the brand fixture carries no logo scene, so everything below would pass '
+        'because the lock correctly had nothing to say'
+    )
+    rerouted = copy.deepcopy(graph)
+    rerouted['scenes'][idx[0]]['type'] = 'bar-chart'
+    brand = [v for v in diff_locked(graph, rerouted) if v.rule.kind == 'brand']
+    assert brand, (
+        'the brand scene type is no longer locked; nothing else in this file '
+        'would notice, because no test here moved a logo scene'
     )
     kinds = {r.kind for r in LOCK_RULES}
     assert kinds <= {'fact', 'copy', 'brand', 'identity'}, (
