@@ -6,6 +6,14 @@ WHAT THIS FILE PROVES, precisely:
     levers 11.1 names pass, that attacks on the claim are caught, that swapping
     the arguments cannot launder a violation, and that nothing calls this yet.
 
+    Since P32 it also proves something the rest of the file could not: that the
+    levers are unlocked BY REFUSAL rather than by being out of reach. Until P32
+    `iter_locked` entered each scene through `content`, and every 11.1 lever is
+    a top-level key beside it, so the lock had never seen one — which made
+    "unlocked" indistinguishable from "invisible", and left the harness's
+    `lock_a_legitimate_lever` mutation inert. §1b below injects a rule for each
+    lever and requires the exemption to be what silences it.
+
     It does NOT prove that "11.2 is protecting delivered footage", because there
     is no repairer. `diff_locked` has zero consumers outside this repository's
     tests; the guard in §4 below pins that as a KNOWN STATE rather than a defect,
@@ -115,6 +123,128 @@ def test_the_lever_list_is_not_a_subset_of_the_lock():
         f'{sorted(overlap)} is both a lock rule and a legitimate lever. The lock '
         f'and the repair contract contradict each other, and each lever test '
         f'alone would still pass.'
+    )
+
+
+# ---------------------------------------------------------------------------
+# 1b. the exemption list is CODE, and it is consulted (P32)
+# ---------------------------------------------------------------------------
+#
+# Everything above would pass against a lock that cannot see a lever at all —
+# which is exactly what happened until P32: `iter_locked` entered each scene
+# through `content`, every 11.1 lever is a TOP-LEVEL SceneSchema key beside it,
+# and so `durationInFrames` was both unlocked and unreachable. "Unlocked because
+# the walker never looks there" and "unlocked because a rule refused it" are
+# different claims, and only one of them answers "did anyone try to lock this?".
+#
+# So these assert the mechanism, not the outcome: inject a rule named after each
+# lever and require the exemption to be what silences it. If the walker goes
+# back to content-only, the rule fires and this reds; if an entry is deleted
+# from LEGITIMATE_LEVERS, the rule fires and this reds.
+
+#: A real mutation per lever, so "the rule fires" is a measurement and not a
+#: tautology. Keys come from the shipped graphs (chart scenes really do carry
+#: `camera`/`motion`), which is why this table is data and not a lambda soup.
+_LEVER_CARRIER: dict[str, tuple[str, object]] = {
+    'durationInFrames': ('scene', lambda s: s.__setitem__('durationInFrames', 4242)),
+    'camera': ('scene', lambda s: s['camera'].__setitem__('translateZ', 4242)),
+    'motion': ('scene', lambda s: s['motion'].__setitem__('preset', 'PROBE')),
+    'layout': ('scene', lambda s: s['layout'].__setitem__('padX', 4242)),
+    'transitionIn': ('scene', lambda s: s['transitionIn'].__setitem__('in', 'PROBE')),
+    'style_bible': ('scene', lambda s: s.__setitem__('style_bible', {'palette': {'a': 1}})),
+    'transitionOut': ('scene', lambda s: s.__setitem__('transitionOut', {'out': 'PROBE'})),
+    'format': ('graph', lambda g: g.__setitem__('format', {**g['format'], 'width': 4242})),
+}
+
+
+@pytest.mark.parametrize('lever', sorted(_LEVER_CARRIER))
+def test_the_exemption_is_what_keeps_a_lever_unlocked(lever, monkeypatch):
+    """The lever must be REACHABLE and REFUSED — not merely out of reach.
+
+    Two assertions, and the order matters. First: with a rule for the lever
+    injected, the lock must stay silent — that is the exemption working. Then,
+    drop the exemption and require the SAME rule to fire — that is proof the
+    first silence was a refusal and not an unreachable path. A walker that
+    never visited the lever would pass the first assertion and fail the second,
+    which is precisely the bug P32 fixed and precisely the one the old
+    `lock_a_legitimate_lever` mutation was blind to.
+    """
+    import locked_fields as lf
+
+    scope, mutate = _LEVER_CARRIER[lever]
+    name = 'showcase_demo.json' if lever in ('layout', 'transitionIn', 'transitionOut') \
+        else 'charts_demo.json'
+    before = _graph(name)
+
+    def _after():
+        after = copy.deepcopy(before)
+        mutate(after if scope == 'graph' else after['scenes'][0])
+        return after
+
+    monkeypatch.setitem(lf._RULES_BY_KEY, lever,
+                        lf.LockRule(lever, 'copy', 'P32 probe: a rule for a lever'))
+    assert diff_locked(before, _after()) == [], (
+        f'{lever!r} is named by a rule and the lock still said nothing — so the '
+        f'exemption is not being read. Either the entry is missing from '
+        f'LEGITIMATE_LEVERS or iter_locked never reaches the key.'
+    )
+
+    monkeypatch.setattr(lf, 'LEGITIMATE_LEVERS', lf.LEGITIMATE_LEVERS - {lever})
+    assert diff_locked(before, _after()), (
+        f'{lever!r} left the exemption list and nothing caught it. The lever is '
+        f'OUT OF REACH rather than exempt — which is the P11/P32 defect: the '
+        f'lock would keep reporting 0 violations whether or not anyone tried.'
+    )
+
+
+def test_every_11_1_lever_is_named_in_the_exemption_list():
+    """The list is pinned to 11.1, so deleting an entry is a red test.
+
+    Set arithmetic against the module constant, not a comment: `LOCKED_SCENE_TYPES`
+    sat unread for months here, and the difference was that nothing asserted it.
+    """
+    import locked_fields as lf
+    assert lf.LEGITIMATE_LEVERS == frozenset(_LEVER_CARRIER), (
+        f'LEGITIMATE_LEVERS is {sorted(lf.LEGITIMATE_LEVERS)}, expected '
+        f'{sorted(_LEVER_CARRIER)}. 11.1 names seven levers; `transitionIn/Out` '
+        f'is one lever with two keys and `format` is graph-level. A key that '
+        f'drops out stops being exempt and stops being reachable, silently.'
+    )
+
+
+def test_the_walker_actually_visits_the_levers(monkeypatch):
+    """Reachability, measured on the shipped graphs and nothing else.
+
+    This is the assertion the old `lock_a_legitimate_lever` mutation could not
+    make. Note it cannot be written against plain `iter_locked` output: that
+    yields only paths a RULE matched, so an exempted lever is absent by
+    construction and asking "is it absent?" proves nothing — the same mistake as
+    measuring a lock by a graph that triggers nothing. So the exemptions are
+    dropped and a probe rule is injected, which turns the question into the one
+    that matters: if someone wrote a rule for this key, WOULD THE WALKER SEE IT?
+    """
+    import locked_fields as lf
+
+    monkeypatch.setattr(lf, 'LEGITIMATE_LEVERS', frozenset())
+    for lever in ('durationInFrames', 'camera', 'motion', 'transitionIn',
+                  'layout', 'format', 'content'):
+        monkeypatch.setitem(lf._RULES_BY_KEY, lever,
+                            lf.LockRule(lever, 'copy', 'P32 reachability probe'))
+
+    graphs = {p.name: json.loads(p.read_text(encoding='utf-8'))
+              for p in EXAMPLES.glob('*.json')}
+    seen: set[str] = set()
+    for g in graphs.values():
+        for _i, _s, path, _r, _v in lf.iter_locked(g):
+            seen.add(lf.lever_key_of(path))
+
+    missing = {'durationInFrames', 'camera', 'motion', 'transitionIn',
+               'layout', 'format', 'content'} - seen
+    assert not missing, (
+        f'the walker never reached {sorted(missing)} across the shipped graphs, '
+        f'even with the exemptions lifted and a rule for each. It is not walking '
+        f'the scene/graph top level, so every lever exemption is vacuous again '
+        f'and "unlocked" means "invisible" rather than "refused".'
     )
 
 
@@ -379,6 +509,9 @@ _CONTRACT_TESTS = (
     'test_a_legitimate_lever_is_not_locked',
     'test_the_lever_list_is_not_a_subset_of_the_lock',
     'test_the_lock_still_covers_what_it_claims_to',
+    'test_the_exemption_is_what_keeps_a_lever_unlocked',
+    'test_every_11_1_lever_is_named_in_the_exemption_list',
+    'test_the_walker_actually_visits_the_levers',
     'test_an_attack_on_the_claim_is_caught_with_its_kind',
     'test_diff_locked_is_symmetric_under_argument_order',
     'test_symmetry_holds_for_a_repair_that_only_adds',

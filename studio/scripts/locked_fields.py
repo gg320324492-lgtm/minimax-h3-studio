@@ -35,6 +35,10 @@ the repair loop unable to do anything at all. The boundary this module draws is
 "the claim" versus "the staging of the claim" — you may move how a number is
 presented, never what it says.
 
+That list now lives in code as `LEGITIMATE_LEVERS`, and being a constant is not
+the same as being enforced — see the note above it for what reads it and what
+would notice it being deleted.
+
 Usage:
     from locked_fields import LockedField, diff_locked, coverage_report
     violations = diff_locked(before, after)
@@ -50,8 +54,8 @@ from typing import Any, Iterator
 
 __all__ = [
     'LockRule', 'LOCK_RULES', 'LockedField', 'iter_locked', 'iter_scene_locked',
-    'LOCKED_SCENE_TYPES', 'BRAND_CONTENT_KEYS',
-    'diff_locked', 'locked_paths', 'coverage_report', 'main',
+    'LOCKED_SCENE_TYPES', 'BRAND_CONTENT_KEYS', 'LEGITIMATE_LEVERS',
+    'lever_key_of', 'diff_locked', 'locked_paths', 'coverage_report', 'main',
 ]
 
 
@@ -103,6 +107,57 @@ LOCK_RULES: tuple[LockRule, ...] = (
 
 _RULE_BY_KEY: dict[str, LockRule] = {r.key: r.key for r in LOCK_RULES}
 _RULES_BY_KEY: dict[str, LockRule] = {r.key: r for r in LOCK_RULES}
+
+# --------------------------------------------------------------------------
+# The exemption list: 11.1's levers, IN RANGE and NOT LOCKED (P32).
+# --------------------------------------------------------------------------
+#
+# Before P32 `iter_locked` entered a scene through `content` and nowhere else,
+# and all seven of these levers are SceneSchema's TOP-LEVEL keys
+# (showcase-v1.ts:242-260) — `durationInFrames`, `style_bible`, `layout`,
+# `camera`, `motion`, `transitionIn`, `transitionOut` — beside `content`, not
+# inside it. Measured: all seven fired 0 times across all three shipped graphs,
+# so a LockRule named after one of them could never trigger on a real graph,
+# and the `lock_a_legitimate_lever` mutation in the harness was therefore
+# INERT while the ledger listed it among the four that "all kill".
+#
+# The fix is NOT to lock them — 11.2's own words: locking them leaves the repair
+# loop with nothing it may do. The fix is to bring them INTO RANGE and then
+# refuse them HERE, so "did anyone try to lock this?" is a question with an
+# answer instead of a coincidence nobody can check.
+#
+# Why a constant is not yet enforcement. `LOCKED_SCENE_TYPES` sat unread for
+# months and the brand lock it promised did not exist; a list that no code path
+# consults is a comment with better typography. Two things read this one, and
+# each fails loudly if it is deleted from:
+#
+#   * `iter_locked` — an exempt key is skipped on every top-level path, so a
+#     rule named after a lever cannot emit even if someone adds one;
+#   * the wiring guard, which injects a rule for each key here and asserts the
+#     lock still says nothing. That is what makes the exemption load-bearing
+#     rather than a no-op: with the entry removed, that same rule WOULD fire.
+#
+# Read it as the boundary 11.1 drew: the claim, versus the staging of the claim.
+LEGITIMATE_LEVERS: frozenset[str] = frozenset({
+    'durationInFrames', 'style_bible', 'layout', 'camera', 'motion',
+    'transitionIn', 'transitionOut',
+    'format',          # graph-level, not a SceneSchema key — showcase-v1.ts:319
+})
+
+
+def lever_key_of(path: str) -> str:
+    """The top-level key a locked path hangs off: the thing an exemption names.
+
+    `scenes[3].camera.translateZ` -> `camera`; `format.width` -> `format`.
+    Paths inside a scene's `content` return the key under `content`, because a
+    claim lives there and no lever exemption reaches it — which is the whole
+    point of the split, and the reason this helper exists rather than a
+    `path.split('.')[0]` at the call site.
+    """
+    parts = path.split('.')
+    if parts[0].startswith('scenes['):
+        return parts[1].split('[')[0] if len(parts) > 1 else ''
+    return parts[0].split('[')[0]
 
 # --------------------------------------------------------------------------
 # The brand lock. A scene TYPE, plus the content keys that are the brand ON a
@@ -206,17 +261,50 @@ class LockedField:
 
 
 def _walk(node: Any, prefix: str) -> Iterator[tuple[str, Any]]:
-    """Yield (dotted path, value) for every nested dict/list under `node`."""
+    """Yield (dotted path, value) for every nested dict/list under `node`.
+
+    `prefix` may be empty, for the graph's own top level (P32). The join has to
+    be conditional: `f'{prefix}.{k}'` with an empty prefix yields `.format`, and
+    a leading dot makes `lever_key_of` read the first component as `''` — which
+    matches no exemption, so `format` walked straight past its own exemption and
+    the guard below would have reported a legitimate lever as locked. The
+    leading-dot path was measured, not reasoned about: it showed up as
+    `format.width -> 1 violation` where it should have been 0.
+    """
+    join = f'{prefix}.' if prefix else ''
     if isinstance(node, dict):
         for k, v in node.items():
-            p = f'{prefix}.{k}'
+            p = f'{join}{k}'
             yield p, v
             yield from _walk(v, p)
     elif isinstance(node, list):
         for i, v in enumerate(node):
-            p = f'{prefix}[{i}]'
+            p = f'{join}[{i}]'
             yield p, v
             yield from _walk(v, p)
+
+
+def _emit_locked(walk: Any) -> Iterator[tuple[str, LockRule, Any]]:
+    """Shared match step: leaf key -> rule, skipping anything 11.1 exempts.
+
+    The exemption is keyed on the TOP-LEVEL key a path hangs off, not on the
+    leaf. A rule named `durationInFrames` must not reach `scenes[0].durationInFrames`
+    even after P32 put that path in range — and equally it must not silently
+    start matching the same leaf somewhere else, so the check is on the scope
+    key and `lever_key_of` is the single definition of that scope.
+
+    `walk` is a (path, value) stream, not a node: the scene, the content dict
+    and the graph root are all walked by the caller, because each has a
+    different prefix and a different exemption scope.
+    """
+    for path, value in walk:
+        leaf = path.rsplit('.', 1)[-1]
+        rule = _RULES_BY_KEY.get(leaf)
+        if rule is None:
+            continue
+        if lever_key_of(path) in LEGITIMATE_LEVERS:
+            continue
+        yield path, rule, value
 
 
 def iter_locked(graph: dict) -> Iterator[tuple[int, str, str, LockRule, Any]]:
@@ -224,18 +312,33 @@ def iter_locked(graph: dict) -> Iterator[tuple[int, str, str, LockRule, Any]]:
 
     Walks the whole content subtree rather than only the top level, so a locked
     key nested inside `chart` is found without the rule knowing where it sits.
+
+    P32: it ALSO walks each scene's top level and the graph's own top level.
+    Both were outside the lock's reach before, and that was not a harmless
+    blind spot — 11.1's seven levers live exactly there, so the exemption list
+    could not be enforced against a path the walker never reached, and a rule
+    named after one of them was unreachable in the strongest sense: it could not
+    fire even on a graph built to trigger it. `LEGITIMATE_LEVERS` is what those
+    newly-reachable paths are measured against, so "a repairer may move the
+    staging" is now a property of this function rather than of where it stopped.
     """
-    scenes = graph.get('scenes') or []
-    for i, scene in enumerate(scenes):
+    for i, scene in enumerate((graph.get('scenes') or [])):
+        if not isinstance(scene, dict):
+            continue
         sid = str(scene.get('id', f'#{i}'))
         content = scene.get('content')
-        if not isinstance(content, dict):
-            continue
-        for path, value in _walk(content, f'scenes[{i}].content'):
-            leaf = path.rsplit('.', 1)[-1]
-            rule = _RULES_BY_KEY.get(leaf)
-            if rule is not None:
+        if isinstance(content, dict):
+            for path, rule, value in _emit_locked(_walk(content, f'scenes[{i}].content')):
                 yield i, sid, path, rule, value
+        # the scene's own keys, beside `content` — where the levers live
+        top = {k: v for k, v in scene.items() if k != 'content'}
+        for path, rule, value in _emit_locked(_walk(top, f'scenes[{i}]')):
+            yield i, sid, path, rule, value
+
+    # the graph's own keys, e.g. `format` — also beside `scenes`, also a lever
+    root = {k: v for k, v in graph.items() if k != 'scenes'}
+    for path, rule, value in _emit_locked(_walk(root, '')):
+        yield -1, '<graph>', path, rule, value
 
 
 def iter_scene_locked(graph: dict) -> Iterator[tuple[int, str, str, LockRule, Any]]:
