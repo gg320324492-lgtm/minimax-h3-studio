@@ -948,6 +948,86 @@ values 18–96,  baseline 40
 ### ⚠️ 守卫的形态
 
 13 条检查，**全部来自真实渲染出的标记**，并**按 `showValues` 参数化** —— **因为在未修复的源码上两半都 FAIL**（`false` 时 6 根柱出界、`true` 时 2 根）。
+
+---
+
+## P29 — B-4 验收缺口已闭合，**顺带查出品牌锁是死的**　状态：✅
+
+记录 `docs/P29_NEW_RENDERER_ACCEPTANCE.md`，图谱 `pipeline/graphs/p29_new_renderer_showcase.json`（7 场景 / 1120 帧），守卫 `tests/test_p29_renderers_are_used_by_a_graph.py`。全量 552→**561 passed, 4 skipped**。`visual_qa.py` / `frame_baseline.py` / `render.mjs` **sha256 一字不差**。
+
+### B-4 闭合：七个新渲染器第一次被整片覆盖
+
+**前一 agent 被中断留下半成品，接手 agent 逐项复核后判定**（详见记录文档）：
+
+- **(a) content 形状有 schema 依据？** ❌ **不成立** —— `content` 是开放袋子，这些键**不是 schema 声明的、是 P26 实现时定的**（P26 文档里 `content.` 出现 **0 次**）。**这份图谱确实「按实现反推契约」，已如实标注。**
+- **(b) 组件消费的键给全了？** ✅ 成立 —— 逐键对源码核过，无遗漏无多余；
+- **(e) 图谱位置** ✅ 成立，**代价已记录** —— 它独立复测（复制进 `examples/` 跑全量）**恰好红 1 条**（某处硬编码图谱数 36 ⇒ 37），故工单禁止改既有守卫，图谱留在 `pipeline/graphs/` 并自行补上 zod/Ajv 检查；
+- **(f) 帧数依据** ✅ 成立，**一处算错并已改** —— `browser-window` 的 note 写「150 给出 103 帧静止」，实为 **47**（`draw` 插值到 103）；其余六个依据可回溯到源码。
+
+**⚠️ 指挥窗口的工单表述有错，执行 agent 纠正**：工单写「`Brand.tsx` 一个组件服务 `logo` 与 `outro` 两个类型」—— **它导出的是两个组件**（`Logo:115` / `Outro:147`），**两者 content 不同**，图谱给对了。
+
+### ⚠️ 执行 agent 看到了什么（画面，不是数字）
+
+15 帧（7 场景 × 入场/稳定），每场景独立目录，渲染前先验魔数与尺寸：
+
+- **`browser-window`**：深色窗口 + 红/黄/绿交通灯、"Console — Live"；大号衬线 `$4.82M`；底部 **7 根灰柱 + 第 8 根琥珀色**（最大值 84），琥珀折线升向右；
+- **`card-grid`**：**MRR 是唯一强调卡**（标签/金额/sparkline/边框全琥珀 + 一圈琥珀辉光）；其余五张白字灰线；正负 delta 绿/红胶囊；**六条 sparkline 各不相同**（`seed` 生效）；入场帧整面墙正从**画面左侧外**滑入（`depth-push`）；
+- **`data-table`**：**FY23 整行琥珀**（全表唯一）；**`"m24": null` 的两格渲染成空白、没有漏出 "null"**；
+- **`quote`**：入场帧**只显示 5 行里的前 3 行** —— 句子正被遮罩逐行揭示，归属行未出现（刻意的「自己讲出自己」）；
+- **`outro`**：**末帧是被照亮的画面**（大面积白色 CTA），**不是近黑**。
+
+**边界实测**：15 帧中 **14 帧四条边全干净**（最小边距 logo 左右各 715px）；唯一碰边的是 `card-grid` 入场帧 x=0，**看图确认是过渡在飞、非稳定态裁切**。
+**⇒ P27 的 B-2（末帧近黑）在此图谱不成立。**
+
+**冻结（B-3 的形状，按令未修）**：**用 PNG 无损逐像素测，避开 P27 那条仪器边界**（`freeze` 在 226 kbps 下看不见）—— `outro` 第 1000–1119 帧 **sha256 完全相同**、第 995 帧仍差 8px ⇒ **约 124 帧（≈2.07s）完全静止**。
+
+### ⚠️⚠️ 本项最重要的发现：**`LOCKED_SCENE_TYPES` 是死的**
+
+**指挥窗口独立复验**：
+
+```
+LOCKED_SCENE_TYPES: frozenset({'logo'})
+改 logo 品牌名          → 0 条违规
+把 logo 改道成 bar-chart → 0 条违规     ← 这正是这把锁存在的目的
+coverage_report([p29图谱]).by_kind.brand == []   ← 即使图谱里有 logo 场景
+```
+
+**全仓检索 `LOCKED_SCENE_TYPES`：只有声明处**（`locked_fields.py:100`）、**注释**（`Brand.tsx:15/17`）、**测试断言**（三处）—— **零生产代码读它**。
+
+**⇒ 这与 P26 文档的说法不符**：P26 记录「P26 给了 logo 渲染器之后，锁就可证伪了」。**实测仍然不可证伪。**
+
+**这是本项目审计过的最严重一类失效**：**一把锁看起来在工作，实则覆盖为零** —— 它有常量、有规则、有 26 条接线守卫、有 `coverage_report()`，**唯独没有生产代码读它**。**与 P15 的 `generative` 同一形状，而那一次隔了很久才被发现。**
+
+**提请指挥裁定（本项一律未动）**：**这把锁该接线到哪？** 修它需要决定「品牌锁定」在渲染路径上意味着什么 —— **那是产品判断，不是本项能定的**。
+
+### M3 首轮存活是**真漏洞**，不是无效变异
+
+执行 agent 如实报告：把守卫自身的 `uncovered = []` 掉，**首轮 8 passed 存活**。**根因**：两条 discrimination 测试问的是 `renderer_coverage`，**不是守卫本身** —— **套件真正跑的那个函数无人观察**。
+
+补的 `test_the_guard_itself_goes_red_on_a_corpus_with_a_hole` **把守卫放子进程跑、给一份挖洞语料、要求子进程必须失败**：
+
+```
+E  AssertionError: the guard PASSED against a corpus whose only quote scene had
+   been deleted. Its body can be neutered without anything noticing...
+E  --- guard subprocess stdout ---
+E  1 passed in 0.04s
+```
+
+**红的理由它核过**：子进程 `returncode=1` 的原因是守卫自己的 `AssertionError: ... asks for them: ['quote']`，**不是 SyntaxError / ImportError / NameError**。
+⚠️ **这是 P21/P22/P24「变异产出 NameError」与 P18「守卫从被守卫对象派生」之后的第五次同族失效** —— **全部由变异抓到，没有一次是读代码看出来的。**
+
+### 其余三条提请裁定 / 记录
+
+1. `test_the_probe_set_is_what_this_file_claims` 的 `36` 是**硬编码计数**，任何第三份 `examples/` 图谱都会红（它复测时亲眼看到）；
+2. **两处文档漂移**：`showcase-v1.ts:290` 注释称 `_note` "exists on exactly ONE graph"（现有两份）；图谱里 `"+0.0pt"` **渲染成绿色正增长**；
+3. `outro` 尾部约 124 帧完全静止（B-3 同形状，**按令未修**）。
+
+### 执行 agent 自报的四条失误
+
+① **第一次跑全量套件时管道进了 `tail -15`** —— **工单明令禁止**，导致输出全程不落盘、白白空转数次检查（此后全部改写文件）；
+② **它自己写的文档引入了 2 个 `U+FFFD`**（"缺口的成因"处）—— **正是 `test_markdown_text_is_intact.py` 守的那类污染**，由它提交前的自检抓到；
+③ 测量脚本两次低级 bug（`prev = a` 应为 `prev = f`），白跑两轮；
+④ 一个临时探针因 GBK 控制台打印 pytest 输出里的破折号而崩，**一度看起来像文件损坏** —— 核实后确认纯控制台假象。
 ---
 
 ## P25 — 门禁接进渲染路径（props 级），逐帧级**实测接不上**　状态：✅
