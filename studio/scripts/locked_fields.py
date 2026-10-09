@@ -114,7 +114,12 @@ _RULES_BY_KEY: dict[str, LockRule] = {r.key: r for r in LOCK_RULES}
 
 #: Scene types that carry brand meaning and must survive a repair: they may not
 #: be rerouted to another type, and see `BRAND_CONTENT_KEYS` for what they carry.
-LOCKED_SCENE_TYPES: frozenset[str] = frozenset({'logo'})
+#:
+#: `outro` joined `logo` in P31 by ruling, not by measurement: Brand.tsx:156-157
+#: reads the same `c.name` and `c.tagline` as `Logo` (:122-123) and renders them
+#: through the same `Lockup`, so the outro displays the same wordmark. Before it,
+#: a repair that edited ONLY the outro's wordmark reported zero violations.
+LOCKED_SCENE_TYPES: frozenset[str] = frozenset({'logo', 'outro'})
 
 #: The `content` keys that ARE the brand, on a scene whose `type` is in
 #: LOCKED_SCENE_TYPES. `name` is the wordmark — Brand.tsx defines a lockup as
@@ -122,10 +127,12 @@ LOCKED_SCENE_TYPES: frozenset[str] = frozenset({'logo'})
 #: content), optionally a TAGLINE". The mark is procedural, so `content.name` is
 #: the only part of the lockup the graph owns and a repair could edit.
 #:
-#: `tagline` is deliberately NOT here: the renderer calls it optional, and
-#: "the brand" does not obviously include the positioning line. That is a
-#: product call, not a measurement — see the note below.
-BRAND_CONTENT_KEYS: tuple[str, ...] = ('name',)
+#: `tagline` joined it in P31 by ruling, over one measured asymmetry: Brand.tsx:93
+#: renders `{name}` unconditionally while :95 gates the tagline behind a ternary,
+#: so a brand scene with NO tagline is a legal authored state. That asymmetry
+#: decides what the LOCK may do, not what a graph may contain — see the note
+#: below, which argues the direction explicitly rather than leaving it implied.
+BRAND_CONTENT_KEYS: tuple[str, ...] = ('name', 'tagline')
 
 _SCENE_TYPE_RULE = LockRule(
     'type', 'brand',
@@ -138,26 +145,47 @@ _BRAND_RULES: dict[str, LockRule] = {
     for k in BRAND_CONTENT_KEYS
 }
 
-# ── WHAT A READER STILL HAS TO DECIDE, and why it is not decided here ──────
+# ── THE TWO RULINGS A READER HAD TO MAKE — both made, P31 ──────────────────
 #
-# 1. Is `outro` a brand scene? MEASURED: `pipeline/graphs/
-#    p29_new_renderer_showcase.json` gives `outro` the same `content.name`, and
-#    Brand.tsx renders it through the same `Lockup` component, so the wordmark
-#    IS displayed there. It is not in LOCKED_SCENE_TYPES because the ledger says
-#    「品牌 logo」 and this constant has said `{'logo'}` since P11. Adding it is a
-#    one-word edit, and `tests/test_brand_lock_wiring.py` keeps passing as it
-#    stands — but it widens the lock
-#    from "the logo scene" to "the brand wherever it appears", which is a
-#    product decision. Until it is made, a repair that edits ONLY the outro's
-#    wordmark is not caught.
+# P30 left these open and wrote them down rather than guessing, because a guess
+# reads as settled the moment it becomes code. The user has now ruled on both.
+# The record is kept rather than deleted: the evidence behind each ruling is
+# the thing a later reader needs and cannot reconstruct from the constant alone.
+
+# 1. Is `outro` a brand scene? — RULED: YES (P31), so it is in
+#    LOCKED_SCENE_TYPES. MEASURED: Brand.tsx:156-157 reads `c.name` and
+#    `c.tagline` — the identical two keys `Logo` reads at :122-123 — and renders
+#    them through the same `Lockup`, adding only `cta`/`sub`. The outro displays
+#    the same wordmark. `pipeline/graphs/p29_new_renderer_showcase.json` agrees:
+#    `p29_outro` carries the same `content.name` as `p29_logo`. Before this
+#    ruling, "edit the outro's wordmark" was the one brand move that reported
+#    ZERO violations.
 #
-# 2. Should `content.tagline` be locked? Same shape: Brand.tsx lists it as
-#    optional, the ledger does not name it, and locking it is defensible either
-#    way. Adding it to BRAND_CONTENT_KEYS is the whole change.
+# 2. Should `content.tagline` be locked? — RULED: YES (P31), so it is in
+#    BRAND_CONTENT_KEYS, and this one carried a real edge case:
 #
-# Both are recorded as open rather than guessed, because a guess here reads as
-# settled the moment it is code — and the thing this repository keeps getting
-# wrong is a comment that outlives the decision it was standing in for.
+#      Brand.tsx:93  renders `{name}` unconditionally.
+#      Brand.tsx:95  renders `{tagline ? (...) : null}` — CONDITIONALLY.
+#
+#    So a brand scene carrying no tagline is a legal authored state, and
+#    `iter_scene_locked` is right to yield nothing for a key that is absent
+#    (`if key in content`). That is the whole of the asymmetry, and it decides
+#    what the LOCK may do — not what a graph may contain. A graph may still be
+#    authored with no tagline; once one is authored, a repair may not move it,
+#    and by the same reasoning as `name` a repair may not DELETE one or
+#    INVENT one. The direction is therefore SYMMETRIC, exactly as for `name`,
+#    whose absence renders an empty `<div>` and is nonetheless locked.
+#
+#    The alternative reading — treat "invent a tagline" as legal because the
+#    renderer copes with absence — was rejected on this ground: a lock governs
+#    the REPAIR LOOP, not the renderer's ability to cope. It would also need a
+#    per-key exception inside a flat key list, which is precisely the invisible
+#    special case this file keeps warning against.
+#
+# Both rulings live in LOCKED_SCENE_TYPES / BRAND_CONTENT_KEYS and NOT in
+# LOCK_RULES, which matches a content key in EVERY scene. `content` is
+# `z.record(z.string(), z.unknown())`, so `name` or `tagline` there would lock a
+# future non-brand scene's byline or product name.
 
 
 @dataclass(frozen=True)

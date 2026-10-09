@@ -402,7 +402,14 @@ def test_by_kind_brand_is_no_longer_empty():
 def test_the_brand_lock_is_visible_in_coverage():
     """A lock that cannot be seen in its own coverage report has invisible blind
     spots, which is the failure `coverage_report` exists to prevent."""
-    cov = lf.coverage_report({'brand': _brand_graph()})
+    graph = _brand_graph()
+    fixture_types = {s.get('type') for s in graph['scenes']}
+    assert {'logo', 'outro'} <= fixture_types, (
+        f'the fixture no longer carries both brand scenes, so every claim below '
+        f'reads as "the lock reached everything that was there" whether or not '
+        f'it did. Fix the fixture, not the assertions: {sorted(fixture_types)}'
+    )
+    cov = lf.coverage_report({'brand': graph})
     scene_locks = cov.get('scene_locks')
     assert scene_locks, (
         'coverage_report has no scene_locks section, so the brand lock is '
@@ -412,7 +419,18 @@ def test_the_brand_lock_is_visible_in_coverage():
         f'the only shipped graph with a brand scene reports unexercised '
         f'{scene_locks["unexercised"]}; the lock is not reaching it'
     )
-    assert scene_locks['exercised_scene_types'] == ['logo'], scene_locks
+    # ⚠️ P31: this used to read `== ['logo']`. P30 wrote the literal while
+    # `outro` was an OPEN question, and leaving it would have turned the ruling
+    # into a red suite instead of a recorded decision. It is now computed from
+    # the fixture rather than pinned, because coverage_report's job is to
+    # describe the graph it was handed — and the `unexercised` assertion above,
+    # not this one, is what carries the weight.
+    assert set(scene_locks['exercised_scene_types']) == (
+        fixture_types & set(lf.LOCKED_SCENE_TYPES)), (
+        f'coverage_report reports exercised scene types '
+        f'{scene_locks["exercised_scene_types"]} for a graph holding '
+        f'{sorted(fixture_types)}; it is not describing what it was given'
+    )
     assert scene_locks['exercised_content_keys'] == sorted(lf.BRAND_CONTENT_KEYS), (
         scene_locks)
 
@@ -458,29 +476,39 @@ def test_the_field_rule_coverage_contract_is_unchanged():
 # 5. the standing decisions a reader has to know about
 # ---------------------------------------------------------------------------
 
-def test_the_ruling_about_what_counts_as_brand_is_still_recorded_in_the_source():
-    """Two product questions are OPEN, deliberately:
+def test_the_rulings_are_recorded_in_the_source():
+    """Both product questions are now RULED (P31), and the source says so.
 
-      * is `outro` a brand scene? It carries `content.name` and Brand.tsx
-        renders it through the same Lockup, so today a repair may edit the
-        outro's wordmark freely. Adding 'outro' to LOCKED_SCENE_TYPES is the
-        whole change and every test here keeps passing.
-      * should `content.tagline` be locked? Same shape.
+    P30 wrote them down as open and pinned the note so it could not be quietly
+    deleted. That worked — and it created the next obligation: a source that
+    still reads "still has to decide" beside a constant that already decided is
+    a comment that outlived its decision, which is the specific failure the note
+    was written to prevent. So this now asserts the note is present, names BOTH
+    questions, and no longer advertises them as open.
 
-    They are written down in the source rather than guessed, because a guess
-    reads as settled the moment it becomes code. This test fails if someone
-    deletes the note — the note is the record, and a record nobody can find is
-    the failure this project keeps making.
+    ⚠️ This is a text assertion about a text record, which is the one place a
+    text assertion is the right tool: the subject IS the prose. It is NOT how
+    the lock itself is verified — that is `diff_locked`, above, and nothing in
+    this file claims otherwise.
     """
     src = (ROOT / 'studio' / 'scripts' / 'locked_fields.py').read_text(encoding='utf-8')
-    note = src.split('WHAT A READER STILL HAS TO DECIDE', 1)
+    note = src.split('THE TWO RULINGS A READER HAD TO MAKE', 1)
     assert len(note) == 2, (
-        'the open brand decisions were removed from locked_fields.py. If they '
-        'have been decided, say which way in the commit message; if not, the '
-        'note has to stay.'
+        'the brand rulings were removed from locked_fields.py. They were the '
+        'evidence for two decisions someone will eventually ask about; say '
+        'which way in the commit message if they are being reversed.'
     )
-    for open_question in ('outro', 'tagline'):
-        assert open_question in note[1], (
-            f'the note no longer mentions {open_question!r}, which is still an '
-            'open product question'
+    assert 'WHAT A READER STILL HAS TO DECIDE' not in src, (
+        'the source still advertises the brand questions as undecided while '
+        'LOCKED_SCENE_TYPES and BRAND_CONTENT_KEYS now decide them. The note '
+        'was updated in P31; this header is what it replaced.'
+    )
+    for ruled_question in ('outro', 'tagline'):
+        assert ruled_question in note[1], (
+            f'the rulings note no longer mentions {ruled_question!r}, which was '
+            'decided in P31'
         )
+    assert note[1].count('RULED') >= 2, (
+        'the note names both questions but records neither as ruled — it reads '
+        'as open while the constants decide'
+    )
