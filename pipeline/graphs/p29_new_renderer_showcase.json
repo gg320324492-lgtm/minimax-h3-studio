@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "project": "p29_new_renderer_showcase",
+  "_note": "P29 — a delivered showcase-v1 graph whose ONLY job is to make the seven P26 renderers reachable by a whole film. P27's B-4: `browser-window`, `stat-card`, `card-grid`, `data-table`, `quote`, `logo`, `outro` had single-frame evidence from P26 and no film-level acceptance at all, because both delivered graphs (showcase_demo, charts_demo) happen to use none of them. Adding a graph that uses them IS the closure action. Frame budgets are per scene and derived from each component's own animation code — see the `notes` on each scene; they are not one number copied seven times. This graph carries NO style_bible: `charts_demo.json` sets none, and adding one here would break tests/test_style_bible_no_dumb_declarations.py::test_the_one_key_the_demo_graph_sets_is_reachable, which pins the set of style_bible keys across pipeline/examples/*.json to exactly {'typography': ['showcase_demo.json']}. The consequence is recorded rather than hidden: with style_bible null, visual_qa's `font_size` rule is UNVERIFIABLE by construction on every frame of this graph (the same constructive limit P27 measured on charts_demo).",
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 60
+  },
+  "bpm": 126,
+  "scenes": [
+    {
+      "id": "p29_browser_window",
+      "type": "browser-window",
+      "durationInFrames": 150,
+      "notes": "150 frames = 2.5s. Budget: BrowserWindow's own code finishes everything at frame 103 — the enter spring runs MOTION.enterSeconds*fps = 0.72*60 = 43 frames, and the bar/spark `draw` interpolate is [43, (0.72+1.0)*60] = [43,103]. That leaves 150 - 103 = 47 frames of fully-drawn hold after the last mark completes, which is what a product screenshot wants: the reader needs to land on the metric AFTER the motion stops, not during it. Short enough to keep the graph cheap, long enough that the settled state is measurable. (P29 measured: at composition frame 140, i.e. local frame 140 of 150, the 8 bars and the 10-point sparkline are both fully drawn.)",
+      "layout": {
+        "windowWidth": 1400,
+        "windowHeight": 800
+      },
+      "camera": {
+        "perspective": 1600,
+        "scale": [1.05, 1.0]
+      },
+      "motion": {
+        "preset": "premium"
+      },
+      "content": {
+        "title": "Console — Live",
+        "metric": "$4.82M",
+        "caption": "net revenue retention, trailing twelve months",
+        "bars": [42, 51, 47, 63, 58, 72, 69, 84],
+        "spark": [18, 24, 21, 29, 27, 35, 33, 41, 39, 48]
+      },
+      "transitionIn": {
+        "in": "fade",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "p29_stat_card",
+      "type": "stat-card",
+      "durationInFrames": 120,
+      "notes": "120 frames = 2.0s, deliberately NOT the same as the browser window. StatCard's own code finishes earlier than BrowserWindow's: its `draw` interpolate is [43, (0.72+0.9)*60] = [43,97], because the sparkline on a card is a 120x44 mark rather than a full-width window chart. One card, one number — it needs less hold than a window full of marks, so it gets 120 rather than 150.",
+      "layout": {
+        "cardWidth": 720,
+        "cardHeight": 420
+      },
+      "motion": {
+        "preset": "premium"
+      },
+      "content": {
+        "label": "Active seats",
+        "value": "12,470",
+        "prefix": "",
+        "suffix": "",
+        "delta": "+12.4%",
+        "note": "vs. previous quarter",
+        "series": [0.22, 0.31, 0.28, 0.44, 0.39, 0.52, 0.58, 0.55, 0.67, 0.72, 0.69, 0.81]
+      },
+      "transitionIn": {
+        "in": "fade",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "p29_card_grid",
+      "type": "card-grid",
+      "durationInFrames": 210,
+      "notes": "210 frames = 3.5s, the longest scene in the graph, and the reason is arithmetic in CardGrid's own stagger. Cards enter on MOTION.staggerDefault = 0.035s => 0.035*60 = 2.1 frames apart, and each card's spark `draw` runs from 0.4*60 = 24 to 1.3*60 = 78 frames AFTER ITS OWN offset. With the 6 cards here, the LAST card is offset by 5*2.1 = 10.5 frames, so its sparkline is not fully drawn until 10.5 + 78 = 88.5 frames. A budget below that would ship a frame where the sixth card's mark is visibly still drawing. 210 gives the whole wall 121 frames of settled hold after the last card finishes.",
+      "layout": {
+        "columns": 3,
+        "cardHeight": 240
+      },
+      "motion": {
+        "preset": "premium",
+        "stagger": 0.035
+      },
+      "content": {
+        "cards": [
+          {"label": "MRR", "value": "$1.94M", "delta": "+9.1%", "note": "recurring", "accent": true, "seed": 11},
+          {"label": "Churn", "value": "1.8", "suffix": "%", "delta": "-0.4pt", "note": "monthly logo churn", "seed": 23},
+          {"label": "ARPU", "value": "$412", "delta": "+6.7%", "note": "per active seat", "seed": 37},
+          {"label": "Pipeline", "value": "$3.20M", "delta": "+21.3%", "note": "weighted, next 2 quarters", "seed": 41},
+          {"label": "Gross margin", "value": "84", "suffix": "%", "delta": "+2.2pt", "note": "trailing twelve months", "seed": 53},
+          {"label": "NPS", "value": "61", "delta": "-1.0", "note": "rolling 90 day", "seed": 67}
+        ]
+      },
+      "transitionIn": {
+        "in": "depth-push",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "p29_data_table",
+      "type": "data-table",
+      "durationInFrames": 180,
+      "notes": "180 frames = 3.0s. DataTable rows enter on the same 2.1-frame stagger as the card grid, but the last of 5 rows is offset by only 4*2.1 = 8.4 frames and the row spring is MOTION.springs.reveal with no per-row draw phase of its own, so the table is visually complete by roughly frame 72 (the scene-level `enter` spring, 0.72*60 = 43 frames, is the dominant term). 180 leaves ~108 frames of hold. It is shorter than the card grid's 210 because a table is READ rather than watched: once the rows are down, the eye scans them at its own speed, and a longer budget would only pad the cut.",
+      "layout": {
+        "rowHeight": 64,
+        "padX": 44
+      },
+      "motion": {
+        "preset": "premium",
+        "stagger": 0.035
+      },
+      "content": {
+        "caption": "Cohort retention by plan year",
+        "columns": [
+          {"key": "cohort", "label": "Cohort"},
+          {"key": "m12", "label": "M12", "kind": "num"},
+          {"key": "m24", "label": "M24", "kind": "num"},
+          {"key": "delta", "label": "Delta", "kind": "delta"}
+        ],
+        "rows": [
+          {"cohort": "FY21", "m12": "118%", "m24": "104%", "delta": "-2.1pt"},
+          {"cohort": "FY22", "m12": "124%", "m24": "112%", "delta": "+1.4pt"},
+          {"cohort": "FY23", "m12": "131%", "m24": "121%", "delta": "+3.8pt", "_accent": true},
+          {"cohort": "FY24", "m12": "137%", "m24": null, "delta": "+0.0pt"},
+          {"cohort": "FY25", "m12": "142%", "m24": null, "delta": "+1.9pt"}
+        ]
+      },
+      "transitionIn": {
+        "in": "fade",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "p29_quote",
+      "type": "quote",
+      "durationInFrames": 160,
+      "notes": "160 frames = 2.67s. Quote's own timeline: the attribution rule interpolates over [0.5*60, 1.4*60] = [30,84], which is its last animated element; the masked reveal of the sentence runs on MOTION.durations.settle = 1.15s = 69 frames. So the scene is visually complete at ~84 frames and 160 gives 76 frames of quiet hold. That hold is the POINT of this scene — Quote.tsx's own header calls 留白 (whitespace) the most important word, and a quote with no dwell is a sentence that flashes past unread.",
+      "layout": {
+        "cardWidth": 1280
+      },
+      "motion": {
+        "preset": "premium"
+      },
+      "content": {
+        "text": "We stopped reporting the number and started reporting what it meant. The dashboard was never the product — the decision was.",
+        "role": "CFO",
+        "attribution": "Prior to the platform migration"
+      },
+      "transitionIn": {
+        "in": "dissolve",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "p29_logo",
+      "type": "logo",
+      "durationInFrames": 100,
+      "notes": "100 frames = 1.67s, the SHORTEST scene here, and it is the one the lock cares about. Logo's timeline is short by design: the enter spring runs 43 frames, and SpecularSweep is scheduled at delayFrames = 0.72*60 = 43 with its own default durationFrames = 26, so the sweep is over at frame 69 and nothing animates after that. 100 gives 31 frames of settled hold past the sweep. A brand lockup is read instantly; giving it a 3-second budget like the card grid would be inventing motion the component does not have.",
+      "motion": {
+        "preset": "premium"
+      },
+      "content": {
+        "name": "MERIDIAN",
+        "tagline": "financial infrastructure"
+      },
+      "transitionIn": {
+        "in": "fade",
+        "durationInFrames": 18
+      }
+    },
+    {
+      "id": "p29_outro",
+      "type": "outro",
+      "durationInFrames": 200,
+      "notes": "200 frames = 3.33s, and this is the scene whose frame budget has a film-level consequence. Outro runs TWO springs in sequence — lockupIn over 43 frames, then ctaIn starting at 0.3*60 = 18 frames with its own 0.9*60 = 54-frame duration, so the CTA text and its accent rule are complete by ~72 frames. The 128 frames after that are deliberate and are the reason this graph does NOT reproduce P27's B-2: B-2 was showcase_demo's last frame landing near-black. Here the final scene ends on a fully-lit accent rule and a display-scale CTA held for over two seconds, so the film's last frame is a lit frame.",
+      "motion": {
+        "preset": "premium"
+      },
+      "content": {
+        "name": "MERIDIAN",
+        "tagline": "financial infrastructure",
+        "cta": "See the numbers for yourself",
+        "sub": "meridian.example/start"
+      },
+      "transitionIn": {
+        "in": "fade",
+        "durationInFrames": 18
+      }
+    }
+  ]
+}
