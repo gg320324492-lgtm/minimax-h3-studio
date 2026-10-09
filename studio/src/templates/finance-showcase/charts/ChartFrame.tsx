@@ -74,6 +74,26 @@ export type ChartFrameProps = {
   options?: Partial<ChartOptions> | null;
   /** the data the y domain is computed from */
   values: readonly number[];
+  /**
+   * The EXTENT the y domain is fitted from, when that is not the same thing as
+   * `values`. Defaults to `values`.
+   *
+   * It exists for VOLUME, and only volume. `VolumeBars` hangs a bar from the
+   * BASELINE -- its top is `yOf(baseline + value)`, its foot `yOf(baseline)` --
+   * so the numbers it spans are `baseline + values`, not `values`. Fitting the
+   * domain to the latter drew the tallest bars above the plot's top edge and
+   * off the frame, while the axis beside them still read the fitted range: the
+   * delivered `charts_demo.json` rendered values 18..96 on a baseline of 40,
+   * so the bars ran to 136 against an axis that stopped at ~100 (`clipping`
+   * and `safe_area` both FAIL, 356px of content on row 0).
+   *
+   * It is a separate prop rather than a widened `values` because `values` is
+   * also the MARK's data: Chart.tsx hands the same array to `<VolumeBars>`, and
+   * shifting it there made the mark add the baseline a second time and put the
+   * bars back off the top -- measured, not assumed. This prop is read by
+   * `fitDomain` and by nothing else, so no other quantity can inherit it.
+   */
+  domainValues?: readonly number[];
   /** zeroBased: bar/rank/volume must be, or their lengths lie about magnitude */
   zeroBased?: boolean;
   /** labels along x; their presence reserves the bottom row */
@@ -112,7 +132,7 @@ const gutterFor = (labels: readonly string[], s: number): number => {
 };
 
 export const ChartFrame: React.FC<ChartFrameProps> = ({
-  chart, options, values, zeroBased = true, xLabels, rowLabels, xAt,
+  chart, options, values, domainValues, zeroBased = true, xLabels, rowLabels, xAt,
   sceneDurationInFrames, children,
 }) => {
   const {PALETTE, SPACE, TYPE} = useDesign();
@@ -181,9 +201,11 @@ export const ChartFrame: React.FC<ChartFrameProps> = ({
   // needs its tallest mark off the plot's top edge. The fit itself (including
   // the constant-series case) lives in scale.ts where it can be checked.
   const headroom = options?.showValues ? 0.14 : 0.04;
+  // only fitDomain sees this; see the prop's note for why volume needs it
+  const domainExtent = domainValues ?? values;
   const domain = useMemo(
-    () => fitDomain(values, zeroBased, headroom),
-    [values, zeroBased, headroom]
+    () => fitDomain(domainExtent, zeroBased, headroom),
+    [domainExtent, zeroBased, headroom]
   );
   const ticks = niceTicks(domain[0], domain[1], 5);
   const tickLabels = ticks.map((t) => formatValue(t, opts.valueFormat).text);
