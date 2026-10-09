@@ -12,21 +12,21 @@ import {SpecularSweep} from '../common/primitives';
 /**
  * Scene — Logo lockup + Outro / CTA (reference film: "金色 Logo Lockup、CTA 结尾").
  *
- * ── THE `logo` TYPE AND `LOCKED_SCENE_TYPES` ─────────────────────────────────
+ * ── THE BRAND SCENE TYPES AND `LOCKED_SCENE_TYPES` ─────────────────────────
  *
  * `studio/scripts/locked_fields.py` carries `LOCKED_SCENE_TYPES = frozenset(
- * {'logo'})`, and its comment says why: "`logo` is a scene TYPE in
- * showcase-v1.ts:36, so the brand mark is a scene, not a field. Locking the
- * type is what stops a repair from rerouting it to a chart to make it fit."
+ * {'logo', 'outro'})` and `BRAND_CONTENT_KEYS = ('name', 'tagline')` — the brand
+ * lock. `logo`/`outro` are scene TYPEs in showcase-v1.ts:82-83, so the brand mark
+ * is a SCENE, not a field, and locking the type is what stops a repair rerouting
+ * it to a chart to make it fit. BY TYPE, unlike `LOCK_RULES`, which matches a
+ * content key in EVERY scene and `content` is an open bag — a
+ * `LockRule('name', …)` would lock a future byline as readily as a wordmark.
  *
- * WHAT THAT LOCK ACTUALLY WAS. Until P26 it guarded a type that had NO renderer:
- * a repair loop protecting `logo` from being rerouted protected a scene that
- * would have rendered `MissingScene` ("not implemented in P4") either way. That
- * did not make the lock wrong — 11.2's point (a repair may not reroute a brand
- * scene) is independent of whether the scene draws — but it made the lock
- * UNFALSIFIABLE: no rendering path existed on which rerouting `logo` could be
- * observed to change a frame. Registering a renderer gives the lock an artefact.
- * The lock itself is untouched; `tests/test_locked_fields.py` still pins it.
+ * WHAT THAT LOCK WAS, AND NOW. Until P26 it guarded a type with NO renderer, so
+ * it was UNFALSIFIABLE — no path on which rerouting `logo` could be seen to change
+ * a frame. Registering a renderer gave it an artefact; that still holds. P26's note
+ * ENDED there, and its closing sentence went false TWICE unedited: P30 wired the
+ * lock in, P31 widened it. Why it stays symmetric: `locked_fields.py`.
  *
  * ── WHAT THIS RENDERS, AND WHY IT IS DESIGN RATHER THAN A CONTENT PRINT ──────
  *
