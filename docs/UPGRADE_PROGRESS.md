@@ -1099,6 +1099,88 @@ E  1 passed in 0.04s
 2. **`Brand.tsx` 头部注释已过期** —— 它写着「The lock itself is untouched; test_locked_fields.py still pins it」，**而现在锁已接线、那条守卫也已改写**；
 3. **`locked_fields_mutation.py` 的 `lock_a_legitimate_lever` 是惰性变异**，**而账本把它算在「4 全杀」里** —— 需要么修它、要么改账本的措辞；
 4. `content.tagline` 是否纳入。
+
+---
+
+## P31 — `outro` 与 `tagline` 纳入品牌锁（用户裁定）　状态：✅
+
+守卫 `tests/test_outro_tagline_brand_lock.py`（26 条）+ `studio/scripts/locked_fields_p31_mutation.py`。全量 591→**617 passed, 4 skipped**（+26，零回归、零新增 skip）。`visual_qa.py` `7e7d586a…` / `frame_baseline.py` `91e3463c…` **均未变**。
+
+### 两条裁定，各自一行
+
+```python
+LOCKED_SCENE_TYPES: frozenset[str] = frozenset({'logo', 'outro'})   # 原 {'logo'}
+BRAND_CONTENT_KEYS: tuple[str, ...] = ('name', 'tagline')            # 原 ('name',)
+```
+
+**`locked_fields.py` 里没有别的行为改动。** **`name`/`tagline` 未被挪进 `LOCK_RULES`**（那张表按 key 匹配**每一个场景**的 content，而 `content` 是开放袋子 ⇒ **会把未来某个场景的非品牌同名字段也锁上**）。
+**并核实：没有任何地方假定 `BRAND_CONTENT_KEYS` 是单元素** —— 消费方一律用 `sorted()` / `set()` / `*` 解包 / `for k in`。
+
+### 「有没有测试把 `outro` 当作可自由修改」——**没有**
+
+执行 agent grep 了 `tests/` 下全部 `outro` 出现处（四处），**没有一处编辑 outro 的品牌 content**：两处是渲染器名的覆盖集合、两处是计数与 schema 枚举探测，**图谱只被读、从未被改**。`BRAND_ATTACKS` 里那条「把品牌场景改道成另一个品牌形状的场景」改的是 **logo → outro**，**仍然被抓住**。
+
+**两处过期断言它选择更新而非放松裁定**：① `test_the_brand_lock_is_visible_in_coverage` 钉着 `exercised_scene_types == ['logo']`（P30 在 `outro` 仍未裁定时写的字面量）→ 改为从 fixture 计算；② `test_the_ruling_about_what_counts_as_brand_is_still_recorded_in_the_source` 按 `'WHAT A READER STILL HAS TO DECIDE'` 切分，**而那句话已不复存在**。
+
+### `coverage_report()` 的变化（可观测）
+
+```
+scene_locks.locked_scene_types     ['logo']        -> ['logo','outro']
+scene_locks.locked_content_keys    ['name']       -> ['name','tagline']
+scene_locks.exercised_scene_types  ['logo']        -> ['logo','outro']
+scene_locks.hit_counts             {name:1}         -> {name:2, tagline:2}
+by_kind['brand']                  ['name','type'] -> ['name','tagline','type']
+LOCK_RULES 的 rules/exercised/unexercised    14 / 14 / []   ← 不变
+```
+
+### ⚠️ `tagline` 的边界情况 —— 一条**实测出来的不对称**
+
+```tsx
+Brand.tsx:93   {name}                        ← 无条件渲染
+Brand.tsx:95   {tagline ? (<div …>) : null}   ← 条件渲染 ⇒ 缺失是合法的作者状态
+```
+
+**⇒ 「凭空造一个 tagline」要不要算违规？** 这是 `name` 那边不存在的新边界。
+**裁定：锁保持对称 —— 改、删、凭空造都违规。** 理由：**那个三元式说的是「画什么」，不是「谁可以写这个字段」**；图谱仍然可以被作者成没有 tagline，**一旦有了，修复循环不得移动它**。**而 `name` 同样不是 schema 必填** —— 缺失时渲染一个空 `<div>`，**却已经被锁了**。
+**被否决的另一种答案（凭空造 = 合法）连同理由写进了源码**：**那需要在扁平键列表里为某个键开特例**。
+
+**指挥窗口独立复验**：
+
+```
+改 name / 改 tagline / 删 tagline / 改道成 bar-chart → 各 1 条 (brand)
+凭空造 tagline（新增第二个场景）→ 2 条：type + name  ← 整个新场景被视为凭空出现
+11.1 的 durationInFrames / camera / style_bible → 0 条   ← 修复循环仍能动
+```
+
+**执行 agent 另测**：`outro` 自己的 `cta` 与 `sub` 不在锁内（0 违规，**符合裁定 —— 那不是品牌字标**）；**一个没有 tagline 的品牌场景完全合法**（identity 差 0、11.1 杠杆 0、加非品牌键 0）。
+
+### 五条变异，四杀一惰性
+
+| 变异 | 探针是否移动 | 结果 |
+|---|---|---|
+R1 删 `'outro'` | 是 | **8 failed**，全是 outro/coverage —— 理由正确 |
+R2 删 `'tagline'` | 是（只有 3 个 tagline 数字 1→0） | **4 failed** —— 理由正确 |
+R3 品牌通道摘掉 | 是 | **20 failed** |
+R4 **过度锁**（对每个场景类型都 emit） | 是 | **8 failed** |
+X **故意惰性**（死分支） | **否** | 96 passed → 报 **INERT 而非 SURVIVED** |
+
+**R4 保持住了 P30 那条性质**：**过度锁定时，没有一个「锁拦不拦得住」的测试转红** —— **只有过度锁自己的断言看见了它**。
+
+### ⚠️ 执行 agent 自报的两条失误（第一条是本项目核心病灶）
+
+① **它的探针自己有别名 bug，而 harness 把它报成了 `INERT`** —— `wrap()` 返回共享对象的 `{"scenes": [s]}`，**一次 `pop("tagline")` 污染了后面所有测量**；更要紧的是**基线探针自己死于 `KeyError: 'tagline'`，而 harness 随后比较了两个完全相同的错误字符串、打印出 "INERT"** —— **一个在"防假绿"这件事上给出假裁定的 harness**。
+两处都已修：`wrap` 改为深拷贝，`run()` / `__main__` **拒绝比较 `PROBE ERROR`**。**它重跑了 R1，上面那 8 failed 是修好之后的干净运行。**
+② 它第一版 coverage 测试里 `by_kind` 报 `KeyError` —— 从 `scene_locks` 子字典里索引错了。
+
+**⇒ 这条与 P18 的「守卫从被守卫对象派生」、P21/P22/P24 的「变异产出 `NameError`」、
+P27 的「元守卫只认裸布尔」是同一族**：**测量装置自己坏了，却报出了确定性的结论**。
+**第六次。**
+
+### 未决（用户未表态）
+
+- **P27 B-2** 末帧近黑、**B-3** 冻结（`outro` 尾部实测约 124 帧 / 2.07s）—— **设计后果**；
+- **P30 遗留**：`iter_locked` 只走 `content` 而 11.1 的杠杆都是 scene 顶层键 ⇒ **以杠杆命名的 `LockRule` 在真实图谱上永远不可能触发**，`lock_a_legitimate_lever` 是**惰性变异**，**而账本把它列在「4 全杀」里**；
+- `Brand.tsx` 头部注释写着「the lock itself is unmodified」—— **已过期**。
 ---
 
 ## P25 — 门禁接进渲染路径（props 级），逐帧级**实测接不上**　状态：✅
