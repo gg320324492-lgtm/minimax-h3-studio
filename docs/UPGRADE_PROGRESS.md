@@ -236,7 +236,7 @@
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
 | 11.1 | Repair Planner（可改 padding/scale/font/chart width/color/timing/camera/stagger/duration） | ⬜ |**仪器已建成（`c6d7a5a`），修复器未写 —— 且这不是搁置，是实测结论。** 新增 `studio/scripts/chart_geometry.py`：从图表选项的几何算 x 标签间距，**不靠像素**（P10 审计结论「Needs the mark layout from the chart options, not pixels」）。对着渲染真值校准：**5 根柱 334px vs 333.6px、16 根柱 104.5px vs 104.2px，误差 0.2%**；宽度用真实字体（Microsoft YaHei）**逐字符量**而非数字数（该字体 `i` 是 5.3px、`W` 是 20.4px，同长度可差 4 倍）。九个变异八个杀。<br>**仪器不下判定** —— 只报比值，阈值由调用方定。`visual_qa.py` 的 `collision` 规则**已接入但仍报 `UNAVAILABLE`**，理由写明「仪器已建成、缺的是判据」，并有 7 条守卫让「顺手填上阈值」变得昂贵。<br>**解锁条件（实测，非推测）**：已交付图表比值 **0.278**（最宽标签 `Retention` 92.6px / 间距 333.6px），**没有一个标签接近碰撞**，修复循环无伤可修；而唯一能清碰撞的手段（缩短 labels）正是 11.2 禁掉的。→ **真正出现一个接近碰撞的图表时本项才需要动手**；若发现这样的图表，**应停下上报**——那会推翻本行的结论。**新计划**：11.1 做成「等真出现长标签图表时才起作用」的仪器，而不是一个修不存在问题的功能。<br>**惰性杠杆逐条复核（10-02 指挥窗口，非引述，附可证伪的 grep）**：`spec.width` / `spec.height` / `chart.width` / `chart.height` 在渲染源码里 **0 命中**；schema 里 `color` 字段 **0 命中**（唯一命中是注释里的单词 "colour"）；schema 里 `timing` 字段 **0 命中**。**十张图表场景只携带 `camera` / `durationInFrames` / `motion` 三个场景级字段**，`layout` 只存在于 showcase 的 kpi-hero / browser-stack / calendar → **11.1 在图表上真正够得着的只有时间轴三项**。**刻度字号硬编码 `20 * s`**（`ChartFrame.tsx:319` 与 `:378`）→ 这是 11.3「每轮步长无依据可定」的根因，字号不可由图谱影响，修复循环调不动它。 |
-| 11.2 | 锁定项保护（核心文案/品牌 logo/数值事实） | ✅ | **新增 `studio/scripts/locked_fields.py`（14 条锁定规则）。**实测 **3 种 kind：fact 9 / copy 4 / identity 1**。**品牌那一类不走字段规则**：`logo` 在 `showcase-v1.ts:36` 是**场景类型**而非 content 字段，所以锁的是类型本身（`LOCKED_SCENE_TYPES = {'logo'}`），`by_kind['brand']` 实测为 **空列表** —— 计数器第三类为零斯箍这一点是实测结论，不是遗漏。为什么是显式路径而不是类型：`content` 在 `showcase-v1.ts:100` 是 `z.record(z.string(), z.unknown())`，**每个场的每个字段都是 `unknown`，包括那些不得动的** → 没有类型边界可靠，锁必须显式写下来，代价就是可能不完整——所以 `LOCK_RULES` 导出且在测试里数掉，`coverage_report()` 直接打印交付图谱真正命中的部分。<br>**实测覆盖：14 条规则、`unexercised: []`——零盲区。**<br>**不锁的是审计结论而不是口味：**`durationInFrames`/`camera`/`motion`/`layout`/`style_bible`/`format`/`transitionIn/Out` 正是 11.1 点名的杠杆，锁了它们修复循环就什么都做不了。边界是「**a claim** vs **the staging of the claim**」——可以改数字怎么呈现，不能改它说什么。<br>**变异测试，4 个全杀**：删 `labels` 规则 → 2 条红；列长差返回 `[]` → `test_a_repair_may_not_shorten_labels` 红；删第二个 `emit()` → `test_a_locked_field_added_where_none_existed_is_caught` 红。<br>**第三个变异暴露了一个真实缺陷，不是测量有效性的问题：**`diff_locked` 初稿只有单向 `emit(before, after)`，**修复过程里向一个原本没有锁定键的场景新增锁定字段（凭空写 caption、补值）就根本看不到**——每个其他测试全绿。补上第二次 `emit()` 后，新测试立即转红且 before/after 符号反了，需要在 `not primary` 时交换两边。<br>**14 条测试两个方向都断言**：违规动作被拒（改值/删标签/删整个字段/改标题），**11.1 的合法杠杆不被拦**——只会说「不」的守卫会通过这个文件里每一条测试，故 `test_the_levers_11_1_names_are_not_locked` 专为它存在。<br>**接线守卫已补齐（`9438563`）：`tests/test_locked_fields_wiring.py` 26 条 + `studio/scripts/locked_fields_mutation.py`。**修复规则本身此前零消费方——它是一道还没被任何东西跨过的栏杆。现在实测：**11.1 那 7 个合法杠杆全部放行**（durationInFrames / camera.translateZ / motion / style_bible / layout.padX / transitionIn / format，各 0 违规），**4 种攻击全部拦截且 kind 正确**（改 values→fact、删一个 label→identity、删整个 labels→identity、改 headline→copy），**双向不变量成立**（`diff_locked(a,b)` 与 `diff_locked(b,a)` 条数相同，含「只增不减」的 forward-only 修复形态）。<br>**变异 11 条，5 杀 6 存活 —— 六条全是「自我削弱」类，不是防御失效类。** 共同形状：函数里还有一条真断言，所以重言式检测不报。**这六条写进了代码，不只写进提交信息**，并由 `test_the_gap_is_still_open_and_labelled` 断言清单非空——**一份注释里的已知缺口会在被修掉的那一刻开始说谎**，而它只能保证缺口被修掉时会红（证明「仍然存活」需要跑元测试，本阶段明确不做）。<br>**扫描范围收窄的后果**：`SOURCE_ROOTS = ('studio','pipeline','docs')` 是**白名单**，**将来新增顶层源码目录必须同步这里**，否则「零消费方」会变成一句漂亮的谎。 |
+| 11.2 | 锁定项保护（核心文案/品牌 logo/数值事实） | ✅ | **新增 `studio/scripts/locked_fields.py`（14 条锁定规则）。**实测 **3 种 kind：fact 9 / copy 4 / identity 1**。**品牌那一类不走字段规则**：`logo` 在 `showcase-v1.ts:36` 是**场景类型**而非 content 字段，所以锁的是类型本身（`LOCKED_SCENE_TYPES = {'logo'}`），`by_kind['brand']` 实测为 **空列表** —— 计数器第三类为零斯箍这一点是实测结论，不是遗漏。为什么是显式路径而不是类型：`content` 在 `showcase-v1.ts:100` 是 `z.record(z.string(), z.unknown())`，**每个场的每个字段都是 `unknown`，包括那些不得动的** → 没有类型边界可靠，锁必须显式写下来，代价就是可能不完整——所以 `LOCK_RULES` 导出且在测试里数掉，`coverage_report()` 直接打印交付图谱真正命中的部分。<br>**实测覆盖：14 条规则、`unexercised: []`——零盲区。**<br>**不锁的是审计结论而不是口味：**`durationInFrames`/`camera`/`motion`/`layout`/`style_bible`/`format`/`transitionIn/Out` 正是 11.1 点名的杠杆，锁了它们修复循环就什么都做不了。边界是「**a claim** vs **the staging of the claim**」——可以改数字怎么呈现，不能改它说什么。<br>**变异测试，4 个全杀**（⚠️ **P34 订正：其中「删第二个 `emit()`」与 `lock_a_legitimate_lever` 的锚点自 P30 起已死，**harness 会大声失败而非静默通过** ⇒ **它们实际没跑，而"全杀"对它们已不成立**；**现已由 `locked_fields_p32_mutation.py`（`diff_always_empty` 14 红）与 `locked_fields_mutation.py`（`drop_second_emit` 6 红、`lock_a_legitimate_lever` 1 红）取代并复核通过** —— 下文的数字保留为 P11 当时的记录）：**删 `labels` 规则 → 2 条红；列长差返回 `[]` → `test_a_repair_may_not_shorten_labels` 红；删第二个 `emit()` → `test_a_locked_field_added_where_none_existed_is_caught` 红。<br>**第三个变异暴露了一个真实缺陷，不是测量有效性的问题：**`diff_locked` 初稿只有单向 `emit(before, after)`，**修复过程里向一个原本没有锁定键的场景新增锁定字段（凭空写 caption、补值）就根本看不到**——每个其他测试全绿。补上第二次 `emit()` 后，新测试立即转红且 before/after 符号反了，需要在 `not primary` 时交换两边。<br>**14 条测试两个方向都断言**：违规动作被拒（改值/删标签/删整个字段/改标题），**11.1 的合法杠杆不被拦**——只会说「不」的守卫会通过这个文件里每一条测试，故 `test_the_levers_11_1_names_are_not_locked` 专为它存在。<br>**接线守卫已补齐（`9438563`）：`tests/test_locked_fields_wiring.py` 26 条 + `studio/scripts/locked_fields_mutation.py`。**修复规则本身此前零消费方——它是一道还没被任何东西跨过的栏杆。现在实测：**11.1 那 7 个合法杠杆全部放行**（durationInFrames / camera.translateZ / motion / style_bible / layout.padX / transitionIn / format，各 0 违规），**4 种攻击全部拦截且 kind 正确**（改 values→fact、删一个 label→identity、删整个 labels→identity、改 headline→copy），**双向不变量成立**（`diff_locked(a,b)` 与 `diff_locked(b,a)` 条数相同，含「只增不减」的 forward-only 修复形态）。<br>**变异 11 条，5 杀 6 存活 —— 六条全是「自我削弱」类，不是防御失效类。** 共同形状：函数里还有一条真断言，所以重言式检测不报。**这六条写进了代码，不只写进提交信息**，并由 `test_the_gap_is_still_open_and_labelled` 断言清单非空——**一份注释里的已知缺口会在被修掉的那一刻开始说谎**，而它只能保证缺口被修掉时会红（证明「仍然存活」需要跑元测试，本阶段明确不做）。<br>**扫描范围收窄的后果**：`SOURCE_ROOTS = ('studio','pipeline','docs')` 是**白名单**，**将来新增顶层源码目录必须同步这里**，否则「零消费方」会变成一句漂亮的谎。 |
 | 11.3 | MAX_REPAIR_ROUNDS=3 + scene 级重渲 | ⬜ | |
 
 ---
@@ -1315,6 +1315,74 @@ M1 从豁免清单删 `durationInFrames` | **杀** —— 探针移动：`exempt
 2. **A4 / A6 / B2** 三处行号与计数漂移（`locked_fields.py:26-29`、`:10`、`visual_qa.py:1155`）—— **`visual_qa.py` 在工单里禁碰**；
 3. **B3** `locked_fields_brand_mutation.py` 的 Usage 指向不存在的文件；
 4. **B4** `locked_fields_mutation.py` 的两个死锚点 —— **harness 会大声失败，但那些变异实际上已不再运行**。
+
+---
+
+## P34 — 四簇假引用/死锚点全部修掉　状态：✅
+
+守卫 `tests/test_comment_citations_resolve.py`（5 条）。全量 632→**637 passed, 4 skipped**。
+**八个场景文件长度逐个未变**（223/330/184/352/254/233/176/132，各 `+1/-1`）；`visual_qa.py` **只改了一行注释、无逻辑改动**。
+
+### B1：它**加强**了指挥窗口给的答案，而不是照搬
+
+指挥窗口查到真实守卫是 `tests/test_showcase_schema_parity.py::test_scenes_do_not_import_design_values_directly`，并要求它核实后再用、**若发现更好的替代就如实报告**。
+
+**它采纳了，并加了一条指挥窗口没要求的强化**：**八处现在引用 node id（`文件::函数名`）而不只是文件名**。**变异 M6 把那个函数改名 → 八处引用全红** ⇒ **若将来它被改名，守卫会说话，而不是引用悄悄退化成装饰。**
+
+**它也确认了指挥窗口的判断**（那个守卫区分得比注释更精确：「字体与缩放是刻意的静态 import，检查针对的是 design **值**」），**并把那句区分保留在注释里**。
+
+### A4 / A6 / B3
+
+- **A4**：「两样被锁」→「**三**个**（`type`/`name`/`tagline`），并写明第三个为何在（P31 一次裁定加了 `outro` 与 `tagline`，**留着 tagline 可编辑就是同一个洞挪一格**）；
+- **A6**：⚠️ **指挥窗口说错了**：`:100` 是 **`translateZ`**、`:101` 才是 `rotateX`。**它把那句话的行号删掉、保留类型** —— **理由是「类型是那句话的断言，行号会静默腐烂」**；
+- **B3**：Usage 改为指向 `studio/scripts/locked_fields_brand_mutation.py` 自身。
+
+### ⚠️⚠️ B4：**「当年杀掉」这个结论对那两条已不成立 —— 它们自 P30 起根本没跑过**
+
+**harness 会大声失败（`ANCHOR NOT FOUND`、exit 1），不是静默失效** —— **但那正意味着：它们没跑，而账本把它们算在 P11 的「4 全杀」里。**
+
+**修好后两条都活了**（锚点用的是现行四参数形式 `emit(after, before, False, iter_locked, field_seen)`）：
+
+| 变异 | 结果 |
+|---|---|
+| `diff_always_empty` | **14 条红** |
+| `drop_second_emit` | **6 条红**，且**恰好一个可观测量移动**（`delete_labels_symmetric` 1→0）—— 正是它声称要测的双向不变量 |
+
+**指挥窗口独立跑完整 harness 复核**：11 条变异，**五条被杀**（`lock_a_legitimate_lever` **1**、`drop_labels_rule` **3**、`diff_always_empty` **14**、`drop_second_emit` **6**、`symmetry_tautology` **1**），**六条存活**（全是自我削弱类，与 11.2 记载的「5 杀 6 存活」同一形状）。**⇒ 那条曾被判 INERT 的 `lock_a_legitimate_lever` 现在也被杀了。**
+
+### 守卫：能区分「当前引用」与「历史引用」——**部分能，并说清了边界**
+
+**两个机械事实而非读散文**：`git log --all` 查路径、以及**承载引用的那句话里的闭合标记词表**。
+
+**⚠️ 它明确划出停在哪里**：**git 历史里没有 ≠ 该路径从未存在**（未跟踪的临时文件），**标记匹配会漏掉措辞异常的历史注记**。**它故意两边都偏向判红** —— 误报的代价是一行 `_EXEMPT`，**漏报的代价是一条自信地指向空处的注释**。**实际只用过一次豁免。**
+
+**它被守卫抓到三个自身 bug（都是守卫先失败）**：
+① 正则交替 `js|json` 让 Python 把 `.json` 里的 `.js` 也匹配上 —— **静默抹掉 8 个真实发现里的 6 个**（**Python `re` 取首个交替，grep 取最长匹配**）；② 标记按**块**匹配，**它自己的 docstring 豁免了自己**；③ 句子切分器在 `tests/test_design_system.py` 里那个 `.` 上断开 —— **一个切开被检查对象的切分器无法判断它**。
+
+**另有一条覆盖面事实**：**96 处引用只存在于 docstring**，而 P33 的 `comment_blocks` 只读 COMMENT token **看不见它们** —— **A6 与 B3 都在 docstring 里**。
+
+### 六条变异（全杀或按设计绿）
+
+M1 改成不存在的文件 → 红｜**M2 删掉一处引用 → 绿**（少引用不是问题，**它确认并说明**）｜M3 判据恒真 → 红｜**M4 路径检查退化成字符串检查 → 红**｜**M5 停止读 docstring → 红**｜M6 改名被引用的测试 → 红。
+
+⚠️ **M4 第一版红在 `NameError` 上** —— **颜色对、理由错**；已重写为真跑，**使红来自判据而非崩溃**。
+
+### ⚠️ 行号引用那一族：**它量了，并决定不扩展**
+
+**22 处行号引用。一条「不得落在注释上」的通则会今天就报 5 处 —— 而其中 4 处是刻意引用注释块。****⇒ 那会是一台误报机，而 P33 自己的文件就警告过这种守卫会被关掉。****P33 那条针对 `Brand.tsx` 的窄守卫单独保留。**
+
+**⚠️ 它报了一处真实漂移但未修**（超出授权）：`visual_qa.py` 用 `Chart.tsx:196` 指「chart: no values」占位符 —— **那一行是注释，它在 :211**。
+
+### ⚠️ 它自报的两条失误
+
+① **一个探针每次都抛 `KeyError`、却对两条变异都打印「INERT」** —— **又一次由一对相同的「错误」得出的假裁定**（P31 同一个形状）。**它差点把它当成发现发出去**；现在探针在输出非 JSON 时硬中止；
+② 两个一次性脚本有语法错误。
+
+### 提请裁定
+
+1. **账本必须订正**：P11 记载的「4 全杀」里，**`lock_a_legitimate_lever` 与 `drop_second_emit` 自 P30 起就没跑过**；**现由 P32 与本项的 harness 取代，且结果已复核**；
+2. **`visual_qa.py` 引用 `Chart.tsx:196` 而它在 :211**（`visual_qa.py` 本项只授权改一行注释）；
+3. **行号引用是否要一条窄守卫** —— 它主张不扩展，理由如上。
 ---
 
 ## P25 — 门禁接进渲染路径（props 级），逐帧级**实测接不上**　状态：✅
