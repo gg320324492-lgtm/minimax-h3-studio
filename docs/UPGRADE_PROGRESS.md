@@ -745,6 +745,67 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 1. **`:65`（3.6）与 `:85`（4.3）** 描述的「对齐参考片」**是真实发生过的，但不可复现** —— **它们应当保留为「做过一次，靠看帧，没有留下测量」，而不是一个可依赖的 ✅**；
 2. **P16 的 ⬜ 应当写明「缺的是输入」而不是「未开始」** —— **这两件事在排期上含义完全不同**；
 3. `docs/UPGRADE_MASTER_PLAN.md:131` 的 P16 行所依赖的「参考片 24–40s」**其指代对象已不可考** —— 原始任务书未持久化。
+
+---
+
+## P26 — 9 个无渲染器的场景类型　状态：✅（7 个做、2 个显式不做）
+
+记录 `docs/P26_MISSING_RENDERERS.md`，守卫 `tests/test_p26_scene_type_coverage.py`（6 条）。
+新组件 `Brand.tsx` / `BrowserWindow.tsx` / `Cards.tsx` / `DataTable.tsx` / `Quote.tsx`
+（1124 行）+ `SCENE_RENDERERS` 加 7 个键。全量 522→**528 passed, 4 skipped**。
+
+### 缺口的来源：**账本 3.2 把「注册」当成「能渲染」**
+
+`SceneType` 声明 **22 个**，`SCENE_RENDERERS` 注册 **13 个** ⇒ 9 个走 `MissingScene`，
+**渲染出类型名加 "not implemented in P4"**。而账本 `:73` 的 `~~3.2~~`「20 种 scene 类型注册」
+**被划掉当作完成** —— **注册了名字不等于能渲染**，这正是 P21 抓出该缺口的来源。
+
+### 裁定（依据是总计划自己的视觉目标段与职责划分，**不是偏好**）
+
+| 类型 | 裁定 | 理由 |
+|---|---|---|
+| `browser-window` / `stat-card` / `card-grid` / `data-table` / `quote` / `logo` / `outro` | **A 做** | 纯程序化；总计划 §3 逐一列出这些构图 |
+| `video` | **B 不做** | 需要 MiniMax 生成镜头，**无生成式渲染器**（P17 裁定 B） |
+| `data-plane-3d` | **B 不做** | **双向受阻**：既被路由进生成式集合，**又需要 `@remotion/three` 而那不是依赖** |
+
+**⚠️ 执行 agent 纠正了指挥窗口工单的分类**：我按「纯程序化 vs 要 H3」二分，
+它指出 **`data-plane-3d` 被双向挡住** —— 第二条（缺依赖）我完全没看到。
+
+### 「没渲染器」从沉默变成了决策
+
+`UNRENDERED_SCENE_TYPES`（`FinanceShowcaseWide.tsx:140`）是**带理由字符串的导出决策表**：
+
+```ts
+video: 'needs a MiniMax generative shot; no generative renderer exists (P17: verdict B)',
+'data-plane-3d': 'needs a 3D surface; routed to the generative set and @remotion/three is not a dependency',
+```
+
+**⇒ 22 = 20 有渲染器 + 2 显式标记不做，零遗漏。**
+
+**⚠️ 它还处理了一条我没提的约束**：理由字符串**刻意避开引擎名**，因为 `test_p17_showcase_demo_verdict.py::test_no_h3_renderer_exists_in_the_render_source` 禁止那个 token 出现在本文件的**代码**里（注释剥离后）—— **这样新加的渲染器就不能靠改个名字藏起来。**
+
+### 守卫
+
+6 条：`SceneType` 的每个值**要么是 `SCENE_RENDERERS` 的键，要么是 `UNRENDERED_SCENE_TYPES` 的键**；并钉住「未渲染的 ⊆ 生成式集合」，
+**这样纯程序化的类型不会被误落地成"有意不做"**。
+判据是**解析出的 map 键做集合差，注释已剥离** —— 它明写这是 4.9 的教训：**「出现某串」或「存在性」不是判据**。
+
+**⚠️ 一处被正确处理的连带**：P21 的 `test_p21_props_path_gates_the_deliverable.py` 里
+**三条失败方向的测试拿 `quote`/`outro`/`card-grid` 当「无渲染器的类型」举例**，
+那些类型现在可渲染了 ⇒ **示例变成假的、测试转红 —— 转红是正确的**。它**原地重写**（P14 先例）为 `video`/`data-plane-3d`，**没有改任何断言，只换了类型名**。
+
+### 渲染取证（它给的判据比我要求的更硬）
+
+**它没有只说「不是占位符」，而是给了一个可复现的判据**：**`MissingScene` 是静态的，所以它的早晚两帧逐字节相同（0 像素变化）**；**每个 A 类类型的两帧都不同（13,029 到 596,866 像素变化）**；**两个 B 类恰好是 0**。
+
+**指挥窗口独立复验**：
+
+- **覆盖完整**：`22 声明 = 20 有渲染器 + 2 显式标记不做`（我第一遍的正则漏了 `video`，因为它写成无引号的 `video:` 而我的正则要求引号 —— **它没漏，是我数错了**）；
+- **`data-table` 不是空壳**：`DataTable.tsx:55-73` 从 `useDesign()` 取 **6 个 token**、读 `columns`/`rows`/`caption`、走 `spring()`、有 `rowHeight`/`padX` 布局覆盖；
+- **给它真实数据后重渲**：非暗像素 **2840 → 29576**（十倍），两帧差异 **0 → 23831**。
+  **⇒ 我第一次测出「两帧差异 0」是因为我给的 `content` 是空的** —— **又一次「测了不存在的东西」**：表格没有行可画，但标题与表头已经渲染。
+
+**三条变异全部杀掉**（删一个渲染器键 / 新增一个 `SceneType` / 让判据永远通过），**每条先证明落地再读结果**。`visual_qa.py` / `frame_baseline.py` / `render.mjs` **sha256 全部未变**。
 ---
 
 ## P25 — 门禁接进渲染路径（props 级），逐帧级**实测接不上**　状态：✅
