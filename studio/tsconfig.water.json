@@ -1,0 +1,4 @@
+{
+  "extends":"./tsconfig.json",
+  "include":["src/water-renewal/**/*.tsx","src/water-renewal/**/*.json","src/templates/common/EnsureFonts.tsx"]
+}

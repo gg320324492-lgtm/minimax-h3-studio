@@ -1,0 +1,323 @@
+{
+  "pace": 1.08,
+  "duration_seconds": 183.33333333333334,
+  "captions": 42,
+  "master": {
+    "path": "C:\\Users\\pc\\Desktop\\设计短片\\黑臭水体治理宣传视频\\第二版成片\\节奏加快版\\让水体重新呼吸_成片2_节奏加快_高清版.mp4",
+    "duration": 183.333333,
+    "size_mb": 428.8,
+    "loudness_lufs": "-14.52",
+    "true_peak_db": "-1.10",
+    "frames": 5500,
+    "black_events": []
+  },
+  "share": {
+    "path": "C:\\Users\\pc\\Desktop\\设计短片\\黑臭水体治理宣传视频\\第二版成片\\节奏加快版\\让水体重新呼吸_成片2_节奏加快_分享版.mp4",
+    "duration": 183.333333,
+    "size_mb": 211.6,
+    "loudness_lufs": "-14.54",
+    "true_peak_db": "-1.17",
+    "frames": 5500,
+    "black_events": []
+  },
+  "final_call": {
+    "recognized": "让我们一起共建人与自然和谐共生的美好家园",
+    "call_to_action_spoken": true
+  },
+  "caption_timing": [
+    {
+      "text": "一条河道，连接着一方水土",
+      "startMs": 1667,
+      "endMs": 3667,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "也连接着人们对美好生活的期待",
+      "startMs": 3667,
+      "endMs": 6794,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "当流动变慢，污染累积，水体的呼吸也变得沉重",
+      "startMs": 11111,
+      "endMs": 15000,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "治理，必须从看清问题开始",
+      "startMs": 15130,
+      "endMs": 17704,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "从现场调查到方案研判，团队把问题带回现场",
+      "startMs": 22222,
+      "endMs": 26296,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "让机理研究与工程实践相互印证",
+      "startMs": 26389,
+      "endMs": 29556,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "微纳米气泡技术，走出实验室",
+      "startMs": 34722,
+      "endMs": 37370,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "设备调试，管线布设，曝气单元定位，每一步",
+      "startMs": 37407,
+      "endMs": 41296,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "都落在真实河道里",
+      "startMs": 41296,
+      "endMs": 43161,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "微小的气泡，连接着气与水",
+      "startMs": 46296,
+      "endMs": 48611,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "通过强化气液传质",
+      "startMs": 48704,
+      "endMs": 50500,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "为增氧与污染控制提供技术支撑",
+      "startMs": 50556,
+      "endMs": 53761,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "清理漂浮物，整理作业区域",
+      "startMs": 57407,
+      "endMs": 59339,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "再把输送管线延伸到需要作用的位置",
+      "startMs": 59339,
+      "endMs": 62870,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "治理的推进，靠的是现场的细致落实",
+      "startMs": 62926,
+      "endMs": 66185,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "设备启动，气泡云在水下扩散",
+      "startMs": 68519,
+      "endMs": 71370,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "从一台装备到一段河道",
+      "startMs": 71370,
+      "endMs": 73556,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "技术接受着真实环境的检验",
+      "startMs": 73648,
+      "endMs": 76262,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "而水环境的重建，还需要更多生命的参与",
+      "startMs": 80556,
+      "endMs": 84111,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "生态浮岛，让修复有了新的接力",
+      "startMs": 84111,
+      "endMs": 87049,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "从材料运输到模块组装，从植物栽植到浮岛入水",
+      "startMs": 89815,
+      "endMs": 94259,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "一块块绿色单元，在协作中连成水上的生态空间",
+      "startMs": 94259,
+      "endMs": 98870,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "植物根系延伸入水，为微生物提供附着空间",
+      "startMs": 101852,
+      "endMs": 105593,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "植物与微生物共同参与净化",
+      "startMs": 105741,
+      "endMs": 108407,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "为生态修复创造条件",
+      "startMs": 108500,
+      "endMs": 110641,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "气泡技术与生态浮岛，在同一条河道里协同推进",
+      "startMs": 112963,
+      "endMs": 117315,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "从设备运行，到生态构建，治理向系统修复延伸",
+      "startMs": 117444,
+      "endMs": 122081,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "水面之下",
+      "startMs": 123148,
+      "endMs": 124037,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "团队也持续关注底泥与上覆水的界面过程",
+      "startMs": 124037,
+      "endMs": 127556,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "每一次现场观察，都是对治理方案的进一步检验",
+      "startMs": 127556,
+      "endMs": 132021,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "从研究到装备，从建设到运行，把技术做实",
+      "startMs": 135185,
+      "endMs": 139019,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "把过程做细，让持续观察与维护",
+      "startMs": 139093,
+      "endMs": 142019,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "成为守护河道的日常",
+      "startMs": 142056,
+      "endMs": 143981,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "一颗气泡",
+      "startMs": 147222,
+      "endMs": 148093,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "一株绿植",
+      "startMs": 148093,
+      "endMs": 149019,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "一群躬身实干的人",
+      "startMs": 149019,
+      "endMs": 150685,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "改变，就从这些具体的行动开始",
+      "startMs": 150870,
+      "endMs": 153667,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "我们守护的，是一条河道，也是河岸的生活",
+      "startMs": 156481,
+      "endMs": 159778,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "家园的底色，以及留给未来的希望",
+      "startMs": 159907,
+      "endMs": 162759,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "让水体重新呼吸，让科技扎根大地",
+      "startMs": 166667,
+      "endMs": 169778,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "向着水清岸绿的愿景，持续行动",
+      "startMs": 169833,
+      "endMs": 172537,
+      "timestampMs": null,
+      "confidence": null
+    },
+    {
+      "text": "让我们一起，共建人与自然和谐共生的美好家园",
+      "startMs": 172704,
+      "endMs": 176794,
+      "timestampMs": null,
+      "confidence": null
+    }
+  ]
+}
