@@ -5,7 +5,8 @@ THE FAILURE THIS EXISTS FOR (P40).
 P12.2 recorded that the work order it was written against quoted a stale number,
 and the number did not come out of thin air: it came out of a docstring.
 
-    studio/scripts/visual_qa.py:1052, before P40:
+    studio/scripts/visual_qa.py, line 1052 BEFORE P40's edit shifted the file
+    (the docstring cited here used to be cited at line 1052):
         "`SceneType` declares 22 values, `SCENE_RENDERERS` names 13, and the
          9 in between are video, browser-window, ..."
 
@@ -296,9 +297,10 @@ def find_all_citations() -> list[tuple[str, str, int, str]]:
 def test_every_cited_collection_size_equals_the_computed_size():
     """THE GUARD. Every cited count must equal len(collection()), measured.
 
-    This is the assertion that would have been RED on `visual_qa.py:1052` the
-    day P29 landed seven renderers, and it is the line that stops a docstring
-    from becoming the next work order's premise.
+    This is the assertion that would have been RED on the docstring that used
+    to sit at visual_qa.py:1052 -- a line number used to be cited there, and
+    P42 moved the file -- the day P29 landed seven renderers, and it is the
+    line that stops a docstring from becoming the next work order's premise.
     """
     problems: list[str] = []
     for rel, name, cited, sentence in find_all_citations():
