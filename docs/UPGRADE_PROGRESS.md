@@ -2179,4 +2179,71 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
   - **两处必须写进账本、否则会误导下一个人**（复验已独立确认）：① **10.1 的 14 条只做 10 条**，`overflow`/`collision`/`flicker`/`broken_font` 是**仪器不存在**（`flicker` 需帧间亮度序列、`broken font` 需字体文件校验，都不是「拿现有渲染一测就知道」），**不是「没做」**。② **`report_demo/props.json` 仍无 `totalDuration`，duration 门禁是 `UNVERIFIABLE`** —— 唯一一份已交付 props 上**这条检查至今无法运行**；那四个 section 时长是 TS 字面量，复制到 Python 会引入四个魔数，**故刻意不做派生**，测试改为断言这个事实。
   - **复验这一侧的修正，如实记**：① 我上轮说 `qa_report.py` **74 行**、**10.1 是 8 条规则** —— 实测 **91 行**、**14 条**（我数错两条，已按 ledger 原文更正）；② 我给的交叉验证判据沿用 P0 的 **0.04%** 误差地板，**那是 mp4 抽帧的地板，PNG 无损不适用** —— 施工方指出后按 0.0000% 逐位相同复核；③ 我在独立重算 contrast 时**先后两次写错量法**（键名是 `background`/`backgroundAlt` 不是 `bg`/`bgAlt`；`[^,\n]+` 把 rgba 的逗号截断导致只有 3 个分量），**第一次甚至在一条都没算出来时就打印了表头**。**量法错了而结论看起来成立，是本项目最难防的一种错。**
   - **账本本身出过一次事故，如实记**：写 10.1/10.2 两行时我把两个长字符串放进一个列表再展开，**分隔用的换行符落进了单独元素**，两行被写成一个残缺的 `|` 和一个空行 —— **账本差点记下一个「已完成」的行号却查不到内容**。用 `git checkout` 还原后改为逐行替换。**这条与本项目记录的「编辑器吃掉字面量」同族，而这次是我自己的脚本。**
-  - **终检**：**182 passed / 2 skipped**（P9 后 151）、tsc 0、`git status` **恰好三个文件**（`visual_qa.py` / `qa_report.py` / `test_visual_qa.py`）、**渲染路径零触碰**。
+  - **终检**：**182 passed / 2 skipped**（P9 后 151）、tsc 0、`git status` **恰好三个文件**（`visual_qa.py` / `qa_report.py` / `test_visual_qa.py`）、**渲染路径零触碰**。
+
+### P43 — `data-plane-3d`：**判 C（不做）**，且工单的硬要求 ② 算术上不成立
+
+**裁定**：`data-plane-3d` **不建**。指挥窗口独立复验，agent 的核心判断成立。
+
+- **(a) 它该画什么 —— 没有依据。** `git log --all -S'data-plane-3d'` 共 **27 个 commit**，
+  逐个看过 diff，**无一处描述画面**。唯一近似描述（`UPGRADE_MASTER_PLAN.md:110`
+  「3D 数据表面 + 蓝色柱体」）**描述的是参考片**，且从未与该类型绑定 ——
+  证据是 P26 自己（`:57`）逐条点名了 §3 锚定的 7 个类型，**其中没有它**。
+  两处代码里的「a 3D data surface / needs a 3D surface」讲的是**引擎**，不是画面。
+- **(b) 数据从哪来 —— 没有契约，且实测无数据。** `content` 是
+  `z.record(z.string(), z.unknown())` / `{"type":"object"}`，**无 `properties`、无按 type 分派**；
+  **三张 tracked 图谱里它出现 0 次**（指挥窗口实测：`charts_demo` 0 / `showcase_demo` 0 /
+  `graphs/p29_new_renderer_showcase` 0）⇒ **今天建出来的渲染器没有任何数据可读。**
+- **(c) `visual_qa` 能验吗 —— 不能，已实测。** 像素仪器本身可用，但
+  「有结构/有内容」这类判据是**误报机**：`MissingScene` 的边缘能量（lap_var **35.9**）
+  **高于**真实帧（**18.4**），因为它画 48px 大字；且无正类可对照。
+
+**⚠️ 承重发现（agent 报、指挥窗口实测确认）**：给它注册**任何一个**渲染器是
+**一行改动、零新依赖**，却让 **9 条守卫转红**，横跨 **6 个已交付工单**：
+
+| 守卫 | 红的理由（实测原文） |
+|---|---|
+| P17 `no_h3_renderer_exists_in_the_render_source` | `SCENE_RENDERERS now routes ['data-plane-3d'] — a generative type has a Remotion renderer` |
+| P17 `every_generative_type_is_gated_not_only_video` | 同上 |
+| P21 `the_failure_direction_names_the_offending_scene_and_type` | **它拿 `data-plane-3d` 当自己的夹具** |
+| P26 `every_scene_type_is_rendered_or_recorded_as_unrendered` | `unrendered != {video, data-plane-3d}` |
+| P12 `the_unrendered_set_is_the_two_generative_types_not_nine` | `assert 21 == 20` |
+| P29 `every_renderer_is_used_by_a_tracked_graph` | `NO tracked graph asks for them: ['data-plane-3d']` |
+| P29 `the_guard_is_red_when_a_graph_stops_using_a_renderer` | 同上 |
+| P40 ×2 | `SCENE_RENDERERS has 21, not 20`（注释里的数字漂移） |
+
+**⇒ 工单硬要求 ②「让 P21 转绿」是算术上不可能的**：`graph_scene_renderable` **已经绿**，
+因为没有图谱用这个类型；给它渲染器，P21 反而转红。**「不再落空」在这里是回归，不是目标。**
+
+**⇒ 且这是个死结**：P29 要求渲染器必须被某个 tracked 图谱用到，
+而图谱需要内容，内容需要那份不存在的规格。**P29 当年修 B-4「绿而有洞」的办法是加图谱 ——
+加图谱要内容。** P29 的失败信息本身给出了正解：
+*「或者，若它确实画不出来 —— 从注册表拿掉，把理由记进 `UNRENDERED_SCENE_TYPES`，
+那正是 P26 为这种情况建的裁定表。」*
+
+**依赖**：**未装** `@remotion/three`。判 C 不构成弄脏 `package.json` 的理由，
+且 `REMOTION_MOTION_UPGRADE_20260930.md:32` **早已裁定延后**（headless 需 `--gl=angle`、
+已知 angle 泄漏需分段渲染、「纯数据视频 3D 张力/成本比低」），待「**真3D 需求**」出现再议
+—— **而缺的正是那个需求**。若将来解锁，**必须 `@remotion/three@4.0.529`**（与本仓
+每个 Remotion 包的精确 pin 一致；只有 `react`/`zod`/`tsx` 用 `^`）。
+
+**⚠️ 本次是第十三次「实测说不出想要的结果」。**
+**⇒ 一个类型的名字、路由和引擎归属齐备，唯独没有内容 —— 而没有内容就无法验收，
+无法验收的东西不该建。**
+
+### P44 — 全仓首次全绿：`719 passed, 4 skipped`
+
+**那条唯一的红是指挥窗口自己造成的**：P42 工单第 37 行的「**不**」字在写入时
+变成 `EF BF BD EF BF BD EF BF BD`（三个 U+FFFD），被 `test_markdown_text_is_intact`
+抓到。**agent 明确报告「这不是我的、我没碰」并把裁定权交回 —— 处置正确。**
+
+**⇒ 已按字节层修回**（`read_bytes`/`write_bytes`，未用 `read_text`/`write_text`）。
+
+**⚠️ 顺带暴露一件更值得记的事**：P43 agent 报告基线是
+`718 passed, 1 failed`，而**工单写的基线是 `719 passed`** —— 差的正是这一条。
+**⇒ 两次独立测量（agent 与指挥窗口）都指向同一个数，差异有唯一解释，
+而这个解释是「文档写的数字已经过期」—— 这正是 P40 建守卫要防的那件事本身。**
+
+**复验记录（指挥窗口）**：
+- 注入 `'data-plane-3d': ChartScene`（一行，字节层，CRLF 292→293 后复原为 292/0）⇒ **9 条守卫红，每条都直接点名 `data-plane-3d`**（红在正确的理由上，非 `NameError`/`SyntaxError`）；
+- 复原后全量 **719 passed, 4 skipped**。
