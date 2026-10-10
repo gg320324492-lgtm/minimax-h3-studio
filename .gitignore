@@ -92,3 +92,11 @@ tests/__pycache__/
 .pytest_cache/
 ceo_mindread_ep01/00_project/shot_specs.json
 ceo_mindread_ep01/00_project/h3_prompts.compiled.json
+
+# water_renewal — same rule as third_lantern / ceo_mindread_ep01: scripts and
+# notes are tracked, media and render output are not. 781 MB of jpg + wav here.
+water_renewal/01_reference/
+water_renewal/05_audio/
+water_renewal/07_edit/
+water_renewal/*/rendered_frames/
+.cache/
