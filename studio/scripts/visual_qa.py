@@ -1049,15 +1049,15 @@ def rule_graph_scene_renderable(props: dict) -> Finding:
     `MissingScene` in `FinanceShowcaseWide.tsx:150` is the fallback for any scene
     type the map does not name, and what it renders is the type's own name plus
     the words "not implemented in P4". Measured over the two schema mirrors:
-    `SceneType` declares 22 values, `SCENE_RENDERERS` names 13, and the 9 in
-    between are `video`, `browser-window`, `stat-card`, `card-grid`,
-    `data-table`, `quote`, `data-plane-3d`, `logo`, `outro`.
+    `SceneType` declares 22 values and `SCENE_RENDERERS` names 20 of them, so
+    the 2 in between are `video` and `data-plane-3d`. (P40: the numbers here
+    are recomputed by `tests/test_p40_docstring_counts_match_code.py`.)
 
     WHY THAT IS A DEFECT AND NOT A TODO. The ledger's line for step 3.2 reads
     "20 种 scene 类型注册" with the list of twenty spelled out beside it, struck
-    through as done. Sixteen of those twenty reach a real renderer today; the
+    through as done. All twenty of those reach a real renderer today; the
     ledger does not say so, and `visual_qa.py --props` exits 0 on a graph made
-    entirely of the four that do not. A schema that validates a scene type the
+    entirely of the two that do not. A schema that validates a scene type the
     template cannot draw is the same defect class this file's header is about —
     "a field the graph can set and that reports success anyway" — one level up,
     and the level where it costs the viewer a whole film.
