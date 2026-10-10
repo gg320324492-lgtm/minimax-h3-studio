@@ -11,9 +11,15 @@ importers:
       '@remotion/bundler':
         specifier: 4.0.529
         version: 4.0.529(postcss@8.5.28)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@remotion/captions':
+        specifier: 4.0.529
+        version: 4.0.529
       '@remotion/cli':
         specifier: 4.0.529
         version: 4.0.529(postcss@8.5.28)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      '@remotion/media':
+        specifier: 4.0.529
+        version: 4.0.529(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@remotion/media-utils':
         specifier: 4.0.529
         version: 4.0.529(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
