@@ -229,6 +229,134 @@ def density(mean_a: np.ndarray, blocks_a: np.ndarray) -> float:
     return float((np.abs(g - np.median(g)) > 8).mean())
 
 
+def decode_frames_rgb(path: str | Path, width: int, height: int,
+                      max_frames: int | None = None, every: int = 1):
+    """Yield (index, RGB ndarray) at NATIVE resolution, `every`-th frame.
+
+    A SEPARATE pass from `decode_frames`, deliberately. That one yields luma
+    and every number already in `measure_motion_and_cuts` was computed from it;
+    switching it to RGB would mean re-deriving luma in numpy with ffmpeg's own
+    weights and every existing verdict would move underneath the change. A new
+    measurement gets a new pass, and the old numbers keep the meaning they had.
+
+    `-vsync 0` is load-bearing here for the same reason as in the luma pass —
+    see the module docstring — and the index this yields is the same global
+    frame index, so a colour can be quoted against the frame number a cut was
+    quoted against.
+    """
+    cmd = ['ffmpeg', '-v', 'error', '-i', str(path), '-vsync', '0',
+           '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=10 ** 8)
+    fs = width * height * 3
+    idx = 0
+    try:
+        while True:
+            buf = proc.stdout.read(fs)
+            if len(buf) < fs:
+                break
+            if idx % every == 0:
+                yield idx, np.frombuffer(buf, dtype=np.uint8).reshape(
+                    height, width, 3)
+            idx += 1
+            if max_frames is not None and idx >= max_frames:
+                break
+    finally:
+        proc.stdout.close()
+        try:
+            proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:      # pragma: no cover - defensive
+            proc.kill()
+
+
+#: RGB is quantised to this many levels per channel before taking the mode.
+#: A dominant colour on a 1280x720 frame is a REGION, not a point, so an
+#: unquantised mode would return whichever antialiasing value happens to occur
+#: most often on one glyph edge. 5 bits per channel is 32 levels — fine enough
+#: to tell `[252,252,252]` from `[224,224,224]` (P37 measured both in this very
+#: film and the difference is the point), coarse enough that a gradient is one
+#: colour rather than 32.
+COLOUR_BITS = 5
+_COLOUR_SHIFT = 8 - COLOUR_BITS
+
+
+def measure_colour(path: str | Path, width: int, height: int,
+                   max_frames: int | None = None, every: int = 30
+                   ) -> dict:
+    """Per-channel means and the dominant colour, at native resolution.
+
+    This is the RGB channel P37 recorded as missing: `adjudicate` returned B for
+    色彩 with the comment "not implemented", while P37 had measured the film's
+    dominant colours in a throwaway script that was never made an instrument.
+    The difference between that and this is the whole difference the work order
+    asks about — 量到 (measured) is not 建了仪器 (built an instrument) — and it
+    is the reason the implementation lives HERE, on the probe's own decode,
+    rather than in a report.
+
+    TWO NUMBERS, and only two, because a number nobody defined cannot be
+    graded on:
+
+      `channel_mean`      mean of R, G and B over every sampled pixel. The
+                          average colour of the picture.
+      `dominant` / `dominant_share`
+                          the modal quantised RGB and the share of sampled
+                          pixels holding it. "How much of this frame is the
+                          background colour", which is the reading that can be
+                          put next to a declared theme token.
+
+    `every` samples one frame in 30 by default, matching the sampling P37
+    reported, and the frame indices are carried in `sampled_frames` so a
+    quoted colour can be traced to frames rather than to a file.
+    """
+    means = np.zeros(3, dtype=np.float64)
+    modes: dict[int, int] = {}
+    frames: list[int] = []
+    per_frame: list[dict] = []
+    pixels = 0
+    for idx, rgb in decode_frames_rgb(path, width, height, max_frames, every):
+        flat = rgb.reshape(-1, 3)
+        means += flat.sum(axis=0, dtype=np.float64)
+        q = (flat >> _COLOUR_SHIFT).astype(np.int32)
+        key = (q[:, 0] << 10) | (q[:, 1] << 5) | q[:, 2]
+        vals, counts = np.unique(key, return_counts=True)
+        frame_best = 0
+        for v, c in zip(vals.tolist(), counts.tolist()):
+            modes[v] = modes.get(v, 0) + c
+            if c > frame_best:
+                frame_best, frame_v = c, v
+        pixels += flat.shape[0]
+        frames.append(idx)
+        per_frame.append({'frame': idx,
+                          'rgb': _unquantise(frame_v),
+                          'share': round(frame_best / flat.shape[0], 4)})
+    if not frames or pixels == 0:
+        return {'frames_sampled': 0}
+    winner = max(modes.items(), key=lambda kv: kv[1])
+    return {
+        'frames_sampled': len(frames),
+        'sampled_frames': {'first': frames[0], 'last': frames[-1],
+                           'stride': every, 'count': len(frames)},
+        'pixels_sampled': int(pixels),
+        'channel_mean': [round(float(v / pixels), 2) for v in means],
+        'dominant': _unquantise(winner[0]),
+        'dominant_share': round(winner[1] / pixels, 4),
+        'per_frame': per_frame,
+    }
+
+
+def _unquantise(key: int) -> list[int]:
+    """Centre of the quantisation bucket, not its floor.
+
+    Reporting 248 for a frame that is really `[252,252,252]` would understate
+    the value by a whole bucket and make two different near-whites — the
+    `[252,252,252]` P37 measured against the `[224,224,224]` the work order
+    assumed — compare equal at exactly the point where they must not.
+    """
+    half = 1 << (_COLOUR_SHIFT - 1)
+    return [((key >> 10) & 0x1F) << _COLOUR_SHIFT | half,
+            ((key >> 5) & 0x1F) << _COLOUR_SHIFT | half,
+            (key & 0x1F) << _COLOUR_SHIFT | half]
+
+
 def probe(path: str | Path | None) -> ProbeResult:
     """Adjudicate all twelve dimensions for one candidate film.
 
@@ -281,6 +409,32 @@ def probe(path: str | Path | None) -> ProbeResult:
                            stream=stream,
                            verdicts={d: UNAVAILABLE for d in DIMENSIONS})
 
+    # The colour pass is SEPARATE and additive, and a failure in it does not
+    # take the other eleven dimensions down with it: colour is the only
+    # dimension it can speak to, and P37's rule is that a probe's failure must
+    # never become another dimension's verdict (P31/P34 each lost a day to a
+    # pair of identical KeyErrors being compared as agreement).
+    try:
+        # The FULL stream, unlike the luma pass's 2400-frame cap. The film's
+        # colour changes by SEGMENT — P37 measured near-white over 23-51s and
+        # near-black over 67-83s — so a cap that stops at 40s would report a
+        # dominant colour for a film whose second half is the opposite colour.
+        #
+        # The stride is then set from the container's own frame count, because a
+        # fixed stride of 30 samples ONE frame from a 2-second test clip — which
+        # is how the first run of this reported `frames_sampled: 1` for every
+        # fixture and would have made a two-frame film look exactly as measured
+        # as an eighty-second one. Target is ~20 samples, clamped to at least one
+        # frame in ten.
+        total = int(stream.get('nb_frames') or 0)
+        stride = max(1, min(30, total // 20)) if total else 30
+        m['colour'] = measure_colour(p, width, height, max_frames=None,
+                                     every=stride)
+        m['colour']['stride'] = stride
+    except Exception as exc:                          # noqa: BLE001
+        m['colour'] = {'frames_sampled': 0,
+                       'error': f'{type(exc).__name__}: {exc}'}
+
     res = ProbeResult(path=str(p), available=True, stream=stream, measurements=m)
     res.verdicts = adjudicate(res)
     return res
@@ -306,9 +460,15 @@ def adjudicate(res: ProbeResult) -> dict[str, str]:
     v['scene 边界'] = A if m['cuts_detected'] > 0 else B
     # 2. duration — container metadata, plus the measured cut count.
     v['时长'] = A if s['nb_frames'] and s['fps'] else B
-    # 3. colour — needs per-channel measurement, which this probe does not do;
-    #    `colour_probe` in the doc's own terms is a separate instrument.
-    v['色彩'] = B
+    # 3. colour — MEASURED, per channel, at native resolution, by the same
+    #    decode the rest of this probe uses. This was the gap P37 recorded:
+    #    "not implemented RGB channel", while a throwaway script outside the
+    #    repository had already measured a dominant colour and the verdict was
+    #    still B because 量到 is not 建了仪器. The condition is on the
+    #    MEASUREMENT, not on a constant, so an empty or failed colour pass
+    #    cannot report A — the always-green shape.
+    c = m.get('colour') or {}
+    v['色彩'] = A if c.get('frames_sampled', 0) > 0 else B
     # 4. layout — measurable only against a declared frame; nothing declares one.
     v['布局'] = B
     # 5. motion — measured, and in the same unit this project already uses.
