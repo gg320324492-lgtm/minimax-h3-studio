@@ -98,7 +98,9 @@ for (const name of ['showcase_demo.json', 'charts_demo.json']) {
    * for the loss of 0.015 of a beat: the snapping was effectively free, and the
    * whole film lost 1 frame. At the fitted 128.998 the same scene is 8.206 beats,
    * still rounding to 8, and now every scene carries a 0.206-beat deficit — 20
-   * frames on showcase_demo, 108 on charts_demo. So correcting the tempo made this
+   * frames on showcase_demo, and on charts_demo it cost 10 or 11 frames per scene
+   * (108 across the film as it stood with a 600-frame c10; 105 after P42
+   * shortened that scene to 150). So correcting the tempo made this
    * branch lossier. Nothing delivered changes, because the render path resolves
    * with `false` and no delivered film has ever gone through this code; but it is
    * the honest consequence of the tempo fix, and it is why the numbers below are
@@ -117,7 +119,16 @@ for (const name of ['showcase_demo.json', 'charts_demo.json']) {
     maxStart: number;
   }> = {
     'showcase_demo.json': {shippedTotal: 801, snappedTotal: 781, moved: 4, maxStart: 14},
-    'charts_demo.json': {shippedTotal: 1950, snappedTotal: 1842, moved: 10, maxStart: 94},
+    // P42: charts_demo's c10_bar_long went 600 -> 150 frames, so these two
+    // totals moved with it and were re-measured, not estimated. What the pins
+    // are FOR is unchanged and is stated by the checks below them: beat_snap
+    // stays lossy, and the loss is per-scene rounding. At 600 frames c10
+    // absorbed 20 beats and the film lost 108 frames to the fractional-beat
+    // deficit; at 150 it absorbs 5 and the film loses 105 across ten scenes of
+    // 10 or 11 frames each. `maxStart` did not move (94) -- it is c10's START
+    // that shifts, and shortening c10 did not change where the scenes before
+    // it end.
+    'charts_demo.json': {shippedTotal: 1500, snappedTotal: 1395, moved: 10, maxStart: 94},
   };
   const p = PINS[name];
 

@@ -62,9 +62,18 @@ THRESHOLDS, and the distribution each sits in:
                THEME-LEVEL, not per-frame. P22 moved it off the `--frame`
                path: it took no frame, so it made that path permanently red.
                See CONTRAST_ROLES and `rule_contrast_frame`.
-  black_frame   non-content >= 0.9995         window (0.999238, 1.0) — only 0.000762
-                                              wide. THIN, stated as such. 8 corpus
-                                              frames are exactly 1.0.
+  black_frame   non-content >= 0.9995         the FAIL side has NO spread: 23 of
+                                              23 corpus frames that FAIL measure
+                                              exactly 1.0, and the busiest PASS
+                                              is 0.999367. The 0.000762 gap is
+                                              between the two populations, not a
+                                              place they overlap. P42 exempted a
+                                              scene's DECLARED exit window (the
+                                              last max(6, round(dur*0.08)) frames,
+                                              mirroring charts/lifecycle.ts),
+                                              because a fade is authored: all ten
+                                              scenes end on one, measured on a
+                                              lossless render.
   freeze        difference == 0 (exact)       noise floor measured at exactly 0
   duplicate     distance == 0 (exact)       a cross-render cut is wrong here:
                                               --frame-pair hands it two CONSECU-
@@ -145,6 +154,24 @@ MIN_TYPE_PX = 12.0
 WCAG_TEXT = 4.5
 WCAG_LARGE = 3.0
 BLACK_NONCONTENT = 0.9995
+#: P42. How many trailing frames of a scene the lifecycle's `exit` phase
+#: occupies, as a share of the scene. This is the SAME number the renderer uses
+#: (charts/lifecycle.ts: `EXIT_SHARE = 0.08`, `EXIT_MIN = 6`), re-declared here
+#: because `black_frame` decides from the graph and the renderer decides from
+#: the frame, and a rule that guesses the wrong one exempts the wrong frames.
+#:
+#: Measured on a lossless render of the delivered film, the two populations the
+#: cut has to separate sit at OPPOSITE ends and do not touch:
+#:
+#:   the busiest frame in the 333-frame corpus      0.862377
+#:   the busiest frame in the nine settled charts    0.999367  (9 corpus frames)
+#:   EVERY frame `black_frame` FAILs                 exactly 1.000000 (23 of 23)
+#:
+#: So the FAIL side has no spread at all — a frame with any content in it never
+#: reaches the cut — and the 0.000762-wide window the docstring quotes is the gap
+#: between the busiest PASS and a FAIL, not a place two populations overlap in.
+EXIT_SHARE = 0.08
+EXIT_MIN = 6
 FREEZE_DIFF = 0
 #: SIGNATURE IDENTITY CUT — the criterion `rule_duplicate` actually decides on.
 #:
@@ -828,13 +855,64 @@ def rule_contrast_frame(a: np.ndarray) -> Finding:
         extra={'theme': theme, 'distance_to_declared_background': round(dist, 1)})
 
 
-def rule_black_frame(a: np.ndarray) -> Finding:
+def exit_window_start(duration_in_frames: int) -> int:
+    """First frame of a scene's declared `exit` phase.
+
+    A mirror of charts/lifecycle.ts, not a new number: `exitFrames = max(6,
+    round(dur * 0.08))` and the exit runs from `dur - exitFrames` to the end.
+    JS `Math.round` rounds halves toward +Infinity, which is what `floor(x+0.5)`
+    does for the non-negative values here.
+    """
+    dur = max(1, int(duration_in_frames))
+    exit_frames = max(EXIT_MIN, math.floor(dur * EXIT_SHARE + 0.5))
+    return max(0, dur - exit_frames)
+
+
+def rule_black_frame(a: np.ndarray, frame_in_scene: int | None = None,
+                     duration_in_frames: int | None = None) -> Finding:
     """Fraction of pixels that are not content, against a measured threshold.
 
-    The threshold window is only 0.000762 wide — the busiest real frame measures
-    0.999238 and the flat frames measure exactly 1.0 — so the margin is thin and
-    is stated rather than dressed up. The exact flat-frame test is reported
-    alongside, because it has no threshold at all.
+    P42 — WHY A SCENE'S LAST FRAME IS NOT A DEFECT, AND WHY THE EXEMPTION IS
+    SCENED RATHER THAN GLOBAL.
+
+    The measurement first. Over the 333-frame corpus every frame this rule
+    FAILs sits at EXACTLY 1.000000 non-content — 23 of 23 — while the busiest
+    PASS is 0.999367. The two populations do not overlap and the FAIL side has
+    no spread, so the cut is not balanced on a knife edge; it separates a frame
+    with a mark in it from a frame with nothing in it.
+
+    Every one of those 23, and every scene in the delivered film, ends on a
+    DECLARED fade. Measured on a lossless render: all ten scenes' final frames
+    read 1.000000, and c10's last 47 frames fall 0.974 -> 1.000 monotonically as
+    the marks leave. That is the lifecycle's `exit` phase doing what it was
+    written to do. A convention that is 10/10 consistent and smooth is not a
+    defect, so reporting it as one is a false positive — which is what P27
+    recorded, having called the same frames "the last frame is nearly black".
+
+    So the rule now exempts a frame that is inside its scene's declared exit
+    window, and only there. Two alternatives were measured and rejected:
+
+      * "N consecutive frames with no change, AND not at the end" (option B):
+        REFUTED BY MEASUREMENT. Every consecutive pair inside a fade DIFFERS —
+        on c01's eleven-frame tail, 461354 down to 97054 changed pixels — so a
+        no-change criterion is false for every frame of a real fade and would
+        exempt nothing at all. It reads the opposite of what it was meant to
+        read: a fade is change, a freeze is sameness.
+      * a threshold move: there is no threshold move available. The FAIL
+        population is a single point at 1.0 and the PASS population tops out at
+        0.999367; the cut already sits in the gap and any cut that moved would
+        either not move the verdict or start FAILing frames that have marks in
+        them.
+
+    WHY THE EXEMPTION IS POSITIONAL AND DEFAULTS TO OFF. `frame_in_scene` and
+    `duration_in_frames` are OPTIONAL, and a caller that does not supply them
+    gets exactly the behaviour this rule had before: a bare frame with no
+    position is judged on its pixels alone. That default is deliberate. The
+    corollary is that the exemption CANNOT rescue a mid-scene freeze, and the
+    guard asserts that directly: a frame inside the exit window goes PASS, and a
+    frame with the same pixels outside it stays FAIL. A rule that exempted black
+    frames everywhere would be a second gate that never goes red, which is this
+    project's most expensive failure mode.
     """
     m, trusted, _ = model_mask(a)
     if not trusted:
@@ -844,13 +922,33 @@ def rule_black_frame(a: np.ndarray) -> Finding:
     noncontent = float(1.0 - m.mean())
     colours = int(np.unique(a.reshape(-1, 3), axis=0).shape[0])
     flat = colours <= 1
-    verdict = FAIL if noncontent >= BLACK_NONCONTENT else PASS
+
+    in_exit = (frame_in_scene is not None and duration_in_frames is not None
+               and frame_in_scene >= exit_window_start(duration_in_frames))
+    # The exemption is an exemption from the VERDICT, not from the
+    # measurement. `noncontent` is still reported and still 1.0 on an exempt
+    # frame: the frame really does have no content in it. What changes is
+    # whether that is a defect, and it is not when the marks were told to leave.
+    verdict = FAIL if (noncontent >= BLACK_NONCONTENT and not in_exit) else PASS
+    exit_note = ''
+    if in_exit:
+        start = exit_window_start(duration_in_frames)
+        exit_note = (f'; frame {frame_in_scene} of {duration_in_frames} is inside '
+                     f'the declared exit (from frame {start}), where the marks are '
+                     f'leaving on purpose — the fade is authored, not a stall')
     return Finding('black_frame', verdict, round(noncontent, 6),
                    f'{noncontent * 100:.4f}% non-content ({m.mean() * 100:.4f}% content), '
                    f'{colours} distinct colour(s)'
-                   + ('; the frame is a single flat colour' if flat else ''),
+                   + ('; the frame is a single flat colour' if flat else '')
+                   + exit_note,
                    extra={'threshold': BLACK_NONCONTENT, 'flat': flat,
-                          'distinct_colours': colours})
+                          'distinct_colours': colours,
+                          'in_declared_exit': in_exit,
+                          'frame_in_scene': frame_in_scene,
+                          'duration_in_frames': duration_in_frames,
+                          'exit_window_start': (exit_window_start(duration_in_frames)
+                                                if duration_in_frames is not None
+                                                else None)})
 
 
 def rule_freeze(pa: Path, pb: Path) -> Finding:
@@ -1250,14 +1348,24 @@ def rule_duplicate_check_props(props_path: Path) -> Finding:
 
 def run_on_frame(path: Path, declared_px: float | None = None,
                  scale: float = 1.0, declared_format: tuple[int, int] | None = None,
-                 props: dict | None = None) -> list[Finding]:
+                 props: dict | None = None,
+                 frame_in_scene: int | None = None,
+                 duration_in_frames: int | None = None) -> list[Finding]:
+    """Rules for one rendered frame.
+
+    `frame_in_scene` / `duration_in_frames` are P42's position context. They are
+    optional and default to None, which leaves `black_frame` judging pixels
+    alone exactly as it did before — a caller that knows where in its scene the
+    frame sits can say so, and a caller that does not is not silently granted an
+    exemption it did not ask for.
+    """
     a = load(path)
     im = Image.open(path)
     findings = [
         rule_safe_area(a),
         rule_clipping(a),
         rule_font_size(a, declared_px, scale),
-        rule_black_frame(a),
+        rule_black_frame(a, frame_in_scene, duration_in_frames),
         rule_blur(a),
         rule_aspect((im.width, im.height), declared_format),
         # P22. `contrast` used to sit here, and it took no frame: the same 24-pair

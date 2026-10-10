@@ -353,7 +353,7 @@
     {
       "id": "c10_bar_long",
       "type": "bar-chart",
-      "durationInFrames": 600,
+      "durationInFrames": 150,
       "camera": {
         "perspective": 1600
       },
@@ -386,7 +386,7 @@
           "showValues": true,
           "showGrid": true,
           "valueFormat": "int",
-          "axisLabel": "LONG-FORM CHART — the entrance has room to be measured",
+          "axisLabel": "BAR CHART — eight months, one held",
           "emphasisIndex": 6
         }
       }
