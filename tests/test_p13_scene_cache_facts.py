@@ -254,7 +254,7 @@ def test_no_entry_point_selects_a_scene_or_a_frame_range():
 
 def test_the_qa_cli_has_no_scene_selector_either():
     """The QA side has the same gap; a cache that skips QA per scene has nothing
-    to key on. `--props` is the only graph-shaped flag (visual_qa.py:751)."""
+    to key on. `--props` is the only graph-shaped flag (visual_qa.py:1393)."""
     src = QA.read_text(encoding='utf-8')
     assert "'--scene'" not in src and '"--scene"' not in src, (
         'visual_qa.py grew a --scene flag — scene-level QA exists now, so the '

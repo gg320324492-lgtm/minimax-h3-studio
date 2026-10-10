@@ -689,8 +689,8 @@ def rule_contrast() -> list[Finding]:
 #: from its name. P22 measured every `inkFaint` / `accent` / `positive` consumer
 #: under `studio/src/templates/finance-showcase/`:
 #:
-#:   inkFaint — 10 of 10 sites are TEXT: the Y axis tick labels (ChartFrame.tsx:320),
-#:     the axis title (:339), the X category labels (:379), the PathMark value
+#:   inkFaint — 10 of 10 sites are TEXT: the Y axis tick labels (ChartFrame.tsx:342),
+#:     the axis title (:361), the X category labels (:401), the PathMark value
 #:     labels (types.tsx:244), the Slope end label and series name (:344, :350),
 #:     the Bubble category label (:429), the Heatmap cell value and its column and
 #:     row labels (:499, :523, :530), and the DataColumns cell rank number
@@ -701,7 +701,7 @@ def rule_contrast() -> list[Finding]:
 #:
 #:   accent — 8 sites, and only THREE are text: the KpiHero eyebrow
 #:     (KpiHero.tsx:84, 20px/500), the KpiHero value suffix (:118, 78.88px), and
-#:     the "chart: no values" placeholder (Chart.tsx:196, 34px). The other five
+#:     the "chart: no values" placeholder (Chart.tsx:211, 34px). The other five
 #:     are mark fills and strokes, where 3:1 is the applicable bar (SC 1.4.11).
 #:
 #:   positive — 2 sites, both text: the KpiHero delta chip (KpiHero.tsx:139,
@@ -725,14 +725,14 @@ def rule_contrast() -> list[Finding]:
 #: where the applicable bar is 3.0 and it passes at 3.71.
 CONTRAST_ROLES: dict[str, dict[str, object]] = {
     'inkFaint': {'consumers': 'text', 'sites': 10,
-                 'sites_detail': 'ChartFrame.tsx:320,339,379; types.tsx:244,344,'
+                 'sites_detail': 'ChartFrame.tsx:342,361,401; types.tsx:244,344,'
                                  '350,429,499,523,530; DataColumns.tsx:244',
                  'applicable_bar': WCAG_TEXT,
                  'note': 'every measured consumer is a text label or a data '
                          'number; none is a divider. The divider roles are '
                          'grid/hairline/column and are not measured here.'},
     'accent': {'consumers': 'text and marks', 'sites': 8, 'text_sites': 3,
-               'sites_detail': 'text: KpiHero.tsx:84,118 and Chart.tsx:196; '
+               'sites_detail': 'text: KpiHero.tsx:84,118 and Chart.tsx:211; '
                                'marks: KpiHero.tsx:169, BrowserStack.tsx:87,117, '
                                'DataColumns.tsx:140,234',
                'applicable_bar': WCAG_LARGE,
@@ -1046,7 +1046,7 @@ def rule_graph_scene_renderable(props: dict) -> Finding:
 
     THIS RULE IS THE PART OF THAT PATH WHICH HAS A MEASURED ANSWER.
 
-    `MissingScene` in `FinanceShowcaseWide.tsx:95` is the fallback for any scene
+    `MissingScene` in `FinanceShowcaseWide.tsx:150` is the fallback for any scene
     type the map does not name, and what it renders is the type's own name plus
     the words "not implemented in P4". Measured over the two schema mirrors:
     `SceneType` declares 22 values, `SCENE_RENDERERS` names 13, and the 9 in
