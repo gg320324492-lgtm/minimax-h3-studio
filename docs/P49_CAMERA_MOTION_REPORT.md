@@ -234,10 +234,41 @@ f71/f137 这一对量到的是**入场尾巴**，不是静止相。
    我自己那两个文件的 sha256。
 5. **`out/p49_probe/mk_variant.py` / `apply_channel.py` 是我写的一次性脚本**，
    放在 `out/` 下（gitignore），**没有**复制任何帧/图进仓库。
+6. **第一次全量测试我报了「`2 failed`」并下了结论，后来发现那是并行 agent 正在
+   改文件造成的**，不是我的回归。**我在基线跑的时候就撞过一次同样的假红，
+   却第一次没有先怀疑并发就往下走。** 重跑单跑即过。
+7. **第一次 `apply_fix.py` 把文件从 CRLF 写成混合换行**（原文件 394 处 CRLF、
+   0 处裸 LF，我插入的 70 行是裸 LF）。`git diff` 显示整块替换才暴露出来。
+   已统一回 CRLF 并用**字节计数**复核（434 CRLF / 0 裸 LF）。
+8. **scratch 用相对路径时，node 在 `cwd=studio` 下解析**，`--props` 指向
+   `studio/out/...` 找不到文件；第一次渲 138 帧时我用了
+   `>/dev/null 2>&1`，把失败吞掉，又顺手把一个 `grep -c` 的 0 当成了结果。
+   **这是第 2 条那次「查不了就当过」的直接成因。**
 
 ---
 
 ## 九、文件清单与 sha256
+
+### 全量测试
+
+标准跑法（`--ignore=test_take_selection_behaviour.py`），**共跑了 4 次**，
+如实记录 —— **数字随并发变，这本身是结论的一部分**：
+
+| 次数 | 结果 |
+|---|---|
+| 开工前 | `2 failed, 750 passed, 6 errors`（并行 agent 正在改 `test_p42`） |
+| 改图谱后 | `2 failed, 770 passed, 4 errors`（两个 `test_p48` 因我的修复变红，已修） |
+| 复跑 | `1 failed, 771 passed`（残留 `render-*` bundle 来自**别人的** `render.mjs`；单跑即过） |
+| **并发清空后** | **`766 passed, 4 skipped, 0 failed, 6 errors`** |
+
+最后一遍的 6 个 error **全部在 `test_chart_type_defaults_are_real.py`**，
+原因逐字为 `ENOBUFS` / `Timeout`（日志里 18 次 ENOBUFS）。
+**该文件我没有碰过**；单跑 `11 passed in 26.41s`。
+**⇒ 这是本机在并发渲染下的已知假红（工单与 P48 都记过），
+不是我引入的回归，但也不该被当成「通过」——它报的是 error，不是 pass。**
+
+基线是 `757 passed, 4 skipped`；现在 `766 passed`，
+净增 **+9**：本项守卫 5 项 + P51 那批（并行 agent 的，不是我的）。
 
 | 文件 | 动作 |
 |---|---|
