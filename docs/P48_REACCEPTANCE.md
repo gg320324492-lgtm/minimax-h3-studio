@@ -239,6 +239,17 @@ P22 把 `contrast` 移出逐帧路径、换成 UNAVAILABLE，**但 `font_size` �
 且守卫 `tests/test_visual_qa.py:205` 的 `test_font_size_fails_below_the_readability_bar`
 **正是在同一张帧上换 `declared_px` 断言 PASS→FAIL 的** —— 它把「判据跟着参数走」当成期望行为固定下来了。
 
+### 四.4 元守卫的一个洞：**✅ 已于 P50 关闭 —— 本节保留为当时的记录，勿照此重开**
+
+**P50（`6fc9b82`）关闭了它**：`:328` 的 `or True` 已删除，判据改为用 `ast.walk`
+遍历整个断言，**任何 `or` 的任一操作数是字面 `True` 即标记**，
+并把判据抽成 `_tautology_offenders()` 供守卫与其自身测试共用一份。
+⚠️ **P48 当时钉住这个洞的那条测试已按它自己的失败信息删除**
+（*"do not leave a guard asserting a hole that no longer exists"*），
+由正面守卫 `test_the_meta_guard_flags_both_halves_of_an_or` 取代。
+
+**以下为 P48 当时的原始记录：**
+
 ### 四.4 元守卫的一个洞：`assert <表达式> or True` 从旁边走过去，而文件里就有一条
 
 `tests/test_p42_fade_is_not_a_freeze.py:478` 的 `test_this_file_asserts_no_always_true_condition`
