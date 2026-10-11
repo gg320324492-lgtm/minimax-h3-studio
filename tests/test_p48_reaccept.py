@@ -9,10 +9,13 @@ So this file does the two things that pass demands, and nothing else:
 
   1. IT PINS WHAT THE INSTRUMENTS ACTUALLY MEASURE. The recurring defect in
      this repository is a rule whose NAME says one thing and whose CODE does
-     another (`font_size`, below), or a meta-guard that recognises one spelling
-     of a tautology and walks past the other (`assert x or True`, below). Both
-     of those are properties READ OFF the running code, not asserted about a
-     source string.
+     another (`font_size`, below). That is a property READ OFF the running code,
+     not asserted about a source string.
+
+     (P48 ALSO MEASURED a meta-guard that recognised one spelling of a
+     tautology and walked past the other — `assert x or True`, below — and
+     pinned the hole. P50 closed it: see §4, where the pin was removed as its
+     own failure message ordered.)
 
   2. IT PINS THE TWO DEFECTS P48 FOUND, AS MEASUREMENTS. A guard that asserted
      "the renderer must not freeze" would be RED on the day it landed, and this
@@ -39,7 +42,6 @@ is the vacuous pass this file argues against.
 
 from __future__ import annotations
 
-import ast
 import json
 import shutil
 import subprocess
@@ -296,71 +298,20 @@ def test_rule_font_size_verdict_tracks_the_argument_not_the_frame():
         'the ratio uses a constant -- reconfirm what the ratio divides by.')
 
 
-# ── 4. a meta-guard blind to the tautology it is written for ─────────────────
-
-def test_the_always_true_meta_guard_misses_the_constant_last_spelling():
-    """`test_p42...`'s meta-guard recognises `assert True or x`, not `x or True`.
-
-    MEASURED (this test): the guard's own predicate -- read out of the file,
-    then EXECUTED on three tautologies -- flags `assert True or x` and lets
-    both `assert x or True` and `assert x and True` through. The constant has
-    to be the FIRST operand for the check to fire.
-
-    And the same file carries a live instance at its line 328 (`assert c10[...]
-    in durations[:-1] or True`), which the guard therefore does not see. That
-    line is not load-bearing (real assertions sit either side of it), so this
-    is reported as a HOLE IN THE META-GUARD, not as lost coverage.
-
-    A source check is the wrong instrument here, which is why the predicate is
-    EXTRACTED and RUN rather than grepped for: the claim is about what the
-    guard DOES with an input, not about a string in a file.
-    """
-    src = (ROOT / 'tests' / 'test_p42_fade_is_not_a_freeze.py').read_text(
-        encoding='utf-8')
-    tree = ast.parse(src)
-    target = None
-    for n in ast.walk(tree):
-        if isinstance(n, ast.FunctionDef) and n.name == (
-                'test_this_file_asserts_no_always_true_condition'):
-            target = n
-    assert target is not None, (
-        'the always-true meta-guard moved or was renamed; re-point this test '
-        'rather than deleting it.')
-
-    # Reconstruct the guard's predicate from its source so this tracks EDITS to
-    # the guard, not a stale copy. `_is_true` is a value check (since 3.8 a bare
-    # True is ast.Constant) -- the guard's own docstring says so.
-    def guard_flags(code: str) -> bool:
-        t = ast.parse(code)
-        a = t.body[0]
-        assert isinstance(a, ast.Assert)
-        def is_true(node):
-            return isinstance(node, ast.Constant) and node.value is True
-        if is_true(a.test):
-            return True
-        if isinstance(a.test, ast.BoolOp) and isinstance(a.test.op, ast.Or):
-            if is_true(a.test.values[0]):
-                return True
-        return False
-
-    assert guard_flags('assert True or x') is True, (
-        'the guard no longer catches `assert True or x`; the hole below may be '
-        'closed differently -- re-derive this test.')
-    assert guard_flags('assert x or True') is False, (
-        'the guard NOW catches `assert x or True`. If so the hole is closed -- '
-        'remove this test and the corresponding paragraph in the P48 report.')
-    assert guard_flags('assert x and True') is False, (
-        'the guard now catches `assert x and True`; the hole is closed.')
-
-    # and the live instance the guard walks past
-    offenders = []
-    for n in ast.walk(tree):
-        if isinstance(n, ast.Assert) and isinstance(n.test, ast.BoolOp) \
-                and isinstance(n.test.op, ast.Or) \
-                and isinstance(n.test.values[-1], ast.Constant) \
-                and n.test.values[-1].value is True:
-            offenders.append(n.lineno)
-    assert offenders, (
-        'the `assert <expr> or True` line moved or was fixed. If it was fixed, '
-        'delete this test and update the P48 report -- do not leave a guard '
-        'asserting a hole that no longer exists.')
+# ── 4. the tautology-hole test P48 commissioned deletion of ──────────────────
+#
+# P48 MEASURED a hole in `test_p42_fade_is_not_a_freeze.py`'s always-true
+# meta-guard: it checked only `node.test.values[0]`, so it recognised
+# `assert True or x` and walked past `assert x or True` -- and the same file
+# carried a live instance at its line 328
+# (`assert c10['durationInFrames'] in durations[:-1] or True`).
+#
+# The test that pinned that hole (`test_the_always_true_meta_guard_misses_the_
+# constant_last_spelling`) said, in its own failure message, to DELETE it if the
+# line was ever fixed: "do not leave a guard asserting a hole that no longer
+# exists." P50 fixed the line (dropped the `or True`) and widened the guard's
+# criterion to flag a literal-`True` operand on EITHER side of an `or`, so the
+# hole is closed. The pin is therefore removed here, as its own message ordered,
+# and not left behind asserting a hole that is gone. The replacement guard -- a
+# positive test that the criterion catches both spellings -- lives in
+# `test_p42_fade_is_not_a_freeze.py::test_the_meta_guard_flags_both_halves_of_an_or`.

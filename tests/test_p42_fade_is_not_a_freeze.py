@@ -325,7 +325,7 @@ def test_c10_is_150_frames_and_the_film_total_follows_from_the_graph():
         f'render, frames 1450..1902 were pixel-identical, and the scene '
         f'finished arriving at frame 1430 — 1.33 s into a 10 s scene. Nine '
         f'other scenes are 150 frames and none of them has that problem.')
-    assert c10['durationInFrames'] in durations[:-1] or True
+    assert c10['durationInFrames'] in durations[:-1]
     assert total == sum(durations), 'unreachable: total is defined as the sum'
     assert total == 1500, (
         f'the graph sums to {total} frames, expected 1500. If a scene length '
@@ -475,18 +475,17 @@ def test_the_axis_label_no_longer_claims_a_long_form_chart():
 
 # ── 5. this file's own criterion is not a no-op ─────────────────────────────
 
-def test_this_file_asserts_no_always_true_condition():
-    """P27's in-file guard, kept because the failure it names recurs.
+def _tautology_offenders(tree) -> list[tuple[int, str]]:
+    """The criterion, extracted so the guard and its own test share ONE copy.
 
-    Every mutation harness in this project died of a variant of neutering an
-    `assert X, (msg)` into `assert True or (msg)`, which keeps the message and
-    the line and survives review. The check is a SHAPE check on the AST, and
-    `_is_true` is a VALUE check because since 3.8 a bare `True` parses to
-    `ast.Constant` — the first version tested `ast.Name` and could not match
-    anything, which is how five neutered assertions in P27's own file passed.
+    A guard whose criterion lives only inside the test that uses it cannot be
+    exercised against a fixture — you would have to edit the guard to test it.
+    Pulling it out here means `test_the_meta_guard_flags_both_halves_of_an_or`
+    runs the SAME function the file's guard runs, so a mutation to the
+    criterion (the P50 defect) makes that test go red. See the guard below for
+    what the criterion covers and, deliberately, does not.
     """
     import ast
-    tree = ast.parse(Path(__file__).read_text(encoding='utf-8'))
 
     def _is_true(node) -> bool:
         return isinstance(node, ast.Constant) and node.value is True
@@ -497,12 +496,131 @@ def test_this_file_asserts_no_always_true_condition():
             continue
         if _is_true(node.test):
             offenders.append((node.lineno, 'assert True'))
-        if isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.Or):
-            if _is_true(node.test.values[0]):
-                offenders.append((node.lineno, 'assert True or ...'))
+            continue
+        # Any `or` inside the test with a literal-True operand makes the whole
+        # assertion true. Walk the test so a nested `or` (`assert (X or True)
+        # and Y`) is seen too — the outer node here is an `and`, and the defect
+        # is one level down. `ast.walk` visits every BoolOp in the subtree.
+        for sub in ast.walk(node.test):
+            if isinstance(sub, ast.BoolOp) and isinstance(sub.op, ast.Or):
+                if any(_is_true(v) for v in sub.values):
+                    offenders.append(
+                        (node.lineno, 'assert <... or True ...>'))
+                    break
+    return offenders
+
+
+def test_this_file_asserts_no_always_true_condition():
+    """P27's in-file guard, kept because the failure it names recurs.
+
+    Every mutation harness in this project died of a variant of neutering an
+    `assert X, (msg)` into `assert True or (msg)`, which keeps the message and
+    the line and survives review. The check is a SHAPE check on the AST, and
+    `_is_true` is a VALUE check because since 3.8 a bare `True` parses to
+    `ast.Constant` — the first version tested `ast.Name` and could not match
+    anything, which is how five neutered assertions in P27's own file passed.
+
+    WHAT THIS GUARD COVERS (the criterion)
+    --------------------------------------
+    Two shapes, and only two:
+
+      * `assert True` — the test expression IS the literal constant `True`;
+      * any `or` within the test that has a LITERAL `True` operand, wherever
+        that operand sits in the chain. `X or True`, `True or X`,
+        `X or Y or True` and a nested `or` are one fact: an `or` is true when
+        ANY operand is true, so an operand that is the constant `True` makes
+        the whole expression true no matter what the other operands evaluate to.
+
+    WHY IT CANNOT RAISE A FALSE POSITIVE
+    ------------------------------------
+    The criterion is not a guess about truth — it is a fact about the operator.
+    It fires only when an `ast.Constant` with `value is True` is an operand of
+    an `or`. That expression is *provably* always true at parse time: no runtime
+    value of the other operands can change it. So flagging it is sound, and a
+    legitimate `assert a or b` (both operands real conditions) can never be
+    flagged, because neither operand is the literal constant `True`. That is
+    the P50 defect exactly: the previous version checked only
+    `node.test.values[0]`, so it caught `assert True or X` and was blind to
+    `assert X or True` — the two spellings of the same neutering, one of which
+    was sitting in this very file.
+
+    WHAT IT DELIBERATELY DOES NOT COVER, AND WHY
+    --------------------------------------------
+    This is a SHAPE-and-VALUE check for the literal `True`, not a theorem
+    prover. Deciding whether an arbitrary expression is always true is the
+    halting problem, and a guard that tries is a false-positive machine. So it
+    does NOT cover — and must not be extended to cover without a new, narrow,
+    provable criterion:
+
+      * `assert X` — a bare non-`True` test. Whether `X` is always true is not
+        decidable here; this guard is about the LITERAL spelling, not semantics.
+      * `assert not False`, `assert 1`, `assert 0 == 0`, `assert X or not X`
+        (excluded middle), `assert len(x) >= 0` — other shapes that happen to be
+        tautologies. They are not the LITERAL `True` operand and the neutering
+        this project has actually been bitten by (the `or True` variant) does
+        not require catching them.
+      * `assert X and False` — always FALSE, a different defect (a gate that
+        never passes, rather than one that never fails). Out of scope.
+      * `assert bool(...)`, `assert (yield)`, `assert <name bound to True>` —
+        a value that is true at runtime but not the constant `True`. Catching
+        these needs evaluation, not parsing.
+
+    A reader who widens the criterion past the literal `True` operand is
+    turning this back into the thing it warns against.
+    """
+    import ast
+    tree = ast.parse(Path(__file__).read_text(encoding='utf-8'))
+    offenders = _tautology_offenders(tree)
     assert not offenders, (
         f'this guard asserts nothing at {offenders}. Restore the real '
         f'condition — a neutered assertion keeps its message and its line.')
+
+
+def test_the_meta_guard_flags_both_halves_of_an_or():
+    """THE GUARD OF THE GUARD. Its own blind spot, asserted.
+
+    The P50 defect was not that the meta-guard was missing — it was that the
+    meta-guard checked only `or`'s FIRST operand, so it caught `assert True or
+    X` and was blind to `assert X or True`, which is the same tautology and was
+    in this file. A guard is only worth its docstring if a mutation to its
+    criterion turns something red; this is that something.
+
+    It runs `_tautology_offenders` — the SAME function the file's guard runs —
+    against literal source, so it does not echo the criterion, it exercises it.
+    Each defect shape must be flagged; each legitimate `or` must NOT be, which
+    is the false-positive half that stops the guard being widened into one.
+
+    If you weaken the criterion back to `node.test.values[0]`, the
+    `assert X or True` case below goes un-flagged and this test goes red.
+    """
+    import ast
+
+    def fired(src: str) -> bool:
+        return bool(_tautology_offenders(ast.parse(src)))
+
+    # Every spelling of the neutering must be caught, INCLUDING the one the old
+    # criterion missed (`X or True`). This list is the defect's shape space.
+    for src in ('assert True',
+                'assert True or X',
+                'assert X or True',                  # <- P50's blind spot
+                'assert X or Y or True',
+                'assert (X or True) and Y',
+                'assert f() == 3 or True'):
+        assert fired(src), (
+            f'the meta-guard does not flag `{src}`, which is always true. '
+            f'The criterion has been narrowed (P50: it once looked at only '
+            f'values[0]) and is blind again.')
+
+    # And a legitimate two-condition `or` must NOT be flagged, or the guard has
+    # become the false-positive machine its docstring warns against.
+    for src in ('assert a or b',
+                'assert a or b or c',
+                'assert returncode != 0 or not rows'):
+        assert not fired(src), (
+            f'the meta-guard flags `{src}`, which is a legitimate guard: its '
+            f'operands are real conditions, not the literal `True`. The '
+            f'criterion has been widened past the literal-True operand, which '
+            f'is a false-positive machine.')
 
 
 def test_the_guard_does_not_assert_a_number_it_could_not_have_measured():
