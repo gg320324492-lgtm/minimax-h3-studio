@@ -2746,3 +2746,43 @@ longer exists"*。
 ⚠️ **并记下它报告的一件更重要的事**：它说另外两次全量跑出现过
 **P14/ENOBUFS 与 6 个 ERROR**，都是与 P49 并发渲染导致，单跑全过。
 **⇒ 这个仓在本机并发下测不出稳定数字 —— 后续的基线数字必须注明是否并发。**
+
+#### P50 交付后的连带发现：三处同形，**而正确的那一份一直都在仓库里**
+
+`test_p42` 的洞补上之后，P50 顺着查出**另外三处**，指挥窗口逐条核实：
+
+| 位置 | 内容 | 状态 |
+|---|---|---|
+| `test_p27_visual_acceptance_is_repeatable.py:587` | **P27 的原始那条** —— p42 就是它的复制品 | ⚠️ 同形半盲 |
+| `test_p46_probe_instruments.py:229` | `assert ... is None or True` | ❌ **活的恒真断言** |
+| `test_visual_qa.py:771` | `assert raw.decode('utf-8').isprintable() or True` | ❌ **活的恒真断言，且作者明知** |
+| `test_locked_fields_wiring.py` | `is_tautology()` **已正确** | ✅ **遍历所有操作数** |
+
+**⚠️ `:771` 那条值得单独说**：
+
+```python
+assert raw.decode('utf-8').isprintable() or True   # decodable is the assertion
+```
+
+**注释写着「decodable is the assertion」—— 作者知道这条断言想说什么，
+而他写的判据（`isprintable()`，而 JSON 里有换行 ⇒ 必假）会让它红，
+于是加了 `or True` 把它压绿。**
+
+**⇒ 这不是「忘了写检查」，是「写了检查、发现它会红、然后把它变成永远绿」。**
+**这才是本项目最核心的失效形态的完整版**，比之前记的那些都更接近它的本质。
+
+**⚠️ 而最刺眼的是第四行**：`test_locked_fields_wiring.py` 的 `is_tautology()`
+**本来就是对的** ——
+
+```python
+return any(isinstance(v, ast.Constant) and v.value is True for v in …)
+```
+
+**⇒ 它遍历所有操作数，正是 P50 刚补上的那个形状。**
+**⇒ 三份元守卫，一份正确、两份半盲，而正确的那份一直在仓库里。**
+**⇒ P47/P50 重写判据时没有先搜"仓库里是否已经有一份写对的"。**
+
+⚠️ **教训不是"该复用"（那太像事后诸葛），而是**：
+**本项目反复出现的"哑声明"，有相当一部分**不是没人写**，而是写了、藏在某个
+不太会被打开的文件里、旁边还带着一个解释它为什么在那里的注释。**
+**⇒ 造第 N 份判据之前，先问「已有的那几份分别长什么样、哪一份是对的」。**
