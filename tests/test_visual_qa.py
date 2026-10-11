@@ -768,7 +768,23 @@ def test_json_output_is_byte_level_parseable(qa_frame):
     raw = r.stdout
     findings = json.loads(raw.decode('utf-8'))
     assert isinstance(findings, list)
-    assert raw.decode('utf-8').isprintable() or True   # decodable is the assertion
+    # Was: `assert raw.decode('utf-8').isprintable() or True  # decodable is
+    # the assertion`. Measured, that line asserted nothing at all. Line 769
+    # has already called `raw.decode('utf-8')`, so a payload that does not
+    # decode raises UnicodeDecodeError there and line 771 was never reached --
+    # "decodable" was already asserted one line above. And `isprintable()` is
+    # not "decodable": it is False for ANY string containing a newline, and
+    # this JSON is printed across lines, so it was guaranteed red. The author
+    # saw the red and added `or True`, which passes every input.
+    #
+    # What the test's own docstring records is a mojibake bug -- real CJK
+    # written through a GBK stdout. Invalid bytes are already caught at 769;
+    # this catches the other way that same bug can arrive, a replacement
+    # character, which decodes fine and is therefore invisible to 769.
+    assert '�' not in raw.decode('utf-8'), (
+        'the --json output carries a U+FFFD replacement character: the '
+        'console encoding mangled real CJK instead of failing loudly. A '
+        'consumer cannot tell a replacement character from data.')
     assert 'findings:' not in raw.decode('utf-8'), 'the summary leaked into stdout'
     assert b'findings:' in r.stderr, 'the human summary belongs on stderr'
     for f in findings:

@@ -558,34 +558,30 @@ def test_this_file_contains_no_neutered_assertion():
     `assert True` is legitimate inside a branch that already established the
     fact, so it is counted and reported rather than banned outright -- what this
     forbids is `True` standing in for a CONDITION.
+
+    P51: the body that used to live here now lives in
+    `tautology_criterion.py`. The reason was measured, not tidied: this copy
+    checked only `test.values[0]`, so it caught `assert True or X` and was
+    blind to `assert X or True` -- the same neutering spelled the other way
+    round, which is the shape P50 found sitting in P42's own file. Three copies
+    of one judgement is how it drifted there.
+
+    This version is strictly stronger. The old rule is a strict SUBSET of what
+    `tautology_criterion.is_neutered` flags, so nothing this test used to catch
+    can now escape it, and the nested `(X or True) and Y` -- which the old rule
+    missed even in principle -- is caught too.
     """
+    from tautology_criterion import is_neutered
     import ast
     src = Path(__file__).read_text(encoding='utf-8')
     tree = ast.parse(src)
-
-    def _is_true(node) -> bool:
-        """Is this node the literal True?
-
-        Written as a VALUE check, not `isinstance(n, ast.Name)`. That was the
-        first version and it was a false negative: since 3.8 a bare `True`
-        parses to `ast.Constant`, never `ast.Name`, so the check could not
-        match anything. It was proved by mutation -- five neutered assertions
-        sat in this file and the guard reported PASS. A guard that cannot fail
-        is the one failure mode this project cannot afford, so it is proved by
-        running a mutation, not by reading the code.
-        """
-        return (isinstance(node, ast.Constant) and node.value is True)
 
     offenders = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Assert):
             continue
-        test = node.test
-        if _is_true(test):
-            offenders.append((node.lineno, 'assert True'))
-        if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.Or):
-            if _is_true(test.values[0]):
-                offenders.append((node.lineno, 'assert True or ...'))
+        if is_neutered(node.test):
+            offenders.append((node.lineno, ast.unparse(node.test)[:60]))
     assert not offenders, (
         f'this guard asserts nothing at {offenders}. A neutered assertion keeps '
         f'its message and its line, so it survives review and turns every '

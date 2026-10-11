@@ -484,30 +484,33 @@ def _tautology_offenders(tree) -> list[tuple[int, str]]:
     runs the SAME function the file's guard runs, so a mutation to the
     criterion (the P50 defect) makes that test go red. See the guard below for
     what the criterion covers and, deliberately, does not.
+
+    P51: the body that used to live here is now `tautology_criterion.py`,
+    because this repo had THREE copies of the judgement "this assertion
+    asserts nothing" and they had drifted apart — p42's walked the subtree,
+    p27's checked only `values[0]`, and locked_fields_wiring's caught `X == X`
+    instead. Three copies is how P50's criterion got quietly narrowed to
+    `values[0]` in the first place. This function stays as the name the two
+    tests below already call, and delegates, so their coverage is unchanged:
+
+      * the p42 rule was measured to be a strict superset of the p27 rule, so
+        collapsing p27 onto it loses nothing;
+      * `is_neutered` below is this file's old rule, unchanged in what it
+        flags. The delegation adds rules it did not have, never removes one.
+
+    `test_the_merged_criterion_is_the_measured_union_of_p42_and_p27` in
+    `test_tautology_criterion.py` is what holds the superset claim to account.
     """
+    from tautology_criterion import is_neutered
     import ast
 
-    def _is_true(node) -> bool:
-        return isinstance(node, ast.Constant) and node.value is True
-
-    offenders = []
+    found = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Assert):
             continue
-        if _is_true(node.test):
-            offenders.append((node.lineno, 'assert True'))
-            continue
-        # Any `or` inside the test with a literal-True operand makes the whole
-        # assertion true. Walk the test so a nested `or` (`assert (X or True)
-        # and Y`) is seen too — the outer node here is an `and`, and the defect
-        # is one level down. `ast.walk` visits every BoolOp in the subtree.
-        for sub in ast.walk(node.test):
-            if isinstance(sub, ast.BoolOp) and isinstance(sub.op, ast.Or):
-                if any(_is_true(v) for v in sub.values):
-                    offenders.append(
-                        (node.lineno, 'assert <... or True ...>'))
-                    break
-    return offenders
+        if is_neutered(node.test):
+            found.append((node.lineno, 'assert <... or True ...>'))
+    return found
 
 
 def test_this_file_asserts_no_always_true_condition():

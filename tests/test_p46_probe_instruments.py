@@ -226,7 +226,23 @@ def test_chart_probe_unavailable_reason_is_never_a_pass(tmp_path):
     assert chart.unavailable(_frame(tmp_path), host=DEAD_HOST) is not None
     assert chart.unavailable(tmp_path / 'nope.png', host=DEAD_HOST) is not None
     # A missing frame is UNAVAILABLE before any socket is opened.
-    assert chart.unavailable(tmp_path / 'nope.png', transport=lambda *a: {}) is None or True
+    #
+    # This line was `assert chart.unavailable(...) is None or True`, which
+    # asserted nothing: the `is None` was the opposite of what UNAVAILABLE
+    # means (it means a reason string, as the two lines above show), so it was
+    # red, and the `or True` was what kept it green. The `or True` also threw
+    # away the second half of the comment -- with `transport=lambda *a: {}` a
+    # transport that WAS opened would have been swallowed silently, so "before
+    # any socket is opened" was never actually checked. The transport below
+    # raises instead, which makes that half real.
+    def _no_socket_may_be_opened(*a):
+        raise AssertionError(
+            f'unavailable() reached the transport for a missing frame: {a!r}')
+
+    reason = chart.unavailable(tmp_path / 'nope.png',
+                               transport=_no_socket_may_be_opened)
+    assert reason is not None, (
+        f'a missing frame must report UNAVAILABLE with a reason, not None')
 
 
 def test_chart_census_marks_a_frame_unreadable_rather_than_defaulting_it(tmp_path):
