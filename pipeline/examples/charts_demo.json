@@ -13,7 +13,8 @@
       "type": "bar-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -49,7 +50,8 @@
       "type": "line-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -85,7 +87,8 @@
       "type": "area-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -114,7 +117,8 @@
       "type": "slope-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -151,7 +155,8 @@
       "type": "bubble-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -193,7 +198,8 @@
       "type": "heatmap",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -251,7 +257,8 @@
       "type": "rank-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -292,7 +299,8 @@
       "type": "volume-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -323,7 +331,8 @@
       "type": "sparkline-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"
@@ -354,7 +363,8 @@
       "type": "bar-chart",
       "durationInFrames": 150,
       "camera": {
-        "perspective": 1600
+        "perspective": 1600,
+        "scale": [1.04, 1.0]
       },
       "motion": {
         "preset": "premium"

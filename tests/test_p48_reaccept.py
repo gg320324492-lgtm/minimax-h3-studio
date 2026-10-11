@@ -123,38 +123,41 @@ def _render_scene(scratch: Path, scene_id: str, frames: list[int],
 
 
 @pytestmark_render
-def test_a_settled_scene_is_frozen_between_adjacent_frames(tmp_path):
-    """P48's headline measurement, on a REAL lossless render.
+def test_a_settled_scene_is_no_longer_frozen_between_adjacent_frames(tmp_path):
+    """P48's headline measurement, INVERTED by the P49 repair — and kept.
 
-    MEASURED (this test): frames 70 and 71 of `c01_bar`, rendered losslessly,
-    are byte-identical -- 0 differing pixels. Nine of the ten scenes hold such
-    a still; `c06_heatmap`'s entrance runs longer so it freezes a little later
-    (frame 100 onward). About 1.35 s of each 2.5 s scene is one frozen picture.
+    WHAT CHANGED. P48 measured 0 differing pixels here and pinned it. P49 found
+    the cause — the graph gave every scene a camera with no movement channel,
+    so `motion.preset: premium` drove a progress value that multiplied nothing
+    — and repaired it by giving each scene `scale: [1.04, 1.0]`. This file's
+    own instruction was to re-derive the numbers rather than delete the check,
+    so the check stays and now asserts the OPPOSITE.
 
-    THE STATE THIS PINS, not a wish. `freeze` is a REAL rule (it is not in
-    `visual_qa.UNIMPLEMENTED`), and its criterion `changed == 0` is exactly
-    what distinguishes this still. What made the still invisible to P27 is the
-    INPUT: P27 measured the 226 kbps film, where a "frozen" pair still differs
-    by 281-2329 px of codec jitter, so `freeze` reported PASS on all 30 pairs
-    (`docs/P27_VISUAL_ACCEPTANCE.md:186` says so). Measured here from the
-    current h264 film, the same jitter is 266-3666 px -- never 0. So this can
-    only be measured on a LOSSLESS render, which is what this test does.
+    RE-DERIVED, not guessed: `c01_bar` frames 70 and 71 now differ by 7,995 px
+    on a lossless render (0 px before the repair).
 
-    IF THIS TEST EVER FAILS because the frames now DIFFER, that is the freeze
-    being fixed (a camera move, or a shorter hold). Re-derive the numbers in
-    the message before changing them -- do not delete the check.
+    `scale` and not `rotateY`: a yaw makes the chart a trapezoid — measured
+    bar-centre spacing 341.5, 336.0, 330.0, 324.5 px instead of a uniform 333.5,
+    with the baseline axis tilted and the emphasis label clipped off the top —
+    which on a chart whose bars encode value as length is a data defect. See
+    `test_p49_camera_move_is_not_a_freeze.py`, which asserts the WHOLE window
+    has no frozen pair rather than this one pair.
+
+    WHAT IS STILL TRUE, and is why the second test below was decoupled from the
+    film: `freeze` is a real rule and its `changed == 0` criterion is exactly
+    what catches a still. P27 missed these frames because it measured the
+    226 kbps film, where a frozen pair still differs by codec jitter.
     """
     frames = _render_scene(tmp_path / 'c01', 'c01_bar', [70, 71])
     changed = _frame_equality(frames[70], frames[71])
     assert changed >= 0, 'the two frames are different sizes; not comparable'
-    assert changed == 0, (
-        f'c01_bar frames 70 and 71 now differ by {changed} px. As measured in '
-        'P48 they were byte-identical (0 px): the scene holds a frozen still '
-        'for ~1.35 s, because `lifecycleAt`\'s focus phase is static by design '
-        'AND the graph gives the camera no movement channel (only a constant '
-        '`perspective`), so `motion.preset: premium` multiplies nothing. If '
-        'this is now fixed, update this guard AND the ledger -- the freeze was '
-        'a real finding, not a rounding detail.')
+    assert changed > 0, (
+        f'c01_bar frames 70 and 71 are byte-identical again ({changed} px). '
+        'P48 measured 0 px here and P49 repaired it to 7,995 px by giving the '
+        'graph a camera channel that moves. If this has gone red, the camera '
+        'channel was removed or its motion now ends before frame 70 -- the '
+        'dead zone has MOVED rather than gone. `test_p49_camera_move_is_'
+        'not_a_freeze.py` measures the whole window and is the stronger check.')
 
 
 @pytestmark_render
@@ -178,8 +181,14 @@ def test_the_freeze_is_invisible_to_rule_freeze_from_a_video(tmp_path):
     if shutil.which('ffmpeg') is None:
         pytest.skip('ffmpeg absent; the compressed-input half did NOT run')
 
-    frames = _render_scene(tmp_path / 'c01', 'c01_bar', [70, 71])
-    lossless = vqa.rule_freeze(frames[70], frames[71])
+    # A genuinely frozen pair, WITHOUT depending on the film still containing
+    # one. P49 repaired the freeze, so rendering c01 at 70/71 no longer yields a
+    # frozen pair -- and it must not: this test is about the INSTRUMENT
+    # (rule_freeze reading 0 or not), not about the film's current state. Pairing
+    # a rendered frame with itself produces exactly the input the rule exists to
+    # catch, and keeps the lesson true whatever the film does next.
+    frames = _render_scene(tmp_path / 'c01', 'c01_bar', [70])
+    lossless = vqa.rule_freeze(frames[70], frames[70])
     assert lossless.verdict == vqa.FAIL, (
         'rule_freeze did not call two byte-identical frames frozen. The rule '
         f'or its criterion changed: {lossless.detail!r}')
