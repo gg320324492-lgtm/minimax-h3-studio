@@ -40,14 +40,22 @@ derived from `formatValue` rather than from a human's opinion of the render.
 
 THE VOCABULARY IS FOUR TYPES, NOT NINE, AND THAT IS MEASURED
 -------------------------------------------------------------
-`options.ts:CHART_TYPES` declares nine. Two are absent from the scorable set:
+`options.ts:CHART_TYPES` declares nine, and this question has four answers.
 
-  * `area` — MEASURED INERT. `line` and `area` render byte-identical, because
-    `types.tsx:268` resolves the fill as `option('line','showArea',opts) ??
-    defaultArea` while `options.ts:201` never returns undefined (it substitutes
-    `DEFAULT_CHART_OPTIONS.showArea === false`). `defaultArea` is unreachable.
-    Scoring a classifier on a class the renderer cannot produce measures
-    nothing.
+  * `area` WAS EXCLUDED HERE AND NO LONGER IS. It used to be excluded because
+    `area` and `line` rendered byte-identical: `types.tsx`'s `LineOrArea`
+    resolved the fill as `option('line','showArea',opts) ?? defaultArea` while
+    `options.ts`'s `option()` never returns undefined, so `defaultArea` was
+    unreachable. P47 moved the fill into a per-type default the resolver
+    consults, and `area` now reaches the pixels as an area. Whether it is
+    still inert is no longer written down anywhere in this directory — it is
+    MEASURED, by `p46_chart_control.measured_inert_types()`, on every run,
+    because the exclusion it replaced was a measurement frozen into a literal
+    with a comment still claiming to be one. `area` is still not in the
+    vocabulary below, and the reason is now the ordinary one: the letter set
+    was fixed when this question was written and adding a letter changes the
+    closed set the classifier is scored against. That is real work and is named
+    as the open half of this dimension, not a finding.
   * `slope`, `heatmap`, `rank`, `bubble` — NOT ATTEMPTED HERE. They read
     `before`/`after`, `rows`, `items` and `series` respectively, so they cannot
     be swapped onto one payload without changing the data too; a pixel

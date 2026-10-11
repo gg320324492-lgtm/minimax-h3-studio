@@ -254,7 +254,9 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
 };
 
 /**
- * `line` and `area` are the same mark with a different DEFAULT, not two marks.
+ * `line` and `area` are the same mark, and what separates them is the DEFAULT of
+ * `showArea` — which the frame resolves for the scene's real chart type, from
+ * `TYPE_DEFAULT_ROWS` in options.ts.
  *
  * They used to be two components and `Line` hard-coded `withArea={false}`, so a
  * graph that set `showArea: true` on a line chart got nothing — while the
@@ -262,14 +264,36 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
  * cannot see that: the name is in the file, on the wrong component. This is the
  * class of inert option the A/B exists to catch, and it is why the option is
  * read here rather than passed in.
+ *
+ * Making them "the same mark with a different default" was the right shape and
+ * it was also UNREACHABLE, which is how this shipped. `defaultArea` was
+ * threaded through this component and could never be used: `option()` returns
+ * `DEFAULT_CHART_OPTIONS[key]` whenever a value is absent, so it never returns
+ * undefined and `?? defaultArea` could only ever take its left side. `Area` and
+ * `Line` rendered byte-identical for every graph that did not spell out
+ * `showArea: true`, and the delivered `charts_demo.json` spelled it out on the
+ * LINE scene and not on the AREA one — so the two shipped with their
+ * appearances swapped, and passed visual acceptance doing it.
+ *
+ * No A/B could see that. `showArea` is very much alive — flipping it moves
+ * 400,053 px — so the matrix was green on the very option that was rendering
+ * its own type backwards. An option being live says nothing about whether its
+ * default is right for the type it lands on; that is a different question, and
+ * `tests/test_chart_type_defaults_are_real.py` is what asks it.
+ *
+ * So there is no `defaultArea` prop to thread, and nothing to resolve here:
+ * `f.opts.showArea` is already the answer for this scene. Resolving it again
+ * through `option()` with a hard-coded `'line'` would resolve a boolean against
+ * a chart type that is not this one — the same defect in a smaller hat, and it
+ * is what made the type unobservable from the mark.
  */
-const LineOrArea: React.FC<{series: Series; defaultArea: boolean}> = ({series, defaultArea}) => {
+const LineOrArea: React.FC<{series: Series}> = ({series}) => {
   const f = useFrame();
-  return <PathMark series={series} withArea={option('line', 'showArea', f.opts) ?? defaultArea} />;
+  return <PathMark series={series} withArea={f.opts.showArea} />;
 };
 
-export const Line: React.FC<{series: Series}> = ({series}) => <LineOrArea series={series} defaultArea={false} />;
-export const Area: React.FC<{series: Series}> = ({series}) => <LineOrArea series={series} defaultArea />;
+export const Line: React.FC<{series: Series}> = ({series}) => <LineOrArea series={series} />;
+export const Area: React.FC<{series: Series}> = ({series}) => <LineOrArea series={series} />;
 
 // ── slope ────────────────────────────────────────────────────────────────────
 

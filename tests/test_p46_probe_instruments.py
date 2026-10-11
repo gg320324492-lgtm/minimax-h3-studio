@@ -400,17 +400,118 @@ def test_the_camera_instrument_explains_a_planted_zoom_better_than_a_shift():
 
 # ── the control render that makes the chart positives legitimate ──────────
 
-def test_the_chart_control_excludes_the_measured_inert_type():
-    """`area` was MEASURED byte-identical to `line`. It must stay out.
+def _five_frames(tmp_path: Path, dup: tuple[str, str] | None = None):
+    """One small PNG per declared type; `dup` makes two of them identical.
 
-    If `area` rejoined the scorable set the classifier would be scored on a
-    class the renderer cannot produce, and every miss on it would be a
-    measurement of nothing.
+    Written rather than rendered, and the reason matters: this is a test of the
+    MEASURER, so the frames are its input and they must be able to take any
+    value the renderer could produce — including two types collapsing into one,
+    which is the state this file used to be unable to represent at all.
+    """
+    from PIL import Image
+
+    types = ('bar', 'line', 'area', 'volume', 'sparkline')
+    out: dict[str, list[Path]] = {}
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    for i, t in enumerate(types):
+        if dup and t == dup[0]:
+            # the same bytes as its partner: this is what a collapsed pair is
+            i = types.index(dup[1])
+        p = tmp_path / f'{t}.png'
+        Image.new('RGB', (16, 16), (i * 40, i * 20, 200 - i * 30)).save(p)
+        out.setdefault(t, []).append(p)
+    return out
+
+
+def test_the_scorable_set_is_measured_from_frames_and_not_read_from_a_table():
+    """`area` was excluded by a LITERAL and this file pinned the literal.
+
+    `p46_chart_control.INERT_TYPES` was `{'area'}` with a comment above it
+    reading "MEASURED INERT, not assumed" and nothing anywhere that
+    re-measured it. That is a measurement frozen into a constant with the claim
+    that it came from one still printed over it: P47 made `area`
+    distinguishable, and the constant would have gone quietly false while its
+    own comment kept saying MEASURED. The replacement asserts the measuring
+    function exists and the constants are gone.
+
+    ⚠️ Deliberately NOT `assert 'area' not in ctl.INERT_TYPES` in either
+    direction. Both forms pin a conclusion; this pins the thing that PRODUCES
+    conclusions, which is the only one of the three that survives the renderer
+    changing.
     """
     import p46_chart_control as ctl
-    assert 'area' in ctl.INERT_TYPES
-    assert 'area' not in ctl.SCORABLE
-    assert set(ctl.SCORABLE) == {'bar', 'line', 'volume', 'sparkline'}
+
+    assert hasattr(ctl, 'measured_inert_types'), (
+        'p46_chart_control no longer measures which types are inert'
+    )
+    assert hasattr(ctl, 'scorable_types'), (
+        'p46_chart_control no longer derives the scorable set'
+    )
+    for gone in ('INERT_TYPES', 'SCORABLE'):
+        assert not hasattr(ctl, gone), (
+            f'p46_chart_control.{gone} is back. A frozen answer about which '
+            'types the renderer can tell apart will go false the moment the '
+            'renderer changes, and nothing would notice.'
+        )
+
+
+def test_a_collapsed_pair_is_detected_and_an_intact_one_is_not(tmp_path):
+    """The measuring function, in BOTH directions, on frames we control.
+
+    MUTATION: "make `area` render identically to `line`" is exactly the second
+    call below — two of the five frames carrying the same bytes. It is fed in
+    rather than produced, because producing it needs the renderer to regress,
+    and that regression is caught by
+    `tests/test_chart_type_defaults_are_real.py::
+    test_no_two_chart_types_may_render_the_same_picture`, which renders for
+    real. Between them, the measurer and the thing being measured are both
+    covered, and neither test spends a render to do it.
+    """
+    import p46_chart_control as ctl
+
+    intact = ctl.measured_inert_types(_five_frames(tmp_path / 'intact'))
+    assert intact == set(), (
+        f'these five types render five different pictures, so none is inert, '
+        f'but the measurer reported {sorted(intact)}'
+    )
+    assert set(ctl.scorable_types(_five_frames(tmp_path / 'intact2'))) == set(ctl.TYPES)
+
+    collapsed = ctl.measured_inert_types(
+        _five_frames(tmp_path / 'collapsed', dup=('area', 'line')))
+    assert collapsed == {'area', 'line'}, (
+        f'two types rendering the same picture were reported as {sorted(collapsed)}. '
+        'The measurer is the only thing standing between a collapsed type and a '
+        'classifier scored on a class the renderer cannot produce.'
+    )
+    scorable = ctl.scorable_types(
+        _five_frames(tmp_path / 'collapsed2', dup=('area', 'line')))
+    assert 'area' not in scorable and 'line' not in scorable, (
+        f'a collapsed pair stayed in the scorable set: {list(scorable)}'
+    )
+    assert 'bar' in scorable, (
+        'a pair collapsing must not take the other types down with it — the '
+        'set is per-type, not per-picture'
+    )
+
+
+def test_an_unmeasured_type_is_not_the_same_claim_as_a_distinct_one(tmp_path):
+    """No frame on disk is NOT a finding that the type is fine.
+
+    This is the "confident zero" the whole P46 line is built against, and it
+    is reachable the moment the scorable set is derived from whatever happens
+    to be on disk rather than from every declared type. So the refusal is
+    asserted: a missing frame raises, and names what it would otherwise have
+    been assuming.
+    """
+    import p46_chart_control as ctl
+
+    partial = _five_frames(tmp_path / 'partial')
+    del partial['sparkline']
+    with pytest.raises(SystemExit) as exc:
+        ctl.scorable_types(partial)
+    assert 'sparkline' in str(exc.value), (
+        f'the refusal did not name what was missing: {exc.value}'
+    )
 
 
 def test_the_control_frames_avoid_the_scene_exit():

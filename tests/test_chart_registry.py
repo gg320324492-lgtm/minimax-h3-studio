@@ -197,6 +197,29 @@ def test_type_options_is_not_a_runtime_gate():
     every volume chart's emphasis away while the registry check still reported
     the option as read. The table is documentation now, and this asserts the
     filter is gone so it cannot come back.
+
+    THE SECOND ASSERTION CHANGED IN P47, and the reason is worth keeping rather
+    than reverting. It used to require the literal `void chart;` -- the marker
+    that the chart parameter was UNUSED, i.e. that the type had become pure
+    documentation. P47 gave `option()` a per-type default to consult
+    (`TYPE_DEFAULT_ROWS`), because `area` and `line` dispatch to the same mark
+    and ONE flat default has to be wrong for one of the two: `showArea: false`
+    meant every `area-chart` that did not repeat the option drew a bare line,
+    and the delivered `charts_demo.json` had it on the LINE scene instead, so
+    the two shipped with their appearances swapped.
+
+    Asserting the marker now would assert a dead branch. What replaces it is
+    the PROPERTY the marker stood for, and it is narrower in what it forbids:
+    the chart type must never be able to DISCARD a value the graph set. That is
+    asserted as an ORDERING -- the graph is read before any table is consulted
+    -- rather than as the presence of a token, because the old marker would not
+    have noticed a filter written against some other key.
+
+    The behavioural half of the same claim -- 9 types x 17 options x 19 probe
+    values, every one of which must come back untouched -- is `options.check.ts`,
+    executed by `tests/test_chart_type_defaults_are_real.py`. A source check can
+    order two lines of text; only running the resolver can show that no path
+    through it discards a value.
     """
     src = (TEMPLATE / 'charts' / 'options.ts').read_text(encoding='utf-8')
     body = src.split('export const option =', 1)[1]
@@ -204,7 +227,19 @@ def test_type_options_is_not_a_runtime_gate():
         'option() must not filter by TYPE_OPTIONS at runtime — a stale table '
         'would silently discard a value the graph set'
     )
-    assert 'void chart;' in body, 'the chart type is documentation now; say so'
+    assert 'TYPE_DEFAULT_ROWS[chart]' in body, (
+        'option() no longer consults a per-type table, so the `area` type has '
+        'no fill of its own and renders as a bare line — the defect P47 fixed, '
+        'back again through a different door'
+    )
+    graph_read = body.index('overrides?.[key]')
+    table_read = body.index('TYPE_DEFAULT_ROWS[chart]')
+    assert graph_read < table_read, (
+        "option() reads the per-type table BEFORE the graph's value. A table "
+        'that overrules the graph is the TYPE_OPTIONS incident under a new '
+        'name: this one fills a gap the graph left, and may never close a gap '
+        'the graph filled.'
+    )
 
 
 def _component(src: str, start: str, end: str) -> str:

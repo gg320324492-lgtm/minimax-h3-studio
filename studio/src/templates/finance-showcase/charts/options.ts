@@ -128,6 +128,50 @@ export const DEFAULT_CHART_OPTIONS: ChartOptions = {
 };
 
 /**
+ * The defaults that DEPEND on the chart type, and why they cannot live in
+ * `DEFAULT_CHART_OPTIONS`.
+ *
+ * That object is one flat record: one value per option, for all nine types.
+ * The shape is right for every option except the ones where THE TYPE IS THE
+ * ARGUMENT. `area` and `line` are the same mark -- both dispatch to `PathMark`
+ * -- and the only thing that distinguishes them is whether the region under the
+ * path is filled. A single flat default has to be wrong for one of the two, so
+ * `showArea: false` made every `area-chart` that did not repeat `showArea: true`
+ * in the graph draw a bare line. The delivered `charts_demo.json` did exactly
+ * that, and did it backwards: `c02_line` set the option and `c03_area` did not,
+ * so the two shipped with their appearances swapped.
+ *
+ * So an option's default is resolved in three steps, in this order:
+ *
+ *     the graph's value   >   this table   >   DEFAULT_CHART_OPTIONS
+ *
+ * THE GRAPH ALWAYS WINS, and that ordering is the whole reason this table is
+ * not the `TYPE_OPTIONS` incident one level up. That table was a runtime
+ * FILTER, so a stale row silently discarded a value the graph had set and left
+ * a working option inert (`test_type_options_is_not_a_runtime_gate`). This
+ * table only ever supplies a value the graph did not supply, so it cannot
+ * silence anything: a graph that writes `showArea: false` on an `area-chart`
+ * gets a bare line, deliberately, and `tests/test_chart_type_defaults_are_real.py`
+ * asserts that override still moves pixels.
+ *
+ * It is SPARSE on purpose. Only the (type, option) pairs where the type's own
+ * meaning requires a value other than the shared default appear here, so adding
+ * an option to `ChartOptions` can never require an entry in this file --
+ * `DEFAULT_CHART_OPTIONS` is typed `ChartOptions` and so stays complete on its
+ * own, which is the property that keeps a second option surface from forming.
+ *
+ * Its rows are not declarations either. Each one is rendered and required to
+ * move pixels, so a row attached to a mark that never reads the option fails
+ * instead of sitting here looking official.
+ */
+export const TYPE_DEFAULT_ROWS: Partial<Record<ChartType, Partial<ChartOptions>>> = {
+  // `area` IS `line` with the region under the path filled. That difference is
+  // the whole of the type, so it belongs to the type as its default rather than
+  // to every graph as something it has to remember to ask for.
+  area: {showArea: true},
+};
+
+/**
  * Which options each chart type is DOCUMENTED to accept.
  *
  * This table is documentation and a test target. It is deliberately NOT a
@@ -183,20 +227,28 @@ export const ALL_OPTION_KEYS: readonly (keyof ChartOptions)[] = [
 ] as (keyof ChartOptions)[];
 
 /**
- * Read one option, falling back to the default.
+ * Read one option, falling back to the type's default and then to the shared one.
  *
  * Any value the graph supplied wins, and nothing here consults the documented
  * surface. Combined with `pickOptions` being keyed off
  * `Object.keys(DEFAULT_CHART_OPTIONS)` — which TypeScript guarantees complete,
  * since the object is typed `ChartOptions` — there is no path by which a graph's
  * value is discarded for want of a table entry. Adding an option makes it live.
+ *
+ * `chart` is read now, for `TYPE_DEFAULT_ROWS` only. It is still NOT a gate:
+ * nothing here can reject or discard a value the graph set, which is the
+ * property `TYPE_OPTIONS` lost when it was a filter and this one has to keep.
+ * The distinction that matters is what each table can DO — `TYPE_OPTIONS` could
+ * throw a graph's value away, this one can only fill in a gap the graph left.
  */
 export const option = <K extends keyof ChartOptions>(
   chart: ChartType,
   key: K,
   overrides?: Partial<ChartOptions> | null
 ): ChartOptions[K] => {
-  void chart; // the type is documentation now, not a gate
   const v = overrides?.[key];
-  return v === undefined || v === null ? DEFAULT_CHART_OPTIONS[key] : v;
+  if (v !== undefined && v !== null) return v;
+  const row = TYPE_DEFAULT_ROWS[chart]?.[key];
+  if (row !== undefined) return row;
+  return DEFAULT_CHART_OPTIONS[key];
 };

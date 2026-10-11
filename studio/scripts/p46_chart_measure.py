@@ -46,7 +46,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from p46_chart_control import FRAMES, SCORABLE                       # noqa: E402
+from p46_chart_control import FRAMES, TYPES, scorable_types          # noqa: E402
 from p46_chart_probe import (NONE_LETTER, OPTION_LETTERS,             # noqa: E402
                              build_question, census, score)
 
@@ -100,11 +100,32 @@ def corpus() -> tuple[list[tuple[Path, str | None]], list[tuple[Path, str | None
     scored: list[tuple[Path, str | None]] = []
     unscored: list[tuple[Path, str | None]] = []
 
-    for t in SCORABLE:
+    # The scorable set is MEASURED from these frames, not imported from a
+    # table. It was `SCORABLE`, a tuple literal, which meant a type could
+    # become indistinguishable in the renderer while the list of types you were
+    # scoring it on stayed exactly as it was — the shape of the whole P46 line
+    # is "does the declared field reach the frame", so a scorer built on a
+    # frozen answer is the one place that question cannot be asked.
+    by_type: dict[str, list[Path]] = {}
+    for t in TYPES:
         for f in FRAMES:
             p = OUT / 'ours' / f'type_{t}' / f'f{f:05d}.png'
             if not p.is_file():
                 raise SystemExit(f'missing {p} — run p46_chart_control.py first')
+            by_type.setdefault(t, []).append(p)
+    scorable = scorable_types(by_type)
+    unscored_types = [t for t in TYPES if t not in scorable]
+    if unscored_types:
+        # Scored anyway: the frames exist and the type is a real declared type,
+        # so a miss on it is a real miss. Reported, because a type that renders
+        # identically to another has nothing in the frame for the classifier to
+        # answer from, and a low score there measures the question.
+        print(f'NOTE: {unscored_types} render identically to another type and '
+              f'have no\n      distinguishing information in the frame; they are '
+              f'scored but the\n      result cannot separate "the classifier '
+              f'missed" from "the frame could\n      not say".')
+    for t in scorable:
+        for p in by_type[t]:
             scored.append((p, TYPE_TO_LETTER[t]))
 
     for _name, f in NEGATIVE_RENDERS.items():

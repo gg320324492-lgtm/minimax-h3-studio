@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -68,26 +69,31 @@ SOURCE_SCENE = 'c01_bar'
 #: difference would no longer isolate the type.
 TYPES = ('bar', 'line', 'area', 'volume', 'sparkline')
 
-#: ⚠️ MEASURED INERT, not assumed. `line` and `area` render BYTE-IDENTICAL on
-#: this payload (sha256 equal; `pairwise_diffs` reports changed_px=0), because
-#: `LineOrArea` (types.tsx:268) resolves the fill as
+#: WHICH TYPES ARE INERT IS NOT A CONSTANT. It was `INERT_TYPES = {'area'}`,
+#: sitting under a comment that read "MEASURED INERT, not assumed" while
+#: nothing ever re-measured it — a measurement frozen into a literal, with the
+#: claim that it came from one still printed above it.
 #:
-#:     option('line', 'showArea', opts) ?? defaultArea
+#: `area` WAS inert when P46 wrote this. `types.tsx`'s `LineOrArea` resolved
+#: the fill as `option('line', 'showArea', opts) ?? defaultArea`, and
+#: `options.ts`'s `option()` returns `DEFAULT_CHART_OPTIONS[key]` for an absent
+#: value and so never returns undefined, which left `defaultArea` unreachable
+#: and made `area` differ from `line` only when a graph spelled `showArea: true`
+#: out by hand. P47 fixed that — the per-type default now lives in
+#: `TYPE_DEFAULT_ROWS` in options.ts and `option()` consults it — so the
+#: literal would have gone quietly false with its comment still saying
+#: MEASURED. It is measured here instead, by `measured_inert_types()`, from
+#: the frames on disk, on every run.
 #:
-#: and `option()` (options.ts:201) NEVER returns undefined — it substitutes
-#: `DEFAULT_CHART_OPTIONS[key]`, where `showArea` is `false` (options.ts:120).
-#: So `defaultArea` is unreachable and `area` only differs from `line` when the
-#: graph sets `showArea: true` explicitly. Verified against the shipped graph:
-#: `c02_line` declares `showArea: true` and `c03_area` declares nothing, so the
-#: two shipped scenes render with the fill INVERTED relative to their names.
+#: WHAT THE CONCEPT IS STILL FOR, unchanged. A classifier cannot be scored on
+#: a class the renderer cannot produce: if two types render the same picture
+#: there is nothing in the frame for the classifier to answer from, and every
+#: miss on that class measures the question rather than the classifier. What
+#: changed is that WHICH types qualify is now a result rather than a table.
 #:
-#: ⇒ `area` is excluded from the scorable set. Scoring a chart-type classifier
-#: on a type the renderer cannot produce would measure the classifier's
-#: behaviour on an unreachable class, which is the "confident zero" shape.
-#: NOTE: `studio/src/**` is read-only for this work, so this is REPORTED, not
-#: fixed. See docs/P46_PROBE_INSTRUMENTS.md.
-INERT_TYPES = {'area'}
-SCORABLE = tuple(t for t in TYPES if t not in INERT_TYPES)
+#: Refused rather than guessed: `scorable_types` raises if it has not been
+#: given a frame for every declared type, because "not in the inert set" and
+#: "never measured" are different answers and only one of them is a finding.
 
 #: The global frames rendered for every type. Absolute, because `still.mjs`
 #: takes an ABSOLUTE frame number — `chart_ab_matrix.py:123-125` records that
@@ -112,6 +118,60 @@ FRAME = FRAMES[-1]
 #: separate the real pairs from zero would make this check vacuous, so the
 #: check asserts the threshold sits strictly between them.
 SAME_PICTURE_PX = 0
+
+
+def _identical(pa: list[Path], pb: list[Path]) -> bool:
+    """Do these two types render the SAME PICTURE on EVERY frame given?
+
+    All of them, not one: a pair that differs on a single frame is still a
+    pair the renderer can tell apart, and the classifier can be scored on it.
+
+    A shape mismatch is NOT identity. Two frames of different sizes have not
+    been shown to be the same picture, and calling that a collapse would be
+    inventing a finding out of a measurement error — the same conflation
+    `_only_match` exists to prevent on the other side of this module.
+    """
+    if not pa or len(pa) != len(pb):
+        return False
+    for x, y in zip(pa, pb):
+        row = pairwise_diffs({'x': x, 'y': y})[0]
+        if row.get('shape_mismatch') or (row['changed_px'] or 0) > SAME_PICTURE_PX:
+            return False
+    return True
+
+
+def measured_inert_types(frames: dict[str, list[Path]]) -> set[str]:
+    """Every type that renders the same picture as another one. MEASURED.
+
+    Derived from the frames handed in, on every call. Nothing here is a
+    table; see the note above `TYPES` for why that used to be the problem.
+    """
+    names = sorted(frames)
+    inert: set[str] = set()
+    for i, a in enumerate(names):
+        for other in names[i + 1:]:
+            if _identical(frames[a], frames[other]):
+                inert.add(a)
+                inert.add(other)
+    return inert
+
+
+def scorable_types(frames: dict[str, list[Path]]) -> tuple[str, ...]:
+    """The declared types a classifier can be scored on, MEASURED.
+
+    Raises rather than answering when the evidence is incomplete. A type with
+    no frame on disk has not been shown to be distinguishable, and scoring a
+    classifier on it would be the "confident zero" shape this P46 line exists
+    to avoid.
+    """
+    missing = [t for t in TYPES if not frames.get(t)]
+    if missing:
+        raise SystemExit(
+            f'no rendered frame for {missing}; run p46_chart_control.py before '
+            'scoring. Refusing to infer which types are inert from the ones '
+            'that happen to be on disk — "not measured" is not "not inert".')
+    inert = measured_inert_types(frames)
+    return tuple(t for t in TYPES if t not in inert)
 
 
 def source_scene() -> dict:
@@ -141,12 +201,28 @@ def write_props(chart_type: str) -> Path:
 
 
 def render(chart_type: str, frame: int = FRAME) -> Path:
+    """One type, one frame.
+
+    `--public-dir` points at an EMPTY directory and TMPDIR at a scratch beside
+    the output, for the reason `ab_field.py` spells out: this graph references
+    no static file, and `still.mjs` would otherwise copy the whole of
+    `studio/public` — 773 MB — into every scratch bundle. 125 of those once
+    filled a C: drive to zero free. `still.mjs` REFUSES the combination when a
+    graph does reference a static file, so this cannot silently break an asset
+    lookup: it stops the render instead, which is the right direction to fail.
+    """
     dest = OUT / 'ours' / f'type_{chart_type}'
+    scratch = dest / 'scratch'
+    public = dest / 'public'
+    scratch.mkdir(parents=True, exist_ok=True)
+    public.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, 'TMPDIR': str(scratch), 'TMP': str(scratch),
+           'TEMP': str(scratch)}
     subprocess.run(
         ['node', str(STILL), '--comp', 'FinanceShowcaseWide',
          '--props', str(write_props(chart_type)), '--out', str(dest),
-         '--frames', str(frame)],
-        cwd=str(REPO / 'studio'), check=True, capture_output=True)
+         '--frames', str(frame), '--public-dir', str(public)],
+        cwd=str(REPO / 'studio'), check=True, capture_output=True, env=env)
     return dest / f'f{frame:05d}.png'
 
 
@@ -191,6 +267,7 @@ def main(argv: list[str] | None = None) -> int:
                     help='one frame; default is every frame in FRAMES')
     args = ap.parse_args(argv)
     frames_wanted = [args.frame] if args.frame is not None else list(FRAMES)
+    measured: list[dict[str, list[Path]]] = []
 
     for frame in frames_wanted:
         rendered: dict[str, Path] = {}
@@ -220,26 +297,30 @@ def main(argv: list[str] | None = None) -> int:
         zero = [r for r in diffs if (r['changed_px'] or 0) <= SAME_PICTURE_PX]
         print(f'{len(nonzero)} of {len(diffs)} pairs differ; '
               f'{len(zero)} are identical.')
-
-        # A pair is inert only if NEITHER member is a declared-inert type; an
-        # inert pair among types nobody scores is a fact, not a failure.
-        undeclared = [r for r in zero
-                      if not ({r['pair'].split('|')[0], r['pair'].split('|')[1]}
-                              & INERT_TYPES)]
-        if undeclared:
-            bad = ', '.join(r['pair'] for r in undeclared)
-            print(f'INERT TYPE FIELD: {bad} rendered identically, so at least '
-                  f'one\n`chart.type` value is not read by the renderer and the '
-                  f'chart-type\nclassifier must not be scored on it.')
-            return 1
         for r in zero:
-            print(f'measured inert pair: {r["pair"]} (byte-identical)')
-        print(f'=> SCORABLE TYPES: {list(SCORABLE)}')
-        print(f'=> EXCLUDED (measured inert): {sorted(INERT_TYPES)}')
+            print(f'  measured inert pair on this frame: {r["pair"]}')
+        measured.append({t: [p] for t, p in rendered.items()})
 
-    print('\n=> every SCORABLE declared type reaches the pixels. The type is ON')
-    print("   the frame; whether it LOOKS like the type is the classifier's")
-    print('   measurement, and it is measured separately.')
+    # MEASURED over every frame rendered. Not read from a table written on a day
+    # when the renderer looked a certain way.
+    every: dict[str, list[Path]] = {}
+    for one in measured:
+        for t, ps in one.items():
+            every.setdefault(t, []).extend(ps)
+    inert = measured_inert_types(every)
+    scorable = scorable_types(every)
+    print(f'\n=> MEASURED INERT (renders identically to another type on every '
+          f'frame): {sorted(inert) or "none"}')
+    print(f'=> SCORABLE TYPES: {list(scorable)}')
+    if inert:
+        print('A classifier cannot be scored on a type that renders the same '
+              'picture as\n   another: there is nothing in the frame for it to '
+              'answer from.')
+    else:
+        print('\n=> every declared type reaches the pixels and is '
+              'distinguishable from\n   the others. The type is ON the frame; '
+              'whether it LOOKS like the type is\n   the classifier\'s '
+              'measurement, and it is measured separately.')
     return 0
 
 
