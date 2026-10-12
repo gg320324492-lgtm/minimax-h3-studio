@@ -202,21 +202,76 @@ def test_clipping_carries_the_edge_failure_safe_area_cannot():
     assert vqa.rule_clipping(frame_interior()).verdict == vqa.PASS
 
 
-def test_font_size_fails_below_the_readability_bar(tmp_path):
-    big = vqa.rule_font_size(frame_interior(), declared_px=20.0)
-    assert big.verdict == vqa.PASS, big.detail
-    small = vqa.rule_font_size(frame_interior(), declared_px=11.25)
-    assert small.verdict == vqa.FAIL, (
-        f'11.25px is below the {vqa.MIN_TYPE_PX}px bar and must fail; '
-        f'got {small.verdict}'
-    )
-    assert small.extra['declared_px'] == 11.25
+def test_font_size_reports_the_bands_and_gates_on_neither_side(tmp_path):
+    """P52. The measurement survives; the verdict does not exist.
+
+    This test used to feed ONE frame to `rule_font_size` twice — `declared_px=20`
+    and `declared_px=11.25` — and assert PASS then FAIL. That assertion is the
+    defect: the caller chose the verdict, so `--declared-px 5` made any frame in
+    the corpus red and `--declared-px 20` made it green without a pixel moving.
+
+    What is asserted now is the opposite contract, and it is still a contract
+    that can fail:
+
+      * the rule reads the frame and REPORTS it — the bands, their median and the
+        declared size are in `extra`, on every call;
+      * it carries no verdict, so nothing a caller passes can move the exit
+        code. UNAVAILABLE is the honest word: the instrument that could answer
+        "is this type too small" was never built (see
+        `vqa.FONT_SIZE_NO_FRAME_CRITERION`, measured over 298 corpus frames).
+      * `value` is None. A number on an UNAVAILABLE finding is a threshold
+        invented rather than measured — the convention `contrast_frame` set.
+    """
+    a = frame_interior()
+
+    declared = vqa.rule_font_size(a, declared_px=20.0)
+    assert declared.verdict == vqa.UNAVAILABLE, declared.verdict
+    assert declared.value is None, (
+        f'an UNAVAILABLE finding must carry no number; got {declared.value}')
+    assert not declared.trusted, (
+        'a finding with no instrument must not claim a trusted one')
+
+    # the measurement is really there, and it came from the frame
+    assert declared.extra['bands'] > 0
+    assert declared.extra['band_px'] == sorted(declared.extra['band_px'])
+    assert declared.extra['measured_median_px'] == pytest.approx(
+        float(np.median(declared.extra['band_px'])))
+    assert declared.extra['declared_px'] == 20.0
+    assert declared.extra['measured_over_declared'] == pytest.approx(
+        declared.extra['measured_median_px'] / 20.0, abs=1e-4)
+
+    # the whole reason the old assertion was wrong, pinned as behaviour: the
+    # caller's number moves the REPORT and nothing else.
+    below = vqa.rule_font_size(a, declared_px=5.0)
+    assert below.verdict == declared.verdict, (
+        'the verdict followed `declared_px` again. That is the defect P52 '
+        'removed: the caller, not the pixels, was choosing the verdict.')
+    assert below.extra['measured_median_px'] == declared.extra['measured_median_px'], (
+        'the same frame produced two different measurements — the bands are a '
+        'function of the pixels, so this is a fixture bug, not a rule finding')
+    assert below.extra['measured_over_declared'] != declared.extra['measured_over_declared'], (
+        'the ratio is the one number `declared_px` is allowed to move; if it '
+        'stopped moving, the declaration is no longer being compared to '
+        'anything and the measurement has been lost rather than un-gated')
 
 
-def test_font_size_reports_unverifiable_without_a_declared_size():
+def test_font_size_reports_without_a_declared_size():
+    """No declared size means no ratio — but still a measurement.
+
+    It used to return UNVERIFIABLE outright, because "a ratio needs both
+    sides". That coupled the rule's ability to REPORT to an argument the
+    caller may not have: `charts_demo` declares `style_bible: null`, so all 30
+    of its frames were UNVERIFIABLE for want of a number that had nothing to do
+    with whether type was readable. The bands are still there without a
+    declaration, so they are still reported; only the ratio is absent.
+    """
     f = vqa.rule_font_size(frame_interior(), declared_px=None)
-    assert f.verdict == vqa.UNVERIFIABLE
-    assert 'ratio needs both sides' in f.detail
+    assert f.verdict == vqa.UNAVAILABLE
+    assert f.extra['bands'] > 0
+    assert 'measured_median_px' in f.extra
+    assert 'declared_px' not in f.extra
+    assert 'measured_over_declared' not in f.extra
+    assert 'No declared size was supplied' in f.detail, f.detail
 
 
 def test_contrast_is_red_on_this_palette_and_counts_its_pairs():

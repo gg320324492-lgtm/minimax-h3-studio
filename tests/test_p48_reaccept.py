@@ -268,41 +268,53 @@ def test_the_declared_bubble_sizes_are_inert(tmp_path):
 
 # ── 3. a rule that measures its argument, not the frame ──────────────────────
 
-def test_rule_font_size_verdict_tracks_the_argument_not_the_frame():
-    """`font_size`'s verdict is decided by `declared_px`, not by the pixels.
+def test_rule_font_size_no_longer_decides_on_the_argument():
+    """P52 closed what this test characterised. It is replaced, not deleted.
 
-    MEASURED (this test): ONE synthetic frame is fed to `rule_font_size` twice,
-    with `declared_px=20` and `declared_px=5`. The verdict is PASS then FAIL --
-    while the frame, and every pixel-derived number in the reading, is
-    identical. The measured `median` band enters only the ratio's numerator;
-    the verdict is `declared_px < MIN_TYPE_PX`.
+    MEASURED (this test, before P52): ONE synthetic frame was fed to
+    `rule_font_size` twice, with `declared_px=20` and `declared_px=5`. The
+    verdict was PASS then FAIL — while the frame, and every pixel-derived
+    number in the reading, was identical. The measured `median` band entered
+    only the ratio's numerator; the verdict was `declared_px < MIN_TYPE_PX`.
 
-    This is the P22 shape one rule over: a constant reported as a per-frame
-    measurement. P22 moved `contrast` off the frame path for exactly this
-    reason; `font_size` kept the shape. It is pinned here so a reader sees it,
-    not so it is endorsed -- the honest form is a rule that reads the rendered
-    size and compares it to what the graph DECLARED, which needs the declared
-    size from the graph rather than from argv.
+    The old assertion's own failure message said what to do next: "If it now
+    measures the frame, delete this characterisation and replace it with one
+    that asserts the frame decides the verdict." It does not — and that is a
+    measurement rather than a preference, so this replacement is not the softer
+    one. `text_band_heights` does not measure type: over the 333-frame corpus
+    a frame carries 1..6 bands, the bands mix text with marks (on `f760_a.png`
+    they are 45/282/64px and only the 45px one is type), dropping the single
+    largest band flips the verdict on 58 of 283 frames, and adding one 2px
+    accent rule flips 58 more. So the frame cannot decide this either, and the
+    finding says so — UNAVAILABLE, "the instrument was never built" — while
+    still REPORTING the bands, the median and the ratio in `extra`.
+
+    Asserted here on the same frame the old test used, so the comparison is
+    like for like.
     """
     # a plain frame with a text-like band. The band must be NARROW relative to
     # the frame (visual_qa.text_band_heights rejects a row band wider than 25%
     # of the width as a solid rectangle, not text) and must clear the backdrop
-    # trust check, or the rule returns UNVERIFIABLE and there is no verdict to
-    # compare. 180 px of a 640-wide frame is 28% of the frame but only ~9% of
-    # the 1920 model -- sized here to sit under the 25% band cut.
+    # trust check, or the rule returns UNAVAILABLE for a second reason and
+    # there is nothing to compare.
     frame = np.full((360, 1920, 3), 12, dtype=int)
     frame[140:176, 880:1060] = 245  # one narrow bright band
     big = vqa.rule_font_size(frame, declared_px=20.0)
     small = vqa.rule_font_size(frame, declared_px=5.0)
-    assert big.verdict == vqa.PASS and small.verdict == vqa.FAIL, (
-        'rule_font_size no longer flips on `declared_px` alone. If it now '
-        'measures the frame, delete this characterisation and replace it with '
-        'one that asserts the frame decides the verdict.')
-    # the frame-derived number is the SAME both times -- the frame did not change
-    assert big.extra['measured_median_px'] == small.extra['measured_median_px'], (
+
+    assert big.verdict == small.verdict == vqa.UNAVAILABLE, (
+        'rule_font_size has a verdict again and it is not the same on both '
+        f'calls: {big.verdict} then {small.verdict}. If a verdict came back, it '
+        'has to be one the pixels can move — see P52: the caller cannot.')
+    assert big.value is None and small.value is None, (
+        'an UNAVAILABLE finding must carry no number; a number here would be a '
+        'threshold invented rather than measured')
+    # the frame-derived numbers are still measured, still identical
+    assert big.extra['measured_median_px'] == small.extra['measured_median_px'] == 36.0, (
         'the two calls measured different median bands, so they are not the '
-        'same frame and this test does not show what it claims.')
-    assert big.value != small.value, (
+        f'same frame: {big.extra} / {small.extra}')
+    # and the ratio is still the one number `declared_px` moves
+    assert big.extra['measured_over_declared'] != small.extra['measured_over_declared'], (
         'the reported ratio is identical across the two calls, which would mean '
         'the ratio uses a constant -- reconfirm what the ratio divides by.')
 

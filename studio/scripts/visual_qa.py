@@ -151,6 +151,27 @@ CONTENT_T = 24
 #: Above the premium-dark gradient's own spread, 6+6+8 = 20.
 PALETTE_TOL = 24
 MIN_TYPE_PX = 12.0
+#: P52. Why `rule_font_size` reports rather than decides, in one sentence, and
+#: the measurement behind it over the 333-frame corpus in `out/p13_probe`
+#: (`docs/P52_FONT_SIZE_VERDICT.md` names the probe; these numbers are the
+#: measurements, not a preference):
+#:
+#:   frames carrying ink bands                 298 of 333  (12 untrusted, 23 with none)
+#:   bands per frame                           1 .. 6, median 3
+#:   dropping the single largest band flips     58 of 283  frames that have >= 2
+#:   mean |median shift| from dropping one band  68.7px   (max 199.5px)
+#:   adding ONE 2px band flips PASS -> FAIL      58 frames
+#:   frames carrying a sub-12px band           199 of 298
+#:   frames whose median is >= 24px            204 of 298
+#:
+#: `text_band_heights` does not measure type: on `out/p13_probe/f760_a.png` the
+#: bands are 45/282/64px and only the 45px one is text. A band statistic over
+#: 1..6 samples of a type/marks mixture has no cut at 12px that separates, so
+#: this is the measured reason `font_size` carries no verdict.
+FONT_SIZE_NO_FRAME_CRITERION = (
+    'bands mix type with marks and there are only 1..6 of them per frame, so no '
+    'statistic over them is robust; telling them apart needs glyph recognition, '
+    'which this project does not have (P16 §3 row 8)')
 WCAG_TEXT = 4.5
 WCAG_LARGE = 3.0
 BLACK_NONCONTENT = 0.9995
@@ -643,37 +664,71 @@ def rule_clipping(a: np.ndarray) -> Finding:
 
 def rule_font_size(a: np.ndarray, declared_px: float | None = None,
                    scale: float = 1.0) -> Finding:
-    """Rendered type against the DECLARED size, as a ratio, plus the absolute.
+    """Rendered ink bands: MEASURED, REPORTED, and no longer a verdict.
 
-    The ratio is the honest measure and it is 1.00 at every format — the scaling
-    is exact. What the audit found is that the absolute falls below the
-    readability bar in portrait: the chart value labels are declared `20 * s`, which
-    is 11.25px at s=0.5625. So both numbers are reported and the absolute is what
-    can go red.
+    P52. The verdict used to be `declared_px < MIN_TYPE_PX` — a function of the
+    caller's `--declared-px` alone. The same pixels read PASS at `--declared-px
+    20` and FAIL at `--declared-px 5`, so the gate could be moved without moving
+    one pixel. That is P22's shape with a constant for an argument.
+
+    It is NOT replaced by `median < MIN_TYPE_PX`. `text_band_heights` does not
+    measure type, and this was measured over the 333-frame corpus rather than
+    argued (`docs/P52_FONT_SIZE_VERDICT.md`, and the numbers are in
+    `FONT_SIZE_NO_FRAME_CRITERION` below):
+
+      * bands are a MIXTURE. On `f760_a.png` — a calendar scene whose only type
+        is a 45px "2026-09" title — the bands are 45, 282 and 64px: the other
+        two are the day tiles. The median is the tiles, not the type.
+      * there is no median to be robust. A frame carries 1..6 bands (median 3),
+        so dropping the single LARGEST band flips the verdict on 58 of 283
+        frames and the mean |shift| is 68.7px. Adding one 2px accent rule turns
+        `full_a/0002.png` from PASS (median 103.5) into FAIL (median 6.0).
+      * there is no valley at the bar. 199 of 298 frames carry a sub-12px band,
+        so "any ink below 12px" is red on two thirds of the corpus, while 204 of
+        298 have a median >= 24px, so "the median is below 12px" is decided by
+        whichever single band happens to be the median.
+
+    So the honest verdict is UNAVAILABLE — the instrument for THIS question was
+    never built, which is what UNAVAILABLE means in this file (an instrument
+    that ran and could not decide is UNVERIFIABLE). Telling type from the marks
+    around it needs glyph recognition; `docs/P16_REFERENCE_BENCHMARK.md` §3 row
+    8 reached that verdict for this dimension before this rule was written.
+
+    Nothing is thrown away. The bands, the median, the declared size and the
+    ratio are real measurements and travel in `extra`, where a machine can read
+    them (the P23 convention). What is gone is the claim that a quantity the
+    caller supplied can decide a question about a frame.
+
+    `declared_px` is still read — it is the denominator of a real ratio — and it
+    can no longer move this finding's verdict or the exit code, because this
+    finding has no PASS or FAIL to move.
     """
     m, trusted, _ = model_mask(a)
     if not trusted:
-        return Finding('font_size', UNVERIFIABLE, None,
-                       'backdrop model untrusted on this frame', trusted=False)
-    bands = sorted(text_band_heights(a, m))
+        return Finding('font_size', UNAVAILABLE, None,
+                       'backdrop model untrusted on this frame; the ink bands '
+                       'would be read off a model that has sampled content',
+                       trusted=False, extra={'scale': scale})
+    bands = sorted(int(b) for b in text_band_heights(a, m))
+    extra: dict = {'scale': scale, 'bands': len(bands), 'band_px': bands}
     if not bands:
-        return Finding('font_size', UNVERIFIABLE, None, 'no text-like band found',
-                       trusted=False)
+        return Finding('font_size', UNAVAILABLE, None,
+                       'no ink band found', trusted=False, extra=extra)
     median = float(np.median(bands))
-    if declared_px is None:
-        return Finding('font_size', UNVERIFIABLE, median,
-                       f'median band {median:.0f}px, but no declared size was supplied; '
-                       f'a ratio needs both sides', trusted=False,
-                       extra={'bands': len(bands), 'min': bands[0], 'max': bands[-1]})
-    ratio = median / declared_px
-    absolute_short = declared_px < MIN_TYPE_PX
-    verdict = FAIL if absolute_short else PASS
-    return Finding('font_size', verdict, round(ratio, 4),
-                   f'declared {declared_px:.2f}px, measured median band {median:.0f}px '
-                   f'(ratio {ratio:.3f}); declared size is '
-                   f'{"BELOW" if absolute_short else "at or above"} the {MIN_TYPE_PX}px bar',
-                   extra={'declared_px': declared_px, 'measured_median_px': median,
-                          'bands': len(bands), 'scale': scale})
+    extra.update({'measured_median_px': median, 'min': bands[0], 'max': bands[-1]})
+    reading = (f'measured {len(bands)} ink band(s) of {bands}px, median {median:.0f}px; '
+               f'the {MIN_TYPE_PX}px bar cannot be applied to these — '
+               + FONT_SIZE_NO_FRAME_CRITERION)
+    if declared_px is not None:
+        extra['declared_px'] = declared_px
+        extra['measured_over_declared'] = round(median / declared_px, 4)
+        reading += (f'. Reported against the declared {declared_px:.2f}px: '
+                    f'median band is {median / declared_px:.3f}x it')
+    else:
+        reading += ('. No declared size was supplied, so the measured/declared '
+                    'ratio is absent; the bands above do not need it')
+    return Finding('font_size', UNAVAILABLE, None, reading, trusted=False,
+                   extra=extra)
 
 
 def rule_contrast() -> list[Finding]:

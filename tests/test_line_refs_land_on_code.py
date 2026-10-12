@@ -231,7 +231,7 @@ _EXEMPT: dict[tuple[str, str], str] = {
         'This file quotes the drifted citation verbatim in its docstring and in '
         'its negative-control fixtures. The guard must be able to write the '
         'defect down in order to test that it catches it.',
-    ('tests/test_line_refs_land_on_code.py', 'visual_qa.py:751'):
+    ('tests/test_line_refs_land_on_code.py', 'visual_qa.py:137'):
         'Same: the blank-line fixture in test_the_criterion_can_still_say_no.',
     ('tests/test_line_refs_land_on_code.py', 'render.mjs:43'):
         'Same: the deliberate-comment-citation fixture quotes the real site.',
@@ -512,9 +512,18 @@ def test_the_criterion_can_still_say_no():
     """The criterion must reject what it was written for.
 
     A criterion edited to always agree is green forever and protects nothing.
-    These are the ORIGINAL drifted citations, verbatim: `Chart.tsx:196` is a
-    comment today and `visual_qa.py:751` is a blank line, both measured, and
+    These are the drifted citations, quoted verbatim: `Chart.tsx:196` is a
+    comment today and `visual_qa.py:137` is a blank line, both measured, and
     neither is the shape of a deliberate citation.
+
+    ⚠️ The blank-line target was re-pointed from `visual_qa.py:751`. P52 added
+    55 lines above it inside `visual_qa.py` — the `FONT_SIZE_NO_FRAME_CRITERION`
+    constant and the rewritten `rule_font_size` docstring — and line 751 became
+    the closing triple-quote of `rule_contrast`'s docstring, i.e. real code. The
+    guard caught that, which is the guard working: a fixture that has silently
+    stopped reproducing its own defect would let the criterion pass on a line
+    number that no longer means anything. `:137` is inside the verdict-constant
+    block, above every edit P52 made, and was blank before and after.
     """
     idx = basename_index()
     cache: dict = {}
@@ -545,7 +554,7 @@ def test_the_criterion_can_still_say_no():
 
     problems = offenders(
         '    to key on. `--props` is the only graph-shaped flag '
-        '(visual_qa.py:751).\n', idx, cache)
+        '(visual_qa.py:137).\n', idx, cache)
     assert problems, (
         'the criterion accepted a citation naming a BLANK line. Blank is not '
         'code, and a reader following it finds nothing at all.')
