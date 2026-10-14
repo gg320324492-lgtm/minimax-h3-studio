@@ -206,3 +206,21 @@ def test_scenes_do_not_import_design_values_directly():
 
 **已裁定不要再讨论**：
 P12 = 零段｜P13 = B+C｜P14 = B+C｜P15 = B｜P16 = 缺输入｜P17 = B｜P18 = B｜P19–P33 = 已处理
+
+---
+
+## 七、2026-10-14 复查：GIT 判据对 tests/ 是失效的
+
+按 `tests/test_comment_citations_resolve.py` 的 GIT + MARKERS 双豁免标准，对 `docs/*.md` 跑了一遍全量复查（该测试本身只扫源码注释与 docstring，不解析 markdown，5 项全绿）。
+
+**初筛 137 处，逐条查证后真正该改的只有 2 处**，均在 `docs/P29_NEW_RENDERER_ACCEPTANCE.md` §三：`StatCard.tsx` 与 `CardGrid.tsx` 是幽灵文件名——这两个组件后来并入 `studio/src/templates/finance-showcase/scenes/Cards.tsx`，而文档仍按组件名当文件名引用。**行号全部仍然准确**（265 确为把 `c` 交给 `Card`、291 确为 `→ cards`、343 确为 `card.accent === true`），只需把文件名换成 `Cards.tsx`，已改。同表的 `BrowserWindow.tsx` / `DataTable.tsx` / `Quote.tsx` / `Brand.tsx` 都真实存在于 `scenes/`，不动。
+
+**其余 135 处不是幽灵，不要动**：
+
+1. **`tests/*.py` 的 19 处**（`UPGRADE_REPORT_20260919.md` 的 16 个基准脚本、`TEST_REPORT_20260910.md` 的 3 个）。这些文件**确实存在过**，只是当时未入库：`tests/` 直到 **2026-09-30** 才在 `ce2ca94`「已解除忽略并入库」之前处于 gitignore 状态，而这两份报告分别是 2026-09-19 和 2026-09-10。`git log --all` 看不见从未提交过的文件，所以 GIT 判据在这里**方向性失效**。该测试文件自己也写明了这个局限：「Git-history absence is not proof of never-having-existed for a path that was never committed」。
+2. **`take_critic.py` / `reference_analyze.py` 的约 30 处**是**如实记录该文件不存在**（「仓库至今无 `take_critic.py`」「`reference_analyze.py` 零实现」「该文件不存在」）。它们符合 MARKERS 豁免，只是措辞是中文，不在本测试现有的英文 marker 词表里。
+3. **计划类文档**（`UPGRADE_MASTER_PLAN.md:195` 的 6 份「最终文档集」、`REMOTION_INTEGRATION_PLAN_20260929.md` 的 `styles.tokens.ts`）列的是**打算产出**的文件，不是对现状的断言。
+4. **已划掉的条目**（`UPGRADE_PROGRESS.md:137` 的 `motionTokens.ts`，行首 `~~5.6~~`）是被取消的工单项。
+5. 其余是产物数据文件名（`job_state.json`、`reference_analysis.json` 等，落在 gitignore 目录里）与正则误捕（`.check.ts`、`index.js`、`tests/test_p37_...py`），不构成引用。
+
+**结论**：marker 词表可以补中文否定词（没有/不存在/零实现/无此文件/未实现），但**不应对 GIT 判据本身动手**——它是这份测试的刻意取舍，两个方向都偏向红是真有理由的。若要让 tests/ 这类引用转绿，正确做法是在测试里为「2026-09-30 前 tests/ 未入库」加一条豁免，而不是改文档。

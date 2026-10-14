@@ -89,8 +89,8 @@ generative-scene 扫描。上面那次全量运行同时证明：**如果放进�
 | 类型 | 组件实际读取的键（源码位置） | 图谱给的 | |
 |---|---|---|---|
 | `browser-window` | `BrowserWindow.tsx:86-89` → `title/metric/caption/bars/spark` | 全部 5 个 | ✅ |
-| `stat-card` | `StatCard.tsx:265` 把 `c` 整个交给 `Card`；`Card:121-130` → `label/value/prefix/suffix/delta/note/series/seed` | 7 个（`accent` 不适用） | ✅ |
-| `card-grid` | `CardGrid.tsx:291` → `cards`；`Card:121-130`；`CardGrid:343` → `card.accent === true` | 6 张卡，每张 8 键，`accent` 已用 | ✅ |
+| `stat-card` | `Cards.tsx:265` 把 `c` 整个交给 `Card`；`Cards.tsx:121-130` → `label/value/prefix/suffix/delta/note/series/seed` | 7 个（`accent` 不适用） | ✅ |
+| `card-grid` | `Cards.tsx:291` → `cards`；`Cards.tsx:121-130`；`Cards.tsx:343` → `card.accent === true` | 6 张卡，每张 8 键，`accent` 已用 | ✅ |
 | `data-table` | `DataTable.tsx:64-66` → `columns/rows/caption`；`DataTable.tsx:48` 类型里显式声明 `Row._accent`；`:167` 用 `row._accent === true`；`:155,181` 用 `col.label` / `row[col.key]`；`:50` 读 `col.kind` | 全部，`_accent` 用在 FY23 | ✅ |
 | `quote` | `Quote.tsx:35-37` → `text/attribution/role` | 全部 3 个 | ✅ |
 | `logo` | `Brand.tsx:115-122` → **只有** `name/tagline` | `name/tagline` | ✅ |
