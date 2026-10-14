@@ -35,7 +35,7 @@ the command line moves.
 
 Replacing `declared_px` with the measured `median` is what the work order warned
 against, and the warning is right. Measured over all 333 frames of
-`out/p13_probe` (`e:/tmp_p52/measure_font_bands.py`, the same corpus P22 used):
+`out/p13_probe` (`out/tmp_p52/measure_font_bands.py`, the same corpus P22 used):
 
 ```
 trusted+measured 298   untrusted 12   trusted-but-no-bands 23
@@ -66,7 +66,7 @@ rows 706..769  h= 64   x 736.. 850    <- the last tile row
 `median` is 64px: the tiles, not the type. Two of the three bands are not text.
 
 **(b) There is no median to be robust.** A frame carries 1..6 bands (median 3).
-Measured (`e:/tmp_p52/measure_hijack.py`, over the 283 frames with ≥ 2 bands):
+Measured (`out/tmp_p52/measure_hijack.py`, over the 283 frames with ≥ 2 bands):
 
 ```
 dropping the single LARGEST band flips the verdict   58 of 283  (20.5%)
@@ -381,9 +381,9 @@ so a CRLF-count check would not have caught it and it was checked anyway.
 ## 11. Reproducing the measurements
 
 ```
-py -3.12 e:/tmp_p52/measure_font_bands.py     # band distribution + fire rates
-py -3.12 e:/tmp_p52/measure_hijack.py         # one-band flips, knife-edge frames
-py -3.12 e:/tmp_p52/mutate_p52.py             # the three mutations, byte-restored
+py -3.12 out/tmp_p52/measure_font_bands.py     # band distribution + fire rates
+py -3.12 out/tmp_p52/measure_hijack.py         # one-band flips, knife-edge frames
+py -3.12 out/tmp_p52/mutate_p52.py             # the three mutations, byte-restored
 ```
 
 The two probes need the gitignored corpus in `out/p13_probe` (333 frames); the
