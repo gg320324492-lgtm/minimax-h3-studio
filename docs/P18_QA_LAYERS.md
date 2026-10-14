@@ -105,7 +105,7 @@ one member of which currently misfires.
 
 The commander's suspicion was that `visual_qa.py` reports findings rather than
 blocking. **That is no longer true** — `visual_qa.py:855` returns
-`1 if hard or unver else 0`, and `6e86b46` made UNVERIFIABLE non-zero too. I
+`1 if hard or unver else 0`, and `2cac275` made UNVERIFIABLE non-zero too. I
 verified the gate is real and that it **does** block. Measured exit codes (no
 pipes — this window was nearly misled by one earlier):
 
@@ -202,7 +202,7 @@ that is absent from the layer partition is precisely the one the master plan's
 ### 3.3 Verdict: **B — don't build a four-layer gate**
 
 It would be a fourth column header on a table that already has a verdict. The
-architecture question it poses was already answered correctly by `6e86b46`
+architecture question it poses was already answered correctly by `2cac275`
 (`FAIL` and `UNVERIFIABLE` both exit non-zero). What a four-layer gate would
 *add* is a grouping with no consumer, and the layer thinness means the grouping
 would be arbitrary where it matters most (Motion: 2 rules, both pair-input, one

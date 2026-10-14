@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `0321bb5` |
+| HEAD | `5c29b10` |
 | 当前状态 | `tests/test_locked_fields_wiring.py`（457 行）与 `studio/scripts/locked_fields_mutation.py`（187 行）**均为未跟踪，一件都没提交** |
 | 基线（含本项） | `259 passed, 2 skipped` |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
@@ -32,7 +32,7 @@
   元测试要安全变异自身副本是另一类机制，你的成本估计准确。
 
 **但「承认缺口」不能只写在 commit message 里。** 提交信息只有 `git log` 读得到，
-注释在读代码的人眼前——而 `55b3ac5` 的教训正是：**docstring 声称的性质必须由代码兑现**。
+注释在读代码的人眼前——而 `9254f2d` 的教训正是：**docstring 声称的性质必须由代码兑现**。
 
 ---
 

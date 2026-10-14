@@ -172,7 +172,7 @@
 - 归档（不删）：4 个 `.pre-v2.bak` + `09_final.pre-v2.bak`（233MB 旧交付备份）→ `ceo_mindread_ep01/_archive_prev2/`；`_archive_20260910_rerun/`（407MB v1 交付存档）保留原位。
 - 保留：`logs/`（活跃管线日志）、`09_final*/` 现行交付。
 - 2026-09-30：**仓库转公开**（隐私/凭据/IP 四类审计通过）。出库：4 个 Mixkit 派生音频（本地保留，gitignore）+ 12 个 vendor 技能目录（可重装）。当前公开内容 = 模板代码 + 契约 + 文档 + CC0/自研音频；H3 prompt/种子/剧本按用户决策一并公开。
-- 2026-09-30：**仓库转公开前完成历史净化**（用户决策：prompt/种子/剧本/timeline 只留本地）。git filter-repo 从全部历史清除 37 个敏感文件（workflows JSON、各项目 seed_manifest/story/dialogue/shots/timeline、prompt 型生成脚本）；本地文件备份于 `E:/H3_local_private/repo_backup/` 并已恢复为 gitignore 的未跟踪状态；强制推送重写后的历史（999088a），远端树验证 0 敏感路径。同轮：仓库转 PUBLIC + About/topics（remotion/comfyui/text-to-video/ai-video/douyin/real-esrgan）。
+- 2026-09-30：**仓库转公开前完成历史净化**（用户决策：prompt/种子/剧本/timeline 只留本地）。git filter-repo 从全部历史清除 37 个敏感文件（workflows JSON、各项目 seed_manifest/story/dialogue/shots/timeline、prompt 型生成脚本）；本地文件备份于 `E:/H3_local_private/repo_backup/` 并已恢复为 gitignore 的未跟踪状态；强制推送重写后的历史（e817623），远端树验证 0 敏感路径。同轮：仓库转 PUBLIC + About/topics（remotion/comfyui/text-to-video/ai-video/douyin/real-esrgan）。
 
 ---
 
@@ -213,3 +213,10 @@
 - **新增 `.gitignore` 规则 `/H3_local_private/`**：必须整目录忽略。备份里的路径深度与既有那些逐条规则不匹配（如 `ceo_mindread_ep01/scripts/build_timeline.py` 是锚定仓库根的规则，匹配不到 `H3_local_private/repo_backup/ceo_mindread_ep01/scripts/build_timeline.py`）。公开仓库泄露过一次，这条不要删。
 - **上方「阶段封版（2026-09-30）」两处 `E:/H3_local_private/` 保持原样**：那是当日的准确记录，不是当前路径。
 - E 盘根目录清理：项目散落产物 8 组（`out/`、`tmp/`、`tmp_p52/`、`p4{2,3}_probe/`、`p15_scratch/`、`P29work/`、`p38probe_graph.json`）并入 `out/`；另清腾讯视频 HLS 缓存 8.8G、QQ音乐缓存 1.3G。项目内清 Remotion 泄漏的 webpack bundle 10G、重复 chrome-headless-shell 270M、`tools/ffmpeg.zip` 170M、ACE-Step 权重 9.7G。项目体积 41G → 20G。
+
+### 历史二次净化：Mixkit 音频出库
+
+- **问题**：`studio/public/audio/` 下 4 个 Mixkit 派生文件（`bgm_main.m4a`、`sfx_whoosh.m4a`、`sfx_impact.m4a`、`sfx_coin.m4a`）在 2026-09-30 的 `84ff6c6` 里已 gitignore 排除，但那次只把它们从**当前树**移除，文件仍留在更早的提交中（由 `e0a832e` 引入）。公开仓库因此可经历史浏览下载到这 4 个文件，与本仓库「Mixkit 许可不允许原始音频独立再分发」的既定策略冲突。
+- **范围**：只清除这 4 个。`_bgm/_ding/_impact/_pop/_riser/_whoosh.m4a`、`sfx_ding/sfx_pop/sfx_riser.m4a` 是 **CC0 的 Kenney 音效**，可合法再分发，保留；`bgm_synth_126.m4a` / `bgm_tech_126.m4a` 是合成兜底版，保留。公开 HEAD 树本来就已不含那 4 个，暴露途径仅历史。
+- **做法**：`git filter-repo --path <4条> --invert-paths` 后 `git push --force-with-lease`。**全部 218 个提交的 SHA 随之改变**（`3e2423a` → `a2b4e1c`），提交数与 HEAD 文件树不变（218 / 464），`git fsck` 干净。
+- **SHA 重映射**：filter-repo 留下 `.git/filter-repo/commit-map`（218 条新旧对照），据此把 `docs/` 与 `README.md` 中 261 处提交引用批量改写（77 个文件、236 行）。最终复核：203 个 SHA 可解析，10 个不可解析——其中 5 个是本次之前就已断裂的引用（`6e8b3d5`、`b3f553d`、`0d59c11`、`e29a400`，均为 2026-09-30 那次净化后就断了，不在本次 commit-map 中），另 5 个不是 commit hash 而是字节范围与测试数据（`09ca278`、`a124727`、`0000000`、`0000120`、`2073600`）。未作猜测性改写。

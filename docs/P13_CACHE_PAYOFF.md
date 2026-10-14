@@ -3,7 +3,7 @@
 > 结论先行：**bundle 复用不值得建（B），scene 级重渲现在也不值得建，但原因和
 > 工单预期的不一样（C）。** 数字全部来自本机实测，见下。**没有实现任何东西。**
 >
-> 基线 `b516f42`，分支 `main`。渲染于 Windows 11 / RTX 5090 / Node v24.16.0 /
+> 基线 `4a07867`，分支 `main`。渲染于 Windows 11 / RTX 5090 / Node v24.16.0 /
 > remotion@4.0.529，`pipeline/examples/showcase_demo.json`，
 > `--comp FinanceShowcaseWide`，1920×1080@60，801 帧（4 个 scene）。
 

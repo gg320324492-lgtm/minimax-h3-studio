@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `7c5a783` |
+| HEAD | `d75224b` |
 | 基线 | **先自己实测**，不要相信下面这个数字 |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -205,7 +205,7 @@ export const SPACE = {xs: 8, sm: 16, md: 24, lg: 40, xl: 64, xxl: 104, hero: 168
 **P12–P18 七段全部未开工**。
 
 **P11 剩两项，都卡在同一个解锁条件**：
-- **11.1 Repair Planner** —— 仪器已建成（`chart_geometry.py`，`c6d7a5a`），
+- **11.1 Repair Planner** —— 仪器已建成（`chart_geometry.py`，`f625ff5`），
   修复器**故意未写**：已交付图表比值 **0.278**，无碰撞可修，
   而唯一能清碰撞的手段（缩短 labels）正是 11.2 禁掉的。
   **若你发现任何图表确实接近碰撞，停下并上报**——那会推翻这个结论。

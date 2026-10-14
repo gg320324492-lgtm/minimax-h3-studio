@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `b516f42`（**本地，未推送** —— 上一轮推送因 TLS 握失败，网络整体不通，`curl https://github.com` 返回 HTTP 000） |
+| HEAD | `4a07867`（**本地，未推送** —— 上一轮推送因 TLS 握失败，网络整体不通，`curl https://github.com` 返回 HTTP 000） |
 | 基线 | **先自己实测**（上次是 `365 passed, 2 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -217,7 +217,7 @@ P14 的"长驻 bundle"就是它的自然形态）、**P15** SR 路由、**P16**�
   `.strict()` **管不到它们**（链条里没有未声明键）。
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** Repair Planner —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），
+- **11.1** Repair Planner —— 仪器已建成（`chart_geometry.py` / `f625ff5`），
   修复器**故意未写**：已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由

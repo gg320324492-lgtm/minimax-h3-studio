@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `a9038d9`（已推送） |
+| HEAD | `12509b0`（已推送） |
 | 基线 | **先自己实测**（⚠️ 见第一节第 3 条：**当前有 1 条已知红**，不是你的） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -81,7 +81,7 @@ ValidationScene.tsx:12 <BlendSequence from={330} .../>
 ```
 FAILED tests/test_p4_9_ledger_numbers_resolve.py::test_the_two_numbers_4_9_invented_still_exist_nowhere
 3 failed 时共有三条，其中另两条是：
-  · test_markdown_text_is_intact  ← 已在 5a754d2 修掉
+  · test_markdown_text_is_intact  ← 已在 058dc5c 修掉
   · test_p14_render_entry_points  ← GBK 控制台把省略号显示成替换字符，纯假象
 ```
 

@@ -81,12 +81,12 @@ Three defects, one bed. They are not three unrelated bugs:
 | | shape | detectable by |
 |---|---|---|
 | P11 `audio` | declared, merged by nothing, read by nothing | data-side reachability sweep |
-| `836f532` `radius`/`shadow`/`depthCue` | merged and read by real scenes, never declared | data-side reachability sweep |
+| `c1e9ce1` `radius`/`shadow`/`depthCue` | merged and read by real scenes, never declared | data-side reachability sweep |
 | **this** | parser open ⇒ *either* of the above can happen invisibly | `safeParse` behaviour |
 
 The middle one is the one strictness was actually load-bearing for. Its author
 saw a clean parse; its renderer saw a fully populated `StyleBible`; nothing
-between them ever observed the value disappear. `836f532` fixed those three
+between them ever observed the value disappear. `c1e9ce1` fixed those three
 sections and **left the bed in place** — `merge a section → a graph sets it →
 it is stripped → a consumer reads a default` could run again with a fourth key.
 

@@ -127,7 +127,7 @@ changed shape".
 ### 3.1 What was NOT built, and why
 
 - **No exit code is changed.** `main()`'s `return 1 if hard or unver` is untouched.
-  UNVERIFIABLE still exits non-zero — that is `6e86b46`'s rule, and "cannot measure
+  UNVERIFIABLE still exits non-zero — that is `2cac275`'s rule, and "cannot measure
   means pass" is the failure this project has already paid for once.
 - **No threshold is created.** There is nothing to tune; that is the whole point.
 - **No `rule_*` function was added.** `qa_layers._rule_functions()` reads every
@@ -137,7 +137,7 @@ changed shape".
   reports no verdict of its own about an artefact, it compares two reports. Keeping
   it out of the AST namespace leaves P18's partition untouched and testable as-is.
 - **`visual_qa.py` and `qa_layers.py` were not modified at all** — both sha256 values
-  are byte-identical to `e372fe2` (see §6).
+  are byte-identical to `946aa86` (see §6).
 
 ---
 
@@ -183,8 +183,8 @@ an invalid mutation and recorded as such; none needed that judgement.
 
 | file | sha256 | changed? |
 |---|---|---|
-| `studio/scripts/visual_qa.py` | `7e7d586a747c9fb13eb5b23628156e19649b1d696fa85fbff281207416d35ded` | **no** (identical to `e372fe2`) |
-| `studio/scripts/qa_layers.py` | `ba519e9e9169aa916d143075cb06ac97d518143848fc5660d6112682e33abdf1` | **no** (identical to `e372fe2`) |
+| `studio/scripts/visual_qa.py` | `7e7d586a747c9fb13eb5b23628156e19649b1d696fa85fbff281207416d35ded` | **no** (identical to `946aa86`) |
+| `studio/scripts/qa_layers.py` | `ba519e9e9169aa916d143075cb06ac97d518143848fc5660d6112682e33abdf1` | **no** (identical to `946aa86`) |
 
 Both new files are LF-only (0 CRLF) and end with a newline. `out/**` was read only.
 

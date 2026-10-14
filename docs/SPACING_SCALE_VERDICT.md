@@ -35,10 +35,10 @@ git log --oneline -S '4…96' -- docs/UPGRADE_MASTER_PLAN.md
 for c in $(git log --format=%h -- docs/UPGRADE_MASTER_PLAN.md); do
   git show $c:docs/UPGRADE_MASTER_PLAN.md | grep -c '4…96\|4 的倍数'
 done
-# => b27cbf2 => 0
+# => bddc790 => 0
 ```
 
-P6 行当前内容（`UPGRADE_MASTER_PLAN.md:131`，该行自 `71da3cd` 起未变）：
+P6 行当前内容（`UPGRADE_MASTER_PLAN.md:131`，该行自 `8fcd15f` 起未变）：
 
 ```
 | **P6** | Design System | `design/` tokens：palette/typography/spacing/depth，premium-dark/light | 全 scene 统一品牌语言 |
@@ -53,18 +53,18 @@ P6 行当前内容（`UPGRADE_MASTER_PLAN.md:131`，该行自 `71da3cd` 起未�
 
 | commit | 日期 | 性质 |
 |---|---|---|
-| `71da3cd` | 2026-09-30 14:32 | **首次出现**，编号 **6.3**，`docs/UPGRADE_PROGRESS.md:91` |
-| `b27cbf2` | 2026-09-30 | 编号 6.3 → 6.7，**并在此加上"与总任务书要求的"** |
-| `014ebe7` | 2026-10-01 | `HANDOFF_VERIFIER_20261001.md:184` 首次称"**规定的**" |
-| `6abbaf2` / `9da8da0` / `6231af4` / `042f207` | 10-01 → 10-02 | 逐层转述，无人核对源头 |
+| `8fcd15f` | 2026-09-30 14:32 | **首次出现**，编号 **6.3**，`docs/UPGRADE_PROGRESS.md:91` |
+| `bddc790` | 2026-09-30 | 编号 6.3 → 6.7，**并在此加上"与总任务书要求的"** |
+| `3c60612` | 2026-10-01 | `HANDOFF_VERIFIER_20261001.md:184` 首次称"**规定的**" |
+| `ea60eaa` / `5491c86` / `a84f0bd` / `ce1f59a` | 10-01 → 10-02 | 逐层转述，无人核对源头 |
 
-`71da3cd:docs/UPGRADE_PROGRESS.md:91` 的原文（**这条里没有"总任务书"**）：
+`8fcd15f:docs/UPGRADE_PROGRESS.md:91` 的原文（**这条里没有"总任务书"**）：
 
 ```
 | 6.3 | Spacing 尺度（4…96） | ⬜ | |
 ```
 
-`b27cbf2` 的 diff 同时做了两件事——把 6.3 改名为 6.7，并把空的结论栏
+`bddc790` 的 diff 同时做了两件事——把 6.3 改名为 6.7，并把空的结论栏
 填成"与**总任务书要求的** 4…96 步长不一致"。
 **归因是在这一步被加上去的，而被归因的那份文件里根本没有这句话。**
 （该 commit 同时改动了 `UPGRADE_MASTER_PLAN.md`，但只加了第 7 条铁律，与 spacing 无关。）
@@ -84,7 +84,7 @@ P6 行当前内容（`UPGRADE_MASTER_PLAN.md:131`，该行自 `71da3cd` 起未�
 
 **前五个会话（2026-08-26 起，至 09-09）从未讨论过 spacing / `tokens.ts` / `SPACE`。
 唯一有内容的 `de13ac51` 最早时间戳是 `2026-09-30T06:36:24Z`，
-而写下「4…96」的 commit `71da3cd` 时间是 `2026-09-30T06:32:51Z`（UTC）——
+而写下「4…96」的 commit `8fcd15f` 时间是 `2026-09-30T06:32:51Z`（UTC）——
 晚了 3 分 33 秒。**
 
 也就是说：**保存 authoring 会话的 jsonl 不在现存六个里**，

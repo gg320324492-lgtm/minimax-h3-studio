@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `20e69f6` 或更新（**开工前先 `git log --oneline -3`**；P35 与 P36 可能已提交） |
+| HEAD | `c8a7b36` 或更新（**开工前先 `git log --oneline -3`**；P35 与 P36 可能已提交） |
 | 基线 | **先自己实测**（上次 `637 passed, 4 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -57,7 +57,7 @@ t=23s 那格是**一个戴口罩的人**（主播出镜）。
 
 ### 4. P16 原先的裁定与现在的事实
 
-`be7ce2f` 裁定 P16「**缺的是输入，不是代码**」：
+`87abf64` 裁定 P16「**缺的是输入，不是代码**」：
 **12 个维度全判 B**，且**即使片子运到仍有 5 个维度缺仪器**
 （camera / 字体 / 密度缺仪器、转场无 schema 枚举、scene 边界无判据）。
 

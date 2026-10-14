@@ -11,7 +11,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `ee454a0`（已推送） |
+| HEAD | `cd7f74a`（已推送） |
 | 基线 | **`719 passed, 4 skipped`**（⚠️ 历史基线过期过两次，**实测为准，不要往工单数字上凑**） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -47,7 +47,7 @@ P40 那次差点被当成真的 U+FFFD）。
 
 ### 3. ⚠️ 本项的时运：P45 刚把一台**分类器**建成了仪器
 
-**P45（`ee454a0` 前一提交）实测**：本地 `qwen2.5vl:7b`（ollama）
+**P45（`cd7f74a` 前一提交）实测**：本地 `qwen2.5vl:7b`（ollama）
 
 - **召回 114/114，假阳性 0/47，282 次调用 0 处分歧**；
 - **单次 median 0.21s / p95 0.32s**；**逐帧求和 3.47s/帧**；

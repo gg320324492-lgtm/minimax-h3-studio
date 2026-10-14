@@ -1,7 +1,7 @@
 # 执行指令 — P12.2 ScenePlanner→Storyboard→showcase_v1.json：接上刚建好的生成侧
 
 > 给执行 agent。本文件**自包含**。你只负责执行，**不做放行/退回裁定**。
-> ⚠️ **P36（`8bd4666`）刚刚建好上游**，本项是它的下游。**接缝很窄，先看清再动手。**
+> ⚠️ **P36（`9a8239b`）刚刚建好上游**，本项是它的下游。**接缝很窄，先看清再动手。**
 
 ---
 
@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `a9038d9`（已推送） |
+| HEAD | `12509b0`（已推送） |
 | 基线 | **先自己实测**（P36 报告 658 passed / 4 skipped） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -35,7 +35,7 @@
 
 ## 一、指挥窗口已实测的事实（本指令建立在此之上，不是引述）
 
-### 1. 上游（P36，`8bd4666`）已经存在并**已经对齐下游**
+### 1. 上游（P36，`9a8239b`）已经存在并**已经对齐下游**
 
 `pipeline/director/style_bible.py:21` 的模块说明原话：
 
@@ -56,7 +56,7 @@
 | 环节 | 状态 |
 |---|---|
 | **Storyboard → showcase_v1.json（12.2，本项）** | **零实现** |
-| **图谱校验** | `pipeline/scene_graph.py`，P11 起读 JSON Schema（`a55d03d`），`SCHEMA_PATH` 在 `:140` |
+| **图谱校验** | `pipeline/scene_graph.py`，P11 起读 JSON Schema（`8c7522e`），`SCHEMA_PATH` 在 `:140` |
 | **StyleBible 解析** | `styleBible.tsx`，4.8 完成，接 `useDesign()` |
 
 **⇒ 本项要补的是「从 Brief/意图 到 一张可被校验的图谱」这一段。**

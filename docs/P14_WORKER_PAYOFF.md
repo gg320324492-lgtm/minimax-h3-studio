@@ -5,7 +5,7 @@
 > **一次渲染里根本没有"值得复用的重复"。**
 >
 > 数字全部来自本机实测。**没有实现长驻 worker，没有实现分级渲染。**
-> 基线 `34316a3`，分支 `main`。渲染于 Windows 11 / RTX 5090 / Node v24.16.0 /
+> 基线 `a05b4b8`，分支 `main`。渲染于 Windows 11 / RTX 5090 / Node v24.16.0 /
 > remotion@4.0.529，`pipeline/examples/showcase_demo.json`，
 > `--comp FinanceShowcaseWide`，1920×1080@60，801 帧（4 个 scene）。
 

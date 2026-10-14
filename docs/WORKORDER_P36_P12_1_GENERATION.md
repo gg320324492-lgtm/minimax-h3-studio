@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `20e69f6` + `6e8b3d5`（**工作树可能已有 P35 的提交**，请先 `git log --oneline -3` 确认） |
+| HEAD | `c8a7b36` + `6e8b3d5`（**工作树可能已有 P35 的提交**，请先 `git log --oneline -3` 确认） |
 | 基线 | **先自己实测**（上次是 `637 passed, 4 skipped`，P35 之后可能更多） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -33,7 +33,7 @@
 | 环节 | 状态 |
 |---|---|
 | **Brief → StyleBible（12.1，本项）** | **零实现** |
-| **SceneGraph 校验** | `pipeline/scene_graph.py` **32 KB**，P11 起读 JSON Schema（`a55d03d`） |
+| **SceneGraph 校验** | `pipeline/scene_graph.py` **32 KB**，P11 起读 JSON Schema（`8c7522e`） |
 | **StyleBible 解析** | `styleBible.tsx` **8 KB**，4.8 完成，接 `useDesign()` |
 
 **⇒ 下游在等一个产出者。**
@@ -60,7 +60,7 @@ cameraLanguage  motionLanguage  chartLanguage  audioLanguage
 **它们是「声明了但没人读」，与本系列修的「有人读但喂不进去」方向相反。**
 
 **(b) `radius` / `shadow` / `depthCue` 直到 P26 才接通**
-（`836f532`：它们被 `styleBible.tsx` 合并、被场景消费，但**不在 schema 里** ⇒
+（`c1e9ce1`：它们被 `styleBible.tsx` 合并、被场景消费，但**不在 schema 里** ⇒
 **永远拿不到图谱的值**）。**现在它们在 schema 里了，但三份图谱一个都没设过。**
 
 ### 4. 本项目对"照着 schema 生成"的态度

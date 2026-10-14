@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `e372fe2`（已推送，与 `origin/main` 同步） |
+| HEAD | `946aa86`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `467 passed, 3 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -38,7 +38,7 @@ EXIT=1
 **对比 P18 时期**（拆 contrast 之前）：`333 帧全部 FAIL`。
 
 ⇒ **永久红的闸没了。** 现在是 **`0 FAIL` 却仍然退不出去** ——
-**因为 UNVERIFIABLE 也返回非零**（`6e86b46` 立的规矩：`qa_report.py:17`
+**因为 UNVERIFIABLE 也返回非零**（`2cac275` 立的规矩：`qa_report.py:17`
 「Exit 1 on any FAIL, and on any UNVERIFIABLE」）。
 
 **⚠️ 这个现状是对的，不要动它**：一个测不了的东西必须报 UNVERIFIABLE 且退出非零，
@@ -166,7 +166,7 @@ font_size, freeze, safe_area
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P18_QA_LAYERS.md`、`docs/P19_*.md`、`docs/P2*.md`
 - `out/**` —— **只读**；`DiagOutputDir`
 - `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
-- **不要动 UNVERIFIABLE 的语义** —— 它退出非零是 `6e86b46` 立的规矩，
+- **不要动 UNVERIFIABLE 的语义** —— 它退出非零是 `2cac275` 立的规矩，
   **「测不了就当过」正是本项目修过的失效**
 - **不要动 `unavailable_findings()` 的占位符**、P19 的 `SIGNATURE_EQUAL`、
   P20 的 `DUP_THRESHOLD`、P21 的 `graph_scene_renderable`、P22 的 `theme_contrast`/`contrast_frame`、

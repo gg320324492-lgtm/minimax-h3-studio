@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `8ea6790`（已推送） |
+| HEAD | `79e62e7`（已推送） |
 | 基线 | **`739 passed, 4 skipped`**（⚠️ 历史基线过期过，**实测为准，不要往工单数字上凑**） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 

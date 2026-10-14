@@ -1,6 +1,6 @@
 # P12.2 — ScenePlanner → Storyboard → showcase_v1.json：**裁定不建（C）**，以及三个答案
 
-> 执行 agent 交付。工单 `docs/WORKORDER_P38_SCENE_PLANNER.md`，基线 `a9038d9`。
+> 执行 agent 交付。工单 `docs/WORKORDER_P38_SCENE_PLANNER.md`，基线 `12509b0`。
 > 本文件是**测量记录**，不是放行/退回裁定。
 > **本项没有实现 ScenePlanner，一行生产代码都没有改。**
 > 交付物是 `tests/test_p12_2_scene_planner_verdict.py`（13 条守卫）——**守卫的对象
@@ -60,7 +60,7 @@ $ py -3.12 studio/scripts/visual_qa.py --props <generate_graph 产出的 video �
 | `SCENE_RENDERERS` 注册 | 13 | **20** |
 | `UNRENDERED_SCENE_TYPES` | 9 | **2**：`video`、`data-plane-3d` |
 
-**原因**：`a7f02b8`（P29）验收了七个新渲染器
+**原因**：`a6989f2`（P29）验收了七个新渲染器
 （`browser-window`/`stat-card`/`card-grid`/`data-table`/`quote`/`logo`/`outro`）。
 ⇒ **按「避开那 9 种」写的 Planner 会去避开 7 种现在渲染正常的类型，
 而真正渲染不出来的那 2 种一个都没提到。**
@@ -137,7 +137,7 @@ Planner 要重新决定的事，brief 已经决定了。
 
 | 图谱 | 时长 | 它遵循的规则 |
 |---|---|---|
-| `showcase_demo` | 229 / 229 / 114 / 229 | **旧 bpm 126 的整拍**（`round(8×28.5714)=229`、`round(4×28.5714)=114`）—— `41947f6` 把声明速度改成 128.998 时**没有重算时长** |
+| `showcase_demo` | 229 / 229 / 114 / 229 | **旧 bpm 126 的整拍**（`round(8×28.5714)=229`、`round(4×28.5714)=114`）—— `1b7e2f1` 把声明速度改成 128.998 时**没有重算时长** |
 | `charts_demo` | 150 ×9 + 600 | **10 帧的整数倍**（= 60fps 下 1/6 秒） |
 | `p29_...` | 150/120/210/180/160/100/200 | **同样是 10 帧的整数倍** |
 
@@ -252,7 +252,7 @@ Storyboard 若插在这两端之间，**它拿到的就是它被要求输出的�
 
 | 工单/旧文档 | 实测 | 出处 |
 |---|---|---|
-| 「9 种场景类型渲染不出来」 | **2 种**（`video`、`data-plane-3d`） | P29 `a7f02b8` 验收了 7 个渲染器 |
+| 「9 种场景类型渲染不出来」 | **2 种**（`video`、`data-plane-3d`） | P29 `a6989f2` 验收了 7 个渲染器 |
 | 「时长是 beat 对齐的，不是自由值」（`DIRECTOR_SCOPE_VERDICT.md` §6.2） | **没有任何东西在保证**；`beat_aligned_durations` 是恒等式 | §2.2 / §2.3 |
 | 「参考片 P37 实测 beat ≈ 120.19 BPM」可用作依据 | **另一条音轨**，P37 自己写着"不可混谈" | `P37_REFERENCE_REANALYSIS.md:84` |
 | `visual_qa.py:1051-1054` docstring 仍写「13 rendered / 9 in between」 | 已过期（20 / 2） | ⚠️ **本项未修**（不在授权内，且改它要先重测 P21 的期望值） |

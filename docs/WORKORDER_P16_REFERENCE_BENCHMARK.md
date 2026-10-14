@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `8909fc6`（已推送，与 `origin/main` 同步） |
+| HEAD | `a8156c5`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 **506 passed, 3 skipped**，另有 2 条新守卫） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -214,7 +214,7 @@
 P12 = 零段｜P13 = B+C｜P14 = B+C｜P15 = B｜P17 = B｜P18 = B｜P19–P25 = 已处理
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），修复器**故意未写**：
+- **11.1** —— 仪器已建成（`chart_geometry.py` / `f625ff5`），修复器**故意未写**：
   已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由"重新测量仍在碰撞"决定。

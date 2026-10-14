@@ -1,6 +1,6 @@
 # P12.1 — Brief → StyleBible：十个键逐个裁定，以及只生成一个键的理由
 
-> 执行 agent 交付。工单 `docs/WORKORDER_P36_P12_1_GENERATION.md`，基线 `20e69f6`。
+> 执行 agent 交付。工单 `docs/WORKORDER_P36_P12_1_GENERATION.md`，基线 `c8a7b36`。
 > 本文件是**裁定与测量记录**，不是放行决定。
 > 产物：`pipeline/director/`（生成侧）、`tests/test_p12_1_depth_cue_generation.py`（守卫）、
 > `studio/scripts/p12_1_depth_cue_probe.ts`（真实渲染探针）。

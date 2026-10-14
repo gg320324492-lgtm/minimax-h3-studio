@@ -1,6 +1,6 @@
 # P12 Director Agent — 范围裁定：先证明哪一段值得建
 
-> 执行 agent 交付。工单：`docs/WORKORDER_P12_DIRECTOR_BOUNDARY.md`，基线 `e71cb56`。
+> 执行 agent 交付。工单：`docs/WORKORDER_P12_DIRECTOR_BOUNDARY.md`，基线 `072ad82`。
 > 本文件是**测量记录**，不是放行/退回裁定。是否实现由指挥窗口与用户决定。
 > **本项没有实现 Director Agent，一行生产代码都没有改。**
 
@@ -10,7 +10,7 @@
 
 1. **交付图谱实际只设了 1 个 `style_bible` 键，不是工单写的 4 个。**
    `pipeline/examples/showcase_demo.json` 只设 `typography`；另 3 个键
-   （`palette` / `motionLanguage` / `cameraLanguage`）在 **`7bef0a8` 已被删掉**。
+   （`palette` / `motionLanguage` / `cameraLanguage`）在 **`974f6ed` 已被删掉**。
    工单的 "4 键" 数字来自 `studio/public/jobs/showcase_demo.json`——
    一个 **gitignore 的 staging 副本**（`.gitignore:26`）。详见 §4.1。
 
@@ -150,7 +150,7 @@ design/styleBible.tsx:33,76                 ← 声明与默认值
 | **Brief** | **零实现** | `grep -rn "brief\|Brief" --include=*.py pipeline/ studio/scripts/ tests/` → **0 命中** |
 | **StyleBible** | **已存在（解析侧），生成侧零实现** | `styleBible.tsx` 90-102 行 `resolveStyleBible` 完整；但无任何生成器 |
 | **Storyboard** | **零实现** | `grep -rn "storyboard\|Storyboard" --include=*.py ...` → **0 命中** |
-| **SceneGraph** | **已存在** | `pipeline/scene_graph.py`（`load`/`schema`/`beat_aligned_durations`/`main`），`a55d03d` 刚改成读 JSON Schema |
+| **SceneGraph** | **已存在** | `pipeline/scene_graph.py`（`load`/`schema`/`beat_aligned_durations`/`main`），`8c7522e` 刚改成读 JSON Schema |
 | **AssetPlan** | **半成品（死头）** | `visual_qa.py::rule_missing_asset` 只剩 4 条硬编码 SFX 路径 |
 
 补充检索（Python 侧，`pipeline/ studio/scripts/ tests/`）：
@@ -245,7 +245,7 @@ resolveStyleBible(PARSED doc)   RADIUS.card = 20   depthCue = ["0 14px 40px rgba
 
 照着 7 键 schema 自动生成，`chartLanguage` 与 `audioLanguage`
 **必然**被生成（它们是声明的一部分），而这两键**没有任何消费方**。
-`7bef0a8` 已经实测过一次这个失败：那份图谱声明了 **15 个键，
+`974f6ed` 已经实测过一次这个失败：那份图谱声明了 **15 个键，
 只有 1 个生效**。工单的"哑声明审计结论"在 §1 得到了第二次独立确认。
 
 **更精确地说，哑声明有三层，粒度不同：**
@@ -287,12 +287,12 @@ resolveStyleBible(PARSED doc)   RADIUS.card = 20   depthCue = ["0 14px 40px rgba
 | `studio/public/jobs/showcase_demo.json` | `cameraLanguage` `motionLanguage` `palette` `typography` | ❌ **gitignore（`.gitignore:26`）** |
 
 查证：`git log -p -- pipeline/examples/showcase_demo.json` 显示
-`7bef0a8 "P6.5-6.8: a light theme that is actually light, and a graph that is actually wired"`
+`974f6ed "P6.5-6.8: a light theme that is actually light, and a graph that is actually wired"`
 **删除了那 3 个键**，commit message 原文：
 
 > "The demo graph's style_bible declared 15 keys and exactly ONE took effect."
 
-即：**工单说的"4 键"是 `7bef0a8` 之前的旧状态**，
+即：**工单说的"4 键"是 `974f6ed` 之前的旧状态**，
 而那 3 个键被删掉**正是因为它们是惰性的**。
 `studio/public/jobs/` 下那份是**上次 staging 的残留副本**（gitignore 的 scratch），
 **不是交付物**。
@@ -388,7 +388,7 @@ def generate_style_bible(brief: dict, *, allowed: dict[str, set[str]]) -> dict:
 
 - `scene_graph.py::load` / `schema()` — 读 `showcase-v1`，拿到 scene 列表与类型
 - `scene_graph.py::beat_aligned_durations` — 时长是 beat 对齐的，
-  **不是自由值**；生成器若自造时长会与 §1.2 的 `41947f6` 撞上
+  **不是自由值**；生成器若自造时长会与 §1.2 的 `1b7e2f1` 撞上
 - `shotspec.py::ShotSpec` / `validate_atomic` — 镜头文本的原子性校验
 
 **守卫怎么写，且必须能红**（本项已交付三条实测有效的）：

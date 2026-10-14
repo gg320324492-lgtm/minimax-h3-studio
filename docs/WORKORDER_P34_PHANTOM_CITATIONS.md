@@ -1,7 +1,7 @@
 # 执行指令 — 四簇假注释/死引用全部修掉（B1 / A4+A6 / B3 / B4）
 
 > 给执行 agent。本文件**自包含**。你只负责执行，**不做放行/退回裁定**。
-> 四簇是 P33 勘察（`32c3b9d`）列出的待裁定项，用户已裁定：**全部修掉**。
+> 四簇是 P33 勘察（`b6825a5`）列出的待裁定项，用户已裁定：**全部修掉**。
 
 ---
 
@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `b497a43`（已推送，与 `origin/main` 同步） |
+| HEAD | `830ba8b`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `632 passed, 4 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 

@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `eeb7d39`（已推送） |
+| HEAD | `3fce07c`（已推送） |
 | 基线 | **⚠️⚠️ 本机全量套件测不出稳定数字。** 三次连跑得到三个不同失败集合，<br>而每个失败文件单跑都绿。**⇒ 你报的每个数字都要注明：是否并发、是否清过探针。**<br>**开工前先自己测一次当基线**，不要沿用工单里的任何数字。 |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 

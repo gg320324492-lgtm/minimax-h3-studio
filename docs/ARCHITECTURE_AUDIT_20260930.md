@@ -42,7 +42,7 @@
 
 ### 🔴 R1 — 敏感文件未受 gitignore 保护（**已于本日修复**）
 文档曾声称敏感文件「已 gitignore」，实测 `git check-ignore` 全部 NOT-IGNORED；`git add -A` 会把 40 个文件（剧本/种子/timeline/workflow JSON/14 个生产脚本）重新提交进**公开**仓库。根因：规则段被历史重写覆盖。
-**修复**：`**/00_project/{timeline,dialogue,seed_manifest,story,shots,sfx_times}*.json`、`workflows/`、12 个 prompt 型脚本、归档目录，逐条 `git check-ignore` 验证 12/12（提交 c8014af / b4bcb54）。
+**修复**：`**/00_project/{timeline,dialogue,seed_manifest,story,shots,sfx_times}*.json`、`workflows/`、12 个 prompt 型脚本、归档目录，逐条 `git check-ignore` 验证 12/12（提交 13bf0d9 / 6127ca9）。
 
 ### 🔴 R2 — 已交付母版由当前无法运行的脚本生成
 `09_final_v2/render_report.md` 记录母版超分来自 `pipe_4k_fast.py`；该脚本 `import _deprecated`（模块已删），生产解释器下**直接崩溃**。现行 `sr_pipeline_v2.py` **从未产出过交付母版**。→ 升级报告的对比基准已断。

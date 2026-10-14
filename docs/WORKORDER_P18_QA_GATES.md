@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `60f8d0c`（已推送，与 `origin/main` 同步） |
+| HEAD | `f9d7148`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `395 passed, 2 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -53,7 +53,7 @@
 | `rule_blur` | `np.ndarray` | Technical |
 | `rule_aspect` | 尺寸元组 | Technical |
 | `rule_missing_asset` | **props 字典** | Technical |
-| `rule_duplicate_check_props` | **路径** | Technical（刚接上，`6e86b46`） |
+| `rule_duplicate_check_props` | **路径** | Technical（刚接上，`2cac275`） |
 
 **三种输入形态**（像素数组 / 文件对 / 图谱）混在十一个函数里。
 **Motion 层只有一条规则**（`rule_freeze`）—— 而它需要两个路径，
@@ -80,7 +80,7 @@ Exit 1 on any FAIL, and on any UNVERIFIABLE.
 ### 4. 「三态而非两态」已是本项目既定原则
 
 `PASS` / `FAIL` / `UNVERIFIABLE`，且 **UNVERIFIABLE 退出非零**
-（`6e86b46` 已把 `visual_qa.py` 对齐到这个原则）。
+（`2cac275` 已把 `visual_qa.py` 对齐到这个原则）。
 **新门禁必须继承这条**，不能退回"查不了就当过"。
 
 ---
@@ -223,7 +223,7 @@ Exit 1 on any FAIL, and on any UNVERIFIABLE.
   都拒绝未知 flag；`check_contract.py` 不接受任何参数）
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），修复器**故意未写**：
+- **11.1** —— 仪器已建成（`chart_geometry.py` / `f625ff5`），修复器**故意未写**：
   已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由

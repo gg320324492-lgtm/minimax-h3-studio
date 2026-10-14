@@ -9,7 +9,7 @@
 
 | 项 | 值 | 来源 |
 |---|---|---|
-| HEAD（开工） | `be7ce2f` | `git log` |
+| HEAD（开工） | `87abf64` | `git log` |
 | 开工基线（**未改动的树**） | **1 failed, 538 passed, 4 skipped**（378.03s） | 实测，标准跑法 |
 | 收尾基线（第 1 次） | **552 passed, 4 skipped**（386.88s），**0 failed** | 实测，标准跑法 |
 | 收尾基线（第 2 次） | **1 failed, 551 passed, 4 skipped**（421.60s） | 实测，标准跑法 |

@@ -36,7 +36,7 @@
 
 | 项 | 值 |
 |---|---|
-| HEAD（开工时） | `9a53c9f` |
+| HEAD（开工时） | `f078c95` |
 | **基线测试** | **`719 passed, 4 skipped`**（实测，与工单数字一致） |
 | 基线跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=.../test_take_selection_behaviour.py` |
 | ollama | 在跑；`qwen2.5vl:7b`，`5969245856` 字节。**未安装、未下载、未修改。** |
@@ -986,7 +986,7 @@ $ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
 
 | 轮次 | 结果 |
 |---|---|
-| 基线（开工时，HEAD `9a53c9f`） | **719 passed, 4 skipped** |
+| 基线（开工时，HEAD `f078c95`） | **719 passed, 4 skipped** |
 | 加了 P46 之后，第一轮 | **2 failed, 737 passed, 4 skipped** |
 | 修掉 §八 第 8 条之后（最终） | ****739 passed, 4 skipped** (517.30 s)** |
 

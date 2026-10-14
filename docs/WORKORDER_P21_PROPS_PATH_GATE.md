@@ -11,7 +11,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `03527c9`（已推送，与 `origin/main` 同步） |
+| HEAD | `beb3b82`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `431 passed, 3 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -64,7 +64,7 @@ this function checking for something structurally impossible:
 
 ### 3. ⚠️ 而现在**有**可检查的字段了 —— 这是本项成立的前提
 
-P12 与 `836f532` 之后，`radius` / `shadow` / `depthCue` 三段**已接进 schema**
+P12 与 `c1e9ce1` 之后，`radius` / `shadow` / `depthCue` 三段**已接进 schema**
 （`StyleBibleSchema` 现 10 键，`.strict()`）。
 
 **请核实：这三段里有没有「图谱声明了某个路径，而磁盘上没有」这一类可做的检查？**
@@ -164,7 +164,7 @@ P12 与 `836f532` 之后，`radius` / `shadow` / `depthCue` 三段**已接进 sc
 - `out/` 下任何证据目录；`DiagOutputDir`
 - `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `unavailable_findings()` 的 4 条占位符**
-- **不要动 `rule_duplicate_check_props`**（`6e86b46` 刚接上的）
+- **不要动 `rule_duplicate_check_props`**（`2cac275` 刚接上的）
 - **不要动 P19 的 `SIGNATURE_EQUAL = 0.0`**、**P20 的 `DUP_THRESHOLD = 0.5`**
 - **不要扩 schema** —— 本项不加字段
 - **不要顺手修 P18 留下的其余三项**（`contrast` 永久失败 / `flicker` 缺失 / per-job 基线）

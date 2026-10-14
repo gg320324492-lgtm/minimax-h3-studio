@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `80d2021`（已推送，与 `origin/main` 同步） |
+| HEAD | `aec2c3d`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `355 passed, 2 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -25,7 +25,7 @@
 
 ### 1. 上一项刚闭合的缺陷
 
-`836f532` 修掉了「合并了但未声明 → `success=true` 静默剥掉」：
+`c1e9ce1` 修掉了「合并了但未声明 → `success=true` 静默剥掉」：
 `radius` / `shadow` / `depthCue` 三段已接进 schema，`depth` 按裁定删掉合并。
 守卫 `tests/test_style_bible_merges_only_declared.py` 双向把关。
 
@@ -124,7 +124,7 @@ undeclared keys that would become hard errors: (零)
 若它只抓得住一个，如实报出来。
 
 **docstring 里要写明这个失效家族的全貌**：
-P11 `audio`（声明了但没人读）、`836f532` 的四段（有人读但喂不进去）、
+P11 `audio`（声明了但没人读）、`c1e9ce1` 的四段（有人读但喂不进去）、
 本项要关的根（schema 开放 → 静默剥离 → 两者都会发生）。
 **三者是同一个温床的三种病。**
 
@@ -192,7 +192,7 @@ P11 `audio`（声明了但没人读）、`836f532` 的四段（有人读但喂�
 **P14** Render Worker / Fast Preview、**P15** SR 路由、**P16**–**P18**。
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** Repair Planner —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），
+- **11.1** Repair Planner —— 仪器已建成（`chart_geometry.py` / `f625ff5`），
   修复器**故意未写**：已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由

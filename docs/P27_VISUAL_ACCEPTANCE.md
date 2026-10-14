@@ -9,7 +9,7 @@
 
 | 项 | 值 | 来源 |
 |---|---|---|
-| HEAD | `21b4316`（与 `origin/main` 同步） | `git log` |
+| HEAD | `cbcab55`（与 `origin/main` 同步） | `git log` |
 | 开工基线 | **528 passed, 4 skipped**（312.78s） | 实测，标准跑法 |
 | 收尾基线 | **539 passed, 4 skipped**（298.25s）＝ 528 + 11 条新守卫 | 实测，标准跑法 |
 | 三个 sha256（开工） | `7e7d586a…` / `91e3463c…` / `120b11da…` | 实测 |

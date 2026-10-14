@@ -1,7 +1,7 @@
 # 执行指令 — 修 `rule_duplicate` 的错配：一把尺子量了两种东西
 
 > 给执行 agent。本文件**自包含**。你只负责执行，**不做放行/退回裁定**。
-> 这是 P18 勘察（`19e2207`）留下的**最高价值未决项**，且它**明确没有动阈值** —— 理由正当，请你复核。
+> 这是 P18 勘察（`9a76cfc`）留下的**最高价值未决项**，且它**明确没有动阈值** —— 理由正当，请你复核。
 
 ---
 
@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `925e69e`（已推送，与 `origin/main` 同步） |
+| HEAD | `6be7acc`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `415 passed, 2 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -62,7 +62,7 @@ point: a second threshold for the same question is a second answer.
 **请核实**：`take_ranker.py` 里到底有没有一个"重复/相似判定阈值"？
 若有，它是不是 0.5？若**没有** —— **那么 `rule_duplicate` 的 docstring 声称的
 "同一把尺子"就是一个从未存在的事实**，而这正是本项目最核心的那类失效
-（`55b3ac5` 的教训：**docstring 声称的性质必须由代码兑现**）。
+（`9254f2d` 的教训：**docstring 声称的性质必须由代码兑现**）。
 
 ### 3. 参考实测数据（P18 测的，请复核）
 
@@ -219,7 +219,7 @@ per-job 基线文件 + **任何偏离即拦**（P18 的最小设计）。
 P12 = 零段｜P13 = B + C｜P14 = B + C｜P15 = B｜P18 = B
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），修复器**故意未写**：
+- **11.1** —— 仪器已建成（`chart_geometry.py` / `f625ff5`），修复器**故意未写**：
   已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由

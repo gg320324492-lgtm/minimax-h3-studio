@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `7e38898`（已推送） |
+| HEAD | `8073f38`（已推送） |
 | 基线 | **`757 passed, 4 skipped`**（⚠️ 本机并发下测不出稳定数字，见第五节） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -238,7 +238,7 @@ and one `git checkout --` that discarded uncommitted work"*。
 - **并行跑**：**P49** 在修全片每场景 1.13 秒的静止（`charts_demo.json` + `CameraRig.tsx`）。
 - **待派**：`c05_bubble` 的 `chart.sizes` 惰性字段（回退值静默替换真实意图）、
   `rule_font_size` 的判定被 `--declared-px` 劫持（仪器是真的，判据不看画面）。
-- **P50** —— 元守卫的洞已闭（`6fc9b82`）。**本项是它的续。**
+- **P50** —— 元守卫的洞已闭（`c8bf0a8`）。**本项是它的续。**
 - **P43 `data-plane-3d`** —— 判 C。**`video`** —— 等外部素材。
 - **P16 / P17** —— 卡在 "premium" 无判据。
 - **已裁定关闭**：11.1 / 12.2 / 12.3 / 13.1 / 14.1 / 14.2 / 15.1 / 15.2 / 18.1。

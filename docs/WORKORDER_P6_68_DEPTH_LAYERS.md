@@ -177,7 +177,7 @@ const depth = DEPTH_CUE[Math.min(i, DEPTH_CUE.length - 1)] ?? SHADOW.floating;
 **P12–P18 七段全部未开工**。
 
 **P11 剩两项，卡在同一个解锁条件**：
-- **11.1** —— 仪器已建成（`chart_geometry.py`，`c6d7a5a`），修复器故意未写：
+- **11.1** —— 仪器已建成（`chart_geometry.py`，`f625ff5`），修复器故意未写：
   已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由

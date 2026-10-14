@@ -1,7 +1,7 @@
 # 执行指令 — 补守卫：白名单名字可以被重新绑定到源文件
 
 > 给执行 agent。本文件**自包含**。你只负责执行，**不做放行/退回裁定**。
-> 本指令**取代**先前的 `docs/WORKORDER_P11_TEST_POLLUTION_FIX.md`（那项已完成，提交 `0567d2c`）。
+> 本指令**取代**先前的 `docs/WORKORDER_P11_TEST_POLLUTION_FIX.md`（那项已完成，提交 `994b7a8`）。
 > 范围很小：一条守卫 + 它的变异测试。
 
 ---
@@ -22,7 +22,7 @@
 
 ## 一、指挥窗口复验发现的洞（已实测，非推断）
 
-`0567d2c` 的核心成果是对的：`space_tokens(path=...)` 已接受副本路径，
+`994b7a8` 的核心成果是对的：`space_tokens(path=...)` 已接受副本路径，
 三条测试改用 `tmp_path` 副本，全量跑完源文件逐位未变——指挥窗口独立复现了这三条。
 
 **但那条结构性守卫有一个真漏洞。**
@@ -54,7 +54,7 @@ dst.write_bytes(src_bytes.replace(b'lg: 40', b'lg: 88'))
 | 结构性守卫 | **通过**（`dst` 在白名单里） |
 | 最终为何转红 | `space_tokens()` 的断言失败，**不是**那条守卫 |
 
-**所以 `0567d2c` 声称的"no test holds a writable handle"尚未成立。**
+**所以 `994b7a8` 声称的"no test holds a writable handle"尚未成立。**
 原 bug 的形状仍能重现并污染文件，只是这次被别的断言偶然抓到。
 
 （指挥窗口已把源文件还原为 `6a89a5b4…`，与 HEAD 一致，全量 235 passed。）

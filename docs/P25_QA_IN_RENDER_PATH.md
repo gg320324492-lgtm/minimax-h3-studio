@@ -1,6 +1,6 @@
 # P25 — 把门禁接进渲染路径：实测、裁定、接线与守卫
 
-> 执行记录。所有数字都来自本机实测（`E:\Minimax-H3`，commit `c284f2f` + 本项改动），
+> 执行记录。所有数字都来自本机实测（`E:\Minimax-H3`，commit `5159e96` + 本项改动），
 > 复现命令写在每节旁边。**未测的一律标注为未测。**
 
 ---
@@ -83,7 +83,7 @@ node studio/bin/render.mjs --comp FinanceShowcaseWide \
 ```
 
 **绿，而且绿得对。** 4 条 UNAVAILABLE 不进退出码（`visual_qa.py:1534` 的条件里没有
-UNAVAILABLE），这是 `6e86b46` 定的语义，本项一个字没动。
+UNAVAILABLE），这是 `2cac275` 定的语义，本项一个字没动。
 
 **把 scene 0 的类型换成 `video`**（声明了、没有渲染器、会渲成 "not implemented in P4"）：
 
@@ -241,7 +241,7 @@ if (argv.includes('--gate-props')) {
   GBK stdout 会在第一个非 ASCII 字符上抛 `UnicodeEncodeError`，
   **闸看起来会像崩了而不是像红了** —— 那会把一次质量问题报成一次工具故障。
 - **默认关。** `--props` 也吃非图谱的 timeline / report props，
-  那类 props 会被 `graph_scene_renderable` 报 UNVERIFIABLE 而非零退出（`6e86b46`）。
+  那类 props 会被 `graph_scene_renderable` 报 UNVERIFIABLE 而非零退出（`2cac275`）。
   默认开会让**每一个非 showcase 渲染**都红，红的原因与片子无关 ——
   **那正是 P22 修掉的「永久红的闸」，换个入口装回去。**
   `test_the_gate_is_off_unless_asked_for` 把「默认关」钉成事实，
@@ -340,7 +340,7 @@ M4 就是给它准备的、也是它的**反证**：它不是恒绿。
 
 ### sha256 收尾比对
 
-| 文件 | 开工时（`c284f2f`） | 收尾时 | 结论 |
+| 文件 | 开工时（`5159e96`） | 收尾时 | 结论 |
 |---|---|---|---|
 | `studio/scripts/visual_qa.py` | `7e7d586a747c9fb1…` | `7e7d586a747c9fb1…` | **一致，一行没动** |
 | `studio/scripts/frame_baseline.py` | `91e3463cf0fe25a2…` | `91e3463cf0fe25a2…` | **一致，一行没动** |
@@ -352,7 +352,7 @@ M4 就是给它准备的、也是它的**反证**：它不是恒绿。
 
 | 时点 | 结果 |
 |---|---|
-| **实测基线**（改之前，`c284f2f`） | **494 passed, 3 skipped in 233.79s** |
+| **实测基线**（改之前，`5159e96`） | **494 passed, 3 skipped in 233.79s** |
 | **改之后**（干净跑，无并发改动） | **2 failed, 500 passed, 3 skipped in 270.78s** |
 | 本项新增守卫单独跑 | **8 passed** |
 | `test_p14_render_entry_points.py` 单独跑 | **10 passed** |

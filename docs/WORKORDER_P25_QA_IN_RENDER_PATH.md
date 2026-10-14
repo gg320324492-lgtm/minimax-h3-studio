@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `c284f2f`（已推送，与 `origin/main` 同步） |
+| HEAD | `5159e96`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `494 passed, 3 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -30,7 +30,7 @@
 
 ## 一、指挥窗口已实测的事实（本指令建立在此之上，不是引述）
 
-### 1. P17 测出的问题（`c284f2f`）
+### 1. P17 测出的问题（`5159e96`）
 
 > **「一份 45s、1080p60 的 demo 今天就能写出来（schema 无时长上限），但无法被察觉。」**
 > 实测：`--props` 对 **1.0s 的片子、300.0s 的片子、640×480@24 都退出 0**；
@@ -113,7 +113,7 @@ read_baseline(path) / write_baseline(path, profile, subject)
    是为 46 GB 事故写的，**接线不能绕过它**（新增异常路径尤其危险）。
 
 ⚠️ **不要动 `visual_qa.py` 的四态语义或退出码条件** ——
-`UNVERIFIABLE` 退出非零是 `6e86b46` 立的规矩，
+`UNVERIFIABLE` 退出非零是 `2cac275` 立的规矩，
 **「测不了就当过」正是本项目修过的失效**。
 
 ### 第 3 件事：给"渲染路径上确实有那道闸"上一条守卫

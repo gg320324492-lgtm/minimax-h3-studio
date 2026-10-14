@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `e71cb56`（已推送，与 `origin/main` 同步） |
+| HEAD | `072ad82`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `334 passed, 2 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -37,7 +37,7 @@
 
 ### 2. 五段链路里，有一段已经存在，有一段是死头
 
-`scene_graph.py` 已经存在且**上轮刚把它改成读 JSON Schema**（`a55d03d`）。
+`scene_graph.py` 已经存在且**上轮刚把它改成读 JSON Schema**（`8c7522e`）。
 它对应链路里的 **SceneGraph** 段（校验侧）。
 
 **AssetPlan 段是死头**：`visual_qa.py` 的 `missing_asset` 规则
@@ -200,7 +200,7 @@
 **P15** SR 路由、**P16**、**P17**、**P18**。
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** Repair Planner —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），
+- **11.1** Repair Planner —— 仪器已建成（`chart_geometry.py` / `f625ff5`），
   修复器**故意未写**：已交付图表比值 **0.278**，无碰撞可修，
   而唯一能清碰撞的手段（缩短 labels）正是 11.2 禁掉的。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。

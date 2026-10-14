@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `7950166`（已推送，与 `origin/main` 同步） |
+| HEAD | `51667c0`（已推送，与 `origin/main` 同步） |
 | 基线 | **实测 `559 passed, 4 skipped`**（含前一 agent 的 7 条新守卫，已绿） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 

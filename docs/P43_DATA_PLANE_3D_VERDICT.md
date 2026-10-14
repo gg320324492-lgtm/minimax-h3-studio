@@ -24,7 +24,7 @@
 |---|---|
 | `git log --all -S'data-plane-3d'` | **27 个 commit**，逐个看过 diff |
 | `git log --all -S'data_plane'` | **0**（该 token 从未以蛇形出现过） |
-| 首次出现 `71da3cd`（P0） | 只有**依赖裁定** + 名单里一个**类型名**，无任何画面描述 |
+| 首次出现 `8fcd15f`（P0） | 只有**依赖裁定** + 名单里一个**类型名**，无任何画面描述 |
 | 全树 `point cloud`/`点云`/`particle`/`粒子`/`立体`/`plane-3d` | **0 处**相关内容描述 |
 | `docs/ARCHITECTURE_AUDIT_20260930.md` | **0** 次提到该类型 |
 | `SHOWCASE_SCHEMA.md` | **不存在**（总计划 `:100` 列为待产出，从未写） |

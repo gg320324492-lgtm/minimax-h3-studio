@@ -51,11 +51,11 @@ studio/src/templates/finance-showcase/scenes/DataColumns.tsx:154
 
 | 提交 | 日期 | 引入 |
 |---|---|---|
-| `71da3cd` | 2026-09-30 | P0 审计，**创建** `UPGRADE_MASTER_PLAN.md`（第 104 行「参考视频第 24 秒以后」） |
-| `a707d31` | 2026-09-30 | P3 scene graph |
-| `3cd20ff` | 2026-09-30 | P4 FinanceShowcaseWide |
+| `8fcd15f` | 2026-09-30 | P0 审计，**创建** `UPGRADE_MASTER_PLAN.md`（第 104 行「参考视频第 24 秒以后」） |
+| `c779bb9` | 2026-09-30 | P3 scene graph |
+| `347bff1` | 2026-09-30 | P4 FinanceShowcaseWide |
 
-**原始任务书已经不可考。** `71da3cd` 之前，transcript
+**原始任务书已经不可考。** `8fcd15f` 之前，transcript
 （`de13ac51-0410-498f-a45e-da600163098e.jsonl`）的第一条 user 消息是
 「你来担任这个项目新阶段建设的复验官 / 这是第一阶段内容：」—— **「第一阶段内容」之后
 的内容在 transcript 里已经丢失**（该条 content 以这句话结束，紧接的就是 agent 自己的
@@ -78,7 +78,7 @@ studio/.../DataColumns.tsx:154          ← 注释
 
 ### 2.4 手工调的证据：token 是试出来的
 
-`3cd20ff` 的 commit body 自述了调参过程（原文）：
+`347bff1` 的 commit body 自述了调参过程（原文）：
 
 > Rendered 801 frames at 1920x1080@60 in 22.8s (~35x realtime). **Fixed three
 > layout defects found by inspecting frames**: absolutely positioned planes
@@ -104,9 +104,9 @@ studio/src/templates/finance-showcase/design/tokens.ts（源码注释）
 
 | 项 | 答案 | 证据 |
 |---|---|---|
-| 当初的手段 | **人眼看片 + 抽帧目检 + 手工调 token** | `3cd20ff` commit body；`design/tokens.ts` 注释 |
+| 当初的手段 | **人眼看片 + 抽帧目检 + 手工调 token** | `347bff1` commit body；`design/tokens.ts` 注释 |
 | 是否有产物 | **否**。没有 `reference_analysis.json`，没有对照帧目录，没有任何片源派生数据 | `git ls-files` 反查零命中 |
-| 产物在哪 | **不在**。P4 的产物是四份 `.tsx` 组件 + `tokens.ts`，它们是**复刻品**不是**测量** | `3cd20ff --stat` |
+| 产物在哪 | **不在**。P4 的产物是四份 `.tsx` 组件 + `tokens.ts`，它们是**复刻品**不是**测量** | `347bff1 --stat` |
 | 与 12 维度的差距 | **12/12 全无**。四个 scene 的 token 里没有一条能追溯到片源的数值 | 见第 4 节 |
 
 > **⚠️ 这不是指控。** 当时没有 `reference_analyze.py` 要跑，也没有片源文件在手。
@@ -187,7 +187,7 @@ studio/public/audio/bgm_beats.json
    beats: 208 条
 ```
 
-P9 提交 `41947f6` 的标题就是「the tempo in the graph was three beats a minute
+P9 提交 `1b7e2f1` 的标题就是「the tempo in the graph was three beats a minute
 wrong」——图谱原声明 126 BPM，与这条 Mixtrack 音轨的 129.2 差 3.00，最小二乘拟合
 得 128.998。**这条 BGM 是本项目自己的音乐资产，与参考片无关。** 所以 12 个维度里
 唯一的「量化对齐」也是对**自备音轨**做的，不是对片子的。

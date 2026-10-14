@@ -10,7 +10,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `a9038d9`（已推送） |
+| HEAD | `12509b0`（已推送） |
 | 基线 | **先自己实测**（见第一节第 3 条：**当前有 1 条已知红**） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -57,7 +57,7 @@
 工单（及 `visual_qa.py:1051-1054` 的 docstring）都写「22 声明 / 13 渲染 / **9 落空**」。
 **它实测：22 声明 / 20 渲染 / 2 落空**（`video`、`data-plane-3d`）。
 
-**原因**：`a7f02b8`（P29）验收了七个新渲染器
+**原因**：`a6989f2`（P29）验收了七个新渲染器
 （`browser-window`/`stat-card`/`card-grid`/`data-table`/`quote`/`logo`/`outro`）。
 
 **⇒ 按「避开那 9 种」写的 Planner 会去避开 7 种现在渲染正常的类型，
@@ -90,7 +90,7 @@
 
 ```
 FAILED test_p4_9_ledger_numbers_resolve.py::test_the_two_numbers_...  ← P39 修的就是它
-FAILED test_markdown_text_is_intact.py                                ← 已在 5a754d2 修掉（现在应当绿）
+FAILED test_markdown_text_is_intact.py                                ← 已在 058dc5c 修掉（现在应当绿）
 FAILED test_p14_render_entry_points.py                                ← GBK 控制台假象，源码零 U+FFFD
 ```
 

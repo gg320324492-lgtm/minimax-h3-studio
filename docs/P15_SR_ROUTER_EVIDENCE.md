@@ -1,6 +1,6 @@
 # P15 — SR Router: the routing signal has no consumer, and nothing shipped needs one
 
-> Measured on this machine at `59f2cc3`, node v24.16.0, py 3.12.
+> Measured on this machine at `a7366fe`, node v24.16.0, py 3.12.
 > Guard: `tests/test_generative_signal_has_no_consumer.py` (6 tests).
 > This file records measurements. It does not implement anything.
 
@@ -78,7 +78,7 @@ of the TS flag.
 ## 2. How it got here: introduced by P3 as a declaration, never finished
 
 ```
-a707d31  P3: showcase-v1 scene graph (the new centre of the architecture)
+c779bb9  P3: showcase-v1 scene graph (the new centre of the architecture)
 ```
 
 The commit message says: *"Generative routing is declared, not guessed: only
@@ -87,10 +87,10 @@ engine."*
 
 **There was never a consumer — not then, not at any point since.** P3 shipped
 `showcase-v1.ts`, `scene_graph.py`, the JSON Schema and the parity test; the TS
-side of P3 had no `FinanceShowcaseWide` at all (it arrived in `3cd20ff`, P4, which
+side of P3 had no `FinanceShowcaseWide` at all (it arrived in `347bff1`, P4, which
 read `r.id`/`r.startFrame`/`r.durationInFrames`/`r.type` and never added a fifth).
 
-`git log -S generative -- studio/` returns exactly one commit: `a707d31`. No
+`git log -S generative -- studio/` returns exactly one commit: `c779bb9`. No
 later commit has ever added, removed or read the field. It is not a regression
 from a working version that got broken; **it is a contract that was written down
 and never implemented.** The parity test that ships alongside it asserts the two
@@ -248,7 +248,7 @@ was correct); `render.mjs` is **LF-only, 162 lines**.
 
 ## 8. Side observation: is there a third "entry silently passes"?
 
-The family (`6e86b46` `visual_qa.py`, `306f327` `render.mjs`) is **not
+The family (`2cac275` `visual_qa.py`, `b017b2a` `render.mjs`) is **not
 reproduced**. Every entry point with a flag surface now rejects unknown flags
 explicitly:
 
@@ -268,7 +268,7 @@ per the work order.
 
 | Run | Result |
 |---|---|
-| Baseline (`59f2cc3`, before this change) | **389 passed, 2 skipped** in 197.49s |
+| Baseline (`a7366fe`, before this change) | **389 passed, 2 skipped** in 197.49s |
 | After adding the guard | **395 passed, 2 skipped** (389 + 6 new) |
 
 ## 10. Reproducing

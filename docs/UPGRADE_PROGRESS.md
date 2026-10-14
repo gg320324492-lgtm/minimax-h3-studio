@@ -88,7 +88,7 @@
 | 4.6 | Scene D — Calendar / Data Grid（34-38s） | ✅ | 30 格月历，值由 seed 确定，高亮格最后到达并带辉光；逐格 stagger |
 | 4.7 | P8 元数据驱动（提前兑现） | ✅ | `showcaseMeta` 从图谱读 width/height/fps/durationInFrames；实测 1920×1080@60、801 帧。**踩到并修掉一个隐蔽坑：Remotion 4.0.529 的 calculateMetadata 收到的是参数对象 `{props, defaultProps,...}` 而非 props 本身**，直接当 props 解析会永远走回退分支 |
 | 4.8 | **style_bible 接线**（复验要求，P5 前置） | ✅ | 复验发现图谱声明的 palette/typography/motionLanguage/cameraLanguage **全部被忽略**——四个 scene 静态 import TS tokens，声明式图谱只能驱动「有哪些 scene、多长、画什么内容」，不能驱动「长什么样」。字段名还三方漂移（schema/Python=`style_bible`，TS=`styleBible`），zod 默认 strip 使其静默失效。**修法**：新增 `design/styleBible.tsx`（resolveStyleBible 按默认键过滤合并 + React Context + `useDesign()` 别名钩子），场景一律走 context；字段名统一为 `style_bible`。**验证**：只改图谱 accent 色与 KPI 字号，渲染结果真实改变（截图对比金色→青色、232→190px）。4 条测试锁住（字段名一致/scene 不得直接 import tokens/主模板必须传图谱值/合并必须按已知键做类型校验） |
-| 4.9 | 视觉缺陷修复 | ⚠️ **两次假账，已由渲染取证推翻** | Browser Stack 右边缘裁切 + Data Columns 标题叠压。<br>**第一次"已修"是假的**：修复当时确实应用并目检通过，但 P5 迁移风格时执行了 `git checkout .../scenes/`，把未提交的布局改动一并回滚，之后未复验就写下了"已修"（commit `532b584` 与本表 4.9 同时声称「间距 330→250、窗宽 560→520」）。复验官以「代码里搜不到 250/520」+自行重渲双重取证推翻。<br>**第二次"已修"也是假的（本窗口 2026-10-09 查出）**：那句「现已真正修复并重渲抽帧确认」里的六个数字，**两个在全仓任何地方都不存在** —— `场高 480` 与 `标题 translateY(-330*s)`。**`DataColumns.tsx` 里根本没有 `translateY`**；`330` 全仓零命中；`480` 只作 `48000` 音频采样率出现。<br>**渲染取证（本窗口独立跑 `still.mjs --frames 548` 复核，非引述）**：标题 cream 像素行 **220–362**，说明文字（`accounts opened`）到 **475**，最高柱顶 **609** ⇒ **三种口径下的间隙分别为 247 / 134 / 81px，全部为正**。`charts` 的四种 columnSeed（42/1/7/999）下最小间隙 **71px**，无一次为负。**⇒ 标题叠压现在不存在。**<br>**真正的修复机制与账本写的完全不同**：是 `DataColumns.tsx:51` 起改成**常规流纵向排布**（标题在上、柱场在下，**重叠在浏览器里无法表示**）。该处注释原话记着缺陷的成因：「二者过去都是绝对定位、以 `top: 50%` 居中，**柱场高 520px**，于是柱场顶边在 y=323 而标题下的说明在 y=398 结束 —— **说明因此永远落在柱带里**，好不好看取决于柱子种子：短柱读作景深，高柱就把文字击穿。**那是一个只能靠运气才对得上的布局。**」**⇒ 当时场高是 520（不是 480），修复是重排（不是 translateY）。**<br>**六个数字逐个核对的实测生效值**：Browser Stack = `spreadX 300 / spreadZ 150 / windowWidth 520`（**250 与 110 只是组件默认值，图谱里被覆盖**）；Data Columns = `columnWidth 44 / fieldHeight 420`（**账本写的 480 是错的**）。**本项未改任何布局** —— 取证显示无需改。<br>**守卫**：`tests/test_p4_9_ledger_numbers_resolve.py`（5 条），判据是「一条修复记录引用的布局值，**必须是它所命名字段的真实值**」（在属主组件的默认或图谱覆盖里，**注释已剥离**）。**⚠️ 它第一版守卫的判据是「数字在仓库某处存在」，被「删掉 520」这个变异击穿而存活**（`520` 也出现在 `depthCue.check.ts` 的夹具里）—— 它据此改成**字段归属**判据，并写明那是**漏洞而非无效变异**。全量 517→**522 passed, 4 skipped**。 |
+| 4.9 | 视觉缺陷修复 | ⚠️ **两次假账，已由渲染取证推翻** | Browser Stack 右边缘裁切 + Data Columns 标题叠压。<br>**第一次"已修"是假的**：修复当时确实应用并目检通过，但 P5 迁移风格时执行了 `git checkout .../scenes/`，把未提交的布局改动一并回滚，之后未复验就写下了"已修"（commit `8d1b890` 与本表 4.9 同时声称「间距 330→250、窗宽 560→520」）。复验官以「代码里搜不到 250/520」+自行重渲双重取证推翻。<br>**第二次"已修"也是假的（本窗口 2026-10-09 查出）**：那句「现已真正修复并重渲抽帧确认」里的六个数字，**两个在全仓任何地方都不存在** —— `场高 480` 与 `标题 translateY(-330*s)`。**`DataColumns.tsx` 里根本没有 `translateY`**；`330` 全仓零命中；`480` 只作 `48000` 音频采样率出现。<br>**渲染取证（本窗口独立跑 `still.mjs --frames 548` 复核，非引述）**：标题 cream 像素行 **220–362**，说明文字（`accounts opened`）到 **475**，最高柱顶 **609** ⇒ **三种口径下的间隙分别为 247 / 134 / 81px，全部为正**。`charts` 的四种 columnSeed（42/1/7/999）下最小间隙 **71px**，无一次为负。**⇒ 标题叠压现在不存在。**<br>**真正的修复机制与账本写的完全不同**：是 `DataColumns.tsx:51` 起改成**常规流纵向排布**（标题在上、柱场在下，**重叠在浏览器里无法表示**）。该处注释原话记着缺陷的成因：「二者过去都是绝对定位、以 `top: 50%` 居中，**柱场高 520px**，于是柱场顶边在 y=323 而标题下的说明在 y=398 结束 —— **说明因此永远落在柱带里**，好不好看取决于柱子种子：短柱读作景深，高柱就把文字击穿。**那是一个只能靠运气才对得上的布局。**」**⇒ 当时场高是 520（不是 480），修复是重排（不是 translateY）。**<br>**六个数字逐个核对的实测生效值**：Browser Stack = `spreadX 300 / spreadZ 150 / windowWidth 520`（**250 与 110 只是组件默认值，图谱里被覆盖**）；Data Columns = `columnWidth 44 / fieldHeight 420`（**账本写的 480 是错的**）。**本项未改任何布局** —— 取证显示无需改。<br>**守卫**：`tests/test_p4_9_ledger_numbers_resolve.py`（5 条），判据是「一条修复记录引用的布局值，**必须是它所命名字段的真实值**」（在属主组件的默认或图谱覆盖里，**注释已剥离**）。**⚠️ 它第一版守卫的判据是「数字在仓库某处存在」，被「删掉 520」这个变异击穿而存活**（`520` 也出现在 `depthCue.check.ts` 的夹具里）—— 它据此改成**字段归属**判据，并写明那是**漏洞而非无效变异**。全量 517→**522 passed, 4 skipped**。 |
 
 **流程教训（本项目第二次「记为已修但无产物」）**：第一次是 P0 的 `check_contract` 假通过，本次是布局修复被自己的 `git checkout` 回滚后未复验即记账。**测试网接不住这类缺陷**——布局问题本就不在单元测试能力范围内，靠抽帧目检。**今后记账规则：任何"已修"必须附可复现证据（具体代码值 + 抽帧截图路径），且清理工作树的操作后必须重验受影响项。**
 
@@ -153,7 +153,7 @@
 |---|---|---|---|
 | 6.5 | Palette tokens + premium-dark/light 双主题 | ✅ | **发现并修掉一个半接线缺陷**：`scene.theme` 字段和 `Backdrop` 里的 `premium-light` 判断早就存在，但四个场景一直从 StyleBible 读 premium-dark —— 图谱作者设 `theme: premium-light` 会得到**亮背景配黑窗口**。半接线比没接线更糟，因为字段看起来是能用的。<br>修法：新增 `design/themes.ts`（**主题 = palette + shadow + depthCue 三件套**。阴影必须随主题走 —— 近黑底上的阴影在纸上等于没有，纸上的阴影在近黑底上是一块淤青）；`StyleBibleProvider` **移进场景循环**（原来包着整片影片，所以 theme 只能在 Backdrop 生效；解析必须发生在 theme 被声明的地方）；`Backdrop` 去掉按主题名的分支（解析后的调色板已经带着本场景的底色，同一个表达式在两种表面上都对，按名字分支正是两种语言漂移的来源）。<br>**实测**（像素采样）：light 背景 (253,252,251)→(244,241,234) = 精确的 #FFFFFF→#F4F1EA；窗口面 (240,240,239)；dark 侧 (15,15,18)/(16,16,19) 未受影响。四场亮色全部目检通过。<br>**但主题第一次渲出来是坏的**，见变更记录 —— 根因不在主题系统 |
 | 6.6 | Typography roles | ✅ | 补齐 `numericDisplay`（展示级数字，232/700，tabular）/ `numericTable`（表格级数字，52/700，tabular）。理由：标题数字和表格数字是**同一个数字的不同排版** —— 前者要紧字距重字重，后者要等宽不换行；此前 KpiHero 拿 `kpiXL`（展示角色）去放一个会动的数字，只好手工补 `tabular-nums` 才不抖。KpiHero 已改用 `numericDisplay` 并删掉手工 tabular 设置。**图谱级覆盖已验证有效**（见变更记录，0.92% 像素变化，变化区域精确落在数字上） |
-| 6.7 | Spacing 尺度 | ✅ | **完成方向与旧记录相反**（复验，不是加工任务）。`SPACE` = 8×斐波那契（1:2:3:5:8:13:21），尺度原样保留；旧行写的「与总任务书要求的 4…96 步长不一致」**两个半部都不成立**（证据见下）。<br>**① 总任务书从未有过数字**：`UPGRADE_MASTER_PLAN.md:131` 的 P6 行自始只写 「`design/` tokens：palette/typography/spacing/depth」；`git log -S '4…96' -- docs/UPGRADE_MASTER_PLAN.md` 零命中，且该文件全历史只有一个内容 blob。**曾被引用的「6.7」这个子项号也不是总任务书的**（它从不编子项号）。<br>**② 这句话第一次出现就是账本自己**：`71da3cd`（2026-09-30）写的是参数 **6.3**，原文「Spacing 尺度（4…96）」**判定格空白**；`b27cbf2` 把 6.3 改名为 6.7，**并填上了「与总任务书要求的」这个归属——指向一个从未包含这些字的文件**；`014ebe7` 首次称它「规定的」，另四个提交转述。**五个提交、三个文件、零出处。**会话历史内可能的出处已排除：六个会话里五个旧的零命中，只有 `de13ac51` 有且最早时间戳比 `71da3cd` 晚 **3 分 33 秒**（提出这条规则的会话不在存活的六个里）。<br>**③ 账本的算术两次都错**：七个值 **已全部是 4 的倍数**（÷4 = 2/4/6/10/16/26/42），「4 的倍数」现状已满足；未满足的是「4…96 的区间」，而「区间」从来不是总任务书的表述。**旧行里「总任务书要求的」这个承重词已删掉——它正是让一句无出处的转述读起来像规则的那几个字。**<br>已交付（复验通过）：**①** 记录文档 `docs/SPACING_SCALE_VERDICT.md`（含检索与提交链证据）；**②** 新增 `tests/test_space_scale.py`（两条）——断言**比例序列**等于 1:2:3:5:8:13:21（不是钉死数字）、且死刻度集合锁定为 `xs`/`xxl`/`hero` 并要求分别在 `tokens.ts` 被点名；官方自报两条变异（指少 `hero:168→170`、插入 `xxxl:180`），**指挥窗口独立复现，均红在正确断言上**（`:117` 比例断言 / `:156` 死刻度断言），还原后 sha256 回到 `68b08661…`、git 干净。<br>**本项目守卫记录**：守卫在干净树上**本来会红**——工单要求断言「七个刻度零死」，但工单自己的爆炸半径表就测出三个零消费。执行 agent **主动上报了这个偏离并未擅自照做**，改成冻结死刻度集合（「死刻度只可能变少，新增必须是显式决策」）——**这个判断是对的，指挥采纳**。<br>全量测试 325→**327 passed, 2 skipped**（+2 = 新增守卫）。刻度值未动（`tokens.ts` 23 行纯注释、0 行删除，SPACE 定义行字节不变）。 |
+| 6.7 | Spacing 尺度 | ✅ | **完成方向与旧记录相反**（复验，不是加工任务）。`SPACE` = 8×斐波那契（1:2:3:5:8:13:21），尺度原样保留；旧行写的「与总任务书要求的 4…96 步长不一致」**两个半部都不成立**（证据见下）。<br>**① 总任务书从未有过数字**：`UPGRADE_MASTER_PLAN.md:131` 的 P6 行自始只写 「`design/` tokens：palette/typography/spacing/depth」；`git log -S '4…96' -- docs/UPGRADE_MASTER_PLAN.md` 零命中，且该文件全历史只有一个内容 blob。**曾被引用的「6.7」这个子项号也不是总任务书的**（它从不编子项号）。<br>**② 这句话第一次出现就是账本自己**：`8fcd15f`（2026-09-30）写的是参数 **6.3**，原文「Spacing 尺度（4…96）」**判定格空白**；`bddc790` 把 6.3 改名为 6.7，**并填上了「与总任务书要求的」这个归属——指向一个从未包含这些字的文件**；`3c60612` 首次称它「规定的」，另四个提交转述。**五个提交、三个文件、零出处。**会话历史内可能的出处已排除：六个会话里五个旧的零命中，只有 `de13ac51` 有且最早时间戳比 `8fcd15f` 晚 **3 分 33 秒**（提出这条规则的会话不在存活的六个里）。<br>**③ 账本的算术两次都错**：七个值 **已全部是 4 的倍数**（÷4 = 2/4/6/10/16/26/42），「4 的倍数」现状已满足；未满足的是「4…96 的区间」，而「区间」从来不是总任务书的表述。**旧行里「总任务书要求的」这个承重词已删掉——它正是让一句无出处的转述读起来像规则的那几个字。**<br>已交付（复验通过）：**①** 记录文档 `docs/SPACING_SCALE_VERDICT.md`（含检索与提交链证据）；**②** 新增 `tests/test_space_scale.py`（两条）——断言**比例序列**等于 1:2:3:5:8:13:21（不是钉死数字）、且死刻度集合锁定为 `xs`/`xxl`/`hero` 并要求分别在 `tokens.ts` 被点名；官方自报两条变异（指少 `hero:168→170`、插入 `xxxl:180`），**指挥窗口独立复现，均红在正确断言上**（`:117` 比例断言 / `:156` 死刻度断言），还原后 sha256 回到 `68b08661…`、git 干净。<br>**本项目守卫记录**：守卫在干净树上**本来会红**——工单要求断言「七个刻度零死」，但工单自己的爆炸半径表就测出三个零消费。执行 agent **主动上报了这个偏离并未擅自照做**，改成冻结死刻度集合（「死刻度只可能变少，新增必须是显式决策」）——**这个判断是对的，指挥采纳**。<br>全量测试 325→**327 passed, 2 skipped**（+2 = 新增守卫）。刻度值未动（`tokens.ts` 23 行纯注释、0 行删除，SPACE 定义行字节不变）。 |
 | 6.8 | Depth 层级 | ✅ | **订正旧记录并修掉一处真缺陷**。旧行说「`DEPTH` 四场无一使用」——这句对但不完整：**`DEPTH` 并非死 token，它已接线**（`styleBible.tsx:73` `mergeSection({...DEPTH}, b.depth)` + `:173` 导出 `DEPTH: s.depth`），**零的是场景读取方，不是通路**。「接线了但没人用」与「没接线」是两个不同量级的缺陷。<br>**真缺陷（先测后修，实测证实）**：`DEPTH_CUE` 当时只有 **3 层**，而 `BrowserStack.tsx` 用 `DEPTH_CUE[Math.min(i, DEPTH_CUE.length - 1)]` 取值 → **第 4 个窗口及以后全部塌成第 3 层阴影**，4 层以上的窗口堆叠**视觉上完全没有深度差**。实测（渲染真实场景、读 React 实际发出的 box-shadow 字符串，六窗口 @frame240）证实修复前 `w3/w4/w5 == w2` 完全相同。<br>**为什么此前没被发现**：已交付图谱里**全部 browser-stack 场景都恰好 3 窗口**（指挥窗口独立复现：3 个场景，窗口数分布 `{3:3}`），而 `content` 在两侧 schema 都是无类型袋子 —— **一个 4 窗口的图谱一直合法、且一直画错**。**执行 agent 自报「46 个 browser-stack 场景」，指挥窗口复现不出（实为 3 个），数字有误；但它据此得出的结论「无已交付帧受影响」经复验成立，故结论不受影响。**<br>**扩展规则是拟合出来的，不是选出来的**：从已交付的三层反推 `y` 步长 16(dark)/12(light)、`blur = k·y` 最小二乘（k=2.849/2.671）、alpha 按最后一段实测比值（1.240/1.357）外推 → **五层是真实天花板**（dark alpha 在第 5 层到 0.95，第 6 层需 1.18 —— 那不是一个颜色）。**循环（wrap）被单独否决**：它会把第 5 个窗口画成第 0 层，即**最远**平面、塌在一个更近的窗口后面 —— 那是可见的深度谎言。故 `depthCueAt` 为纯 clamp。<br>**判定：图谱不应驱动 `DEPTH`**（只给设计未实施，schema 未动）。深度是场景几何，与图谱**已经**设置的 `layout.spreadZ` 同类，而 `locked_fields.py` 刻意不锁 `spreadZ`；`DEPTH` 与 `spreadZ` 冗余，**不是缺失的 schema 字段**。反向决定所需设计已写进 commit message。<br>**已交付（复验通过）**：**①** `depthCue` 3→5 层（两主题）；**②** 新增 `depthCueAt()` 纯 clamp；**③** `depthCue.check.ts`（409 行夹具）+ `tests/test_depth_cue_layers.py`（7 条）。夹具**渲染真实场景读真实 CSS 字符串**、刻意不重写一遍 clamp —— 它要找的正是「clamp 写得和场景不一样」这一类 bug；并说明为何不走 `visual_qa.py` 像素路径：**阴影塌陷是 CSS 声明层面的事实，从压平后的帧里不可恢复**。<br>**指挥窗口独立注入的变异**：把 clamp 改成 `cue[i % cue.length]`（循环）→ 2 条守卫红，其中行为那条打印出 `window 5: 0 14px 40px rgba(0,0,0,0.40)`，**即最远层塌到最近层后面**——红得正是它该抓的东西。还原后 git 干净，全量 **334 passed, 2 skipped**（+7）。<br>**执行 agent 纠正了指挥窗口的错误**：工单称四个文件都是 CRLF —— 实测 `tokens.ts`/`themes.ts` 是 **LF**，仅 `styleBible.tsx`/`BrowserStack.tsx` 是 CRLF；它按各自实际行尾保存。该 agent 另主动上报五条自身失误（夹具后缀污染套件、heredoc 注入 0x08 字节、alpha 外推算错并更正、中途删除快照后靠 sha256 恢复等），均如实记录。 |
 
 ---
@@ -174,7 +174,7 @@
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
 | 8.1 | `calculateMetadata` 返回 width/height/fps/durationInFrames | ✅ | **代码 P6 起就已存在，但「返回 format」不等于「按 format 渲」** —— 审计才把这两件事分开。`showcaseMeta`（`FinanceShowcaseWide.tsx`）四项全返回、`Root.tsx:63` 已接上，`render.mjs` 走 `selectComposition` 所以 format 确实来自图谱。**但布局是高度驱动的**：`scaleFrom(height) = height/1080`，**全库没有任何东西读帧宽**。于是竖版一渲就横向溢出（见 8.2）。<br>**修法**：`scaleFrom` **删除**（不留别名 —— 「一个只认高度的缩放器存在」本身就是病因），换成 `scaleFor(width, height) = min(w/1920, h/1080)`（contain），补上缺失的 `DESIGN_WIDTH`。**11 处生产调用点**全改（含 `styleBible.useScale()` 与 `primitives.tsx` 三处内联的 `comp.height/1080`）。<br>**附带**：判据抽成纯模块 `schemas/showcaseMeta.ts`（只依赖 zod，因此可测），组件里只剩两行包装 —— 原判据在 React 组件内部，**「图谱写坏会怎样」这个问题在不渲一帧的前提下无法提出**。<br>16:9 不变性**实测**：`orig` vs `scaleonly` @f343 = **0 px 逐位相同**（`min(1,1)=1`）。 |
-| 8.2 | 验证 1920×1080@60 / 1080×1920@60 / 3840×2160@60 | ✅ **但验证本身抓出三个缺陷** | **实测数据（复验重测，判据 = 内容像素 `max channel > 30`；背景渐变 ≤18、内容 ≥49，两侧留足余量）**：<br>**① 竖版横向溢出（已修）**。`scaleFrom(1920)=1.7778` 而帧只有 1080 宽。修前三帧**全部 `x 0-1079` 双向裁切**；修后 **v515 x 255-824（边距 L255 R255）、v343 x 231-857、v259 x 255-844，全部干净**。<br>**② 静默回退（已修）**。`safeParse` 失败时旧代码返回 `1920×1080@60 / 1 帧` —— 图谱写坏时渲染器**不报错**，交出一段别的东西。`broken.json`（`width: "1920"`）现在抛：`showcase-v1: this graph does not match the schema, so its render format cannot be trusted.` + `format.width: Invalid input: expected number, received string`。**旧代码在帧 515 报的是 `Cannot use frame 515: Duration of composition is 1` —— 在怪帧号，而不是在怪图谱。**<br>**③ `Math.max` 方向错误，token 在所有已交付场景里都是死的（已修）**。HEAD 的 `rampOf` 结尾是 `Math.max(1, seconds*fps/sceneFrames)`：`229 帧 ÷ (2.6s×60fps=156) = 0.68`，而 **`Math.max(1, 0.68) = 1`** —— clamp 只往上抬，于是**任何长于标称时长的场景，ramp 都被抬成 1.0，相机动机跑满整场**，`premiumCameraSeconds: 2.6` 被乘出来然后丢掉。藏在其下的 fps 依赖是真的，但只在**短于**标称时长的场景上显形，所以之前没被发现。改为 `cameraMoveFrames = seconds*fps`（绝对帧数，**不取整**：energetic 0.55s 在 30fps 是 16.5 帧，`Math.round` 会变 17，等于把刚要修掉的 fps 依赖装回去）→ premium 在 229 帧场景第 **156** 帧到位、后 72 帧静止，与 token 声明和 `CameraRig` 两处注释一致。<br>**施工方主动更正了自己上一轮的判断**（原文称「60fps 只差不到一帧」，是把 `Math.max` 的方向写反了）—— 这条更正比原结论有价值，已留在变更记录。 <br>**⑤ chart 场景三档复验（10-01，本阶段收尾）—— 抓到并修掉一个 P7.1 遗留缺陷**。P7.3 的整条证据链（柱标签、slope 轴、A/B 26/26、成片 1950 帧）**全部建立在 1920×1080 单档上**，而缩放器是共享的。用 `--baseline` 从 `charts_demo.json` 派生探针（只改 `format`，字节校验 + self-test），三档 × 四帧共 12 张全部渲出、无裁切。<br>**缺陷**：`ChartFrame.tsx` 的 plot 盒取自 `H = comp.height - padY` —— **原始帧高**，而标记/字体/padding 全乘 `s`。这行来自 **`11b9274`（P7.1）**，不是 P8 引入的；**P8 让它第一次能被渲出来**。`comp.width - padX` 恰好正确是因为三档都满足 `comp.width = DESIGN_WIDTH × s`，**高度只在首个非 16:9 格式上分家**（竖版 s=0.5625：设计高 607.5、帧高 1920）。实测竖版五根柱 **1223/1012/1331/943/1557px**，设计值 **319/285/345/260/406** —— **被拉伸 3.4 倍**，基线落在 y=1824 而非 532。**修法是结构性的**：plot 盒 = **设计盒 × s**，不再是「帧减 padding」。**16:9 与 4K 共 8 张渲染 `0 px` 逐位相同**（构造上即 no-op，已用像素证明），竖版柱高回到 **318/263/353/252/406**、slope 顶部墨迹 hd 87 / 竖版 48（预期 49）/ 4K 174（预期 174）。<br>**顺带把竖版图表居中**：`offsetY = max(0, (comp.height - DESIGN_HEIGHT × s) / 2)`，修前竖版图表贴顶（上方留白 33、下方 **1385px**），修后上下 **690/729、703/710、762/714、689/714** —— 与场景的「上下各约 700px」一致。**同样是 16:9/4K 的 0 px no-op**（`comp.height` 在这两档恰等于 `DESIGN_HEIGHT × s`）。<br>**柱标签主张三档复测**：hd **−10/−9/−10/−10/−9px**，与 P7.3 声称逐项吻合；4K/竖版大体随 `s` 缩放，个别柱偏差来自**标签与柱顶只隔 1–2px、该间隙在缩放后不成立**（P7.3 记录过的同类污染读数），**不是新缺陷**。 |
+| 8.2 | 验证 1920×1080@60 / 1080×1920@60 / 3840×2160@60 | ✅ **但验证本身抓出三个缺陷** | **实测数据（复验重测，判据 = 内容像素 `max channel > 30`；背景渐变 ≤18、内容 ≥49，两侧留足余量）**：<br>**① 竖版横向溢出（已修）**。`scaleFrom(1920)=1.7778` 而帧只有 1080 宽。修前三帧**全部 `x 0-1079` 双向裁切**；修后 **v515 x 255-824（边距 L255 R255）、v343 x 231-857、v259 x 255-844，全部干净**。<br>**② 静默回退（已修）**。`safeParse` 失败时旧代码返回 `1920×1080@60 / 1 帧` —— 图谱写坏时渲染器**不报错**，交出一段别的东西。`broken.json`（`width: "1920"`）现在抛：`showcase-v1: this graph does not match the schema, so its render format cannot be trusted.` + `format.width: Invalid input: expected number, received string`。**旧代码在帧 515 报的是 `Cannot use frame 515: Duration of composition is 1` —— 在怪帧号，而不是在怪图谱。**<br>**③ `Math.max` 方向错误，token 在所有已交付场景里都是死的（已修）**。HEAD 的 `rampOf` 结尾是 `Math.max(1, seconds*fps/sceneFrames)`：`229 帧 ÷ (2.6s×60fps=156) = 0.68`，而 **`Math.max(1, 0.68) = 1`** —— clamp 只往上抬，于是**任何长于标称时长的场景，ramp 都被抬成 1.0，相机动机跑满整场**，`premiumCameraSeconds: 2.6` 被乘出来然后丢掉。藏在其下的 fps 依赖是真的，但只在**短于**标称时长的场景上显形，所以之前没被发现。改为 `cameraMoveFrames = seconds*fps`（绝对帧数，**不取整**：energetic 0.55s 在 30fps 是 16.5 帧，`Math.round` 会变 17，等于把刚要修掉的 fps 依赖装回去）→ premium 在 229 帧场景第 **156** 帧到位、后 72 帧静止，与 token 声明和 `CameraRig` 两处注释一致。<br>**施工方主动更正了自己上一轮的判断**（原文称「60fps 只差不到一帧」，是把 `Math.max` 的方向写反了）—— 这条更正比原结论有价值，已留在变更记录。 <br>**⑤ chart 场景三档复验（10-01，本阶段收尾）—— 抓到并修掉一个 P7.1 遗留缺陷**。P7.3 的整条证据链（柱标签、slope 轴、A/B 26/26、成片 1950 帧）**全部建立在 1920×1080 单档上**，而缩放器是共享的。用 `--baseline` 从 `charts_demo.json` 派生探针（只改 `format`，字节校验 + self-test），三档 × 四帧共 12 张全部渲出、无裁切。<br>**缺陷**：`ChartFrame.tsx` 的 plot 盒取自 `H = comp.height - padY` —— **原始帧高**，而标记/字体/padding 全乘 `s`。这行来自 **`16c18d8`（P7.1）**，不是 P8 引入的；**P8 让它第一次能被渲出来**。`comp.width - padX` 恰好正确是因为三档都满足 `comp.width = DESIGN_WIDTH × s`，**高度只在首个非 16:9 格式上分家**（竖版 s=0.5625：设计高 607.5、帧高 1920）。实测竖版五根柱 **1223/1012/1331/943/1557px**，设计值 **319/285/345/260/406** —— **被拉伸 3.4 倍**，基线落在 y=1824 而非 532。**修法是结构性的**：plot 盒 = **设计盒 × s**，不再是「帧减 padding」。**16:9 与 4K 共 8 张渲染 `0 px` 逐位相同**（构造上即 no-op，已用像素证明），竖版柱高回到 **318/263/353/252/406**、slope 顶部墨迹 hd 87 / 竖版 48（预期 49）/ 4K 174（预期 174）。<br>**顺带把竖版图表居中**：`offsetY = max(0, (comp.height - DESIGN_HEIGHT × s) / 2)`，修前竖版图表贴顶（上方留白 33、下方 **1385px**），修后上下 **690/729、703/710、762/714、689/714** —— 与场景的「上下各约 700px」一致。**同样是 16:9/4K 的 0 px no-op**（`comp.height` 在这两档恰等于 `DESIGN_HEIGHT × s`）。<br>**柱标签主张三档复测**：hd **−10/−9/−10/−10/−9px**，与 P7.3 声称逐项吻合；4K/竖版大体随 `s` 缩放，个别柱偏差来自**标签与柱顶只隔 1–2px、该间隙在缩放后不成立**（P7.3 记录过的同类污染读数），**不是新缺陷**。 |
 
 ---
 
@@ -206,11 +206,11 @@
 
 惰性字段审计的结论不是「有 6 个死字段」，而是**其中三个不是死的，是在说谎**。三者都已修复，各带可失败的守卫。
 
-**一、顶层 `audio` 永久不可达（`62f3249`）**：`FinanceShowcaseWide.tsx` 曾读 `doc.audio` 并渲染 `<Audio>`，而 `ShowcaseSchema` **从未声明该字段**、且无 `.passthrough()`。运行时实测：`safeParse` 返回 `success: true`、解析后键为 `version,project,format,bpm,scenes`、**`audio survived?: false`** —— zod 剥掉未知键，故该分支永久不可达，今天写带 `"audio"` 的图谱会**渲染静音且校验通过**。**已删除分支而非接线**，依据三条：① 没有任何生产者会生成它；② `pipeline/schemas/showcase-v1.schema.json` 是 `additionalProperties: false` 且只声明 6 键，**只在 zod 里接线会直接破坏 parity**；③ `beat/sfxProfile.check.ts` 断言「没有映射声音是 bgm」而 beat grid 是**从 `bgm_beats.json` 推导**的——对本模板 BGM 是节拍参考而非音床，接线会给每部片子铺一层音乐。`visual_qa.py` 的 `missing_asset` 同步收窄（它原本检查三个渲染器收不到的字段）。
+**一、顶层 `audio` 永久不可达（`e1f5850`）**：`FinanceShowcaseWide.tsx` 曾读 `doc.audio` 并渲染 `<Audio>`，而 `ShowcaseSchema` **从未声明该字段**、且无 `.passthrough()`。运行时实测：`safeParse` 返回 `success: true`、解析后键为 `version,project,format,bpm,scenes`、**`audio survived?: false`** —— zod 剥掉未知键，故该分支永久不可达，今天写带 `"audio"` 的图谱会**渲染静音且校验通过**。**已删除分支而非接线**，依据三条：① 没有任何生产者会生成它；② `pipeline/schemas/showcase-v1.schema.json` 是 `additionalProperties: false` 且只声明 6 键，**只在 zod 里接线会直接破坏 parity**；③ `beat/sfxProfile.check.ts` 断言「没有映射声音是 bgm」而 beat grid 是**从 `bgm_beats.json` 推导**的——对本模板 BGM 是节拍参考而非音床，接线会给每部片子铺一层音乐。`visual_qa.py` 的 `missing_asset` 同步收窄（它原本检查三个渲染器收不到的字段）。
 
-**二、`motion.ease` 图谱在设、渲染器从不读（`e74e285`）**：交付图谱两处设 `"ease": "expo-out"`，而全仓**没有任何 `expo-out` 解析器**——调用点要的是四个数字（`cubicBezierEase(0.16, 1, 0.3, 1)`），图谱给的是一个**名字**。**接线需要发明一张 name→curve 表**，那是设计决定不是修 bug；改类型的折中更糟，会把今天所有图谱判为非法。**已清理**（删图谱取值 + 删 schema 声明，两份镜像同步）。附带发现 `design/tokens.ts` 的 `MOTION.profiles[].ease` **同样无人读**——`profileOf()` 只取 `.stagger` 与 `.spring`，两个惰性字段共用一个名字。
+**二、`motion.ease` 图谱在设、渲染器从不读（`4b3a707`）**：交付图谱两处设 `"ease": "expo-out"`，而全仓**没有任何 `expo-out` 解析器**——调用点要的是四个数字（`cubicBezierEase(0.16, 1, 0.3, 1)`），图谱给的是一个**名字**。**接线需要发明一张 name→curve 表**，那是设计决定不是修 bug；改类型的折中更糟，会把今天所有图谱判为非法。**已清理**（删图谱取值 + 删 schema 声明，两份镜像同步）。附带发现 `design/tokens.ts` 的 `MOTION.profiles[].ease` **同样无人读**——`profileOf()` 只取 `.stagger` 与 `.spring`，两个惰性字段共用一个名字。
 
-**三、`baseline` 生效在一层之上（`74852de`）**：前两个是「没人读」，这个是**能读但层错了**——生效的是 `content.baseline`，而作者写在看起来更自然的 `content.chart.baseline`（与 `values`/`labels` 并排）**静默失效**；交付图谱 volume-chart **两处都设 40**，故成片从来看不出来。像素级实测（同值、帧 59）：`chart.baseline=40` → 柱顶 **402.7**；不设 → **770.5**；旧层 `content.baseline=40` → **770.5**，**与不设完全相同**。**已改为从 `spec.baseline` 读**并删掉图谱里的惰性副本。依据不是口味：`options.ts:14` 早已写明「Options live on the SCENE's `content.chart`, never scattered through a component's props」——**规则就写在离读取点 40 行处**，而代码违反了它。且移动后 `baseline` **仍是锁定的 fact**（`locked_fields` 按叶子键匹配而非按路径），**零锁定覆盖损失**；若会损失，保留别扭的层才是对的。
+**三、`baseline` 生效在一层之上（`0874f3a`）**：前两个是「没人读」，这个是**能读但层错了**——生效的是 `content.baseline`，而作者写在看起来更自然的 `content.chart.baseline`（与 `values`/`labels` 并排）**静默失效**；交付图谱 volume-chart **两处都设 40**，故成片从来看不出来。像素级实测（同值、帧 59）：`chart.baseline=40` → 柱顶 **402.7**；不设 → **770.5**；旧层 `content.baseline=40` → **770.5**，**与不设完全相同**。**已改为从 `spec.baseline` 读**并删掉图谱里的惰性副本。依据不是口味：`options.ts:14` 早已写明「Options live on the SCENE's `content.chart`, never scattered through a component's props」——**规则就写在离读取点 40 行处**，而代码违反了它。且移动后 `baseline` **仍是锁定的 fact**（`locked_fields` 按叶子键匹配而非按路径），**零锁定覆盖损失**；若会损失，保留别扭的层才是对的。
 
 **两笔未被授权修、但已记录的问题**：
 - **两份 schema 镜像严格性不一致**：zod 的 `MotionSchema` 无 `.strict()`（**静默剥离**未知键），JSON Schema 的 `Motion` 有 `additionalProperties: false`（**拒绝**）。运行时验证：重新加 `motion.ease`，zod 给 `success: true` 且键消失，JSON Schema 会拒绝——**同一份图谱两种相反裁决**。修它要先定「哪边权威」，是设计决定。
@@ -219,8 +219,8 @@
 **三次任务共同的形态**：都不是「代码没写」，而是**代码在说谎**。三个都由**测量**钉住，不是读代码猜出来的。
 
 **惰性字段的其余四条：只记账，不动代码。** `scene.notes`、`scene.audioEvents`、`scene.transitionOut`、`camera.focus` —— 实测**两份交付图谱一个都没设**（逐场逐层查过），所以它们不骗任何人，只是 schema 表面上的空承诺。与上面那三个「会骗人的字段」不是一类：那三个图谱**在设**、渲染器**不认**，作者会误以为有效；这四个图谱不碰，谁也不会依赖。删它们是 schema 瘦身，价值低于改动本身的风险；接线则要先有真实需求。**留给将来第一次有人要设其中之一时再定**——那时它是接线还是删除，取决于要解决什么问题，而现在两个都无从判断。
-<br>**两份 schema 镜像已对齐（`55a1d90`）** —— 且修复过程中发现比原判断更重的问题。① **JSON Schema 此前根本无法编译**：`definitions/Track` 被 8 处 `$ref` 引用却从未定义，Ajv 报 `can't resolve reference #/definitions/Track`。**因为从来没有人真正运行过这个文件**（parity 测试只用正则比对），所以它那 6 处 `additionalProperties: false` **从未被任何真实图谱检验过**。现在 Ajv 与 `jsonschema` 均通过编译。② 严格性不一致已消除：zod 的 6 个对象全部 `.strict()`，与 JSON Schema 的 6 处 `additionalProperties: false` 一一对应。**运行时实测五种情形**：`clean` 通过、顶层 `audio` **拒绝**、`motion.ease` **拒绝**、场景里打错字 **拒绝**、`_note` **通过且保留**。<br>**主动接受的代价**：未知键从「静默忽略」变成**硬错误** —— 对着略旧草稿写的图谱会加载失败，而不是带着一个被忽略的字段跑起来。**故意付的**：另一个选项是双向都看不见的失败。错误不是裸 `ZodError`，`describeIssues` 会指出路径。<br>**`_note` 在两份镜像里都被显式声明**，不是删掉、也不是开一个洞放它过去 —— 它是本项目的元信息键惯例（`prompt_compiler.py`、`migrate_shotspecs.py` 已在产出它）。而 `layout` / `content` / `audioEvents` / `StyleBible` 这些自由容器**保持开放**：严格化覆盖的是图谱自身的词汇表，不是组件解释的载荷。<br>**两条既有守卫曾把缺陷钉成了契约**：`test_zod_strips_an_undeclared_top_level_audio_at_runtime` 与 `test_a_graph_setting_ease_still_validates_but_the_key_is_gone` 断言的正是「静默剥离」这个行为 —— **留着它们就等于把缺陷写进规格**，现已改为断言拒绝。<br>**一条工具选择的教训**：指挥窗口曾用 Python `jsonschema` 质疑「无法编译」的说法，得出「能编译」的相反结论 —— **因为 `jsonschema` 不解析 `$ref` 而 Ajv 解析**。用错工具就得出错结论。
-<br>**镜像漂移已修，且指挥窗口的枚举漏了一处（`a55d03d`、`0dafc5c`）**。① **生产者曾是最宽松的那一方**：`scene_graph.py:25` 声明 `SCHEMA_PATH` 却从不使用，真正的校验是手写的 `_validate`，**从不检查未知键** —— 实测同一份加了两个未知键的图谱，Python **接受**、JSON Schema **拒绝**。而管线是图谱的**生产者**，**这正是三个「会骗人的字段」能长期存在的机制**。现已改为按 schema 校验，且 schema 文件读不到时**响亮失败**（静默跳过的校验器就是它要修的那个缺陷本身）。保留的只有 schema 覆盖不到的两条，其中「重复 scene id」有实据：`FinanceShowcaseWide.tsx:156` 用 `doc.scenes.find(x => x.id === r.id)` 解析，**两个同 id 场景会渲染第一个的内容**。<br>② **两份镜像对 `camera.perspective = 0` 裁决相反**（zod `.positive()` 拒绝 / JSON Schema `minimum: 0` 接受）。修复前的旧 Python 也拒绝 0 —— **JSON Schema 一直是异类**，只因从无人运行它（8 处悬空 `$ref`，上一笔才修）。**已按 zod 改为 `exclusiveMinimum: 0`**。<br>③ **指挥窗口手工枚举「四处数值边界、只有一处漂移」是错的 —— 执行 agent 用 `z.toJSONSchema()` 让 zod 机械地陈述自己的契约再与镜像对拍，又找到一处更严重的**：`format.width` / `format.height` 在镜像里是 `minimum: 16`、zod 是 `.positive()`（下限 1），**任何宽度 1～15 的图谱能过生产者却被渲染器拒绝** —— 正是那三笔修复要消除的「宽松生产者」的镜像版。已改为 `minimum: 1`。**教训：手工目测两份文件的边界不是测量方法。** 它还验明两处**不是**漂移：`Scene.type` 同样 22 个值只是顺序不同、`Track` 的 `oneOf` 与 tuple 写法等价。<br>④ **parity 测试为什么没抓住这些**：它把两个文件当**文本**解析。`test_camera_channels_match_across_sides` 在 `perspective` 分歧期间**一直是绿的**，因为 `"perspective"` 确实是两边的键 —— **文本比对不是较弱的语义比对，它回答的是另一个问题**，并且恰好在**边界**漂移时读绿。新守卫用 **78 个取值探针跑三个校验器**（zod / Ajv / 管线），其中两条直接从 schema 读出数值边界与枚举成员，**加了一个没有探针触及的边界就会红** —— 让扫描保持是扫描。
+<br>**两份 schema 镜像已对齐（`f878089`）** —— 且修复过程中发现比原判断更重的问题。① **JSON Schema 此前根本无法编译**：`definitions/Track` 被 8 处 `$ref` 引用却从未定义，Ajv 报 `can't resolve reference #/definitions/Track`。**因为从来没有人真正运行过这个文件**（parity 测试只用正则比对），所以它那 6 处 `additionalProperties: false` **从未被任何真实图谱检验过**。现在 Ajv 与 `jsonschema` 均通过编译。② 严格性不一致已消除：zod 的 6 个对象全部 `.strict()`，与 JSON Schema 的 6 处 `additionalProperties: false` 一一对应。**运行时实测五种情形**：`clean` 通过、顶层 `audio` **拒绝**、`motion.ease` **拒绝**、场景里打错字 **拒绝**、`_note` **通过且保留**。<br>**主动接受的代价**：未知键从「静默忽略」变成**硬错误** —— 对着略旧草稿写的图谱会加载失败，而不是带着一个被忽略的字段跑起来。**故意付的**：另一个选项是双向都看不见的失败。错误不是裸 `ZodError`，`describeIssues` 会指出路径。<br>**`_note` 在两份镜像里都被显式声明**，不是删掉、也不是开一个洞放它过去 —— 它是本项目的元信息键惯例（`prompt_compiler.py`、`migrate_shotspecs.py` 已在产出它）。而 `layout` / `content` / `audioEvents` / `StyleBible` 这些自由容器**保持开放**：严格化覆盖的是图谱自身的词汇表，不是组件解释的载荷。<br>**两条既有守卫曾把缺陷钉成了契约**：`test_zod_strips_an_undeclared_top_level_audio_at_runtime` 与 `test_a_graph_setting_ease_still_validates_but_the_key_is_gone` 断言的正是「静默剥离」这个行为 —— **留着它们就等于把缺陷写进规格**，现已改为断言拒绝。<br>**一条工具选择的教训**：指挥窗口曾用 Python `jsonschema` 质疑「无法编译」的说法，得出「能编译」的相反结论 —— **因为 `jsonschema` 不解析 `$ref` 而 Ajv 解析**。用错工具就得出错结论。
+<br>**镜像漂移已修，且指挥窗口的枚举漏了一处（`8c7522e`、`abc2204`）**。① **生产者曾是最宽松的那一方**：`scene_graph.py:25` 声明 `SCHEMA_PATH` 却从不使用，真正的校验是手写的 `_validate`，**从不检查未知键** —— 实测同一份加了两个未知键的图谱，Python **接受**、JSON Schema **拒绝**。而管线是图谱的**生产者**，**这正是三个「会骗人的字段」能长期存在的机制**。现已改为按 schema 校验，且 schema 文件读不到时**响亮失败**（静默跳过的校验器就是它要修的那个缺陷本身）。保留的只有 schema 覆盖不到的两条，其中「重复 scene id」有实据：`FinanceShowcaseWide.tsx:156` 用 `doc.scenes.find(x => x.id === r.id)` 解析，**两个同 id 场景会渲染第一个的内容**。<br>② **两份镜像对 `camera.perspective = 0` 裁决相反**（zod `.positive()` 拒绝 / JSON Schema `minimum: 0` 接受）。修复前的旧 Python 也拒绝 0 —— **JSON Schema 一直是异类**，只因从无人运行它（8 处悬空 `$ref`，上一笔才修）。**已按 zod 改为 `exclusiveMinimum: 0`**。<br>③ **指挥窗口手工枚举「四处数值边界、只有一处漂移」是错的 —— 执行 agent 用 `z.toJSONSchema()` 让 zod 机械地陈述自己的契约再与镜像对拍，又找到一处更严重的**：`format.width` / `format.height` 在镜像里是 `minimum: 16`、zod 是 `.positive()`（下限 1），**任何宽度 1～15 的图谱能过生产者却被渲染器拒绝** —— 正是那三笔修复要消除的「宽松生产者」的镜像版。已改为 `minimum: 1`。**教训：手工目测两份文件的边界不是测量方法。** 它还验明两处**不是**漂移：`Scene.type` 同样 22 个值只是顺序不同、`Track` 的 `oneOf` 与 tuple 写法等价。<br>④ **parity 测试为什么没抓住这些**：它把两个文件当**文本**解析。`test_camera_channels_match_across_sides` 在 `perspective` 分歧期间**一直是绿的**，因为 `"perspective"` 确实是两边的键 —— **文本比对不是较弱的语义比对，它回答的是另一个问题**，并且恰好在**边界**漂移时读绿。新守卫用 **78 个取值探针跑三个校验器**（zod / Ajv / 管线），其中两条直接从 schema 读出数值边界与枚举成员，**加了一个没有探针触及的边界就会红** —— 让扫描保持是扫描。
 
 
 ## P11 — Auto Repair Loop　状态：⬜（1/3：**11.2 完全闭环**；11.1 **前置仪器已建成、修复器未写**；11.3 未开始）。**
@@ -235,8 +235,8 @@
 
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
-| 11.1 | Repair Planner（可改 padding/scale/font/chart width/color/timing/camera/stagger/duration） | ✅ **已裁定关闭** | **仪器已建成（`c6d7a5a`），修复器未写 —— 且这不是搁置，是实测结论。** 新增 `studio/scripts/chart_geometry.py`：从图表选项的几何算 x 标签间距，**不靠像素**（P10 审计结论「Needs the mark layout from the chart options, not pixels」）。对着渲染真值校准：**5 根柱 334px vs 333.6px、16 根柱 104.5px vs 104.2px，误差 0.2%**；宽度用真实字体（Microsoft YaHei）**逐字符量**而非数字数（该字体 `i` 是 5.3px、`W` 是 20.4px，同长度可差 4 倍）。九个变异八个杀。<br>**仪器不下判定** —— 只报比值，阈值由调用方定。`visual_qa.py` 的 `collision` 规则**已接入但仍报 `UNAVAILABLE`**，理由写明「仪器已建成、缺的是判据」，并有 7 条守卫让「顺手填上阈值」变得昂贵。<br>**解锁条件（实测，非推测）**：已交付图表比值 **0.278**（最宽标签 `Retention` 92.6px / 间距 333.6px），**没有一个标签接近碰撞**，修复循环无伤可修；而唯一能清碰撞的手段（缩短 labels）正是 11.2 禁掉的。→ **真正出现一个接近碰撞的图表时本项才需要动手**；若发现这样的图表，**应停下上报**——那会推翻本行的结论。**新计划**：11.1 做成「等真出现长标签图表时才起作用」的仪器，而不是一个修不存在问题的功能。<br>**惰性杠杆逐条复核（10-02 指挥窗口，非引述，附可证伪的 grep）**：`spec.width` / `spec.height` / `chart.width` / `chart.height` 在渲染源码里 **0 命中**；schema 里 `color` 字段 **0 命中**（唯一命中是注释里的单词 "colour"）；schema 里 `timing` 字段 **0 命中**。**十张图表场景只携带 `camera` / `durationInFrames` / `motion` 三个场景级字段**，`layout` 只存在于 showcase 的 kpi-hero / browser-stack / calendar → **11.1 在图表上真正够得着的只有时间轴三项**。**刻度字号硬编码 `20 * s`**（`ChartFrame.tsx:319` 与 `:378`）→ 这是 11.3「每轮步长无依据可定」的根因，字号不可由图谱影响，修复循环调不动它。（原结论保留）<br>**修复器**故意不写**：仪器已建成（`chart_geometry.py` / `c6d7a5a`），而已交付图表最差标签比值 **0.2775**（2026-10-10 指挥窗口复测，与原记的 0.278 一致）**离碰撞（1.0）差三倍多，无伤可修**。**解锁条件：真的出现一个接近碰撞的图表** —— **若你发现这样的图表，停下上报，那会推翻这条关闭**。** |
-| 11.2 | 锁定项保护（核心文案/品牌 logo/数值事实） | ✅ | **新增 `studio/scripts/locked_fields.py`（14 条锁定规则）。**实测 **3 种 kind：fact 9 / copy 4 / identity 1**。**品牌那一类不走字段规则**：`logo` 在 `showcase-v1.ts:36` 是**场景类型**而非 content 字段，所以锁的是类型本身（`LOCKED_SCENE_TYPES = {'logo'}`），`by_kind['brand']` 实测为 **空列表** —— 计数器第三类为零斯箍这一点是实测结论，不是遗漏。为什么是显式路径而不是类型：`content` 在 `showcase-v1.ts:100` 是 `z.record(z.string(), z.unknown())`，**每个场的每个字段都是 `unknown`，包括那些不得动的** → 没有类型边界可靠，锁必须显式写下来，代价就是可能不完整——所以 `LOCK_RULES` 导出且在测试里数掉，`coverage_report()` 直接打印交付图谱真正命中的部分。<br>**实测覆盖：14 条规则、`unexercised: []`——零盲区。**<br>**不锁的是审计结论而不是口味：**`durationInFrames`/`camera`/`motion`/`layout`/`style_bible`/`format`/`transitionIn/Out` 正是 11.1 点名的杠杆，锁了它们修复循环就什么都做不了。边界是「**a claim** vs **the staging of the claim**」——可以改数字怎么呈现，不能改它说什么。<br>**变异测试，4 个全杀**（⚠️ **P34 订正：其中「删第二个 `emit()`」与 `lock_a_legitimate_lever` 的锚点自 P30 起已死，**harness 会大声失败而非静默通过** ⇒ **它们实际没跑，而"全杀"对它们已不成立**；**现已由 `locked_fields_p32_mutation.py`（`diff_always_empty` 14 红）与 `locked_fields_mutation.py`（`drop_second_emit` 6 红、`lock_a_legitimate_lever` 1 红）取代并复核通过** —— 下文的数字保留为 P11 当时的记录）：**删 `labels` 规则 → 2 条红；列长差返回 `[]` → `test_a_repair_may_not_shorten_labels` 红；删第二个 `emit()` → `test_a_locked_field_added_where_none_existed_is_caught` 红。<br>**第三个变异暴露了一个真实缺陷，不是测量有效性的问题：**`diff_locked` 初稿只有单向 `emit(before, after)`，**修复过程里向一个原本没有锁定键的场景新增锁定字段（凭空写 caption、补值）就根本看不到**——每个其他测试全绿。补上第二次 `emit()` 后，新测试立即转红且 before/after 符号反了，需要在 `not primary` 时交换两边。<br>**14 条测试两个方向都断言**：违规动作被拒（改值/删标签/删整个字段/改标题），**11.1 的合法杠杆不被拦**——只会说「不」的守卫会通过这个文件里每一条测试，故 `test_the_levers_11_1_names_are_not_locked` 专为它存在。<br>**接线守卫已补齐（`9438563`）：`tests/test_locked_fields_wiring.py` 26 条 + `studio/scripts/locked_fields_mutation.py`。**修复规则本身此前零消费方——它是一道还没被任何东西跨过的栏杆。现在实测：**11.1 那 7 个合法杠杆全部放行**（durationInFrames / camera.translateZ / motion / style_bible / layout.padX / transitionIn / format，各 0 违规），**4 种攻击全部拦截且 kind 正确**（改 values→fact、删一个 label→identity、删整个 labels→identity、改 headline→copy），**双向不变量成立**（`diff_locked(a,b)` 与 `diff_locked(b,a)` 条数相同，含「只增不减」的 forward-only 修复形态）。<br>**变异 11 条，5 杀 6 存活 —— 六条全是「自我削弱」类，不是防御失效类。** 共同形状：函数里还有一条真断言，所以重言式检测不报。**这六条写进了代码，不只写进提交信息**，并由 `test_the_gap_is_still_open_and_labelled` 断言清单非空——**一份注释里的已知缺口会在被修掉的那一刻开始说谎**，而它只能保证缺口被修掉时会红（证明「仍然存活」需要跑元测试，本阶段明确不做）。<br>**扫描范围收窄的后果**：`SOURCE_ROOTS = ('studio','pipeline','docs')` 是**白名单**，**将来新增顶层源码目录必须同步这里**，否则「零消费方」会变成一句漂亮的谎。 |
+| 11.1 | Repair Planner（可改 padding/scale/font/chart width/color/timing/camera/stagger/duration） | ✅ **已裁定关闭** | **仪器已建成（`f625ff5`），修复器未写 —— 且这不是搁置，是实测结论。** 新增 `studio/scripts/chart_geometry.py`：从图表选项的几何算 x 标签间距，**不靠像素**（P10 审计结论「Needs the mark layout from the chart options, not pixels」）。对着渲染真值校准：**5 根柱 334px vs 333.6px、16 根柱 104.5px vs 104.2px，误差 0.2%**；宽度用真实字体（Microsoft YaHei）**逐字符量**而非数字数（该字体 `i` 是 5.3px、`W` 是 20.4px，同长度可差 4 倍）。九个变异八个杀。<br>**仪器不下判定** —— 只报比值，阈值由调用方定。`visual_qa.py` 的 `collision` 规则**已接入但仍报 `UNAVAILABLE`**，理由写明「仪器已建成、缺的是判据」，并有 7 条守卫让「顺手填上阈值」变得昂贵。<br>**解锁条件（实测，非推测）**：已交付图表比值 **0.278**（最宽标签 `Retention` 92.6px / 间距 333.6px），**没有一个标签接近碰撞**，修复循环无伤可修；而唯一能清碰撞的手段（缩短 labels）正是 11.2 禁掉的。→ **真正出现一个接近碰撞的图表时本项才需要动手**；若发现这样的图表，**应停下上报**——那会推翻本行的结论。**新计划**：11.1 做成「等真出现长标签图表时才起作用」的仪器，而不是一个修不存在问题的功能。<br>**惰性杠杆逐条复核（10-02 指挥窗口，非引述，附可证伪的 grep）**：`spec.width` / `spec.height` / `chart.width` / `chart.height` 在渲染源码里 **0 命中**；schema 里 `color` 字段 **0 命中**（唯一命中是注释里的单词 "colour"）；schema 里 `timing` 字段 **0 命中**。**十张图表场景只携带 `camera` / `durationInFrames` / `motion` 三个场景级字段**，`layout` 只存在于 showcase 的 kpi-hero / browser-stack / calendar → **11.1 在图表上真正够得着的只有时间轴三项**。**刻度字号硬编码 `20 * s`**（`ChartFrame.tsx:319` 与 `:378`）→ 这是 11.3「每轮步长无依据可定」的根因，字号不可由图谱影响，修复循环调不动它。（原结论保留）<br>**修复器**故意不写**：仪器已建成（`chart_geometry.py` / `f625ff5`），而已交付图表最差标签比值 **0.2775**（2026-10-10 指挥窗口复测，与原记的 0.278 一致）**离碰撞（1.0）差三倍多，无伤可修**。**解锁条件：真的出现一个接近碰撞的图表** —— **若你发现这样的图表，停下上报，那会推翻这条关闭**。** |
+| 11.2 | 锁定项保护（核心文案/品牌 logo/数值事实） | ✅ | **新增 `studio/scripts/locked_fields.py`（14 条锁定规则）。**实测 **3 种 kind：fact 9 / copy 4 / identity 1**。**品牌那一类不走字段规则**：`logo` 在 `showcase-v1.ts:36` 是**场景类型**而非 content 字段，所以锁的是类型本身（`LOCKED_SCENE_TYPES = {'logo'}`），`by_kind['brand']` 实测为 **空列表** —— 计数器第三类为零斯箍这一点是实测结论，不是遗漏。为什么是显式路径而不是类型：`content` 在 `showcase-v1.ts:100` 是 `z.record(z.string(), z.unknown())`，**每个场的每个字段都是 `unknown`，包括那些不得动的** → 没有类型边界可靠，锁必须显式写下来，代价就是可能不完整——所以 `LOCK_RULES` 导出且在测试里数掉，`coverage_report()` 直接打印交付图谱真正命中的部分。<br>**实测覆盖：14 条规则、`unexercised: []`——零盲区。**<br>**不锁的是审计结论而不是口味：**`durationInFrames`/`camera`/`motion`/`layout`/`style_bible`/`format`/`transitionIn/Out` 正是 11.1 点名的杠杆，锁了它们修复循环就什么都做不了。边界是「**a claim** vs **the staging of the claim**」——可以改数字怎么呈现，不能改它说什么。<br>**变异测试，4 个全杀**（⚠️ **P34 订正：其中「删第二个 `emit()`」与 `lock_a_legitimate_lever` 的锚点自 P30 起已死，**harness 会大声失败而非静默通过** ⇒ **它们实际没跑，而"全杀"对它们已不成立**；**现已由 `locked_fields_p32_mutation.py`（`diff_always_empty` 14 红）与 `locked_fields_mutation.py`（`drop_second_emit` 6 红、`lock_a_legitimate_lever` 1 红）取代并复核通过** —— 下文的数字保留为 P11 当时的记录）：**删 `labels` 规则 → 2 条红；列长差返回 `[]` → `test_a_repair_may_not_shorten_labels` 红；删第二个 `emit()` → `test_a_locked_field_added_where_none_existed_is_caught` 红。<br>**第三个变异暴露了一个真实缺陷，不是测量有效性的问题：**`diff_locked` 初稿只有单向 `emit(before, after)`，**修复过程里向一个原本没有锁定键的场景新增锁定字段（凭空写 caption、补值）就根本看不到**——每个其他测试全绿。补上第二次 `emit()` 后，新测试立即转红且 before/after 符号反了，需要在 `not primary` 时交换两边。<br>**14 条测试两个方向都断言**：违规动作被拒（改值/删标签/删整个字段/改标题），**11.1 的合法杠杆不被拦**——只会说「不」的守卫会通过这个文件里每一条测试，故 `test_the_levers_11_1_names_are_not_locked` 专为它存在。<br>**接线守卫已补齐（`3253bab`）：`tests/test_locked_fields_wiring.py` 26 条 + `studio/scripts/locked_fields_mutation.py`。**修复规则本身此前零消费方——它是一道还没被任何东西跨过的栏杆。现在实测：**11.1 那 7 个合法杠杆全部放行**（durationInFrames / camera.translateZ / motion / style_bible / layout.padX / transitionIn / format，各 0 违规），**4 种攻击全部拦截且 kind 正确**（改 values→fact、删一个 label→identity、删整个 labels→identity、改 headline→copy），**双向不变量成立**（`diff_locked(a,b)` 与 `diff_locked(b,a)` 条数相同，含「只增不减」的 forward-only 修复形态）。<br>**变异 11 条，5 杀 6 存活 —— 六条全是「自我削弱」类，不是防御失效类。** 共同形状：函数里还有一条真断言，所以重言式检测不报。**这六条写进了代码，不只写进提交信息**，并由 `test_the_gap_is_still_open_and_labelled` 断言清单非空——**一份注释里的已知缺口会在被修掉的那一刻开始说谎**，而它只能保证缺口被修掉时会红（证明「仍然存活」需要跑元测试，本阶段明确不做）。<br>**扫描范围收窄的后果**：`SOURCE_ROOTS = ('studio','pipeline','docs')` 是**白名单**，**将来新增顶层源码目录必须同步这里**，否则「零消费方」会变成一句漂亮的谎。 |
 | 11.3 | MAX_REPAIR_ROUNDS=3 + scene 级重渲 | ⬜ | |
 
 ---
@@ -246,7 +246,7 @@
 | # | 任务 | 状态 | 结论/数据 |
 |---|---|---|---|
 | 12.1 | BriefParser→ReferenceAnalyzer→StyleBible | ⬜ | **不建。** 解析侧已存在（`styleBible.tsx`），**生成侧零实现**；且生成侧若照 7 键 schema 走，默认就产出哑声明（见下） |
-| 12.2 | ScenePlanner→Storyboard→showcase_v1.json | ✅ **已裁定关闭** | **不建。** Storyboard 零实现（0 命中）；下游 `scene_graph.py` 已存在（`a55d03d` 起读 JSON Schema），**上游却无产出者** —— 应等生成侧先有契约（原结论保留）<br>****裁定 C（2026-10-10，P38/P40）**：三个答案都指向「上游已经做了」—— (a) brief 已带类型、`generate_graph` 逐字节原样带过（`IS` 判定 `True`），而「挑不出渲染不出来的类型」**已由 P21 的 `rule_graph_scene_renderable` 覆盖**；(b) 时长判据**不存在且可证** —— `beat_aligned_durations` 用 `resolve(beat_snap=True)` 求解后再问「离 beat 多远」，而吸附保证 `drift ≤ 0.5`、阈值却是 `> 0.5` ⇒ **它是一个自己和自己对齐的检查**；**而三张交付图谱在渲染器真正使用的时间线上漂移 12.9–13.9 帧**；(c) Storyboard **是恒等映射**（`generated.graph['scenes'] IS brief['scenes']`）。**未建任何模块。**** |
+| 12.2 | ScenePlanner→Storyboard→showcase_v1.json | ✅ **已裁定关闭** | **不建。** Storyboard 零实现（0 命中）；下游 `scene_graph.py` 已存在（`8c7522e` 起读 JSON Schema），**上游却无产出者** —— 应等生成侧先有契约（原结论保留）<br>****裁定 C（2026-10-10，P38/P40）**：三个答案都指向「上游已经做了」—— (a) brief 已带类型、`generate_graph` 逐字节原样带过（`IS` 判定 `True`），而「挑不出渲染不出来的类型」**已由 P21 的 `rule_graph_scene_renderable` 覆盖**；(b) 时长判据**不存在且可证** —— `beat_aligned_durations` 用 `resolve(beat_snap=True)` 求解后再问「离 beat 多远」，而吸附保证 `drift ≤ 0.5`、阈值却是 `> 0.5` ⇒ **它是一个自己和自己对齐的检查**；**而三张交付图谱在渲染器真正使用的时间线上漂移 12.9–13.9 帧**；(c) Storyboard **是恒等映射**（`generated.graph['scenes'] IS brief['scenes']`）。**未建任何模块。**** |
 | 12.3 | Asset Router（每 scene 判 Remotion/H3/Image/Existing/Hybrid） | ✅ **已裁定关闭** | **死头。** `visual_qa.py` 的 `missing_asset` 规则**实测已按 P11 收敛为 4 条硬编码 SFX 路径**（指挥窗口工单里写的「仍在读 3 个不可达字段」是过期的，执行 agent 纠正）；无资产判定需求可接（原结论保留）<br>****死头（资产路由）**：它要判的每个场景「该走 Remotion 还是 H3」，而需 H3 的只有 `video`/`data-plane-3d`、**且 P17 已裁定无 H3 渲染器** ⇒ **没有可路由的对象**。** |
 
 **勘察记录**：`docs/DIRECTOR_SCOPE_VERDICT.md`（518 行，含全部 grep 与逐键表）。**守卫已交付**：`tests/test_style_bible_no_dumb_declarations.py`（12 条）+ `tests/style_bible_consumption.py`。
@@ -269,11 +269,11 @@
 
 **指挥窗口纠正了执行 agent 一条、也被执行 agent 纠正两处**：
 
-- **指挥窗口的工单错了**：「交付图谱设过 4 键」**实测只有 1 键**（`typography`）。另 3 键在 `7bef0a8` **已被删除 —— 因为它们是惰性的**；工单采信的那 4 键里有 3 键来自 `studio/public/jobs/`（gitignore 的 staging 副本）。**照 4 键设计会把三个已被判无效而删的键当成成功先例。**
+- **指挥窗口的工单错了**：「交付图谱设过 4 键」**实测只有 1 键**（`typography`）。另 3 键在 `974f6ed` **已被删除 —— 因为它们是惰性的**；工单采信的那 4 键里有 3 键来自 `studio/public/jobs/`（gitignore 的 staging 副本）。**照 4 键设计会把三个已被判无效而删的键当成成功先例。**
 - **执行 agent 报告自己的守卫第一版读了自己的被测对象**：它把 `styleBible.tsx` 算作消费方，而 resolver 定义了全部 9 个导出、因而命名了全部 9 个。已修并写进注释。**这一条与 P11「治愈式重绑定」同族：守卫问错了对象。**
 - 另主动上报五条自身失误（第二版用词匹配判消费方造成 6 个假消费方、文档写坏 30 个中文字符、两处 grep 数字写错、node 探针 `npx` 路径失败等），均如实记录。
 
-**反向缺陷已闭合（`836f532`，复验通过）** —— 四段逐段裁定 A/A/A/B：
+**反向缺陷已闭合（`c1e9ce1`，复验通过）** —— 四段逐段裁定 A/A/A/B：
 
 | 段 | 裁定 | 依据 |
 |---|---|---|
@@ -301,7 +301,7 @@
 
 **指挥窗口独立复验**：node 探针实测 `radius`/`shadow`/`depthCue` **三段 SURVIVED 带真实值**、`depth` 按裁定被剥离；正向变异（加未声明的 `bleed` merge）→ 5 条红；反向变异（删已声明且被消费的 `spacing`）→ 6 条红，含镜像一致性与两侧解析。还原后 git 干净、全量 346→**355 passed, 2 skipped**（+9）。
 
-**根已关：`.strict()` 已加（`f1a591e`，复验通过）** —— 上一项修的是实例，本项关的是温床：
+**根已关：`.strict()` 已加（`5490be6`，复验通过）** —— 上一项修的是实例，本项关的是温床：
 
 - **zod 侧** `StyleBibleSchema` 加 `.strict()`；**JSON Schema 侧** `definitions/StyleBible` 加 `"additionalProperties": false`（10 键）。**两侧镜像同步**，`test_showcase_schema_parity.py` 仍绿。
 - **查全比工单宽得多**：工单测的是 19 份图谱，**执行 agent 扫了全仓 563 份 JSON**（含 `pipeline/**`、`studio/public/**`、`tests/**`、`studio/bin/**` 及 `node_modules` 之外的一切）：**携带 `style_bible` 的仅 3 份，未声明键 0 处 → 加 `.strict()` 不会让任何现存图谱转红。**
@@ -359,7 +359,7 @@
 
 **变异存活且应当存活**：把图谱里一个 scene 的值改掉 → `373 passed`，**因为现有系统真的察觉不到**，那正是被记录的发现；agent 用第三条变异（让某规则真去读 scene 值）证明这个存活**不是守卫空转**，而非造 contrived 输入去杀它。
 
-**本阶段附带修掉一处更危险的失效（`6e86b46`）**：**`visual_qa.py` 被喂错东西时报告「通过」** —— `:761` 的 `args.props.exists()` 条件在文件不存在时静默跳过 → `props` 保持 `None` → `:773` 整段 `rule_missing_asset` 被跳过 → **一次什么都没跑的 QA 输出「无发现」报告、退出码 0**（实测：`0 FAIL, 0 UNVERIFIABLE, 4 UNAVAILABLE` + `EXITCODE=0`）。**CI 里等价于绿灯。**
+**本阶段附带修掉一处更危险的失效（`2cac275`）**：**`visual_qa.py` 被喂错东西时报告「通过」** —— `:761` 的 `args.props.exists()` 条件在文件不存在时静默跳过 → `props` 保持 `None` → `:773` 整段 `rule_missing_asset` 被跳过 → **一次什么都没跑的 QA 输出「无发现」报告、退出码 0**（实测：`0 FAIL, 0 UNVERIFIABLE, 4 UNAVAILABLE` + `EXITCODE=0`）。**CI 里等价于绿灯。**
 
 - **裁定走 B（报 `UNVERIFIABLE`）而非 A（`ap.error()`）**，依据是**房屋约定**：`qa_report.py:17` 写明「Exit 1 on any FAIL, and on any UNVERIFIABLE」，`visual_qa.py` 自身表头 §2 定义 UNVERIFIABLE 为「仪器测不了」。A 被否决是因为它会**毁掉报告** —— `--json` 消费方会拿到非零退出码**且完全没有 findings 数组**。- **接上了那个零调用方的 `rule_duplicate_check_props`（`:615`）而不是重新发明** —— 它本就实现了 B 的语义（UNVERIFIABLE + 带路径）。- **两个工具现在约定一致**：缺失 props 时 `visual_qa.py` 退出 **1** 并指名路径，`ab_field.py:471-472` 退出 **2** 并指名文件。方向一致（都非零）。- **那条钉住「现状」的守卫被重写而非删除或放松**（161 行变更），agent 读后确认它钉的是现状、并按其注释要求「刻意回来重写」——**红在了正确的理由上**（规则不再消失，而是改变判定）。
 
@@ -382,7 +382,7 @@
 ① **第一次失效实验测的是死代码** —— 注入一个未使用的 export 然后 grep bundle，**webpack tree-shake 掉了**，据此差点得出「编辑永不生效」的结论；改用构造级可观测的编辑（`durationInFrames={150}`→`{151}`）重做。**「测了不存在的东西」与「在错误的尺度上测」（P13 的 480×270 下采样）是同一族错误**；
 ② 它**不信任 `render.mjs` 自己的 `150f` 输出**，用 `ffprobe -count_frames` 独立复核了帧数 —— **这个态度值得保留**。
 
-**本阶段附带修掉两处「入口静默通过」（`306f327`）** —— 与 `6e86b46` 的 `visual_qa.py` **同构**：工具在被喂错东西时报告成功。**这不是一个 bug 是一类**：「入口接受任意输入，错的那个和对的那个返回同样的成功」。
+**本阶段附带修掉两处「入口静默通过」（`b017b2a`）** —— 与 `2cac275` 的 `visual_qa.py` **同构**：工具在被喂错东西时报告成功。**这不是一个 bug 是一类**：「入口接受任意输入，错的那个和对的那个返回同样的成功」。
 
 - **`render.mjs` 静默忽略任何未知 flag**。**带默认值的 flag 拼错时连 `requireArg` 兜底都没有**：`--cosdec vp9`（`codec` 拼错）过去**退出 0 并产出一部 h264 片子**，**输出里没有任何东西能把它和成功区分开**。已修：退出 2 + 指名该 flag + 列出全部已知 flag。
 - **`still.mjs` 早就修过这个 bug、`render.mjs` 漏了**：`still.mjs:31-33` 的注释原话是「Unknown flags are now an error, because a typo that silently selects a different frame produces a wrong image rather than a failure」—— **同仓库、同类 bug、修一处漏一处**。
@@ -418,7 +418,7 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 **这不是「声明了没人读」的形态**，所以关键词检索是错的工具。执行 agent 逐条关闭了间接路径（props 展开 / `useDesign()` / 方括号访问 / `JSON.stringify` / `Object.keys` / `GENERATIVE_SCENE_TYPES` 的 import——**无人 import**）。Python 侧 `scene_graph.py:179` 确实消费它，**但那是规划器读自己的模型，不是渲染器读这个 prop**。
 
-**来历**：`a707d31`（P3）引入，commit message 写的是 routing「declared, not guessed」；`git log -S generative -- studio/` **只有这一个提交** —— **TS 消费方从未存在过**。parity 测试钉住的是两侧的**声明**，所以它一直绿着、也一直没被质疑。
+**来历**：`c779bb9`（P3）引入，commit message 写的是 routing「declared, not guessed」；`git log -S generative -- studio/` **只有这一个提交** —— **TS 消费方从未存在过**。parity 测试钉住的是两侧的**声明**，所以它一直绿着、也一直没被质疑。
 
 **建议（未实施，提请裁定）**：**标注，不删、不接线。**
 - 删 TS 那一半 → **为去掉一个惰性的一半而破坏一条活着的 parity 守卫**；
@@ -469,7 +469,7 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 **分类基于规则函数实际 emit 的 `Finding.rule` 名**（调用全部 11 个函数得出），**不是函数名** —— `rule_duplicate_check_props` **emit 的是 `missing_asset`**，按函数名分类会给一条规则两个主人。
 
-**工单的怀疑「总闸可能不存在」被推翻**：`visual_qa.py:855` `return 1 if hard or unver else 0`，`6e86b46` 让 UNVERIFIABLE 也非零。**实测退出码（无管道）：`--frame`→1、`--frame-pair`→1、`--props <不存在>`→1。总闸存在且已对齐。**
+**工单的怀疑「总闸可能不存在」被推翻**：`visual_qa.py:855` `return 1 if hard or unver else 0`，`2cac275` 让 UNVERIFIABLE 也非零。**实测退出码（无管道）：`--frame`→1、`--frame-pair`→1、`--props <不存在>`→1。总闸存在且已对齐。**
 
 **但真正的问题是「永久红的闸和没有闸无法区分」**：
 
@@ -502,9 +502,9 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 **未决项（提请裁定）**：
 
-1. ~~**`duplicate` 阈值与其输入错配**~~ → **已修（`fa6cbb5`，P19）**，见下。
-2. ~~`contrast` 永久失败~~ → **已修（`bc19ffa`，P22）**，见下；
-3. ~~`--props` 路径不检查任何交付物~~ → **已修（`8a2b090`，P21）**，见下；
+1. ~~**`duplicate` 阈值与其输入错配**~~ → **已修（`d8b9f05`，P19）**，见下。
+2. ~~`contrast` 永久失败~~ → **已修（`0306ce4`，P22）**，见下；
+3. ~~`--props` 路径不检查任何交付物~~ → **已修（`61bdb79`，P21）**，见下；
 
 ---
 
@@ -597,7 +597,7 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 ② **第一次行尾检查是错的** —— `grep -c $'\r$'` 报 `visual_qa.py` 1372/1371 行 CRLF、**读起来像整文件 CRLF**；字节级检查显示它是 **LF**。**它在编辑前先对了 git，而不是采信那个读数**；
 ③ **编辑 `UNIMPLEMENTED` 时短暂造出一个重复的 `'flicker'` 字典键**，**在任何测试跑之前就抓到并回退** —— 这正是本项目记录在案的 dict 陷阱；
 ④ 两个守卫首跑有 bug（`n_samples` 把全语料的 297 与单目录重算的 37 比、以及传了 `capsys=None`）；⑤ **两个草稿脚本本身有 bug**（f-string `SyntaxError`、硬编码 `n=41` 与段数不符），**它丢弃了它们的输出、重新干净地测了一遍，而不是照着有 bug 的脚本汇报**。
-4. ~~`flicker` 是缺失的 Motion 规则~~ → **已处理（`c70ce27`，P23）**，见下；
+4. ~~`flicker` 是缺失的 Motion 规则~~ → **已处理（`5df7a24`，P23）**，见下；
 5. 总计划的「四层」行现在有实测分布 3/3/2/2，**是否要更新措辞**。
    **分布已随 P21/P22 变为 4/3/2/3，四层与总闸的未决项至此全部处理完毕**（见下各节）。
 
@@ -701,7 +701,7 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 ### 最重要的一条：**当初的「对齐」是人眼和手工，没有留下可复用的测量**
 
-- **P4 的提交自己这么说**：`3cd20ff` 的正文是「Fixed three layout defects found by **inspecting frames**」—— **看帧，不是测量**；
+- **P4 的提交自己这么说**：`347bff1` 的正文是「Fixed three layout defects found by **inspecting frames**」—— **看帧，不是测量**；
 - **`tokens.ts` 记的是规则不是测量**：调色板文档写的是 「near-black, warm off-white ink, one gold accent」，**没有任何一个 hex 值被追溯到那部片子**；
 - **四个场景的时间戳（24s / 26–30s / 32s / 34–38s）背后没有任何计算**。**指挥窗口独立复核**：`git grep 参考片` 在 `studio/` 与 `pipeline/` 下**只命中三份图谱的 `_note` 注释**，且那三处自己写着「合成数据」—— **`_note` 按 P4 的约定是给人看的、解析后即丢弃的元信息**；
 - **⚠️ 原始任务书已丢失**：产出总计划的那次会话以「这是第一阶段内容：」开头，**那句之后的内容从未被持久化** ⇒ **连片子叫什么名字都无法恢复**。
@@ -931,7 +931,7 @@ values 18–96,  baseline 40
 | **修后** | **0** | — | — |
 
 **⇒ 那不是标题，是柱子；颜色与它报的 `(49,49,50)` 只差 2 个色阶，列范围与它完全一致。**
-**⇒ 我的成因判定是错的，它的是对的。** 源码已按 `git show 1cb9a6b^:` 精确还原，工作树干净。
+**⇒ 我的成因判定是错的，它的是对的。** 源码已按 `git show cf4cccd^:` 精确还原，工作树干净。
 
 ### 执行 agent 自报的四条失误（**它的第一版修法更差**）
 
@@ -1307,7 +1307,7 @@ M1 从豁免清单删 `durationInFrames` | **杀** —— 探针移动：`exempt
 **⇒ 这就是 P33 的真正教训：写注释时，别的文件正按行号引用它。**
 **⇒ 而那正是 `locked_fields.py:347` 那个注释的原型** —— 它用 `:93` / `:156-157` 指 `Brand.tsx`。
 
-其余三条：守卫第一次**红在了错的地方**（`comment_blocks` 只处理 `//` 与 `/* */`、读不了 Python 的 `#`，导致新加的引用守卫报"找不到引用"—— **解析漏洞不是真问题，已改用 `tokenize`**）；一次 shell 误报（`${f##*:}` 把 `E:` 的冒号吃掉、4 个文件全报 DIFFERS，**实际是引号 bug**，已用 sha256 复核）；**中途发现 HEAD 变了**（P32 在它跑测试期间提交 `16c8a88`）—— 它**重新对着 P32 最终版复跑守卫并复验了 3 处引用**。
+其余三条：守卫第一次**红在了错的地方**（`comment_blocks` 只处理 `//` 与 `/* */`、读不了 Python 的 `#`，导致新加的引用守卫报"找不到引用"—— **解析漏洞不是真问题，已改用 `tokenize`**）；一次 shell 误报（`${f##*:}` 把 `E:` 的冒号吃掉、4 个文件全报 DIFFERS，**实际是引号 bug**，已用 sha256 复核）；**中途发现 HEAD 变了**（P32 在它跑测试期间提交 `3d396a0`）—— 它**重新对着 P32 最终版复跑守卫并复验了 3 处引用**。
 
 ### 提请裁定（本项一律未动）
 
@@ -1408,7 +1408,7 @@ M1 改成不存在的文件 → 红｜**M2 删掉一处引用 → 绿**（少引
 | `visual_qa.py:1049` | `FinanceShowcaseWide.tsx:95` | `:150` | **新发现** |
 | `test_p13_scene_cache_facts.py:257` | `visual_qa.py:751`（空行） | `:1393` | **新发现** |
 
-**⚠️ 根因是同一次编辑：P28。** 它用 `git show bc19ffa:` 证明 —— **P22 时 `ChartFrame.tsx:320,339,379` 正好就是那三处 `inkFaint`、`FinanceShowcaseWide.tsx:95` 正好就是 `MissingScene`**；P28 给 `ChartFrame.tsx` 加了 **22 行**（393→415）、给 `FinanceShowcaseWide.tsx` 加了 **55 行**，**把四处全推下去了**。
+**⚠️ 根因是同一次编辑：P28。** 它用 `git show 0306ce4:` 证明 —— **P22 时 `ChartFrame.tsx:320,339,379` 正好就是那三处 `inkFaint`、`FinanceShowcaseWide.tsx:95` 正好就是 `MissingScene`**；P28 给 `ChartFrame.tsx` 加了 **22 行**（393→415）、给 `FinanceShowcaseWide.tsx` 加了 **55 行**，**把四处全推下去了**。
 
 ### ⚠️⚠️ 而这条漂移比工单设想的更险：**它落在真实代码上，只是错的那部分**
 
@@ -1506,7 +1506,7 @@ P22 时  ChartFrame.tsx:320 = color: PALETTE.inkFaint,   ← 正是它声称的�
 ### ⚠️ 提交撞车（已由指挥窗口处理）
 
 **两个 agent 共享一个工作树与一个 index**：P12.1 stage 了六个文件，**在它自己的 `git commit` 跑之前，并发的 P37 跑了 `git commit`，把整个 index 提交了 —— 连 P12.1 的文件一起，顶着 P37 的标题**。
-**P12.1 没有 `reset --soft` 重来**（那个提交属于**仍在运行的** agent，**在运行中的 agent 底下改写历史比一个标错的提交更糟**），**改为记录归属（`eb525c3`）**。**两个 agent 都结束后，指挥窗口用 `git commit-tree` 从完全相同的 tree 重建了该提交**（`e29a400` → `8bd4666`）—— **内容零改动，只有 message 变**，**三个树对象逐一比对确认**。
+**P12.1 没有 `reset --soft` 重来**（那个提交属于**仍在运行的** agent，**在运行中的 agent 底下改写历史比一个标错的提交更糟**），**改为记录归属（`73bad8f`）**。**两个 agent 都结束后，指挥窗口用 `git commit-tree` 从完全相同的 tree 重建了该提交**（`e29a400` → `9a8239b`）—— **内容零改动，只有 message 变**，**三个树对象逐一比对确认**。
 
 ---
 
@@ -1593,7 +1593,7 @@ for r in sc.resolve(beat_snap=True):        # ← 用 beat_snap=True 解
 
 ### ⚠️ 它纠正了指挥窗口工单的一处前提，而且它是对的
 
-工单（**及 `visual_qa.py:1051-1054` 的 docstring**）都写「22 声明 / 13 渲染 / **9 落空**」。**它实测：22 / 20 / 2**（`video`、`data-plane-3d`）—— 因为 **`a7f02b8`（P29）验收了七个新渲染器**。
+工单（**及 `visual_qa.py:1051-1054` 的 docstring**）都写「22 声明 / 13 渲染 / **9 落空**」。**它实测：22 / 20 / 2**（`video`、`data-plane-3d`）—— 因为 **`a6989f2`（P29）验收了七个新渲染器**。
 
 **⇒ 按「避开那 9 种」写的 Planner 会去避开 7 种现在渲染正常的类型，而真正渲染不出来的 2 种一个都没提到。**
 
@@ -1623,7 +1623,7 @@ for r in sc.resolve(beat_snap=True):        # ← 用 beat_snap=True 解
 
 ## P40 — 收尾 P38/P39，并给「docstring 里的数字」建守卫　状态：✅
 
-提交 `0138c69`（未推送）。全量 682→**686 passed, 4 skipped**。
+提交 `27e6f7c`（未推送）。全量 682→**686 passed, 4 skipped**。
 
 ### 两条此前留在工作树里的半成品，已核实并落地
 
@@ -1793,7 +1793,7 @@ M1 去掉豁免 → `assert 'FAIL' == 'PASS'`；**M2 把豁免改成全局 → �
 
 ## P25 — 门禁接进渲染路径（props 级），逐帧级**实测接不上**　状态：✅
 
-记录 `docs/P25_QA_IN_RENDER_PATH.md`，守卫 `tests/test_p25_qa_in_render_path.py`，**P17 的判定随之改写**（`0d085a9` + `d652aef`）。全量 494→**506 passed, 3 skipped**。
+记录 `docs/P25_QA_IN_RENDER_PATH.md`，守卫 `tests/test_p25_qa_in_render_path.py`，**P17 的判定随之改写**（`d1c7232` + `fca3807`）。全量 494→**506 passed, 3 skipped**。
 
 ### 成本：瓶颈不是解码，是仪器
 
@@ -1810,7 +1810,7 @@ M1 去掉豁免 → `assert 'FAIL' == 'PASS'`；**M2 把豁免改成全局 → �
 
 ### 裁定 C（拆开）
 
-- **props 门禁：已接。** `--gate-props` 在 **bundle 之前**跑 `visual_qa.py --props`，红则不渲。**拒绝成本 0.41s 且不留 mp4**（所以工单担心的「QA 红了片子已经产出」在这个接点不成立）；通过成本 **0.20s（渲染的 1%）**。**默认关闭**，理由写在文件里：**`--props` 也吃非图谱的 timeline/report props，那类会被报 UNVERIFIABLE 而非零退出**（`6e86b46` 立的规矩，本项未动它）。
+- **props 门禁：已接。** `--gate-props` 在 **bundle 之前**跑 `visual_qa.py --props`，红则不渲。**拒绝成本 0.41s 且不留 mp4**（所以工单担心的「QA 红了片子已经产出」在这个接点不成立）；通过成本 **0.20s（渲染的 1%）**。**默认关闭**，理由写在文件里：**`--props` 也吃非图谱的 timeline/report props，那类会被报 UNVERIFIABLE 而非零退出**（`2cac275` 立的规矩，本项未动它）。
 - **逐帧门禁：未接，且实测不应接。** **把 801 帧全跑一遍，801/801 非零退出，而那些红不来自渲染** —— 801+801 是 `aspect`/`font_size` 的 UNVERIFIABLE，因为调用方没传 `--props`/`--declared-px`；另 50 个 `black_frame`、60 个 `blur` FAIL 是**场景之间的过渡帧**，而那里的阈值窗口只有 **0.000762 宽 —— 窄到分不清「故意的空白帧」与「渲染卡住」**。**接上去会让每次渲染都因与片子无关的理由变红 —— 那正是 P18 记的「永久红的闸」换个入口重现。**
 
 **指挥窗口独立复现了决定性的一步（同一帧）**：
@@ -1849,7 +1849,7 @@ M1 去掉豁免 → `assert 'FAIL' == 'PASS'`；**M2 把豁免改成全局 → �
 
 **它自己污染了测试文件的行尾**（`p.write_text()` 在 Windows 上翻译行尾 → 1101 个 CR，HEAD 是 0），**且是在第一次全量跑之后才发现**，所以那次 `506 passed` 是在 CRLF 文件上跑出来的。**它按字节计数修好、重跑，并把这次作废写进文档而不是悄悄替换。**
 
-**三个被钉住的文件在 `ad23a6c..d652aef` 之间 `git diff` 为空**：`visual_qa.py` `7e7d586a…`、`frame_baseline.py` `91e3463c…`、`render.mjs` `120b11da…` —— **P25 的接线与 `:95-108` 的清理逻辑都没被碰。**
+**三个被钉住的文件在 `32ed7e9..fca3807` 之间 `git diff` 为空**：`visual_qa.py` `7e7d586a…`、`frame_baseline.py` `91e3463c…`、`render.mjs` `120b11da…` —— **P25 的接线与 `:95-108` 的清理逻辑都没被碰。**
 
 **一个待指挥裁定的遗留**：该 agent 发现 `docs/P17_SHOWCASE_DEMO.md` 里**有 16 个它没修的 `\ufffd` 替换字符**（它编辑时修掉了自己造的 5 个），**理由是「超范围且没人复核过」** —— 这个理由成立，**留待单独处理**。
 
@@ -1917,7 +1917,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
 
 **指挥窗口的疑点成立：`rule_duplicate` 的 docstring 声称的「复用 take_ranker 阈值」从来不存在。** `take_ranker.py` 里那些 0.5 是 `m_sharpness`/`m_exposure`/`m_temporal_stability` 的空输入兜底、`calcOpticalFlowFarneback(pyr_scale=0.5)` 与 jitter 中性值 —— **不是重复判定阈值**。那个文件里真正像重复检测的是 `m_duplicate`（`:165-171`），但它是**另一把尺子另一个刻度**：`mean abs diff / 255`，切在 **0.0015**（≈0.38 灰阶）。**0.5 的真身是 `rank_takes.py:44` 的 `DUP_THRESHOLD`** —— **数字是真的，但在别处，复用从未发生**。
 
-**因此裁定 B（docstring 撒谎）优先于 A（阈值错配）** —— 一个声称的性质不存在，比一个阈值不合适严重得多（`55b3ac5` 的教训：**docstring 声称的性质必须由代码兑现**）。
+**因此裁定 B（docstring 撒谎）优先于 A（阈值错配）** —— 一个声称的性质不存在，比一个阈值不合适严重得多（`9254f2d` 的教训：**docstring 声称的性质必须由代码兑现**）。
 
 **但 A 之所以不可选，是因为实测证明「换更好的切口」根本不存在**：
 在 329 帧语料上给两个总体打分（相邻帧应 PASS vs 重跑应 FAIL），**这把尺子上最好的一刀 balance 0.9969，落在恰好 0.0 之上，且仅由一对真实重跑帧撑着**（`fr_a`/`fr_b` 是同一次渲染的两帧，不是两帧对比）—— **两个总体不分离**。**这就是 `collision` 规则至今 UNAVAILABLE 的同一种处境，所以它没有编一个阈值 —— 与 P18 的 `collision` 处置一致。**
@@ -1956,7 +1956,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
 - **分布**：那 7 对 = **{0.000} ∪ [34.543, 62.820]}**；扩到全部 120 对 = **{0.000} ∪ [31.264, 105.839]}** —— **P1 的间隙仍成立**；
 - **它定不下来的部分**：**(0.0, 34.543) 里的任何值对现存每一对都给出相同判定**，**0.5 与 1.0 都在这个空隙里、都只抓到那一个 0.000 对**。
 
-`git log -S` 显示那个 `1.0` 是 P1（`47d2f79`）写进来的 —— **与它并不依据的那份测量同时写下**。
+`git log -S` 显示那个 `1.0` 是 P1（`cc20d0d`）写进来的 —— **与它并不依据的那份测量同时写下**。
 
 **⚠️ 指挥窗口复验时纠正了执行 agent 的一处方向性错误**：它写「a near-duplicate at 0.7 is caught by 0.5, missed by 1.0」—— **反了**。判定是 `d < threshold`，**阈值越大判得越宽** ⇒ **1.0 抓得到 0.7、0.5 漏掉它**。它自己跑出的变异输出第 2 行也是 `duplicate=False`，**与它 docstring 里那句相反** —— 注释与自己的输出口径不一致。**指挥窗口独立复核：** `0.7 < 0.5` 为假、`0.7 < 1.0` 为真；**统一到 0.5 是收窄盲区，不是放宽**。**结论（删掉第二个字面量）不受影响 —— 理由方向错了，结论方向对。**
 
@@ -1990,7 +1990,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
   - **已知边界一（样本量薄）**：真实数据仅 9 对，其中真重复仅 1 例（n=1）。后续每积累多 take 镜头应重测该分布。
   - **已知边界二（语义已收窄）**：0.5 只抓「逐像素完全相同」，不再抓「近重复」。若将来出现「同 seed + 非确定性采样器」的重跑（距离小但非零）会漏检。已写入 `rank_takes.py` 阈值注释。
 - 2026-09-30：**P1 完成**。TakeRanker 上线：9 项客观指标 + 像素级冗余检测 + 人工 override 最高优先 + fail-closed。EP01 实测：S05A 自动改选(闪烁缺陷 take 被淘汰)、S06_T02 判定同 seed 冗余(像素差 0.0)。select_takes 全 12 镜头走自动排名，QA 16/16 PASS。**边界认知：客观指标只能淘汰坏的，无法在「都好」里挑出更好的——S06 两 take 全指标相同，VLM critic 留作增量。**
-- 2026-09-30：**P6.2 完成 —— Browser Stack 真正居中**（commit `5be9a46`）。60 passed，tsc 干净，完整渲出 `out/showcase_p6_centred.mp4`（1920×1080@60，`yuv420p(tv, bt709)`，过 `qa_final` 严格 pix_fmt）。
+- 2026-09-30：**P6.2 完成 —— Browser Stack 真正居中**（commit `2d3d4c3`）。60 passed，tsc 干净，完整渲出 `out/showcase_p6_centred.mp4`（1920×1080@60，`yuv420p(tv, bt709)`，过 `qa_final` 严格 pix_fmt）。
   - **上一条的归因是错的，已更正**：原记录「光学重心偏右 = 近端窗口被透视放大」只是三个缺陷之一，而且是次要的那个。量像素后才发现真正的缺陷①大得多。
   - **过程失败（第四次同类，但这次是「读源码代替量像素」）**：上一轮我判「参数已生效」的标准是**读代码确认组件读了这些参数**，不是**量渲染结果**。这个标准是无效的 —— 本轮三个缺陷全部能通过读源码发现「代码看起来对」：①注释写得像已修、②新写的反解数学读起来完全合理、③一行分数方向写反。**新规则：构图/排版类改动，验收标准只能是像素测量，不能是「代码读起来对」**。已落成工具：`studio/bin/still.mjs`（单帧渲染）+ `studio/scripts/measure_frame.py`（剪影/内容 bbox）。
   - **隔离实验推翻了自己的假设**：先归因于 `perWindowRotateY` 的 3D 旋转，把旋转与相机全归零重渲 —— 仍 +33px，假设被证伪。手算才发现是 `screenScaleFor` 把分数写反了。**先证伪再修，比先修再验便宜**。
@@ -2004,7 +2004,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
   - **顺手接上了一个哑字段**：`cameraLanguage.perspective` 之前没有任何代码读（`CameraRig` 只看 `scene.camera`）。已接为缺省值（场景自己的优先）。注意这份图谱每个场景都自带 perspective，所以对它是缺省而非覆盖 —— 已在图谱里不放该声明，**不声明一个接上了但对这份图谱无效的东西**。
   - **测量工具自身也有主题盲区**：`measure_frame.py` 原来按暗色表面色（`R≥19`）判剪影，亮色四场全部 EMPTY。**只对一个主题有效的验收工具，会安静地给另一个主题发错通行证。** 已重写为**背景相对**判据（取画面边框环的众数作背景，再按偏离量取 bbox），两个主题通用。同时把误导性的 `ink` 标签改成 `marks` 并写明它测的是内容范围不是居中。
   - **仍未做（如实记）**：`SPACE` 尺度仍是 8/16/24/40/64/104/168，与总任务书要求的 4…96 步长不一致；`DEPTH` 阶梯无场景使用；`CameraRig`/`primitives` 仍静态 import `MOTION`，所以 `motionLanguage` 的覆盖到不了它们（与本轮发现同类的哑声明，已记录未修）。
-- 2026-09-30：**P6 复验通过并已推送**（`1595732..7bef0a8`，3 个提交）。复验官用我方工具独立复现了全部关键数字：Browser Stack 静止帧 **+1.5px**（与声称逐位一致）、亮色 backdrop **(244,241,234)** vs 暗色 (10,10,12)、图谱 `style_bible` 只剩 `['typography']`。复验官指出两处遗留问题，**两处都复现成立并已修**：
+- 2026-09-30：**P6 复验通过并已推送**（`6f99b5e..974f6ed`，3 个提交）。复验官用我方工具独立复现了全部关键数字：Browser Stack 静止帧 **+1.5px**（与声称逐位一致）、亮色 backdrop **(244,241,234)** vs 暗色 (10,10,12)、图谱 `style_bible` 只剩 `['typography']`。复验官指出两处遗留问题，**两处都复现成立并已修**：
   - **(1) 居中判据对亮色不可靠 —— 已修，且是我这个工具的第三次同类错误。** 复现：`extent x[0..1805] offset=−57.5px`，而同一帧的 `marks x[411..1157]` 与暗色**完全一致**（说明构图没问题，是判据坏了）。根因：v2 用「边框众数当背景 + 固定阈值 8」，而**亮色背景自身动态范围 11 > 8**（暗色只有 6，所以一直没暴露）——大半个画面被当成内容。**固定阈值在这里根本不成立**：构图与自身背景的对比度和背景渐变量级相同，而这是逐主题的设计选择。<br>修法：逐行拟合背景（取该行左右边缘采样做线性模型，径向渐变在行内近似线性，且构图居中所以边缘是背景），再对残差取阈值；**模型解释不了这一帧时直接拒绝出数并返回非零退出码**，而不是给一个自信的错数字（错数字会被写进账本然后被争论，拒绝才会被修）。<br>复测：亮色 **+21.5px**、暗色 **+3.0px**；四场两主题逐一对齐（s01 −531.5/−531.5、s04 −0.5/−0.5）。s02 两主题差 18.5px 是**真实性质不是 bug**：暗色阴影 alpha 0.50 压在 10 亮度上只偏 5（低于阈值量不到），亮色阴影 alpha 0.19 压在 244 上偏 43（量得到）——所以 **`extent` 含能量到的阴影，跨主题不可比；`marks` 可比**（已写进脚本文档与本条）。<br>**新增 3 项测试**（`tests/test_measure_frame.py`，合成帧，不依赖任何一次渲染，因此可移植）：亮色窗口必须量到 ~0、同一窗口在两主题下 `marks` 必须一致、模型解释不了时必须拒绝且退出码非零。**变异测试通过**：把工具退回 v2 实现，亮色那条转红；还原后 3 项全绿。**这个工具错了三版，每一版在暗色上都对** —— 教训是验收工具必须**跨主题验证**，而且要在有第二个主题之前就写好跨主题测试。
   - **(2) `still.mjs --out` 把文件当目录且不提示 —— 已修。** 现在识别 `.png` 后缀（单帧时按文件写），并显式打印「output directory」与最终写入清单与数量；`.png` 配多帧直接拒绝（exit 2）。三种模式实测通过。
   - **顺带修了一个自己写的输出格式坑**：`offset={offset:+7.1f}px` 的宽度限定符会补前导空格，输出成 `offset= +3.0px` —— 按空白切分的解析器会把它拆成两个 token。已去掉填充（字段保持单 token），测试解析器改用正则。
@@ -2063,12 +2063,12 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
   - **未做**：P7.3（annotation 避让 / 数字格式 / theme / stagger / emphasis 收口）；矩阵接进 `tests/` 成为 CI 项（复验官建议 P8 收尾做）。
 
 - 2026-10-01：**复验官独立核实交接状态**（接手 `docs/HANDOFF_VERIFIER_20261001.md`，`git log` 交叉核对）。**抓到 3 处账实不符 + 1 个当下生效的机制缺口**，进度表滞后已按 `git log` 订正。
-  - **订正进度表**：`7.2` 行 ⬜ → ✅（实际 `7a6bcaf` 已提交）、P7 表头 ⬜ → 🔄、`7.1` 行补注第 10 场（1950 帧）、`7.1b` 行补注矩阵 24/24。**changelog 判定可信、任务行与表头滞后 —— 这条判断经核实成立。**
+  - **订正进度表**：`7.2` 行 ⬜ → ✅（实际 `c982da2` 已提交）、P7 表头 ⬜ → 🔄、`7.1` 行补注第 10 场（1950 帧）、`7.1b` 行补注矩阵 24/24。**changelog 判定可信、任务行与表头滞后 —— 这条判断经核实成立。**
   - **假账一：「60+ 项」不成立**。`lifecycle.check.ts` 实测 **29 个 `check(` 调用点、跑出 54 条断言**（`dur` 循环把 29 展开为 54）；`scale.check.ts` 为 59 调用点 / 58 断言。已在上方 P7.2 条内就地订正。
   - **假账二：「106 passed」当前不可复现**。`python -m pytest tests/ -q` 直接 collection ERROR（`No module named 'cv2'`）—— **pytest 只装在 Python 3.12、cv2 只装在 3.10，106 = 102 + 4 劈在两个解释器里**，两个都不是完整环境。实测 **102 passed / 3.16s**（`--ignore=tests/test_take_selection_behaviour.py`，该文件 4 条测试全部需要 cv2）。**裁定：不动环境**（用户决定），缺口记录在此。
   - **机制缺口：`lifecycle.check.ts` 没接进 pytest**。`tests/` 全库零引用；而 `scale.check.ts`（`tests/test_chart_math.py:27`）与 `projection.check.ts` 都接了。**P7.2 的 54 条守卫目前纯靠自觉**，且 `out/` 被 `.gitignore:33` 忽略、矩阵报告不入库。**这不再是 P8 的事 —— 对 P7.2 已经生效**，已并入 7.3 待办。
   - **订正交接文档的错误判断**：交接第二节称「表头 `P6 状态：🔄` 滞后」—— 实测 **准确**（6.7 `SPACE` 仍是 8…168 而非规定的 4…96、6.8 `DEPTH` 四场无一使用，两处均已诚实标注）。只有 P7 表头滞后。**教训又一次兑现：交接文档本身也是待验证的主张。**
-  - **核实通过项**：`out/charts_demo.mp4` = 1950 帧 / 32.5s / 1920×1080 / yuv420p / bt709；`charts_demo.json` = 10 场 1950 帧；`out/chart_ab.md` = **24 行全 LIVE**；`barBox` 在 `scale.ts:276` 且有基线锚定检查；`types.tsx` 零 remotion 引用；`lifecycle.check.ts` exit 0、`scale.check.ts` 58 ok；C: **77.62 GB** 可用、TEMP **5.28 GB**；工作树干净；`origin/main` 落后本地 1 个提交（`014ebe7` 交接文档）。
+  - **核实通过项**：`out/charts_demo.mp4` = 1950 帧 / 32.5s / 1920×1080 / yuv420p / bt709；`charts_demo.json` = 10 场 1950 帧；`out/chart_ab.md` = **24 行全 LIVE**；`barBox` 在 `scale.ts:276` 且有基线锚定检查；`types.tsx` 零 remotion 引用；`lifecycle.check.ts` exit 0、`scale.check.ts` 58 ok；C: **77.62 GB** 可用、TEMP **5.28 GB**；工作树干净；`origin/main` 落后本地 1 个提交（`3c60612` 交接文档）。
 - 2026-10-01：**P7.3 审计（先审计，再修改）—— 收口点全部列出，两条最重的主张先像素坐实**。渲 `out/p73_audit/f120/f00120.png`（bar 场稳定帧）与 `f570/f00570.png`（slope 场稳定帧），量出来的：
   - **[实测] 柱状图数值标签沉进自己的柱子里 —— `declutter` 的排序假设对柱状图不成立**。`declutter` 注释声称「value labels in these charts are already ordered by value」，但 `Bar` 按**类别顺序**（Overview/Retention/Errors/Signups/Revenue = 48.2/39.9/52.1/36.8/61.4M）传入，y 序是乱的；declutter 保序下推，把后面的标签推到前一个下面。实测 label 中心相对柱顶：0/1/3 号 **−10/−9/−9px（正确）**，**2 号 +160px、金色 emphasis 柱 4 号 +322px —— 标签在自己柱体内部**（近白字压金色底）。修法：按 y 排序后 declutter（`declutterByY`），上界从整屏收到 plot 底（否则短柱标签会压上 x 标签行）。
   - **[实测] Slope 自建 y 映射，和它所在的轴不同尺度**。frame 域带 headroom（showValues=false 时 +4%），Slope 却用 `local=[min,max]` 自算 —— 正是 `ChartFrame` 存在的理由所禁止的「标记与轴不同尺度、可读而错误」。实测：刻度带间距均匀 **210.5px/10 单位（=21.05px/单位，frame 尺度）**，"60" 刻度中心 y=114，而 61 值的线顶在 **y≈58**（frame 尺度应为 93）—— **顶端偏 36px ≈ 1.7 个刻度单位**，恰为 headroom 的量。`test_no_chart_mark_owns_its_own_scale` 只查 `domainFor`/`niceTicks` 两个**名字**，漏了内联 `const domain: Extent` + `const y = (v)=>` —— 守卫也要长牙。
@@ -2077,7 +2077,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
   - **[源码] theme**：heatmap 格子填充硬编码 `rgba(245,242,234,α)` —— 亮主题下**色阶反向**（值越高越白，在纸色底上越看不见）；emphasis 格文字硬编码 `#14140F` 而 `PALETTE.onAccent` 的注释写明就是为这个格子准备的；`useMarkPaint().fade` 硬编码 rgba 且**零读者**；Chart.tsx 无值报错文案硬编码 `#E8C464`。
   - **[源码] stagger/emphasis**：**Sparkline 整个不在生命周期上** —— 无入场、无退场淡出、无 emphasis，c09 满帧场景硬弹出而另外八种都在走五阶段；frame 家具（网格/基线/刻度/轴标签/x 标签）**没有退场** —— 合成里没有 SceneExit，标记按 presence 淡出时轴还满亮度挂着直到硬切；死代码四处（Bar 的 `{SPACE ? null : null}`、Slope 的 `* 0` no-op、未用 import `scaleFrom`/`staggerPosition`）；`TYPE_OPTIONS.slope` 声明了 `showValues` 但 Slope 从不读它（只影响 frame 留白）。
   - **[守卫] 注册表被注释满足**：`check_registry` 是**名字出现**检查，`enterFrames` 登记在 types.tsx —— 它在 types.tsx 里只出现在一句**文档注释**里，真实读取者是 ChartFrame。和 showArea 同一类：名字在文件里、不在那个组件上。修法：检查前剥离注释 + 把条目移到 READER_FRAME（先演示转红再修）。
-  - **附带事实核对**：磁盘已由复验官实测解决（C: 77.62GB、TEMP 5.28GB，现存 7 个新 bundle），该项从待办销账；`014ebe7`/`6abbaf2` 两个文档提交已在 main 且已推送。
+  - **附带事实核对**：磁盘已由复验官实测解决（C: 77.62GB、TEMP 5.28GB，现存 7 个新 bundle），该项从待办销账；`3c60612`/`ea60eaa` 两个文档提交已在 main 且已推送。
 - 2026-10-01：**P7.3 完成 —— 标签在说谎、轴与线不同源、第九个标记不在时间线上；两条实测缺陷修后复测归位**。
   - **修后复测（同一套量法；修前数字见上一条审计）**：
     - **柱标签**：渲 `out/p73_fix/f120` 实测五个 label 中心相对柱顶 **−10/−9/−10/−10/−9px**（修前 2 号 +160、金色 emphasis 柱 +322）。**测量本身也修了一处**：修前 3 号柱 "top=492" 是标签恰好挡住填充像素的污染读数（按其余四柱线性插值真值 477）——修后标签在柱上方，检测不再被挡。
@@ -2094,7 +2094,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
     2. **编辑器把文档内容里的裸 LF 归一成 CRLF**：账本里「（LF 对不上 CRLF）」那句记录行尾区别的例句，其 LF 字面量在一次**针对别的行**的编辑中被静默归一，句子变成「CRLF 对不上 CRLF」。**又一次静默失败，这次在编辑工具上** —— 按字节修复后才提交（终验：与 HEAD 的逐行差异仅剩预期两处 = 任务行 + 变更记录块，该例句字节已还原）。
   - **终检**：**110 passed**（102 基线 + 新 8：lifecycle 3 + registry 5；cv2 的 4 条按复验官裁定仍 `--ignore` 分解释器跑）、tsc 0、三 check exit 0、**A/B 26/26 exit 0**（`out/chart_ab.md`，每行 13 溯源字段；新增行 = sparkline `enterFrames` 287px @进入帧、heatmap `theme` 2,073,383px）、完整渲出 `out/charts_demo.mp4`（1950 帧 32.5s，`yuv420p(tv, bt709)` 编码契约保持）。
   - **未做（明确留后）**：A/B 矩阵接进 `tests/` 当 CI 项（P8 收尾，与复验官约定）；P6 遗留 6.7 SPACE 尺度 / 6.8 DEPTH 无场景使用；`shot_specs.json` 创作字段与音频听感（人工）。
-  - **推送状态**：本条与同日审计条**等推送授权**（铁律：不自动 push）。原尾行「本条与 `014ebe7` 一并等推送授权」已过时 —— `014ebe7`/`6abbaf2` 实测已在 `origin/main`（tip=6abbaf2），就地订正。
+  - **推送状态**：本条与同日审计条**等推送授权**（铁律：不自动 push）。原尾行「本条与 `3c60612` 一并等推送授权」已过时 —— `3c60612`/`ea60eaa` 实测已在 `origin/main`（tip=ea60eaa），就地订正。
 
 - 2026-10-01：**P7.3 复验裁定 —— 通过**（复验官独立取证，未采信施工方自述）。**逐条重测两条最重的主张，并实测三条新守卫能否失败。**
   - **渲染噪声地板先测**：同 props 连渲两次 `f01220.png`，`array_equal=True`、**差异 0 px**。**不先钉死地板，任何小数字都无法判定** —— 这是「取错对象拿到格式正确的答案」的第 N 次同型，所以先测地板再看数字。
@@ -2136,7 +2136,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
   - **未做（明确留后）**：**chart 场景（`charts_demo.json`）未做像素验证** —— `ChartFrame.tsx` 换了缩放器调用，而 P7.3 的整条证据链（柱标签 −9/−10px、slope 21px、A/B 26/26、成片 1950 帧）**全部建立在 1920×1080 单档上**；缩放器是共享的，`min(2,2)=2` 的算术成立，**但 P7.3 的像素数字在 4K 下一个都没验过**。连同 P7.3 遗留的 `declutterByY` 调用点守卫与 A/B 矩阵进 `tests/`，**一并放在 P8 收尾**。
   - **另有人工项在册未动**：P6 遗留 6.7 `SPACE` 尺度（仍 8…168 而非规定的 4…96）/ 6.8 `DEPTH` 四场无一使用；`shot_specs.json` 创作字段；音频听感。
 - 2026-10-01：**P8 收尾 —— chart 场景三档像素验证抓到 P7.1 遗留缺陷（已修）+ 守卫三件 + 账本双表清理**。P8 完成。
-  - **最大的一处不是新写的代码，而是一直没人渲过的那一档**：`ChartFrame.tsx` 的 `H = comp.height - padY` 来自 **`11b9274`（P7.1）**，把**原始帧高**当作设计量。`scaleFor` 早就改成两轴了，`W` 那一行也恰好正确（因为三档都满足 `comp.width = DESIGN_WIDTH × s`），**只有高度在首个非 16:9 格式上分家** —— 所以 16:9 与 4K 两条路径都「看着对」，缺陷自 P7.1 潜伏至今。实测竖版柱高 **1223/1012/1331/943/1557** vs 设计值 **319/285/345/260/406**（**拉伸 3.4 倍**，基线 y=1824 而非 532）。
+  - **最大的一处不是新写的代码，而是一直没人渲过的那一档**：`ChartFrame.tsx` 的 `H = comp.height - padY` 来自 **`16c18d8`（P7.1）**，把**原始帧高**当作设计量。`scaleFor` 早就改成两轴了，`W` 那一行也恰好正确（因为三档都满足 `comp.width = DESIGN_WIDTH × s`），**只有高度在首个非 16:9 格式上分家** —— 所以 16:9 与 4K 两条路径都「看着对」，缺陷自 P7.1 潜伏至今。实测竖版柱高 **1223/1012/1331/943/1557** vs 设计值 **319/285/345/260/406**（**拉伸 3.4 倍**，基线 y=1824 而非 532）。
   - **修法与证明**：plot 盒 = **设计盒 × s**。**16:9 与 4K 各四帧共 8 张渲染 `0 px` 逐位相同** —— 构造上即 no-op，用像素证明而非论证。竖版柱高回到 318/263/353/252/406，slope 顶部 hd 87 / 竖版 48 / 4K 174，全部按 `s` 缩放。
   - **顺带居中**：`offsetY = max(0, (comp.height - DESIGN_HEIGHT × s) / 2)`。修前竖版图表贴顶、下方空 **1385px**；修后上下 **690/729、703/710、762/714、689/714**，与场景一致。**同样 16:9/4K 0 px**。
   - **守卫**：
@@ -2668,7 +2668,7 @@ def _tautology_offenders(tree) -> list[tuple[int, str]]:
 
 ### P50 — 元守卫在**自己那个文件里**放过了一条恒真断言 —— 已关闭
 
-**提交 `6fc9b82`**。⚠️ **指挥窗口独立复核了最要紧的两条。**
+**提交 `c8bf0a8`**。⚠️ **指挥窗口独立复核了最要紧的两条。**
 
 #### 守卫的守卫：**指挥窗口自己做的变异，红在正确的理由上**
 
@@ -2725,7 +2725,7 @@ c10['durationInFrames'] in durations[:-1] -> True
 longer exists"*。
 
 **⇒ 指挥窗口已核对 `docs/P48_REACCEPTANCE.md:242` 并加了闭合标注**
-（保留原文，标明"已于 P50 关闭，勿照此重开"，并指向 `6fc9b82`）。
+（保留原文，标明"已于 P50 关闭，勿照此重开"，并指向 `c8bf0a8`）。
 **⚠️ 那个 agent 按工单把 P48 报告列为只读是对的 —— 过时内容由账本侧统一订正，
 这样两个 agent 不会同时写一个文件。**
 
@@ -2733,7 +2733,7 @@ longer exists"*。
 
 复验时指挥窗口 `git stash push` 了三个文件想验"干净 HEAD 上那两条红不红"，
 **而 P50 已经提交了它们** ⇒ stash 的是已进 HEAD 的内容，pop 回来变成"无改动"。
-**⇒ 那次 stash 是多余的操作，所幸没有丢东西（已确认 P50 的两个文件都在 `6fc9b82` 里）。**
+**⇒ 那次 stash 是多余的操作，所幸没有丢东西（已确认 P50 的两个文件都在 `c8bf0a8` 里）。**
 **⚠️ 教训：验"某个红是不是别人留下的"之前，先确认工作树的状态 ——
 `git status` 与 `git log` 各看一眼，比 stash 快也比 stash 安全。**
 
@@ -2789,7 +2789,7 @@ return any(isinstance(v, ast.Constant) and v.value is True for v in …)
 
 ### P49 — 全片一半静止已修；**指挥窗口的推理有一个符号错误，被 agent 驳回**
 
-**提交 `307148c` + `0205167`。** ⚠️ **`CameraRig.tsx` 与 `tokens.ts` 逐字节未动**
+**提交 `4b6bf9a` + `3ac5ab3`。** ⚠️ **`CameraRig.tsx` 与 `tokens.ts` 逐字节未动**
 （sha256 与开工一致）⇒ **它是数据问题，不是架构问题，判据成立。**
 
 #### 指挥窗口驳回的"十个场景一个值"，它承认了，而且给了真正的依据
@@ -2858,7 +2858,7 @@ c01：137 对，**0 冻结，最小 5981 px**；c09（最稀疏）：0 冻结，
 
 ### P51 — 四份恒真判据：实测矩阵、合并零损失、**而 C1 有假阳性**
 
-**提交 `0ba3a8e`。** ⚠️ **它实测推翻了工单的一个前提，如实报告而不是编造红。**
+**提交 `afd9e41`。** ⚠️ **它实测推翻了工单的一个前提，如实报告而不是编造红。**
 
 #### 实测覆盖矩阵（20 个形状，判据从源码**按 AST 节点位置切片**取出，非重写）
 
@@ -2939,7 +2939,7 @@ c01：137 对，**0 冻结，最小 5981 px**；c09（最稀疏）：0 冻结，
 
 ### P52 — `rule_font_size`：**判 UNAVAILABLE**，而且方案 A 是先测死的，不是选出来的
 
-**提交 `41e3d2a`。** ⚠️ **P22 那条守卫逐字节未动**（sha256 前后一致）。
+**提交 `e027040`。** ⚠️ **P22 那条守卫逐字节未动**（sha256 前后一致）。
 
 #### ⚠️ 指挥窗口的核心预测被实测推翻，且推翻它的是数据
 

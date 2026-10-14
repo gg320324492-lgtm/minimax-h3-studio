@@ -11,7 +11,7 @@
 | 项 | 值 |
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
-| HEAD | `34316a3`（**本地，未推送** —— 网络整体不通，`curl https://github.com` 返回 HTTP 000，已连续四次） |
+| HEAD | `a05b4b8`（**本地，未推送** —— 网络整体不通，`curl https://github.com` 返回 HTTP 000，已连续四次） |
 | 基线 | **先自己实测**（上次是 `379 passed, 2 skipped`） |
 | 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
@@ -26,7 +26,7 @@
 
 ## 一、指挥窗口已实测的事实（本指令建立在此之上，不是引述）
 
-### 1. P13 已经把这一项的前提测出来了（`6eca430`）
+### 1. P13 已经把这一项的前提测出来了（`8492875`）
 
 `docs/P13_CACHE_PAYOFF.md` 的结论：
 
@@ -225,7 +225,7 @@ P13 的答案是「没有 scene 级入口 + 没有 scene 级 diff」。
 P11 方向；`.strict()` 管不到）。
 
 **P11 剩 11.1 / 11.3**，卡在同一个**实测解锁条件**：
-- **11.1** —— 仪器已建成（`chart_geometry.py` / `c6d7a5a`），修复器**故意未写**：
+- **11.1** —— 仪器已建成（`chart_geometry.py` / `f625ff5`），修复器**故意未写**：
   已交付图表比值 **0.278**，无碰撞可修。
   **若你发现任何图表确实接近碰撞，停下并上报** —— 那会推翻这个结论。
 - **11.3** `MAX_REPAIR_ROUNDS=3` —— 依赖 11.1；轮次应由
