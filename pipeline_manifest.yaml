@@ -208,7 +208,7 @@ qa_gates:
 # 本地私有内容（禁止入库）
 # ─────────────────────────────────────────────────────────────
 local_only:
-  backup_root: E:/H3_local_private/
+  backup_root: H3_local_private/   # 仓库内，2026-10-14 由 E:/H3_local_private/ 迁入
   patterns: 见 .gitignore「本地生产内容」段
   verification: >
     任何改动后必须 `git add -An . | grep -E "timeline|story|seed_manifest|workflows"` 返回空，

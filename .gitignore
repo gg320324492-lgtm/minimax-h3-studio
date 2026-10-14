@@ -83,7 +83,10 @@ piyao_2026/scripts/gen_clips.py
 piyao_2026/scripts/build_timeline.py
 third_lantern/scripts/gen_clips.py
 third_lantern/scripts/build_timeline.py
-# 备份在 E:/H3_local_private/
+# 备份在 H3_local_private/（原 E:/H3_local_private/，2026-10-14 迁入仓库目录）
+# 整目录忽略：备份里的文件路径深度与上面那些逐条规则不匹配，靠它们挡不住。
+# 公开仓库泄露过一次（2026-09-30），这条不要删。
+/H3_local_private/
 ceo_mindread_ep01/_archive_*/
 ceo_mindread_ep01/00_project/environment_report.md
 config/local.yaml

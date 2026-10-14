@@ -204,3 +204,12 @@
 3. v4 动效候选：冻结-爆发、百分比环、odometer、赛跑图、15/30/60s 档位、循环结尾、pushCut 迁移
 4. 动效无自动质检（仅目检 + 响度量化）
 5. 报告/数据模板无 LLM 自动填数据入口（现为手工 JSON）
+
+---
+
+## 仓库整理（2026-10-14）
+
+- **私有内容备份迁入仓库目录**：`E:\H3_local_private\` → `H3_local_private/`（14MB，51 个文件）。用户决策，为与项目其余内容同处一个目录。同步更新 `config/paths.py`（改为 `ROOT / 'H3_local_private'`，不再写死绝对路径）、`pipeline_manifest.yaml`、`config/local.example.yaml`。
+- **新增 `.gitignore` 规则 `/H3_local_private/`**：必须整目录忽略。备份里的路径深度与既有那些逐条规则不匹配（如 `ceo_mindread_ep01/scripts/build_timeline.py` 是锚定仓库根的规则，匹配不到 `H3_local_private/repo_backup/ceo_mindread_ep01/scripts/build_timeline.py`）。公开仓库泄露过一次，这条不要删。
+- **上方「阶段封版（2026-09-30）」两处 `E:/H3_local_private/` 保持原样**：那是当日的准确记录，不是当前路径。
+- E 盘根目录清理：项目散落产物 8 组（`out/`、`tmp/`、`tmp_p52/`、`p4{2,3}_probe/`、`p15_scratch/`、`P29work/`、`p38probe_graph.json`）并入 `out/`；另清腾讯视频 HLS 缓存 8.8G、QQ音乐缓存 1.3G。项目内清 Remotion 泄漏的 webpack bundle 10G、重复 chrome-headless-shell 270M、`tools/ffmpeg.zip` 170M、ACE-Step 权重 9.7G。项目体积 41G → 20G。

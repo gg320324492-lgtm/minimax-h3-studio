@@ -19,4 +19,4 @@ ffmpeg_dir: E:\Minimax-H3\tools\ffmpeg-7.1.1-full_build\bin
 comfy_server: http://127.0.0.1:8188
 
 # 本地私有内容备份根（永不入库）
-local_private_backup: E:\H3_local_private
+local_private_backup: E:\Minimax-H3\H3_local_private
