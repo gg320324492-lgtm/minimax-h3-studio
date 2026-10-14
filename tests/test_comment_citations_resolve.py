@@ -48,7 +48,8 @@ reference. It is two mechanical facts:
      point in this repository's history. A path that was real and was later
      deleted is a historical reference, and a comment may say so.
   2. MARKERS. A small closed vocabulary — `no longer`, `used to`, `deleted`,
-     `renamed to`, `was`, `historically`, `gone` — inside the SAME comment block
+     `renamed to`, `was`, `historically`, `gone`, and the Chinese equivalents
+     `已删除` / `至今无` / `不存在` / `零实现` — inside the SAME comment block
      as the citation.
 
 Either one exempts a missing path. A path missing from disk with NEITHER is a
@@ -137,6 +138,25 @@ _HISTORICAL_MARKERS = (
     'historically', 'was removed', 'has gone', 'formerly',
     # was never real / is asserted absent
     'never existed', 'never on disk', 'does not exist', 'no such file',
+    # same two families, 中文. This tree writes its work orders in Chinese and
+    # states absence in Chinese — 「仓库至今无 `take_critic.py`」 is the single
+    # most repeated citation shape in docs/, and 「零实现」 is how P16 records
+    # that reference_analyze.py was specified and never built. An English-only
+    # vocabulary read every one of those as a live pointer.
+    #
+    # DELIBERATELY ABSENT, and the omission is the point: 没有, 无, 缺失 and 未
+    # are not here. Each is ordinary prose about something other than the cited
+    # path — 「没有测试覆盖 `foo.py`」 says the FILE has no coverage, not that
+    # the file is absent — and admitting them would turn the vocabulary into a
+    # blanket exemption for exactly the comments this guard exists to catch.
+    # The terms below each assert non-existence of the thing named.
+    #
+    # was real, is not any more
+    '已删除', '已移除', '已废弃', '曾经位于', '原先位于', '原名',
+    '改名为', '重命名为', '至今无',
+    # was never real / is asserted absent
+    '从未存在', '从未', '不存在', '未曾存在', '未实现', '零实现',
+    '全仓无', '仓库无', '无此文件', '没有此文件',
 )
 
 #: Missing paths that are legitimate, each with the fact that exempts it.
@@ -437,6 +457,45 @@ def test_a_historical_statement_is_not_a_violation():
             f'statement about a file that no longer exists and the guard must '
             f'allow it — otherwise it is a false-positive machine, and a false-'
             f'positive machine gets switched off.')
+
+
+def test_a_chinese_historical_statement_is_not_a_violation():
+    """The same property, stated the way this tree actually states it.
+
+    The English test above would pass with the vocabulary as it was before
+    2026-10-14 while every Chinese work order went red. `docs/` is written in
+    Chinese and says so in Chinese: WORKORDER_P12_DIRECTOR_BOUNDARY.md:36 is
+    「没有 `take_critic.py`」 and P16 records 「`reference_analyze.py` 零实现」.
+    Both assert absence; neither was recognised, so both read as a live pointer
+    to a file that was never there.
+
+    The vocabulary was widened rather than the documents edited, because the
+    documents are right.
+    """
+    idx = _basename_index()
+    history: dict[str, bool] = {}
+    for phrase in ('已删除', '至今无', '不存在', '零实现'):
+        note = (f'# 这个脚本{phrase}，见 tests/test_design_system.py\n')
+        assert not unresolved(note, '.py', idx, history), (
+            f'a comment saying a path {phrase!r} was red. Chinese absence '
+            f'statement, same property as the English case above.')
+
+
+def test_ordinary_chinese_prose_is_still_red():
+    """The counter-direction: widening the vocabulary must not exempt everything.
+
+    「没有」 and 「缺失」 were left out of `_HISTORICAL_MARKERS` on purpose.
+    This is the test that says so out loud — a comment about a file's COVERAGE
+    is not a comment about its EXISTENCE, and if 没有 ever creeps in, the guard
+    stops distinguishing the two and the addition is worse than the gap it
+    closed.
+    """
+    idx = _basename_index()
+    history: dict[str, bool] = {}
+    note = '# 没有测试覆盖 tests/test_design_system.py\n'
+    assert unresolved(note, '.py', idx, history), (
+        'a comment saying a path has no coverage was exempted. The marker '
+        'vocabulary must assert the path is absent, not that it is untested.')
 
 
 def test_the_scan_is_not_vacuous():
