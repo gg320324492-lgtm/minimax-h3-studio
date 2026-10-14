@@ -5,6 +5,10 @@ xiao flute / warm strings resolve (tender farewell).
 
 Run from repo root:
   cd ACE-Step-1.5 && acestep-env/Scripts/python.exe ../scripts/bgm_acestep.py
+
+acestep-env/ and ACE-Step-1.5/checkpoints/ were both deleted 2026-10-14; see
+liaozhai_demo/acestep-requirements.txt for how to rebuild the environment, and
+ACE-Step-1.5/README.md (`uv run acestep-download --all`) for the weights.
 """
 import sys
 import time
