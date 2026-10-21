@@ -3029,3 +3029,67 @@ declared_px=None  -> UNAVAILABLE   value=None   trusted=False
 
 **⚠️ 一条它按工单没有动的**：`qa_layers.py:270` 有一段关于 `font_size` 的**过期散文**，
 **在授权范围外、且没有任何测试断言它** ⇒ **它标记出来而不是悄悄改。**
+
+#### 2026-10-21 指挥窗口回归：⚠️ **本仓有别的会话在提交，且历史被 rebase 过**
+
+**这不是指挥窗口的改动，但影响所有后续工作，必须记下来。**
+
+- **新提交**（`6f4ec60` / `bad5aea` / `f886c57`，同一 git 作者，10-14）：
+  引用守卫的**中文豁免词表**扩宽、**两条真幻影引用重指向**、
+  **261 条提交引用在 Mixkit 音频清除后重映射**。
+  ⇒ **⚠️ 那一会话做的正是指挥窗口上一轮提议的"散文一致性"的一部分，
+  且做得比提议更细（它区分了"真幻影"与"135 条有理由的不存在"）。**
+  **⇒ 指挥窗口原打算派的那一项已经有相当一部分被做掉了，
+  剩下的缺口是另一个（见下）。**
+- **⚠️ 历史被 rebase 过**：指挥窗口的 P52 提交号从 `41e3d2a` 变成 `e027040`，
+  账本提交号同样变了。**内容完整，编号改变。**
+- **⚠️ 工作树里有不属于指挥窗口这条线的在制工作**：
+  ```
+   M studio/src/Root.tsx
+  ?? intro_video/
+  ?? studio/public/audio/intro/
+  ?? studio/src/templates/model-intro/
+  ```
+  **⇒ 两份工单都写明：那不是本线的，不要碰、不要提交；
+  且因为别的会话会提交，提交前先 `git status`。**
+
+#### ⚠️ 由此查到的一处：P40 那个"过期数字守卫"**早就知道** `qa_layers.py` 的债
+
+指挥窗口上一轮提议"扫散文里的过期测量"，**动笔前先查了目标**，
+结果发现 `qa_layers.py:264-266` 写着「22 / 13 / 9 in between」，
+而实测是 **22 / 20 / 2**（P26 的解析器）。
+
+**⚠️ 但它不是漏网之鱼** —— 它在 P40 的 `_KNOWN_DEBT` 里登记为**未偿还的已知债务**，
+且有专门的守卫 `test_the_known_debt_sites_are_still_the_debt_they_claim`，
+它要求该站点**仍引用那个过期数字、那个数字仍不等于真实值**，
+并写着 *「the day it is fixed, this goes red and the entry must be deleted」*。
+
+**⇒ 这个机制设计得很好：债不会悄悄变化，但也没人会去还。**
+**⇒ 指挥窗口的判断改了：真正该做的不是"抓新的过期数字"，是"还这笔债"。**
+
+**⇒ 而查的过程中，指挥窗口先犯了一个错并自己纠正了**：
+它以为守卫漏掉它是因为散文**被拆成多个相邻字符串字面量**（源码里
+`'…13 named by '` 与 `'SCENE_RENDERERS, 9 in between…'` 是两段），
+**但实测守卫的 `cited_sizes()` 对原始源码文本就能找到 `SCENE_RENDERERS 13`。**
+**⇒ 假设被数据推翻，而推翻它的是一次实测而不是一次推理。**
+
+#### ⚠️ 但真正的缺口在**另一处** —— 一个**没有任何守卫看着**的状态陈述
+
+`qa_layers.py:270-272`：
+
+```
+'font_size': ('UNVERIFIABLE on all 333 corpus frames when no --declared-px is '
+              'supplied, because a ratio needs both sides. It is Layout in what '
+              'it MEASURES, and it is dead in this CLI as shipped.'),
+```
+
+**⚠️ P52 昨天刚把 `rule_font_size` 改成永远 UNAVAILABLE、但仍在测量**
+⇒ **这三句每一句都不成立了**（状态、理由、结论各错一处）。
+
+**⇒ 而 P40 的守卫只管「集合大小」，不管「某规则在某条件下的判读状态」。**
+**⇒ `MEASURED_NOTE` 的 docstring 恰好写着它存在的理由**：
+*"so a guard can assert the layer without the measurement drifting out of the
+file that states it"* —— **P52 刚让这句话变成假的。**
+
+**⇒ 这才是新缺口：不是"散文会过期"（那条早被登记），而是
+「散文会过期，而登记机制只覆盖其中一种形态」。**
