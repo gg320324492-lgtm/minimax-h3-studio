@@ -38,6 +38,10 @@ studio/.remotion/
 .zcodeignore
 .rresearch/
 
+# 从 E:\ 根部挪入的历史工作内容（用户 2026-11-04 整理指令）。挪动≠收编：
+# 黑臭水体宣传片可能是其他会话的在制工作，保持 untracked，与在 E 盘根时一致。
+from_e_root/
+
 # Project-local generated envs & audio (regenerable)
 **/acestep-env/
 liaozhai_demo/05_audio/
