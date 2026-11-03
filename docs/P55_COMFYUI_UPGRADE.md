@@ -1,9 +1,11 @@
-# P55 执行报告 — ComfyUI v0.34.0 → v0.43.2 升级尝试：**已回滚**
+# P55 执行报告 — ComfyUI v0.34.0 → v0.43.2 升级：**已按裁定接受 v0.43.2（新版为准）**
 
 > 执行日期：2026-11-04。执行者：Claude（worktree `vigorous-bouman-918316`）。
-> **一句话结论：升级已完成并跑完全部五条回归，其中核心回归③（同 seed 生成一致性）
-> 失败——v0.43.2 在同 prompt 同 seed 下生成不同的画面。按工单第三节预授权执行了回滚，
-> 回滚后 E:\ComfyUI 的代码与 pip 环境均已验证恢复原状，且同 seed 输出与升级前基线逐字节一致。**
+> **一句话结论：升级完成后五条回归中核心回归③（同 seed 生成一致性）失败——v0.43.2
+> 在同 prompt 同 seed 下生成不同的画面（确定性版本行为变化），按预授权回滚到 v0.34 并
+> 逐字节验证恢复；随后指挥窗口裁定"更新到最新版、以新版为准，旧内容可弃则弃、需用则
+> 适配"，据此重新升级到 v0.43.2 并固化为最终状态。v0.43.2 自身确定性已验证
+> （同 seed 重跑逐字节一致），新基准 r2v 输出 md5 `d5e83c59…` 已存档。**
 
 ---
 
@@ -147,17 +149,26 @@ venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.
   ——**与升级前基线逐字节一致**（`compare_rollback.json`）。
   ⇒ 回滚完全恢复原生成行为；同时反证 v0.34 自身也是确定的。
 
-## 五、给指挥窗口的裁定材料
+## 五、指挥窗口裁定与最终状态
 
-升级的动因（P56 Pika Flex 需要 0.43.2+、P57 ControlNet Union 需要 0.35.0+）仍然成立，
-但**接受 v0.43.2 等于接受"全部既有 seed 的产出作废"**（生成管线从 prompt+seed 锁定
-变为不可复现）。可选路径：
+**裁定（2026-11-04，指挥窗口原话）**："更新到最新版之后，以新版为准。之前的这些内容，
+如果可以抛弃的话就不用再要了；如果需要，就再把这些旧内容做适配。"
 
-1. **保持 v0.34**，P56/P57 的模板依赖在需要时再评估（部分模板可能兼容 0.34 或可手工改）；
-2. **接受 v0.43.2 + 全量重锁 seed**：若生产线不依赖历史 seed 复现，语义质量未观察到退化
-   （见 3.3 的 VLM 读帧），但需重跑所有既有工作流的 seed 校准；
-3. **等上游**：向上游报告 H3 产出在 0.34→0.43.2 间不可复现的问题，看是否有官方说明
-   （int8_convrot/nvfp4 kernel 更换是否有精度声明）。
+据此执行（同一会话内）：
+
+1. **重新升级**：`git checkout v0.43.2` + `pip install -r requirements.txt`
+   （`pip_install_0432_final.log`）；torch 系仍为 2.11.0+cu128 未动。
+2. **新基准固化**：重新升级后同 seed（261662374822964）r2v 复跑（prompt_id `34aa9299`，
+   290.8 s），输出与升级期 candidate **逐字节一致**
+   （视频流 md5 `d5e83c59259682c545327e3bb2cd03d1`、音频流 `2c4bf034b44693e9d9c38ccb678f734a`，
+   `compare_new_baseline.json`）——即新版行为稳定可复现，旧基准
+   （`baseline_r2v_034.mp4`，md5 `f13a831c…`）自该裁定起作废，仅留作证据。
+3. **旧内容处置**：按"可弃则弃"——旧 seed 的复现性不再作为约束；
+   项目脚本/工作流引用经回归⑤验证在新版下全部成立，无需代码适配；
+   SR 管线（pipe_fast/pipe_4k_fast）在 0.34 下的实测数字未在 0.43.2 重测，
+   已在记忆中标注，待下次使用时实测。
+4. **解锁**：P56（Pika Flex 对比，需 0.43.2+）与 P57（ControlNet Union 2.0，需 0.38+）
+   的版本前置条件已满足。
 
 ## 六、证据文件清单
 
@@ -168,8 +179,8 @@ mp4 合计仅约 6 MB，全部保留）：
 
 | 文件 | 内容 |
 |---|---|
-| `baseline_r2v_034.mp4` / `candidate_r2v_0432.mp4` / `candidate_r2v_0432_repeat.mp4` / `candidate_t2v_0432.mp4` / 回滚验证 mp4 | 五次生成产物 |
-| `compare_r2v.json` / `compare_r2v_repeat.json` / `compare_rollback.json` | 逐流 md5 + PSNR |
+| `baseline_r2v_034.mp4` / `candidate_r2v_0432.mp4` / `candidate_r2v_0432_repeat.mp4` / `candidate_t2v_0432.mp4` / `rollback_check_r2v_034.mp4` / `new_baseline_r2v_0432.mp4` | 六次生成产物（末者为裁定后的新版基准） |
+| `compare_r2v.json` / `compare_r2v_repeat.json` / `compare_rollback.json` / `compare_new_baseline.json` | 逐流 md5 + PSNR |
 | `frame_psnr.txt` | 124 帧逐帧 y-PSNR |
 | `base_f001.png` / `cand_f001.png` / `base_f075.png` / `cand_f075.png` | VLM 读帧素材 |
 | `comfy_v034_startup.log` / `comfy_v0432_startup.log` / `comfy_v034_rollback.log` | 三次启动日志 |
