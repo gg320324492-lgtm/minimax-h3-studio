@@ -168,6 +168,14 @@ experiments:
                                         # 自己的临时目录（103-105 行已核）
     - experiments/p57_measure.py     # 显存/耗时采样
     - experiments/p57_build_workflows.py # 官方模板落盘与参数化
+    # ── P58 真实提取链测量脚本（2026-11-04 合并时登记）──
+    # 真实素材→SDPose/DA3 提取→控制生成的一次性验收测量；不产出交付物。
+    # 已核：p58_extract.py / p58_runner.py 的 shutil 只用 copy2，无删除操作。
+    - experiments/p58_extract.py         # 提取链提交 + 显存/耗时采样
+    - experiments/p58_measure_extract.py # 提取质量门槛度量
+    - experiments/p58_build_workflows.py # 生成变体构建（两段式 UI + 一体图 API）
+    - experiments/p58_runner.py          # 生成运行器（UI/API 双格式）
+    - experiments/p58_measure.py         # 三组对照 PSNR/MAD/一致性测量
   forbidden:  # 已崩溃 / 有破坏性 / 纯 mtime 主路径 —— Agent 调用即事故
     - experiments/full_pipeline.py      # import _deprecated（已删）→ 崩溃
     - experiments/pipe_fast.py          # import _deprecated → 崩溃
