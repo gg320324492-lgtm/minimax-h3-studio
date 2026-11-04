@@ -60,6 +60,7 @@ STUDIO = ROOT / 'studio'
 
 sys.path.insert(0, str(SCRIPTS))
 import visual_qa as vqa  # noqa: E402
+from ab_field import frame_ink  # noqa: E402
 
 _NODE = shutil.which('node')
 
@@ -228,19 +229,36 @@ def test_the_freeze_is_invisible_to_rule_freeze_from_a_video(tmp_path):
 
 
 # ── 2. a declared chart field with no reader: c05_bubble's `sizes` ───────────
+#
+# ⚠️ P54 REPAIRED THIS, AND THE CHECK NOW ASSERTS THE OPPOSITE — the same
+# move the camera check above made when P49 fixed the freeze. It was not
+# deleted: a check that is removed when its finding is fixed cannot tell the
+# next reader whether the finding came back.
 
 @pytestmark_render
-def test_the_declared_bubble_sizes_are_inert(tmp_path):
-    """`c05_bubble` declares `sizes`; the renderer reads `series[].sizes`.
+def test_the_declared_bubble_sizes_reach_the_mark(tmp_path):
+    """`c05_bubble` declares `sizes`, and the mark now reads them.
 
-    MEASURED (this test): changing `chart.sizes` from `[8,22,40,61,79,95]` to
-    all 1 changes 0 pixels, while changing `chart.values[0]` from 12 to 11
-    changes the frame. The declared `sizes` array is a sentence nothing reads
-    -- `Chart.tsx` passes `spec.series?.[0]?.sizes` to `<Bubble>`, and this
-    graph has no `series`, so the mark falls back to `values`.
+    WHAT CHANGED. P48 MEASURED (this test): changing `chart.sizes` from
+    `[8,22,40,61,79,95]` to all 1 changed 0 pixels, while changing
+    `chart.values[0]` from 12 to 11 changed the frame. The declared `sizes`
+    array was a sentence nothing read -- `Chart.tsx` passed
+    `spec.series?.[0]?.sizes` to `<Bubble>`, and this graph has no `series`,
+    so the mark fell back to `values` and sized the bubbles by the y value.
+
+    The reason it survived every other guard is the part worth keeping in the
+    file: THE PICTURE LOOKED CORRECT. The bubbles really did vary in size, in
+    the right order, so every existence check was green. A fallback that
+    substitutes one field's value for another produces a plausible picture.
+
+    P54 wired the flat spelling `chart.sizes` into the same resolution rule
+    `values` already follows (`series[0].X ?? X`), so the declared sizes now
+    reach the mark and the radii follow the SIZE field, not the y value.
 
     A POSITIVE CLASS is proved too, so a 0 here cannot mean "the render was
-    empty": the `values` mutation must move pixels.
+    empty": the `values` mutation must move pixels, and the frame must carry
+    ink, measured with the repository's own instrument (`ab_field.frame_ink`)
+    rather than a threshold invented here.
     """
     def mutate_sizes(chart):
         chart['sizes'] = [1, 1, 1, 1, 1, 1]
@@ -254,16 +272,28 @@ def test_the_declared_bubble_sizes_are_inert(tmp_path):
     valued = _render_scene(tmp_path / 'values', 'c05_bubble', [100],
                            chart_mutate=mutate_values)[100]
 
+    # the subject is on the frame, measured with the repository's instrument:
+    # "the field does nothing" and "you measured an empty frame" are
+    # indistinguishable from the outside, and both are well-formed sentences.
+    ink = frame_ink(base)
+    assert ink > 0, (
+        f'c05_bubble frame 100 measures {ink}% ink. `frame_ink` reads pure '
+        'backdrop as exactly 0.000000, so a zero here means the frame carries '
+        'no chart at all -- and every assertion below would be measuring an '
+        'empty picture and saying so with confidence.')
+
     # the instrument works: the values mutation MUST move the frame
     assert _frame_equality(base, valued) > 0, (
         'perturbing chart.values[0] changed 0 pixels, so this test is not '
         'measuring the mark at all -- fix the fixture before reading the next '
         'assertion as a finding about `sizes`.')
-    assert _frame_equality(base, moved) == 0, (
-        'changing c05_bubble\'s declared `sizes` moved pixels, so something now '
-        'reads it. If a reader was added, remove the inertness finding from the '
-        'P48 report -- and if the intent is that `chart.sizes` be honoured, '
-        'wire it in `Chart.tsx` (which reads `series[].sizes` only).')
+    assert _frame_equality(base, moved) > 0, (
+        'changing c05_bubble\'s declared `sizes` moved 0 pixels, so the '
+        'declared sizes are NOT reaching the mark again. `Chart.tsx` resolves '
+        '`spec.series?.[0]?.sizes ?? spec.sizes`; if that read went away, the '
+        'mark falls back to `series.sizes ?? series.values` and sizes the '
+        'bubbles by the y value, which is exactly the defect this file '
+        'recorded.')
 
 
 # ── 3. a rule that measures its argument, not the frame ──────────────────────

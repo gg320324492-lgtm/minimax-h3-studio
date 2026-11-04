@@ -19,15 +19,15 @@ import {useDesign} from '../design/styleBible';
  * field that no mark reads is a failing registry check, not a capability that
  * looks real.
  *
- * A graph may also set `chart.series` (or `values` at the top level) and the
- * adapter supplies the rest. Anything the graph does not supply falls back to
- * the declared default, so two renders of the same graph cannot differ.
+ * A graph may spell a data channel at the top level (`values`, `sizes`) or per
+ * series (`chart.series[]`); ONE rule resolves both, and `series[0]` wins as
+ * the more specific statement about the same data. Nothing supplied is dropped.
  */
 
 export type ChartSpec = {
   type: ChartType;
   series?: {name?: string; values: number[]; sizes?: number[]}[];
-  values?: number[];
+  values?: number[]; sizes?: number[];   // the pair, in the graph-level spelling
   labels?: string[];
   /** heatmap only */
   rows?: number[][];
@@ -137,7 +137,7 @@ export const normaliseChart = (raw: unknown): ChartSpec => {
         sizes: s.sizes ? numArray(s.sizes) : undefined,
       }))
     : undefined;
-  return {...c, type: asChartType(c.type), series, values: numArray(c.values),
+  return {...c, type: asChartType(c.type), series, values: numArray(c.values), sizes: c.sizes === undefined ? undefined : numArray(c.sizes),
     baseline: typeof c.baseline === 'number' ? c.baseline : undefined} as ChartSpec;
 };
 
@@ -235,7 +235,7 @@ export const ChartScene: React.FC<{scene: Scene}> = ({scene}) => {
         {type === 'bar' ? <Bar series={{values}} labels={spec.labels} /> : null}
         {type === 'line' ? <Line series={{values}} /> : null}
         {type === 'area' ? <Area series={{values}} /> : null}
-        {type === 'bubble' ? <Bubble series={{values: spec.series?.[0]?.values ?? values, sizes: spec.series?.[0]?.sizes}} labels={spec.labels} /> : null}
+        {type === 'bubble' ? <Bubble series={{values: spec.series?.[0]?.values ?? values, sizes: spec.series?.[0]?.sizes ?? spec.sizes}} labels={spec.labels} /> : null}
         {type === 'slope' ? (
           <Slope before={spec.before ?? []} after={spec.after ?? []} labels={spec.labels ?? []} />
         ) : null}
