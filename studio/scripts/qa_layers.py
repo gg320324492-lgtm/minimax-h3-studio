@@ -262,14 +262,20 @@ MEASURED_NOTE: dict[str, str] = {
                               'graph, and 0 for both. It is the only rule on that path '
                               'whose verdict changes with the graph (measured by '
                               'calling it on two different graphs). MEASURED: 22 scene '
-                              'types declared by SceneType, 13 named by '
-                              'SCENE_RENDERERS, 9 in between rendering the MissingScene '
+                              'types declared by SceneType, 20 named by '
+                              'SCENE_RENDERERS, 2 in between rendering the MissingScene '
                               'placeholder. No threshold — the question is presence or '
                               'absence of a renderer, and a cut point would be a number '
                               'about nothing.'),
-    'font_size': ('UNVERIFIABLE on all 333 corpus frames when no --declared-px is '
-                  'supplied, because a ratio needs both sides. It is Layout in what '
-                  'it MEASURES, and it is dead in this CLI as shipped.'),
+    'font_size': ('UNAVAILABLE on every frame, with or without --declared-px — '
+                  'P52 retired the verdict because the caller\'s argument moved '
+                  'it, and no statistic over the ink bands is a frame criterion '
+                  '(a frame carries 1..6 bands; docs/P52_FONT_SIZE_VERDICT.md). '
+                  'It still MEASURES — band count, heights, median, min and max, '
+                  'and when --declared-px is supplied the measured/declared '
+                  'ratio — and reports all of it in `extra`: the instrument runs '
+                  'on every frame, it only no longer decides. It is Layout in '
+                  'what it MEASURES.'),
     'aspect': ('UNVERIFIABLE on all 333 corpus frames run as --frame, because '
                'declared_format is None unless --props carried a format block.'),
 }

@@ -136,9 +136,11 @@ _HISTORICAL_MARKERS = (
 #: site still cites a number that does NOT equal the computed size, so the day
 #: someone corrects it this goes red and the entry must be deleted. It cannot
 #: outlive the defect.
-_KNOWN_DEBT = {
-    ('studio/scripts/qa_layers.py', 'SCENE_RENDERERS'): 13,
-}
+#:
+#: P53 paid the one entry this dict ever held (qa_layers.py's `names 13` ->
+#: 20), exactly as the mechanism below intended. The dict is empty; the
+#: mechanism is not retired with it.
+_KNOWN_DEBT: dict[tuple[str, str], int] = {}
 
 #: A site that carries a stale-looking number P40 cannot mechanically attribute
 #: (no collection NAME in the sentence). Recorded so the gap is not mistaken for
