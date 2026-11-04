@@ -11,7 +11,7 @@
 │ AI 生成层（GPU）              │ 合成渲染层（CPU+NVENC）                │
 │  ComfyUI + MiniMax-H3        │  studio/  Remotion 4.0.529            │
 │  r2v 角色一致 / fl2va 首末帧   │  TimelinePlayer × 三模板 + 数据报告    │
-│  Turbo LoRA 8-step           │  卡拉OK字幕 · 转场 · 卡点量化 · 封面    │
+│  t2v 用 Pika Flex 6 步       │  卡拉OK字幕 · 转场 · 卡点量化 · 封面    │
 │  Turbo 4-8 步, 17k+5 帧格     │  Studio 实时预览                      │
 ├─────────────────────────────┴──────────────────────────────────────┤
 │ 数据层   timeline_v2.json（zod 契约 = Python↔TS 双端唯一真相）          │
@@ -28,7 +28,7 @@
 |---|---|
 | `ceo_mindread_ep01/` `liaozhai_demo/` `piyao_2026/` `third_lantern/` | 四个生产项目（竖屏短剧/复古动画/辟谣 PSA/国风 2K） |
 | `studio/` | Remotion 合成层（模板/契约/渲染桥/音频），见 [studio/README.md](studio/README.md) |
-| `workflows/` | ComfyUI H3 工作流 JSON（r2v 角色一致 / fl2va 首末帧 / 归档备份） |
+| `workflows/` | ComfyUI H3 工作流 JSON（r2v 角色一致 / fl2va 首末帧 / t2v 走 Pika Flex `video_p56_t2v_B_flex.json` / 归档备份） |
 | `docs/` | 全部报告与方案文档（管线升级史 / Remotion 融合方案 / 动效调研） |
 | `experiments/` | 一次性实验脚本与基准残留（SR 调参/管道变体/分析 dump），非生产依赖 |
 | `ffmpeg_env.py` `sr_pipeline_v2.py` | ⚠️ 根级系统模块：ffmpeg 解析器 / Real-ESRGAN 超分引擎，**被多项目生产链引用，勿移动** |
