@@ -69,7 +69,7 @@ ControlNet-Union（legacy 版只含 `control_proj_in` + 5 个 control_blocks，�
 | **速度** | 端到端秒/条（5 秒片） |
 | **控制是否生效** | ⚠️ **这是核心**：同 prompt 同 seed，`control_context_scale=1.0` vs `0`（关闭控制）各跑一次——**若两者像素几乎相同，控制没生效**，那比 OOM 更严重，必须报告 |
 | **规格** | ffprobe：17k+5、24fps、音轨 |
-| **画质** | 抽帧放 `E:\out\p57\compare\` 供用户肉眼裁定（命名 `{控制路}_scale{值}_f{帧号}.png`） |
+| **画质** | 抽帧放 `E:\Minimax-H3\out\p57\compare\` 供用户肉眼裁定（命名 `{控制路}_scale{值}_f{帧号}.png`） |
 
 ### 第 3 步：给裁定数据（**不裁定**）
 
@@ -89,7 +89,7 @@ ControlNet-Union（legacy 版只含 `control_proj_in` + 5 个 control_blocks，�
    **不许只看"画面像被控制了"**；
 3. **贴原始输出**（显存、耗时、ffprobe、像素差），不贴结论句；
 4. ⚠️ **一块 GPU，与 P56 串行**；**外推等于没测**（每条实测计时）；
-5. ⚠️ **磁盘**：视频放 `E:\out\p57\`，收尾删大文件留对比帧与表格；
+5. ⚠️ **磁盘**：视频放 `E:\Minimax-H3\out\p57\`，收尾删大文件留对比帧与表格；
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删**；
 6. ⚠️ `tests/test_markdown_text_is_intact.py` 守 U+FFFD——中文报告用 `read_bytes`/`write_bytes`；
 7. ⚠️ GBK 控制台读非 ASCII 用字节判断。
