@@ -167,6 +167,9 @@ P40 的守卫只管**集合大小**这类数字，**不管"某规则在某条件
   ```
    M studio/src/Root.tsx
   ?? intro_video/
+  ?? from_e_root/
+   M studio/src/Root.tsx
+   M tests/test_p48_reaccept.py   <- P54 的半成品，不要碰
   ?? studio/public/audio/intro/
   ?? studio/src/templates/model-intro/
   ```

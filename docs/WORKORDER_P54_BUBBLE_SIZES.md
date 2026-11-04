@@ -190,6 +190,9 @@
   ```
    M studio/src/Root.tsx
   ?? intro_video/
+  ?? from_e_root/
+   M studio/src/Root.tsx
+   M tests/test_p48_reaccept.py   <- 本项自己的半成品（测试已翻转，渲染器与图谱还没改完）
   ?? studio/public/audio/intro/
   ?? studio/src/templates/model-intro/
   ```
