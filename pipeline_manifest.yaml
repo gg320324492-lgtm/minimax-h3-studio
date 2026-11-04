@@ -154,6 +154,20 @@ experiments:
     - experiments/quality_compare.py # flicker_test 的严格超集，故其取代者（仍在用）；
                                      # 但会 f.unlink() 删帧目录并调 ffmpeg 解帧——
                                      # 属"看着只对比、实际动文件"，禁止在生产目录附近运行
+    # ── P55/P56/P57 验收测量脚本（2026-11-04 合并时登记）──
+    # 均为"升级回归/模型对比/控制生效性"的一次性测量：提交 ComfyUI 任务、
+    # 读输出算 PSNR/md5。不产出交付物、不写生产目录。
+    - experiments/p55_runner.py      # 升级回归提交器（钉 seed，输出到 out/p55）
+    - experiments/p55_compare.py     # 逐流 md5 + 逐帧 PSNR 对比
+    - experiments/p56_runner.py      # Pika Flex 三场景对比提交器
+    - experiments/p56_build_workflows.py # 从原工作流派生 A/B 对比版（不改原件）
+    - experiments/p56_measure.py     # 对比读数（耗时/规格/指令遵循）
+    - experiments/p57_runner.py      # ControlNet 四问提交器
+    - experiments/p57_compare.py     # strength 1.0 vs 0 对照读数
+    - experiments/p57_control_assets.py # 程序化控制视频生成；os.remove 只删
+                                        # 自己的临时目录（103-105 行已核）
+    - experiments/p57_measure.py     # 显存/耗时采样
+    - experiments/p57_build_workflows.py # 官方模板落盘与参数化
   forbidden:  # 已崩溃 / 有破坏性 / 纯 mtime 主路径 —— Agent 调用即事故
     - experiments/full_pipeline.py      # import _deprecated（已删）→ 崩溃
     - experiments/pipe_fast.py          # import _deprecated → 崩溃

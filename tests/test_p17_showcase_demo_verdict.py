@@ -631,7 +631,14 @@ def test_the_only_production_caller_of_the_showcase_gate_is_the_render_path():
         `studio/scripts/check_contract.py` — comment mentions only.
     """
     skip_dirs = {'tests', 'out', 'node_modules', '.git', '__pycache__',
-                 'acestep-env', 'ffmpeg-7.1.1-full_build'}
+                 'acestep-env', 'ffmpeg-7.1.1-full_build',
+                 # Session worktrees under .claude/worktrees/ are full repo
+                 # COPIES, not production files. Both sweeps went red on
+                 # 2026-11-04 with every concurrent session's checkout listed
+                 # as a phantom caller/wired site, while no real call site
+                 # changed. Same reasoning as node_modules: a copy of the
+                 # directory is not the thing.
+                 '.claude'}
     invokers: list[str] = []
     namers_only: list[str] = []
     scanners = 0
@@ -968,7 +975,14 @@ def test_the_frame_gate_is_not_wired_and_must_not_be():
     reason would be the permanent-red gate all over again.
     """
     skip_dirs = {'tests', 'out', 'node_modules', '.git', '__pycache__',
-                 'acestep-env', 'ffmpeg-7.1.1-full_build'}
+                 'acestep-env', 'ffmpeg-7.1.1-full_build',
+                 # Session worktrees under .claude/worktrees/ are full repo
+                 # COPIES, not production files. Both sweeps went red on
+                 # 2026-11-04 with every concurrent session's checkout listed
+                 # as a phantom caller/wired site, while no real call site
+                 # changed. Same reasoning as node_modules: a copy of the
+                 # directory is not the thing.
+                 '.claude'}
     wired: list[str] = []
     scanned: list[str] = []
     for path in ROOT.rglob('*'):
