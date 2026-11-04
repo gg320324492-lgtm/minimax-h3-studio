@@ -5,6 +5,8 @@
 > ComfyUI v0.43.2, 2026-11-04. **The adopt/reject ruling is deliberately not
 > made here** — this file exists to put decidable numbers in front of the
 > user; the switch decision stays with the user and the command window.
+> (It has since arrived, and a post-report defect was found on review —
+> §8 and §9.)
 
 ## 0. Data conclusion (one paragraph, no ruling)
 
@@ -113,6 +115,12 @@ reference-guided composition simply dropped that element on both sides.
 `E:\Minimax-H3\out\p56\compare\{scene}_{A|B}_f{000,062,123}.png` — first,
 middle and last sampled frame of each render, 18 PNGs.
 
+Caveat added on review (§9, measured): for **fl2v** the f000/f123 grabs are
+the reference colour cards themselves (per-channel std ≤ 2.4 across all
+four endpoint grabs) — eyeball the middle frames for that scene. The r2v
+and t2v grabs all contain generated content; r2v's defect is in its
+reference *signal*, not its endpoint frames.
+
 ## 6. Licensing note (flagged by the work order, not reviewed here)
 
 Pika H3 Flex is distributed under the MiniMax H3 community license per the
@@ -156,3 +164,71 @@ proper review** — this task measured feasibility and speed only.
 - Per-run runner logs (seed pin, prompt ids, elapsed, outputs) are in the
   session transcript; the machine-readable measurement files are
   `E:\Minimax-H3\out\p56\measure_{scene}_{side}.json`.
+
+## 8. The ruling (arrived 2026-11-04, after this report was committed)
+
+The user reviewed the 18 comparison frames and ruled:
+
+> **Adopt Pika H3 Flex for the t2v scene only; r2v and fl2v stay on their
+> H3 baselines.**
+
+The ruling is consistent with §0/§2 (t2v is where Flex's only large speed
+win — 3.8× — sits, and r2v is where it is slower), and §9 gives a second
+reason: the r2v/fl2v evidence is compromised, the t2v comparison is not.
+Adopting Flex means the t2v template changes from the local full-step
+skeleton to the pika t2v template (or its `workflows/` copy) — that wiring
+is a separate change, not part of this record.
+
+## 9. Post-report review finding: the reference pictures are placeholder
+colour cards (found 2026-11-04 by the P55 session, re-verified here)
+
+While reviewing the fl2v comparison, the P55 session found that
+`E:\ComfyUI\input\p56_ref_first_1344x768.png` and
+`p56_ref_last_1344x768.png` are flat colour, not content. Re-measured here
+(per-channel std across the whole frame):
+
+| file | mean RGB | per-channel std |
+|---|---|---|
+| `p56_ref_first_1344x768.png` | (180, 30, 30) | (0, 0, 0) |
+| `p56_ref_last_1344x768.png` | (128, 128, 128) | (0, 0, 0) |
+| `red_superboy_on_city_roof.png` (512² source) | (180, 30, 30) | (0, 0, 0) |
+| `mecha_dragon_lightning.png` (512² source) | (128, 128, 128) | (0, 0, 0) |
+
+**The defect is wider than the P55 session reported, but affects the two
+scenes differently**: the two *source* images are themselves placeholder
+cards, and this task's r2v workflows (nodes 137/139) used the same two
+pre-resized cards as their reference frames. fl2v takes them as literal
+first/last frames, so its endpoint frames are the cards; r2v takes them
+as reference-frame conditioning, so its outputs are full-content videos
+(all six r2v/t2v endpoint grabs measured above have real content) — its
+degradation is a reference *signal* carrying no information, which the
+model had to substitute from the prompt. The P56 runner verified the
+files existed and were 1344×768; it never measured whether they
+contained anything. That check was the gap.
+
+What survives the finding and what does not:
+
+- **Speed (§2): valid.** Step counts, LoRAs and sampler schedules are what
+  set runtime; flat references change neither the r2v nor the fl2v
+  measurement's arithmetic. (Content-rich references would decode
+  identically through the VAE; nothing in the pipeline scales with picture
+  *content*.)
+- **VLM instruction-following (§4): readable but reinterpreted.** The
+  questions were asked of middle frames, whose content is prompt-driven.
+  The r2v scores (3/4 both sides, the numeral 7 missing on both) were
+  obtained under a reference signal that carried no content, and may
+  describe that condition rather than real r2v behaviour — the A/B tie
+  itself, being under identical conditions on both sides, remains a
+  fair like-for-like statement about how each speed path copes with the
+  same degraded input.
+- **fl2v endpoint quality: not measured** — both endpoint frames of both
+  renders are the cards. **r2v reference-following: not measured** — the
+  references could not be followed, only substituted for. Neither scene
+  was exercised the way production would use it. The t2v scene has no
+  reference inputs and is fully representative, which is a second reason
+  the user's ruling rests comfortably on it.
+
+No GPU rerun was ordered. If a future task needs real r2v/fl2v evidence,
+replace `red_superboy_on_city_roof.png` and `mecha_dragon_lightning.png`
+with actual produced frames (or re-generate the P55-era assets) and rerun
+both scenes before trusting any r2v/fl2v number in §2–§4 as representative.
