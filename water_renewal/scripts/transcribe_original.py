@@ -1,6 +1,7 @@
 import json, subprocess, sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'脚本'))
 from ffmpeg_env import FFMPEG
 from faster_whisper import WhisperModel
 out=Path(__file__).resolve().parents[1]/'01_reference'

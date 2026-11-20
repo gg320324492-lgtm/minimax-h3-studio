@@ -3,7 +3,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 import json
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / '脚本'))
 from ffmpeg_env import FFMPEG
 
 root = Path(__file__).resolve().parents[1]

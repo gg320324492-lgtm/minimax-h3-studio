@@ -30,6 +30,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(r'E:\Minimax-H3')
+sys.path.insert(0, str(ROOT / '脚本'))
 sys.path.insert(0, str(ROOT))
 from ffmpeg_env import FFMPEG  # noqa: E402
 

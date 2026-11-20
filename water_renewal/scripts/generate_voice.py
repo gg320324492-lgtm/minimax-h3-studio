@@ -1,6 +1,7 @@
 import json, subprocess, sys, time
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'脚本'))
 from ffmpeg_env import FFMPEG,FFPROBE
 ROOT=Path(__file__).resolve().parents[1]
 CFG=json.loads((ROOT/'00_project/editorial.json').read_text(encoding='utf-8'))

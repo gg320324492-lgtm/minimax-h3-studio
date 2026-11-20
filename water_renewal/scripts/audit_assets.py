@@ -2,7 +2,8 @@ import json, subprocess, sys
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'脚本'))
 from ffmpeg_env import FFMPEG, FFPROBE
 ROOT=Path(r'C:\Users\pc\Desktop\设计短片\黑臭水体治理宣传视频')
 OUT=Path(__file__).resolve().parents[1]/'01_reference'

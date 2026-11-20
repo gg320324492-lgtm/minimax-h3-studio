@@ -1,5 +1,5 @@
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[2]/'studio/src/water-renewal'
+ROOT=Path(__file__).resolve().parents[3]/'studio/src/water-renewal'
 for name in ['OpeningScene','FieldScene','BubbleScene','EcologyScene','ValidationScene','FinaleScene']:
  p=ROOT/(name+'.tsx');s=p.read_text(encoding='utf-8')
  if "import {BlendSequence}" not in s:

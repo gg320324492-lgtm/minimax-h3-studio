@@ -1,12 +1,13 @@
 # Media & artifacts
 *.mp4
 *.png
+*.wav
 *.jpg
 *.jpeg
 *.safetensors
 *.pth
 *.log
-logs/
+out/日志/
 work_frames/
 upscale_frames/
 upscale_frames_2k/
@@ -17,9 +18,9 @@ __pycache__/
 # tests/ 已解除忽略并入库（P0 复验：零回归网不可再丢）
 hist.json
 oi.json
-ceo_mindread_ep01/0[1-9]_*/
-ceo_mindread_ep01/09_final/
-ceo_mindread_ep01/logs/
+成片项目/ceo_mindread_ep01/0[1-9]_*/
+成片项目/ceo_mindread_ep01/09_final/
+成片项目/ceo_mindread_ep01/logs/
 
 # Remotion studio
 studio/node_modules/
@@ -51,12 +52,12 @@ studio/.remotion/
 
 # Project-local generated envs & audio (regenerable)
 **/acestep-env/
-liaozhai_demo/05_audio/
-piyao_2026/05_audio/
-third_lantern/05_audio/
+成片项目/liaozhai_demo/05_audio/
+成片项目/piyao_2026/05_audio/
+成片项目/third_lantern/05_audio/
 experiments/oi.json
-liaozhai_demo/ACE-Step-1.5/
-ceo_mindread_ep01/_archive_prev2/
+成片项目/liaozhai_demo/ACE-Step-1.5/
+成片项目/ceo_mindread_ep01/_archive_prev2/
 
 # Licensed real audio (local-only; Mixkit terms discourage raw redistribution)
 studio/public/audio/bgm_main.m4a
@@ -69,7 +70,7 @@ studio/public/audio/sfx_coin.m4a
 
 # ===== 本地生产内容（不公开）=====
 # H3 workflow JSON（含 prompt+采样参数）/ 种子 / 剧本 / 时间线
-workflows/
+out/工作流/
 **/00_project/timeline.json
 **/00_project/timeline_v2.json
 **/00_project/timeline_v2.words.json
@@ -80,38 +81,48 @@ workflows/
 **/00_project/sfx_times.json
 **/00_project/*_MANIFEST*.json
 # prompt 型生产脚本（含全部 prompt/种子硬编码）
-ceo_mindread_ep01/scripts/build_timeline.py
-ceo_mindread_ep01/scripts/_archive/
+成片项目/ceo_mindread_ep01/scripts/build_timeline.py
+成片项目/ceo_mindread_ep01/scripts/_archive/
 # gen_keyframes_v3 的 prompt/种子已抽到 00_project/h3_generation.json（本地私有），
 # 脚本本体入库以保住 P0.3 的 wait_for_prompt 修复。旧版仍在 _archive/。
-ceo_mindread_ep01/scripts/gen_office.py
+成片项目/ceo_mindread_ep01/scripts/gen_office.py
 
-ceo_mindread_ep01/scripts/gen_references.py
+成片项目/ceo_mindread_ep01/scripts/gen_references.py
 
-liaozhai_demo/scripts/gen_clips.py
-liaozhai_demo/scripts/build_timeline.py
-piyao_2026/scripts/gen_clips.py
-piyao_2026/scripts/build_timeline.py
-third_lantern/scripts/gen_clips.py
-third_lantern/scripts/build_timeline.py
+成片项目/liaozhai_demo/scripts/gen_clips.py
+成片项目/liaozhai_demo/scripts/build_timeline.py
+成片项目/piyao_2026/scripts/gen_clips.py
+成片项目/piyao_2026/scripts/build_timeline.py
+成片项目/third_lantern/scripts/gen_clips.py
+成片项目/third_lantern/scripts/build_timeline.py
 # 备份在 H3_local_private/（原 E:/H3_local_private/，2026-10-14 迁入仓库目录）
 # 整目录忽略：备份里的文件路径深度与上面那些逐条规则不匹配，靠它们挡不住。
 # 公开仓库泄露过一次（2026-09-30），这条不要删。
 /H3_local_private/
-ceo_mindread_ep01/_archive_*/
-ceo_mindread_ep01/00_project/environment_report.md
+成片项目/ceo_mindread_ep01/_archive_*/
+成片项目/ceo_mindread_ep01/00_project/environment_report.md
 config/local.yaml
-ceo_mindread_ep01/00_project/h3_generation.json
+成片项目/ceo_mindread_ep01/00_project/h3_generation.json
 tests/__pycache__/
 .pytest_cache/
-ceo_mindread_ep01/00_project/shot_specs.json
-ceo_mindread_ep01/00_project/h3_prompts.compiled.json
+成片项目/ceo_mindread_ep01/00_project/shot_specs.json
+成片项目/ceo_mindread_ep01/00_project/h3_prompts.compiled.json
 
 # water_renewal — same rule as third_lantern / ceo_mindread_ep01: scripts and
 # notes are tracked, media and render output are not. 781 MB of jpg + wav here.
-water_renewal/01_reference/
-water_renewal/05_audio/
-water_renewal/07_edit/
-water_renewal/09_final/
-water_renewal/*/rendered_frames/
+成片项目/water_renewal/01_reference/
+成片项目/water_renewal/05_audio/
+成片项目/water_renewal/07_edit/
+成片项目/water_renewal/09_final/
+成片项目/water_renewal/*/rendered_frames/
 .cache/
+
+# ===== 2026-11-20 成片项目归位 =====
+# 6 个成片项目实体已移入 productions/，根目录保留目录联接以兼容旧的绝对路径。
+# 联接路径必须忽略，否则 git 会把同一份内容在两处各登记一遍。
+/ceo_mindread_ep01/
+/liaozhai_demo/
+/piyao_2026/
+/third_lantern/
+/water_renewal/
+/intro_video/

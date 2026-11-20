@@ -12,6 +12,7 @@ Wraps any subtitle wider than MAX_TEXT_WIDTH at punctuation into <= 2 lines.
 # legacy PATH binary for byte-comparable re-runs).
 import sys as _sys, os as _os  # noqa: E402
 if r'E:\Minimax-H3' not in _sys.path:
+    _sys.path.insert(0, r'E:\Minimax-H3\脚本')
     _sys.path.insert(0, r'E:\Minimax-H3')
 from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
 _prepend_ffmpeg()

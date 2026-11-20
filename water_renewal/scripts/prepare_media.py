@@ -2,7 +2,8 @@ import json,subprocess,sys,shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image,ImageOps,ImageEnhance
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'脚本'))
 from ffmpeg_env import FFMPEG
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT.parent/'studio/public/jobs/water-renewal'

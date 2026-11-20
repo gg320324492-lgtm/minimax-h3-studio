@@ -2,7 +2,8 @@ import json,sys,subprocess,re,difflib,hashlib
 from pathlib import Path
 import numpy as np,soundfile as sf
 from scipy.signal import resample_poly
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'脚本'))
 from ffmpeg_env import FFMPEG
 ROOT=Path(__file__).resolve().parents[1]
 CFG=json.loads((ROOT/'00_project/editorial.json').read_text(encoding='utf-8'))
