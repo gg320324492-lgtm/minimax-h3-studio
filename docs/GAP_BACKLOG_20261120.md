@@ -114,22 +114,23 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 
 ---
 
-## G-12 仓库测试套件的「账务化」—— 待决策
+## G-12 仓库测试套件的「账务化」—— 已关闭（2026-11-21）
 
-73 个测试文件 / 29188 行。逐文件断言对象分类后：**账务类 29 个 / 639 行（14 用例）**、
-中间 1 个、**产出类 69 个 / 28369 行（691 用例）**。
+73 个测试文件 / 29188 行逐个甄别后，按用户拍板的方案二执行裁剪（commit 62fb4ad）：
 
-- 账务类（护仓库自身的路径/哈希/引用/清单）：`test_manifest_freshness`、
-  `test_tautology_criterion`、`test_brand_lock_comment_honesty`，
-  加上产出类里实际在钉仓库文本的约 26 个（引用解析、行号引用落点、docstring 计数、
-  qa_layers/visual_qa 的哈希 pin、p0 的 ls-files 检查等）。
-- 产出类（真正护画面/管线行为）：图表几何与基线、转场非冻结、camera move、
-  depth cue、visual acceptance 可复现、schema 严格性、渲染入口守卫等。
+- 删除 4 个纯账本测试文件（9 例）：comment_citations_resolve、
+  line_refs_land_on_code、manifest_freshness、markdown_text_is_intact
+- 拆分 5 个夹带账本断言的文件：brand_lock_comment_honesty（删 3）、
+  p40_docstring_counts（删 3，保留守卫元测试）、
+  p16_reference（删约 3 例 git ls-files 账本）、
+  p29_renderers（删 2-3 例 git 跟踪状态断言）、p2_prompt_contract（删 2 例）
 
-待决策：账务类是否裁掉。裁掉后 789 用例约降到 350；可能漏掉个别真护产出的
-（判定脚本 out/工具/classify_tests.py 可重跑，删除前逐个过一遍更稳）。
+**最终验收：761 passed / 12 skipped / 0 failed，10 分 14 秒**（裁剪前 789 例）。
+裁剪时遗漏了 test_p0_regressions.py 对被删文件的一处 importlib 引用，
+导致首轮验收 1 例 FileNotFoundError——已补交（a7c6d6c）并把内联校验模块
+`tests/_manifest_freshness_check.py` 纳入跟踪。
 
----
+甄别报告：out/工具/测试甄别.md（71 文件/691 例逐个读断言的定稿清单）。
 
 ## G-02 本机网络出口受限 —— 已规避
 
