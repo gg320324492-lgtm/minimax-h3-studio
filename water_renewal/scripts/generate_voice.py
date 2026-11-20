@@ -13,7 +13,8 @@ def main():
     torch.manual_seed(20261010)
     model=None
     if any(not (OUT/(l['id']+'_raw.wav')).exists() for l in CFG['narration']):
-        model=Qwen3TTSModel.from_pretrained('E:/tts/models/Qwen3-TTS-1.7B-CustomVoice',device_map='cuda:0',dtype=torch.bfloat16)
+        # 2026-11-20：模型迁入项目内 third_party/tts/models/（原 E:/tts/models/ 已不存在）
+        model=Qwen3TTSModel.from_pretrained('E:/Minimax-H3/third_party/tts/models/Qwen3-TTS-1.7B-CustomVoice',device_map='cuda:0',dtype=torch.bfloat16)
     base='标准普通话，成熟男声，纪录片解说，声音沉稳温暖、清晰饱满。中等语速，语句连贯，停顿自然，不拖长字音。'
     manifest=[]
     for line in CFG['narration']:

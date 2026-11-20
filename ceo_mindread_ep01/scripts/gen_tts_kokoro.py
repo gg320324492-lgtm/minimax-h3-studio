@@ -123,7 +123,10 @@ def main():
             out_dir = PROJECT / '05_audio/INTERN'
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        wav_path = Path(f'C:/Users/pc/AppData/Local/Temp/kokoro_{slug}.wav')
+        # 2026-11-20：临时 wav 改写到 E 盘项目内（原写 C:\Users\pc\AppData\Local\Temp，违反 C 盘禁数据规定）
+        tmp_dir = Path(r'E:/Minimax-H3/out/tmp/kokoro')
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        wav_path = tmp_dir / f'kokoro_{slug}.wav'
         m4a_path = out_dir / f'{slug}.m4a'
 
         # Delete old file to ensure regeneration
