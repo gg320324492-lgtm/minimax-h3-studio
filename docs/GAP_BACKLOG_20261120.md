@@ -70,7 +70,7 @@
 
 tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 
-## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 待收尾（2026-11-21）
+## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 已关闭（2026-11-21）
 
 2026-11-20 把 `from_e_root/黑臭水体治理宣传片剪辑` 并入 `productions/water_renewal/` 时，
 这批脚本的根路径已全部重映射到项目内（不再指向已不存在的 `E:/promo_video`、
@@ -96,8 +96,21 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
   （640×480，EXIF 已转正，与微信导出图同源同分辨率）按 P 表 fid 顺序拷入
   `01_reference/photos/p01..p24.jpg`，`norm_photos()` 改读该目录。4 个脚本
   均已用 ComfyUI venv ast.parse 验证通过。
-- **2026-11-21 遗留**：脚本内部子目录常量的运行时适配（上表"修复后指向"所列）
-  正在另一会话处理，完成后此处更新为已关闭。
+- **2026-11-21 修复三：运行时子目录断链补完（commit 25d7f71）**：`build_video.py`
+  的 `W/norm`、`W/kb`、`W/tf`、`W/fonts`、`W/scenes`、`W/concat.txt`、`W/audio.txt`、
+  `W/captions.ass` 等中间产物核实均由脚本自身 mkdir 创建，无需改；真正断链的是
+  audio_mix 按 manifest 的遗留 `E:/promo_video` 路径读旁白——已改为按当前树
+  `05_audio/narration/N*.wav` 解析（manifest 旧路径仅作回退）。同轮修复：
+  `gen_narration.py` 产出改 wav（48k pcm_s16le，消费方均按 wav 读）、
+  `finish_audio.py` 的 ambience 改读 `05_audio/music/`、`prepare_media.py`
+  的 h3 拷贝源改 `01_reference/h3_clips/`。`narration_manifest.json`（未跟踪）
+  已重建为 wav 路径 + 脚本权威文案。全部二进制读写保持行尾，ComfyUI venv
+  ast.parse 通过，`pytest tests/test_p0_regressions.py` 16 passed。
+  遗留说明：`prepare_media.py` 的 `inventory.json` 仍指向已不存在的 C 盘旧素材
+  目录，且产出目录 `ROOT.parent/'studio'` 解析到 `productions/studio`（实际
+  studio 在项目根）——但该脚本是首批素材的一次性转码工具，其产物
+  `studio/public/jobs/water-renewal/` 已在位且成为素材现存唯一副本，无重跑
+  需求，故不再改（真要重跑需先重建 inventory 指向 `01_reference/videos|photos`）。
 
 ---
 
