@@ -32,7 +32,7 @@
 | `studio/` | Remotion 合成层（模板/契约/渲染桥/音频），见 [studio/README.md](studio/README.md) |
 | `scripts/` | ⚠️ 仓库级系统模块：`ffmpeg_env.py`（ffmpeg 解析器）/ `sr_pipeline_v2.py`（Real-ESRGAN 超分引擎），**被多项目生产链引用，勿移动** |
 | `tools/` | 自带 ffmpeg-7.1.1-full_build（PATH 上有 Octave 的 4.2.11 陷阱，一律经 `ffmpeg_env.py` 解析）+ `check_c_drive.py`（C 盘零写入守卫） |
-| `out/` | 生成输出与工单证据：`workflows/`（ComfyUI H3 工作流 JSON）/ `logs/` / `studio_jobs/`（渲染素材）/ `tools/`（一次性运维脚本）+ 按工单命名的目录（p55/p56/p57/p58…），整体 gitignore |
+| `out/` | 生成输出与工单证据：`工作流/`（ComfyUI H3 工作流 JSON）/ `日志/` / `渲染素材/`（渲染素材与硬链接去重件）/ `工具/`（一次性运维脚本与台账）+ 按工单命名的目录（`工单_P55`…`工单_P58`、`归档_P13视觉QA` 等），整体 gitignore |
 | `third_party/` | 外部工具实体（不入库）：`ComfyUI/`（含 122GB 模型与 venv）/ `tts/` / `claude-skills/` / `chrome-headless-shell/` / 各缓存目录 |
 | `docs/` | 全部报告与方案文档（管线升级史 / Remotion 融合方案 / 动效调研 / 缺口清单） |
 | `experiments/` | 一次性实验脚本与基准残留（SR 调参/管道变体/分析 dump），非生产依赖 |
