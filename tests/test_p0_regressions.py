@@ -208,7 +208,7 @@ def test_manifest_covers_every_experiments_script():
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
-        'mf', ROOT / 'tests' / 'test_manifest_freshness.py')
+        'mf', ROOT / 'tests' / '_manifest_freshness_check.py')
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert mod.main() == 0, (
