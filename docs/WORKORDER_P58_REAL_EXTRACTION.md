@@ -36,7 +36,7 @@
    **开工先查，缺就下载并核 SHA256**（下载纪律同 P57：aria2c 分块 + 落盘校验，
    **警惕包装脚本恒返回 0 的假成功**——P57 栽过一次）。
 3. **真实素材候选**（按优先级）：
-   - `E:\Minimax-H3\water_renewal\01_reference\` 或 `intro_video/` 的真实片段
+   - `E:\Minimax-H3\成片项目\water_renewal\01_reference\` 或 `intro_video/` 的真实片段
      （⚠️ 781 MB 媒体未入库，只读，**用前先确认文件在**）；
    - `E:\Minimax-H3\third_party\ComfyUI\input\` 已有素材；
    - 都不合适就自取一段 5–10 秒含人物动作的公开素材（**报告里写清来源**）。

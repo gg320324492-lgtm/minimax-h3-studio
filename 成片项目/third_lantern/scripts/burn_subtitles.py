@@ -19,7 +19,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import FFMPEG, prepend_to_path  # noqa: E402
 prepend_to_path()
 
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
 MAX_TEXT_WIDTH = 1700
 
 INK = (242, 236, 224, 255)          # 米白

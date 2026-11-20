@@ -902,7 +902,7 @@ ok    FlashVSR-v1.1: 6.47 GB, all 4 files present
 
 **回滚方式**（如需）：
 ```bash
-cd E:/Minimax-H3/ceo_mindread_ep01
+cd E:/Minimax-H3/成片项目/ceo_mindread_ep01
 cp -p 07_edit/EP01_PICTURE_MASTER_1080P.mp4.pre-v2.bak 07_edit/EP01_PICTURE_MASTER_1080P.mp4
 cp -rp 09_final.pre-v2.bak/. 09_final/
 ```

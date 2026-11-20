@@ -1,6 +1,6 @@
 import sys, json, shutil, time
 from pathlib import Path
-REPO=Path('E:/Minimax-H3/liaozhai_demo/ACE-Step-1.5')
+REPO=Path('E:/Minimax-H3/成片项目/liaozhai_demo/ACE-Step-1.5')
 sys.path.insert(0,str(REPO))
 OUT=Path(__file__).resolve().parents[1]/'05_audio/music'
 OUT.mkdir(parents=True,exist_ok=True)

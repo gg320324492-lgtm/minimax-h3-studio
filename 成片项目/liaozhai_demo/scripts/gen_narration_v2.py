@@ -11,7 +11,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-PROJECT = Path(r'E:/Minimax-H3/liaozhai_demo')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/liaozhai_demo')
 OUT = PROJECT / '05_audio' / 'NARR_V2'
 MODEL_DIR = r'E:/tts/models/Qwen3-TTS-1.7B-CustomVoice'
 TOKENIZER_DIR = r'E:/tts/models/Qwen3-TTS-Tokenizer-12Hz'

@@ -55,7 +55,7 @@
 `ceo_mindread_ep01/` `liaozhai_demo/` `piyao_2026/` `third_lantern/` `water_renewal/`
 `intro_video/` 现在是**目录联接**，指向 `成片项目/` 下的实体。
 
-- 作用：老脚本里的 `E:/Minimax-H3/water_renewal/...` 绝对路径仍可解析
+- 作用：老脚本里的 `E:/Minimax-H3/成片项目/water_renewal/...` 绝对路径仍可解析
 - 风险：**删掉联接 = 断掉所有旧路径引用**
 - 已加 `.gitignore` 规则忽略这 6 条联接路径，避免 git 在两处各登记一份内容
 - 待办：若将来要把绝对路径全部改写为 `成片项目/...`，改完才能删联接

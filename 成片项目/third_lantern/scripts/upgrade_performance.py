@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 
 SERVER = 'http://127.0.0.1:8188'
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
 R2V_WORKFLOW = Path(r'E:/Minimax-H3/video_minimax_h3_r2v.json')
 COMFY_INPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/input')
 COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')

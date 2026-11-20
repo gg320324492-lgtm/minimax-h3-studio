@@ -23,7 +23,7 @@
 # 3. 渲染（在 studio 工程里）
 cd ../studio
 npx tsc --noEmit -p tsconfig.json
-npx remotion render ModelIntro E:/Minimax-H3/intro_video/out/model_intro.mp4 \
+npx remotion render ModelIntro E:/Minimax-H3/成片项目/intro_video/out/model_intro.mp4 \
   --browser-executable=E:/Minimax-H3/.remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/chrome-headless-shell.exe
 ```
 

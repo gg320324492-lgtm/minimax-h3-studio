@@ -1,8 +1,8 @@
 """Generate gufeng-suspense BGM candidates with ACE-Step 1.5 (MIT).
 
 Run from repo root via env python:
-  cd ACE-Step-1.5 && E:/Minimax-H3/liaozhai_demo/acestep-env/Scripts/python.exe \
-      E:/Minimax-H3/liaozhai_demo/scripts/bgm_acestep.py
+  cd ACE-Step-1.5 && E:/Minimax-H3/成片项目/liaozhai_demo/acestep-env/Scripts/python.exe \
+      E:/Minimax-H3/成片项目/liaozhai_demo/scripts/bgm_acestep.py
 
 acestep-env/ and ACE-Step-1.5/checkpoints/ were both deleted 2026-10-14; see
 liaozhai_demo/acestep-requirements.txt for how to rebuild the environment, and
@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT = Path(r'E:/Minimax-H3/liaozhai_demo')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/liaozhai_demo')
 REPO = PROJECT / 'ACE-Step-1.5'
 sys.path.insert(0, str(REPO))
 

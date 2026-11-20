@@ -31,7 +31,7 @@ sys.path.insert(0, r'E:\Minimax-H3')
 from ffmpeg_env import FFMPEG, FFPROBE  # noqa: E402  (see ffmpeg_env: bare `ffmpeg`
 #                                          resolves to Octave's bundled 4.2.11 here)
 
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 # Respect the same override as finalize.py, otherwise a re-run that writes to a
 # tagged directory would have its QA gate silently validate the OLD delivery.
 FINAL = Path(_os.environ.get('EP01_FINAL_DIR', str(PROJECT / '09_final')))

@@ -37,7 +37,7 @@ from comfy_utils import wait_for_prompt  # noqa: E402
 
 SERVER = 'http://127.0.0.1:8188'
 WORKFLOW = Path(r'E:\Minimax-H3\third_party\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 SEED_MANIFEST = PROJECT / '00_project' / 'seed_manifest.json'
 
 

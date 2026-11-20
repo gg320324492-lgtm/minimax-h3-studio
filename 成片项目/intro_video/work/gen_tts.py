@@ -22,7 +22,7 @@ import numpy as np  # noqa: E402
 import soundfile as sf  # noqa: E402
 from kokoro import KPipeline  # noqa: E402
 
-ROOT = Path(r'E:/Minimax-H3/intro_video')
+ROOT = Path(r'E:/Minimax-H3/成片项目/intro_video')
 STUDIO = Path(r'E:/Minimax-H3/studio')
 AUDIO_OUT = STUDIO / 'public' / 'audio' / 'intro'
 TIMELINE_OUT = STUDIO / 'src' / 'templates' / 'model-intro' / 'timeline.json'

@@ -8,7 +8,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import FFMPEG, prepend_to_path  # noqa: E402
 prepend_to_path()
 
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
 SRC = PROJECT / '07_edit' / 'TL_WITH_SUBTITLES.mp4'
 OUT = PROJECT / '09_final'
 NAME2K = '第三盏灯_演示版_2K.mp4'

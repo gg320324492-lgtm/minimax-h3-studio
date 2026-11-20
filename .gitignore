@@ -95,10 +95,10 @@ out/工作流/
 成片项目/piyao_2026/scripts/build_timeline.py
 成片项目/third_lantern/scripts/gen_clips.py
 成片项目/third_lantern/scripts/build_timeline.py
-# 备份在 H3_local_private/（原 E:/H3_local_private/，2026-10-14 迁入仓库目录）
+# 备份在 私有备份/（原 H3_local_private/、再原 E:/，2026-10-14 迁入仓库目录，2026-11-20 改名）
 # 整目录忽略：备份里的文件路径深度与上面那些逐条规则不匹配，靠它们挡不住。
 # 公开仓库泄露过一次（2026-09-30），这条不要删。
-/H3_local_private/
+/私有备份/
 成片项目/ceo_mindread_ep01/_archive_*/
 成片项目/ceo_mindread_ep01/00_project/environment_report.md
 config/local.yaml
@@ -118,11 +118,5 @@ tests/__pycache__/
 .cache/
 
 # ===== 2026-11-20 成片项目归位 =====
-# 6 个成片项目实体已移入 productions/，根目录保留目录联接以兼容旧的绝对路径。
-# 联接路径必须忽略，否则 git 会把同一份内容在两处各登记一遍。
-/ceo_mindread_ep01/
-/liaozhai_demo/
-/piyao_2026/
-/third_lantern/
-/water_renewal/
-/intro_video/
+# 6 个成片项目实体在 成片项目/ 之下；根目录联接已随路径全量改写一并移除，
+# 不再需要联接路径的忽略规则。

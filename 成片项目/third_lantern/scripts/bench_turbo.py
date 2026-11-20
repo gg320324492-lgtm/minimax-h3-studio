@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-sys.path.insert(0, r'E:/Minimax-H3/third_lantern/scripts')
+sys.path.insert(0, r'E:/Minimax-H3/成片项目/third_lantern/scripts')
 import upgrade_performance as up
 
 SERVER = 'http://127.0.0.1:8188'

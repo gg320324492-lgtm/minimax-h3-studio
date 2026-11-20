@@ -46,7 +46,7 @@ Studio 的 `WaterRenewal` 展示最新加快版交付文件；`WaterRenewalEdit`
 # 第 2 步要用 acestep-env（2026-10-14 已删除）。重建步骤见
 # liaozhai_demo/acestep-requirements.txt 的文件头；ACE-Step 权重同样已删，
 # 重下见 ACE-Step-1.5/README.md 的 `uv run acestep-download --all`。
-& 'E:/Minimax-H3/liaozhai_demo/acestep-env/Scripts/python.exe' water_renewal/scripts/generate_music.py
+& 'E:/Minimax-H3/成片项目/liaozhai_demo/acestep-env/Scripts/python.exe' water_renewal/scripts/generate_music.py
 & 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' water_renewal/scripts/generate_voice_original.py
 & 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' water_renewal/scripts/finish_audio.py
 ```

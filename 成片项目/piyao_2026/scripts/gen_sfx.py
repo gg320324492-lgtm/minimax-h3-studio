@@ -13,9 +13,9 @@ from scipy import signal
 from scipy.io import wavfile
 
 SR = 48000
-PROJECT = Path(r'E:/Minimax-H3/piyao_2026')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/piyao_2026')
 OUT = PROJECT / '05_audio' / 'SFX'
-EP_SFX = Path(r'E:/Minimax-H3/ceo_mindread_ep01/05_audio/SFX')
+EP_SFX = Path(r'E:/Minimax-H3/成片项目/ceo_mindread_ep01/05_audio/SFX')
 RNG = np.random.default_rng(20260922)
 
 

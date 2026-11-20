@@ -31,7 +31,7 @@ import os
 import subprocess
 from pathlib import Path
 
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 BGM_DIR = PROJECT / '05_audio/BGM'
 SFX_DIR = PROJECT / '05_audio/SFX'
 BGM_DIR.mkdir(parents=True, exist_ok=True)

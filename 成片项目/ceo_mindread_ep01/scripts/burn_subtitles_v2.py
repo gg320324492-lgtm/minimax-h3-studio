@@ -24,7 +24,7 @@ import time
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 MAX_TEXT_WIDTH = 1000  # px, frame is 1080 wide; keep margin
 
 STYLES = {

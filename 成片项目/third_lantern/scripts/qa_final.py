@@ -15,7 +15,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import FFMPEG, FFPROBE, prepend_to_path  # noqa: E402
 prepend_to_path()
 
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
 VIDEO = PROJECT / '09_final' / '第三盏灯_演示版_2K.mp4'
 CFG = json.loads((PROJECT / '00_project/story.json').read_text(encoding='utf-8'))
 

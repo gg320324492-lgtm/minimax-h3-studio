@@ -13,7 +13,7 @@ from pathlib import Path
 import os
 os.environ['HF_HUB_CACHE'] = 'E:/Minimax-H3/third_party/ComfyUI/models/tts'
 
-PROJECT = Path(r'E:/Minimax-H3/piyao_2026')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/piyao_2026')
 OUT = PROJECT / '05_audio' / 'NARR'
 VOICE = 'zm_yunjian'  # deep / resolute male, more solemn than zm_yunyang
 

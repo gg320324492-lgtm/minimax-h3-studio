@@ -2,7 +2,7 @@
 # third_lantern post chain:
 # timeline -> picture lock(1344x768) -> FlashVSR 2x -> postfx 1440p -> mix -> burn -> finalize -> QA
 set -e
-cd /e/Minimax-H3/third_lantern
+cd /e/Minimax-H3/成片项目/third_lantern
 PY="E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe"
 EDIT=07_edit
 FROM_STAGE="${FROM_STAGE:-1}"

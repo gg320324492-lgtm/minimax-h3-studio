@@ -19,7 +19,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import FFMPEG, FFPROBE, prepend_to_path  # noqa: E402
 prepend_to_path()
 
-PROJECT = Path(r'E:/Minimax-H3/piyao_2026')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/piyao_2026')
 VIDEO = PROJECT / '09_final' / '它只是换了一个地名_参赛版_1080P.mp4'
 CFG = json.loads((PROJECT / '00_project/shots.json').read_text(encoding='utf-8'))
 ORDER = ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08',

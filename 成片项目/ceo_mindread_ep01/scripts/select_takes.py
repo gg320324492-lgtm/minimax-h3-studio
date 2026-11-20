@@ -29,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 
 # Quality of the 720p picture lock. The lock is an INTERMEDIATE, not a
 # deliverable: it is the source every later stage reads (upscale -> audio ->

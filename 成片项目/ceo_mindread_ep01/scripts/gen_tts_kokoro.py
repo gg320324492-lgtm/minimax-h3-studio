@@ -27,7 +27,7 @@ import subprocess
 
 os.environ['HF_HUB_CACHE'] = 'E:/Minimax-H3/third_party/ComfyUI/models/tts'
 
-PROJECT = Path(r'E:/Minimax-H3/ceo_mindread_ep01')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/ceo_mindread_ep01')
 
 # Voice mapping
 VOICE_CEO = 'zm_yunyang'  # Professional, Reliable male

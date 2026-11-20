@@ -25,7 +25,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import prepend_to_path  # noqa: E402
 prepend_to_path()
 
-PROJECT = Path(r'E:/Minimax-H3/piyao_2026')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/piyao_2026')
 MAX_TEXT_WIDTH = 1700
 
 # box: (fill rgba, pad_x, pad_y, radius)  -> rounded rect behind the text

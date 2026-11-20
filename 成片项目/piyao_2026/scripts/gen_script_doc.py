@@ -14,7 +14,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
-PROJECT = Path(r'E:/Minimax-H3/piyao_2026')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/piyao_2026')
 CFG = json.loads((PROJECT / '00_project/shots.json').read_text(encoding='utf-8'))
 TL = json.loads((PROJECT / '00_project/timeline.json').read_text(encoding='utf-8'))
 

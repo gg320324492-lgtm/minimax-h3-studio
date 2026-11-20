@@ -19,7 +19,7 @@ from scipy import signal
 from scipy.io import wavfile
 
 SR = 48000
-PROJECT = Path(r'E:/Minimax-H3/piyao_2026')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/piyao_2026')
 RNG = np.random.default_rng(20260922)
 
 CFG = json.loads((PROJECT / '00_project' / 'shots.json').read_text(encoding='utf-8'))

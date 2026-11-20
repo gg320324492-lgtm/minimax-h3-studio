@@ -29,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 OUTPUT = PROJECT / '07_edit' / 'EP01_WITH_AUDIO.mp4'
 
 

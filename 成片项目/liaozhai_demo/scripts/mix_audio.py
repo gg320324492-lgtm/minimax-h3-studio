@@ -16,7 +16,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import prepend_to_path  # noqa: E402
 prepend_to_path()
 
-PROJECT = Path(r'E:/Minimax-H3/liaozhai_demo')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/liaozhai_demo')
 OUTPUT = PROJECT / '07_edit' / 'LZ_WITH_AUDIO.mp4'
 
 

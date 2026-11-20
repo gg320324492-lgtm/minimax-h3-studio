@@ -23,7 +23,7 @@ from ffmpeg_env import FFMPEG, FFPROBE, prepend_to_path  # noqa: E402
 prepend_to_path()
 
 SERVER = 'http://127.0.0.1:8188'
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
 COMFY_INPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/input')
 COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')
 TMP = PROJECT / '07_edit' / '2k_chunks'

@@ -2,7 +2,7 @@
 # piyao_2026 post chain: timeline -> picture lock -> 1080p SR -> audio -> subs -> final -> QA
 # Prereq: all 15 clips present under 03_video_raw/ (scripts/gen_clips.py).
 set -e
-cd /e/Minimax-H3/piyao_2026
+cd /e/Minimax-H3/成片项目/piyao_2026
 PY="E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe"
 SR="E:/Minimax-H3/sr_pipeline_v2.py"
 EDIT=07_edit

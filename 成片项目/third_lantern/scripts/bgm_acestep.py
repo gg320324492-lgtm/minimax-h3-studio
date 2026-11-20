@@ -14,8 +14,8 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
-REPO = Path(r'E:/Minimax-H3/liaozhai_demo/ACE-Step-1.5')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
+REPO = Path(r'E:/Minimax-H3/成片项目/liaozhai_demo/ACE-Step-1.5')
 sys.path.insert(0, str(REPO))
 
 SEEDS = [411, 715, 924]

@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
+PROJECT = Path(r'E:\Minimax-H3\成片项目\ceo_mindread_ep01')
 # Both output roots are overridable so a re-run does not destroy an existing
 # delivery. Project convention is that originals are kept and revisions are
 # written alongside; run_post_chain.sh points these at a tagged directory unless

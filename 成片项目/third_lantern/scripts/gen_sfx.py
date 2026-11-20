@@ -12,7 +12,7 @@ from scipy import signal
 from scipy.io import wavfile
 
 SR = 48000
-PROJECT = Path(r'E:/Minimax-H3/third_lantern')
+PROJECT = Path(r'E:/Minimax-H3/成片项目/third_lantern')
 OUT = PROJECT / '05_audio' / 'SFX'
 RNG = np.random.default_rng(410924)
 CFG = json.loads((PROJECT / '00_project' / 'story.json').read_text(encoding='utf-8'))
