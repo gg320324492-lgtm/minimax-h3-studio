@@ -53,55 +53,6 @@
 复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q`
 （系统 python 没有 pytest；用 ComfyUI 的 venv）。
 
-## G-10 目录命名 —— 已关闭（2026-11-20 改回英文）
-
-本日一度把成片目录改成中文（成片项目/ 测试/ 脚本/ 私有备份/ 等），**当天已全部改回英文**：
-
-    productions/   6 个成片项目
-    tests/         测试套件
-    scripts/       ffmpeg_env.py、sr_pipeline_v2.py
-    H3_local_private/   私有备份
-    out/workflows/ out/logs/ out/studio_jobs/ out/tools/
-
-**为什么改回**：中文目录名在四处在持续制造问题，每一处都会静默出错——
-1. `git ls-files` 默认把非 ASCII 路径输出成八进制转义（`"æ..."`），
-   测试拿这个输出去开文件必然失败；
-2. `subprocess.run(..., text=True)` 按系统 locale（本机 GBK）解码 git 的 UTF-8 输出，
-   中文路径变乱码；
-3. 守护测试里的路径正则只认 `tests|studio|pipeline|docs|tools`，改名就得逐个改；
-4. 每一条绝对路径、每一个 manifest 条目都要跟着改，改漏一处就断。
-
-**结论**：本项目的目录名保持英文。中文只用在**文档正文与注释**里，不进路径。
-
----
-
-## G-01 测试套件存在失败项 —— 待验证
-
-目录归位后跑 `pytest tests/`，出现若干 E（error）与 F（failure）。
-
-**已修（当轮）**：收集期报错的 2 个用例 —— `tests/test_p20_one_ruler.py`、
-`tests/test_take_selection_behaviour.py`，根因是 `ffmpeg_env.py` 搬到 `scripts/` 后
-`studio/scripts/take_ranker.py` 的 sys.path 没跟上（`ModuleNotFoundError: ffmpeg_env`）。
-修后两个用例能正常收集。
-
-**2026-11-20 补记**：tests/ 改名为 tests/ 时，暴露出**相对路径引用**也被迁移影响
-（`ROOT / 'ceo_mindread_ep01' / 'scripts'` 这类不带 Minimimax-H3 前缀的写法，
-前一轮只改了绝对路径，漏了这些）。已修 7 个文件（config/paths.py、
-tests/test_p20_one_ruler.py、tests/test_p0_regressions.py、
-tests/test_p16_reference_is_not_an_input_free_measurement.py、
-tests/test_p2_prompt_contract.py、及 3 个生产脚本）。
-修后 **801 个用例全部收集成功、0 收集错误**（改名前是 793 收集 + 1 错误）。
-
-**未修（遗留）**：修完再跑，进度条上仍可见 **≥4 个 FAILURE**
-（分布约在 35%、44%、53%、62% 处；此前 ≥6 个 ERROR 是上述收集错误连带造成的）。
-具体用例名未捕获——该次 pytest 的输出被截断，只保留了进度点。
-
-- 复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q -rf --tb=no`
-  （系统 python 3.10 **没有 pytest**，必须用 ComfyUI 的 venv）
-- 建议下一步：加 `-rf --tb=no` 重跑取清单；再 `git stash` 回退到迁移前提交
-  （8233b99）跑同一套作基线，区分「路径迁移引起」与「原本就红」
-- 判定口径：只修前者，不动原本就红的用例
-
 ## G-09 sr_takes.py 指向的 shot_manifest 不存在 —— 待办
 
 `productions/ceo_mindread_ep01/scripts/sr_takes.py:30` 读的是
