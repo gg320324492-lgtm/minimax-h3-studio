@@ -132,6 +132,18 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 
 甄别报告：out/工具/测试甄别.md（71 文件/691 例逐个读断言的定稿清单）。
 
+## G-13 Claude 记忆目录误删与恢复 —— 已关闭（2026-11-21）
+
+清理 C 盘已归档会话窗口时，误删了当前会话的 memory/ 目录（15 个记忆文件 + 索引）。恢复过程：
+
+- 6 个文件从当前会话 jsonl 的 Write/Edit 记录重放恢复
+- pika-flex-ruling 凭本会话读过的全文重建
+- 其余 4 个（seedvr2-comfyui-integration、ep01-production-pipeline、kokoro-zh-cannot-say-latin、controlnet-ruling-keep-not-wired）原文无法找回，凭本会话读过的摘要与项目文档重建，内容为重建版，细节可能与原版有出入
+- MEMORY.md 索引重写，15 条与磁盘文件一一对应
+- 教训：删会话目录前必须先确认该目录下没有 memory/ 子目录——框架把记忆与会话记录放在同一层级，按目录名循环删除会误伤。
+
+---
+
 ## G-02 本机网络出口受限 —— 已规避
 
 2026-11-20 实测：
