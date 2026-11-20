@@ -53,21 +53,14 @@
 复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q`
 （系统 python 没有 pytest；用 ComfyUI 的 venv）。
 
-## G-09 sr_takes.py 指向的 shot_manifest 不存在 —— 待办
+## G-09 sr_takes.py 指向的 shot_manifest 不存在 —— 已关闭（2026-11-20）
 
-`productions/ceo_mindread_ep01/scripts/sr_takes.py:30` 读的是
-`EP01 / '00_project' / 'shot_manifest.json'`，但该文件实际位于
-`09_final/shot_manifest.json`（`09_final_v2/` 下另有一份）。
-
-**这不是目录迁移造成的**：该行自最初的提交 9e96377 起就是这样写的，
-`00_project/shot_manifest.json` 从未进过版本库（.gitignore 里也没有它），
-只在磁盘上存在过；`H3_local_private/shot_manifest.before_takeranker.json` 就是它被
-take_ranker 改动前的备份——说明后续某次运行把它挪走了，脚本没跟着改。
-
-- 现象：`python sr_takes.py --help` 直接 FileNotFoundError
-- 待办：确认 per-take SR 应该读 `09_final/shot_manifest.json` 还是
-  `09_final_v2/shot_manifest.json`，再改这一行
-- 影响面：只影响 EP01 的逐镜头超分，不影响其它工单
+`sr_takes.py` 及同根因的 5 处引用（select_takes 写入、finalize 复制与读取、
+qa_final 读取、studio/scripts/rank_takes 读取）已全部统一到权威位置
+`productions/ceo_mindread_ep01/09_final/shot_manifest.json`。
+select_takes 现在直接写 09_final/（并确保目录存在），finalize 里那条
+00_project -> 09_final 的复制已删除。提交 0867d5e + 18d11c0。
+tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 
 ## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 待办
 
@@ -85,6 +78,23 @@ take_ranker 改动前的备份——说明后续某次运行把它挪走了，�
 - 之所以不在本轮直接改：这几条路径各自对应哪一版产物需要按成片实际内容判断，
   猜错会让脚本把素材写到错误的目录——属于"修复任务"，按约定登记为缺口。
 - 影响面：只影响 water_renewal 的重跑（成片已交付，`09_final/` 在位）。
+
+---
+
+## G-12 仓库测试套件的「账务化」—— 待决策
+
+73 个测试文件 / 29188 行。逐文件断言对象分类后：**账务类 29 个 / 639 行（14 用例）**、
+中间 1 个、**产出类 69 个 / 28369 行（691 用例）**。
+
+- 账务类（护仓库自身的路径/哈希/引用/清单）：`test_manifest_freshness`、
+  `test_tautology_criterion`、`test_brand_lock_comment_honesty`，
+  加上产出类里实际在钉仓库文本的约 26 个（引用解析、行号引用落点、docstring 计数、
+  qa_layers/visual_qa 的哈希 pin、p0 的 ls-files 检查等）。
+- 产出类（真正护画面/管线行为）：图表几何与基线、转场非冻结、camera move、
+  depth cue、visual acceptance 可复现、schema 严格性、渲染入口守卫等。
+
+待决策：账务类是否裁掉。裁掉后 789 用例约降到 350；可能漏掉个别真护产出的
+（判定脚本 out/tools/classify_tests.py 可重跑，删除前逐个过一遍更稳）。
 
 ---
 
@@ -140,13 +150,13 @@ Remotion 打包时会把 `public/` 整目录拷进 `studio/.remotion/*-bundle/`
   且 3 个 `PREMIXED.mp4` 已剥离无用视频轨（375MB → 8.4MB）
 - 待办：若渲染变慢，可考虑把 `public/jobs` 改回实体目录、只把归档产物放 out/
 
-## G-07 studio 依赖重装后未做端到端渲染 —— 待验证
+## G-07 studio 依赖重装后未做端到端渲染 —— 已关闭（2026-11-20）
 
-`studio/node_modules` 已用 pnpm 重装（store 指到 `third_party/.pnpm-store`，
-node_modules 由 1.1G 降到 240M）。已验证 remotion CLI 可用、Node 能透过联接读取素材，
-但**没有跑一次完整渲染**。
-
-- 待办：`cd studio && pnpm run dev` 起 studio，确认各模板仍能正常预览/渲染
+端到端验证完成：`pnpm exec remotion --version` = @remotion/cli 4.0.529；
+`node studio/bin/still.mjs --comp FinanceShowcaseWide` 真实出图
+（1920×1080 PNG，452KB，证据 out/tmp/g07_verify/frame.png）；
+渲染相关守护测试 58 passed / 3 skipped / 0 failed。
+studio 依赖重装后链路完好。
 
 ## G-08 Remotion 浏览器位置 —— 已关闭
 
