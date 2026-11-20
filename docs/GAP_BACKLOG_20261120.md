@@ -55,14 +55,22 @@
 
 ## G-09 sr_takes.py 指向的 shot_manifest 不存在 —— 已关闭（2026-11-20）
 
-`sr_takes.py` 及同根因的 5 处引用（select_takes 写入、finalize 复制与读取、
-qa_final 读取、studio/scripts/rank_takes 读取）已全部统一到权威位置
-`productions/ceo_mindread_ep01/09_final/shot_manifest.json`。
-select_takes 现在直接写 09_final/（并确保目录存在），finalize 里那条
-00_project -> 09_final 的复制已删除。提交 0867d5e + 18d11c0。
+根因：目录归位时 `shot_manifest.json` 被移到 `09_final/`，但 `sr_takes.py` 等
+6 处引用仍指旧位置。两批提交修复：
+
+1. **0867d5e**：`sr_takes.py` 读取的 `shot_manifest.json` 改指实际存在的
+   `09_final/` 目录。
+2. **18d11c0（同根因 5 处）**：shot_manifest.json 的权威位置统一改为
+   `productions/ceo_mindread_ep01/09_final/shot_manifest.json`——
+   - `select_takes.py`：写入改到 `09_final/`（并确保目录存在）；
+   - `finalize.py`：删除 `00_project` -> `09_final` 的复制，
+     读取改读 `09_final/`；
+   - `qa_final.py`：读取改读 `09_final/`；
+   - `studio/scripts/rank_takes.py`：读取改读 `09_final/`。
+
 tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 
-## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 已关闭（2026-11-21）
+## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 待收尾（2026-11-21）
 
 2026-11-20 把 `from_e_root/黑臭水体治理宣传片剪辑` 并入 `productions/water_renewal/` 时，
 这批脚本的根路径已全部重映射到项目内（不再指向已不存在的 `E:/promo_video`、
@@ -75,16 +83,21 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 | `gen_narration.py` | `OUT=PROJECT/'assets'/'narration'` | `05_audio/narration/`；manifest 写 `01_reference/narration_manifest.json`、临时 wav 落 `05_audio/tmp/` |
 | `gen_cover.py` | `OUT=.../assets/cover` | `01_reference/cover/`（重映射时已改对，本轮核对无误） |
 
-- 之所以不在本轮直接改：这几条路径各自对应哪一版产物需要按成片实际内容判断，
+- 之所以不在归位轮直接改：这几条路径各自对应哪一版产物需要按成片实际内容判断，
   猜错会让脚本把素材写到错误的目录——属于"修复任务"，按约定登记为缺口。
 - 影响面：只影响 water_renewal 的重跑（成片已交付，`09_final/` 在位）。
-- **2026-11-21 修复说明**：原始素材（C 盘桌面旧目录）已不存在，故把仍在的
+- **2026-11-21 修复一：根路径重映射（commit 1bf84b1）**：归位当天先做了把
+  `E:/promo_video` 等 E 盘外部根重映射到项目内路径的工作，4 个脚本已不再指向
+  已不存在的 `E:/promo_video`、也不再写 C 盘桌面。
+- **2026-11-21 修复二：原始素材归位**：原始素材（C 盘桌面旧目录）已不存在，故把仍在的
   素材副本归位到项目内——8 个第一批视频从 `studio/public/jobs/water-renewal/`
   （prepare_media.py 的转码副本）拷回 `01_reference/videos/`（保持 `_raw.mp4`
   原文件名，V 表只需改相对路径）；24 张第一批照片 `01_reference/A09..A32.jpg`
   （640×480，EXIF 已转正，与微信导出图同源同分辨率）按 P 表 fid 顺序拷入
   `01_reference/photos/p01..p24.jpg`，`norm_photos()` 改读该目录。4 个脚本
   均已用 ComfyUI venv ast.parse 验证通过。
+- **2026-11-21 遗留**：脚本内部子目录常量的运行时适配（上表"修复后指向"所列）
+  正在另一会话处理，完成后此处更新为已关闭。
 
 ---
 
@@ -161,7 +174,7 @@ Remotion 打包时会把 `public/` 整目录拷进 `studio/.remotion/*-bundle/`
 
 端到端验证完成：`pnpm exec remotion --version` = @remotion/cli 4.0.529；
 `node studio/bin/still.mjs --comp FinanceShowcaseWide` 真实出图
-（1920×1080 PNG，452KB，证据 out/tmp/g07_verify/frame.png）；
+（1920×1080 PNG，452KB，证据 out/工具/审计/g07_verify/frame.png）；
 渲染相关守护测试 58 passed / 3 skipped / 0 failed。
 studio 依赖重装后链路完好。
 
@@ -180,7 +193,7 @@ Remotion 认的浏览器位置是 `studio/node_modules/.remotion/chrome-headless
 修后该文件 **11 passed in 30.86s**，手工跑 `node studio/bin/still.mjs` 也正常出图。
 
 **遗留**：`pnpm install` 重建 node_modules 后这个联接会没，届时需重跑
-`out/工具scripts/link_chrome_nm.bat` 重建（不必重新下载 270MB）。
+`out/工具/link_chrome_nm.bat` 重建（不必重新下载 270MB）。
 
 ---
 
