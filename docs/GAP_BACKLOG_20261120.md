@@ -11,13 +11,21 @@
 ## G-01 测试套件存在失败项 —— 待验证
 
 目录归位后跑 `pytest tests/`，出现若干 E（error）与 F（failure）。
-当轮只修了**收集期报错**（`ModuleNotFoundError: ffmpeg_env`，根因是 `ffmpeg_env.py`
-搬到 `脚本/` 后 sys.path 没跟着加），**未逐条排查剩余失败**。
 
-- 复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q`
-- 注意：系统 python（3.10）**没有 pytest**，要用 ComfyUI 的 venv
-- 待办：逐条定位失败断言，判断是「路径迁移引起」还是「原本就红」
-- 判定口径：迁移前应有基线；若无基线，以 `git stash` 回退到迁移前提交跑一次对照
+**已修（当轮）**：收集期报错的 2 个用例 —— `tests/test_p20_one_ruler.py`、
+`tests/test_take_selection_behaviour.py`，根因是 `ffmpeg_env.py` 搬到 `脚本/` 后
+`studio/scripts/take_ranker.py` 的 sys.path 没跟上（`ModuleNotFoundError: ffmpeg_env`）。
+修后两个用例能正常收集。
+
+**未修（遗留）**：修完再跑，进度条上仍可见 **≥6 个 ERROR、≥4 个 FAILURE**
+（分布约在 17%、26%、35%、44%、53%、62% 处）。
+具体用例名未捕获——该次 pytest 的输出被截断，只保留了进度点。
+
+- 复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q -rf --tb=no`
+  （系统 python 3.10 **没有 pytest**，必须用 ComfyUI 的 venv）
+- 建议下一步：加 `-rf --tb=no` 重跑取清单；再 `git stash` 回退到迁移前提交
+  （8233b99）跑同一套作基线，区分「路径迁移引起」与「原本就红」
+- 判定口径：只修前者，不动原本就红的用例
 
 ## G-02 本机网络出口受限 —— 已规避
 
