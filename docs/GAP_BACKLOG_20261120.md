@@ -111,10 +111,22 @@ node_modules 由 1.1G 降到 240M）。已验证 remotion CLI 可用、Node 能�
 
 - 待办：`cd studio && pnpm run dev` 起 studio，确认各模板仍能正常预览/渲染
 
-## G-08 .remotion/chrome-headless-shell 保留 —— 已规避
+## G-08 Remotion 浏览器位置 —— 已关闭
 
-270M 的 headless Chrome 是渲染必需，删了会重新下载且默认落 C 盘。
-本轮**未删除**。若将来要删，需先设环境变量把下载位置指到 E 盘。
+Remotion 认的浏览器位置是 `studio/node_modules/.remotion/chrome-headless-shell`，
+而浏览器实体在 `third_party/chrome-headless-shell/`。两者用**目录联接**相连。
+
+**起因**：2026-11-20 重装 `studio/node_modules` 时，Remotion 触发了浏览器下载，
+该下载中断，只留下一个 32MB 的 zip 与 download.lock →
+`测试/test_chart_type_defaults_are_real.py`（真跑 Remotion 渲染）先报 5 个 error 再卡死，
+整个测试套件跑到 26% 就挂住。
+
+**修法**：删掉未完成的下载目录，改建联接
+`studio/node_modules/.remotion/chrome-headless-shell` → `third_party/chrome-headless-shell`。
+修后该文件 **11 passed in 30.86s**，手工跑 `node studio/bin/still.mjs` 也正常出图。
+
+**遗留**：`pnpm install` 重建 node_modules 后这个联接会没，届时需重跑
+`out/工具脚本/link_chrome_nm.bat` 重建（不必重新下载 270MB）。
 
 ---
 
