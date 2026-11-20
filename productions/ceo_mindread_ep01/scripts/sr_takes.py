@@ -27,7 +27,7 @@ SR_ARGS = ['--scale', '2', '--tile', '768', '--overlap', '64',
 
 
 def main() -> int:
-    manifest = json.loads((EP01 / '00_project' / 'shot_manifest.json').read_text(encoding='utf-8'))
+    manifest = json.loads((EP01 / '09_final' / 'shot_manifest.json').read_text(encoding='utf-8'))
     order = list(manifest['selections'].keys())
 
     failed = []
