@@ -125,7 +125,7 @@ const pickOptions = (raw: Record<string, unknown>): Partial<ChartOptions> => {
  * DATA (a value on the y axis, the thing the ledger locks), and options.ts's own
  * rule says "Nothing that changes the data belongs here."
  *
- * tests/test_chart_baseline_is_read.py pins this from both sides: the working
+ * 测试/test_chart_baseline_is_read.py pins this from both sides: the working
  * level must render, and the inert level must be refused rather than tolerated.
  */
 export const normaliseChart = (raw: unknown): ChartSpec => {

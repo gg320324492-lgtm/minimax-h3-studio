@@ -280,8 +280,8 @@ TM_CCOEFF 均值扣除: 真值 48.2M = 0.542      假值 99.9M = 0.585   ← 仍
 ## 六、全量测试
 
 ```
-cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
-    --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
+cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
+    --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py
 
 719 passed, 4 skipped in 466.62s (0:07:46)
 ```

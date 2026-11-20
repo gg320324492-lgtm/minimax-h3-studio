@@ -12,16 +12,16 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `0f89de0`（已推送） |
 | 基线 | **`757 passed, 4 skipped`**（⚠️ 实测为准） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把 `—` 显示成替换字符）。
 
 **⚠️ Shell 状态在两次工具调用之间不保持**。**全程用绝对路径**。
 **⚠️ `git add` 用显式路径**。
 
 **开工前记录 sha256，收尾比对**：
-- `tests/test_p42_fade_is_not_a_freeze.py`（⚠️ 文件名已由指挥窗口核实）
+- `测试/test_p42_fade_is_not_a_freeze.py`（⚠️ 文件名已由指挥窗口核实）
 
 ---
 
@@ -63,7 +63,7 @@ if isinstance(node.test, ast.BoolOp) and isinstance(node.test.op, ast.Or):
 
 **⇒ 而 `:328` 正是后者，在同一个文件里。**
 
-**⚠️ 指挥窗口已独立核实**：`grep "or True"` 在 `tests/test_p42_fade_is_not_a_freeze.py` 只命中 `:328` 一处。
+**⚠️ 指挥窗口已独立核实**：`grep "or True"` 在 `测试/test_p42_fade_is_not_a_freeze.py` 只命中 `:328` 一处。
 
 ### 3. 为什么这一条特别严重
 
@@ -144,7 +144,7 @@ docstring 说这个失效形态**杀死了本项目每一个变异工具链**。
 4. **⚠️ 磁盘**：本项基本不渲染。**若你渲染，输出到 E 盘**，跑完清理。
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删。**
 5. ⚠️ **不要与别的进程并发渲染** —— **本项会与 P49 并行跑，请用独立 scratch 目录。**
-6. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+6. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 7. ⚠️ py-3.10 有 cv2 但没有 pytest。
 
 ---
@@ -161,7 +161,7 @@ docstring 说这个失效形态**杀死了本项目每一个变异工具链**。
 - **不要动 P19–P48 的任何成果**、不要改 `studio/src/**`
 - **⚠️ 不要把任何帧/图复制进仓库**
 
-**本指令授权你修改**：`tests/test_p42_fade_is_not_a_freeze.py`（**那条断言与那条元守卫**）、相关测试、新增文档。
+**本指令授权你修改**：`测试/test_p42_fade_is_not_a_freeze.py`（**那条断言与那条元守卫**）、相关测试、新增文档。
 ⚠️ **`test_p42*.py` 里除这两处之外的内容不要动** —— 它有 P42/P47 已经验收过的东西。
 
 ---

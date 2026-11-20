@@ -209,7 +209,7 @@ node render.mjs … --gate-props     # 正常图谱
    于是报 `render.mjs reports ['gate-props', 'py; boolean flags']`）。
    **这是我改坏了一个既有守卫**，由全量套件发现，不是由变异发现 —— 记在这里。
    修法：`--gate-props` 只在 `BOOL_FLAGS`，值 flag 列表里不再有它；
-   `tests/test_p14_render_entry_points.py` 的 `values` 字典补了 `'py': 'python'`
+   `测试/test_p14_render_entry_points.py` 的 `values` 字典补了 `'py': 'python'`
    （P14 要求「列出来的 flag 必须各有一次成功渲染」）。
 2. **`runGates()`**：一个打印用的小函数，产出 `py -3.12 <abs path to visual_qa.py> --props <props>`。
    **刻意做成函数而不是字符串** —— 工单点名过这一类坑（路径拼接 + Windows 分隔符），
@@ -249,7 +249,7 @@ if (argv.includes('--gate-props')) {
 
 ---
 
-## 4. 守卫：`tests/test_p25_qa_in_render_path.py`（8 个测试）
+## 4. 守卫：`测试/test_p25_qa_in_render_path.py`（8 个测试）
 
 **回答工单那个问题：「如果明天把接线删了会怎样？」**
 **答案是一个明确的失败 —— 4 个测试红，其中一个是
@@ -287,10 +287,10 @@ if (argv.includes('--gate-props')) {
 原始 `-rf` 输出（M1）：
 
 ```
-FAILED tests/test_p25_qa_in_render_path.py::test_the_gate_is_reported_by_the_tool_so_a_reader_knows_it_ran
-FAILED tests/test_p25_qa_in_render_path.py::test_a_graph_the_gate_rejects_stops_the_render
-FAILED tests/test_p25_qa_in_render_path.py::test_the_healthy_graph_renders_and_the_gate_is_green
-FAILED tests/test_p25_qa_in_render_path.py::test_an_unknown_flag_is_still_rejected_with_the_gate_flag_listed
+FAILED 测试/test_p25_qa_in_render_path.py::test_the_gate_is_reported_by_the_tool_so_a_reader_knows_it_ran
+FAILED 测试/test_p25_qa_in_render_path.py::test_a_graph_the_gate_rejects_stops_the_render
+FAILED 测试/test_p25_qa_in_render_path.py::test_the_healthy_graph_renders_and_the_gate_is_green
+FAILED 测试/test_p25_qa_in_render_path.py::test_an_unknown_flag_is_still_rejected_with_the_gate_flag_listed
 4 failed, 4 passed in 82.53s (0:01:22)
 ```
 
@@ -298,7 +298,7 @@ FAILED tests/test_p25_qa_in_render_path.py::test_an_unknown_flag_is_still_reject
 
 ```
 E       assert 0 != 0
-FAILED tests/test_p25_qa_in_render_path.py::test_a_graph_the_gate_rejects_stops_the_render
+FAILED 测试/test_p25_qa_in_render_path.py::test_a_graph_the_gate_rejects_stops_the_render
 1 failed, 7 passed in 83.00s (0:01:23)      ← M2
 1 failed, 7 passed in 83.26s (0:01:23)      ← M3
 ```
@@ -309,7 +309,7 @@ FAILED tests/test_p25_qa_in_render_path.py::test_a_graph_the_gate_rejects_stops_
 E       assert None
 E        +  where None = <built-in method search of re.Pattern object ...>
 E        +    where re.Pattern = re.compile('const\s+runGates\s*=').search
-FAILED tests/test_p25_qa_in_render_path.py::test_the_render_path_calls_the_qa_gate_in_code_not_in_a_comment
+FAILED 测试/test_p25_qa_in_render_path.py::test_the_render_path_calls_the_qa_gate_in_code_not_in_a_comment
 1 failed, 7 deselected in 0.05s
 ```
 
@@ -365,12 +365,12 @@ E  suite: studio/bin/render.mjs
 E  If that is a deliberate wiring, the P17 verdict changes: a gate that runs is a gate
 E  that can stop a delivery.
 E  assert ['studio/bin/render.mjs'] == []
-tests/test_p17_showcase_demo_verdict.py:457
+测试/test_p17_showcase_demo_verdict.py:457
 
 E  AssertionError: render.mjs now names a QA gate in code: ['visual_qa']. The finding
 E  that nothing gates a render changes and this file must be re-measured.
 E  assert ['visual_qa'] == []
-tests/test_p17_showcase_demo_verdict.py:474
+测试/test_p17_showcase_demo_verdict.py:474
 ```
 
 ⚠️ **这两条不是本项引入的回归，是本项修好的缺陷在守卫上留下的回声。**
@@ -435,7 +435,7 @@ tests/test_p17_showcase_demo_verdict.py:474
 
 ### ⚠️ 需要指挥窗口裁定的一件事
 
-`tests/test_p17_showcase_demo_verdict.py` 的两条守卫断言的是
+`测试/test_p17_showcase_demo_verdict.py` 的两条守卫断言的是
 **「P17 的发现为真」**，而**本项把那个发现修掉了**，所以它们必然红。
 
 按本项目的规矩（不是把红变绿，是**结论变了就显式改写**），
@@ -445,7 +445,7 @@ tests/test_p17_showcase_demo_verdict.py:474
 
 **本项没有改它们**：改写一个 P17 交付物的裁决，不在本工单的授权范围内。
 **请裁定：是照 P14 的先例改写，还是保留它们红着作为历史记录。**
-（若选改写，`tests/test_p25_qa_in_render_path.py` 的 8 条应当接管那两条断言的性质，
+（若选改写，`测试/test_p25_qa_in_render_path.py` 的 8 条应当接管那两条断言的性质，
 而不是被删掉。）
 
 ---

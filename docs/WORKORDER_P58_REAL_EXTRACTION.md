@@ -88,7 +88,7 @@
 5. **磁盘**：`out\p58\` 收尾留证据删大文件；
    ⚠️ `studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删；
 6. ⚠️ GBK 控制台读非 ASCII 用字节判断；写中文报告用 `read_bytes`/`write_bytes`
-   （`tests/test_markdown_text_is_intact.py` 守全仓 U+FFFD）；
+   （`测试/test_markdown_text_is_intact.py` 守全仓 U+FFFD）；
 7. **不装新自定义节点**——内建节点不够用就停下来报告缺什么。
 
 ---

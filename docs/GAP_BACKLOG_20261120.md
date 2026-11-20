@@ -12,13 +12,21 @@
 
 目录归位后跑 `pytest tests/`，出现若干 E（error）与 F（failure）。
 
-**已修（当轮）**：收集期报错的 2 个用例 —— `tests/test_p20_one_ruler.py`、
-`tests/test_take_selection_behaviour.py`，根因是 `ffmpeg_env.py` 搬到 `脚本/` 后
+**已修（当轮）**：收集期报错的 2 个用例 —— `测试/test_p20_one_ruler.py`、
+`测试/test_take_selection_behaviour.py`，根因是 `ffmpeg_env.py` 搬到 `脚本/` 后
 `studio/scripts/take_ranker.py` 的 sys.path 没跟上（`ModuleNotFoundError: ffmpeg_env`）。
 修后两个用例能正常收集。
 
-**未修（遗留）**：修完再跑，进度条上仍可见 **≥6 个 ERROR、≥4 个 FAILURE**
-（分布约在 17%、26%、35%、44%、53%、62% 处）。
+**2026-11-20 补记**：tests/ 改名为 测试/ 时，暴露出**相对路径引用**也被迁移影响
+（`ROOT / 'ceo_mindread_ep01' / 'scripts'` 这类不��� Minimimax-H3 前缀的写法，
+前一轮只改了绝对路径，漏了这些）。已修 7 个文件（config/paths.py、
+测试/test_p20_one_ruler.py、测试/test_p0_regressions.py、
+测试/test_p16_reference_is_not_an_input_free_measurement.py、
+测试/test_p2_prompt_contract.py、及 3 个生产脚本）。
+修后 **801 个用例全部收集成功、0 收集错误**（改名前是 793 收集 + 1 错误）。
+
+**未修（遗留）**：修完再跑，进度条上仍可见 **≥4 个 FAILURE**
+（分布约在 35%、44%、53%、62% 处；此前 ≥6 个 ERROR 是上述收集错误连带造成的）。
 具体用例名未捕获——该次 pytest 的输出被截断，只保留了进度点。
 
 - 复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q -rf --tb=no`

@@ -86,7 +86,7 @@ export const TRAFFIC_LIGHTS = ['#FF5F57', '#FEBC2E', '#28C840'] as const;
  * adjacent steps perceptually even as they grow — doubling the gap reads as
  * one clear move at every size, which an arithmetic 8/16/24/32/... step does
  * not do above the first few rungs. Any edit has to keep that property; see
- * tests/test_space_scale.py.
+ * 测试/test_space_scale.py.
  *
  * `xs` (8), `xxl` (104) and `hero` (168) are DEAD STEPS: nothing reads them.
  * Measured 2026-10-03 by enumerating `SPACE.<key>` across every .ts/.tsx under
@@ -142,7 +142,7 @@ export const RADIUS = {chip: 999, card: 20, window: 14, panel: 28} as const;
  *
  * `depthCue` IS a different key, and IS graph-reachable: a real consumed
  * section (BrowserStack:293 -> depthCueAt), declared by P12. Do not let the
- * two be conflated again. tests/test_depth_cue_layers.py pins both facts
+ * two be conflated again. 测试/test_depth_cue_layers.py pins both facts
  * separately, because the previous version of that test used the substring
  * assertion `'depth' not in schema_text`, which the word `depthCue` alone
  * was enough to trip - a text-presence assertion, and the fifth of those in

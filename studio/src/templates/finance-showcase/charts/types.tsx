@@ -279,7 +279,7 @@ const PathMark: React.FC<{series: Series; withArea: boolean}> = ({series, withAr
  * 400,053 px — so the matrix was green on the very option that was rendering
  * its own type backwards. An option being live says nothing about whether its
  * default is right for the type it lands on; that is a different question, and
- * `tests/test_chart_type_defaults_are_real.py` is what asks it.
+ * `测试/test_chart_type_defaults_are_real.py` is what asks it.
  *
  * So there is no `defaultArea` prop to thread, and nothing to resolve here:
  * `f.opts.showArea` is already the answer for this scene. Resolving it again

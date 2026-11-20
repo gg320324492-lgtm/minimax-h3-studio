@@ -1,7 +1,7 @@
 # P49 — 十个场景的相机声明了「多久」却没声明「往哪走」
 
 > 交付报告。**不含放行/退回裁定** —— 那是指挥窗口的事。
-> 守卫：`tests/test_p49_camera_move_is_not_a_freeze.py`
+> 守卫：`测试/test_p49_camera_move_is_not_a_freeze.py`
 
 ---
 
@@ -172,7 +172,7 @@ f71/f137 这一对量到的是**入场尾巴**，不是静止相。
 
 ## 六、守卫
 
-`tests/test_p49_camera_move_is_not_a_freeze.py`，**进套件、无环境开关**。
+`测试/test_p49_camera_move_is_not_a_freeze.py`，**进套件、无环境开关**。
 
 | 测试 | 作用 | 需渲染 |
 |---|---|---|
@@ -273,11 +273,11 @@ f71/f137 这一对量到的是**入场尾巴**，不是静止相。
 | 文件 | 动作 |
 |---|---|
 | `pipeline/examples/charts_demo.json` | 改（十处加 `scale: [1.04, 1.0]`） |
-| `tests/test_p49_camera_move_is_not_a_freeze.py` | 新增 |
-| `tests/test_p48_reaccept.py` | 改（两个测试，见下） |
+| `测试/test_p49_camera_move_is_not_a_freeze.py` | 新增 |
+| `测试/test_p48_reaccept.py` | 改（两个测试，见下） |
 | `docs/P49_CAMERA_MOTION_REPORT.md` | 新增（本文件） |
 
-**`tests/test_p48_reaccept.py` 为什么动**：P48 那两个测试断言 c01
+**`测试/test_p48_reaccept.py` 为什么动**：P48 那两个测试断言 c01
 **就是**冻结的，而我的修复让它不成立了。**该文件自己的失败信息写着**
 「If this is now fixed, update this guard AND the ledger — the freeze was a
 real finding」；docstring 也写着「Re-derive the numbers ... do not delete

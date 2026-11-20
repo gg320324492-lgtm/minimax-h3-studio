@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `1fb2613`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `617 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -150,7 +150,7 @@ P31 的教训：**harness 拿两个相同的错误字符串比较、然后打印
    （指挥窗口验 P30 时传了裸 scene、`iter_scene_locked` 读 `graph['scenes']` ⇒ 测出"全部 0 条"）；
    在错误的尺度上测等于没测；确认变异生效前不要宣称存活；
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾，P17 的 agent 污染了 1101 行**）；
-   路径分隔符；别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   路径分隔符；别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -163,7 +163,7 @@ P31 的教训：**harness 拿两个相同的错误字符串比较、然后打印
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - **`out/p13_probe/**` 与 `out/*.mp4` —— 只读**（P27 的证据目录）
 - `DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs` 及 P19–P31 的成果**
 - **不要给 11.1 的七个杠杆真的上锁** ——
   **⚠️ 锁了它们修复循环就什么都做不了**（11.2 原话）

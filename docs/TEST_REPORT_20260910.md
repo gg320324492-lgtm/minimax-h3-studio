@@ -51,7 +51,7 @@
 附加: minimaxh3_* 风格 embeddings 已就位, prompt 中按官方用法调用
 ```
 
-**新增文件**: `upscale_x4v3.py`, `tests/test_steps_ab.py`, `tests/compare_steps.py`, `tests/compare_x4v3.py`
+**新增文件**: `upscale_x4v3.py`, `测试/test_steps_ab.py`, `测试/compare_steps.py`, `测试/compare_x4v3.py`
 **备份**: `video_minimax_h3_r2v.backup_20steps.json` (20 步原版)
 
 ## 遗留观察项

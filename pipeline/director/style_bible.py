@@ -84,7 +84,7 @@ REFUSED: dict[str, str] = {
         'measured curve. There is nothing to continue.'),
     'spacing': (
         'has 12 consumer sites but generating it would fight an invariant: the '
-        'scale is 8x Fibonacci, pinned by tests/test_space_scale.py, and three '
+        'scale is 8x Fibonacci, pinned by 测试/test_space_scale.py, and three '
         'of its steps (xs, xxl, hero) are MEASURED dead. A generator emitting '
         'spacing values is emitting values nothing reads, against a rule.'),
     'radius': (

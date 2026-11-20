@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `87abf64`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `539 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`。
 
 **⚠️ 磁盘**：输出到 **E: 盘**，跑完清理，收尾报告写明造了什么、删了什么。
@@ -158,7 +158,7 @@ showValues: option(chart, 'showValues', options),
    - **路径分隔符**（P17 的 `startswith('out/')` 在 Windows 上漏掉了整个 `out/`）；
    - **别把长跑命令管道进 `tail`**；
    - **`PYTHONIOENCODING=utf-8` 会污染 `test_visual_qa.py`**；
-   - **`tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD**。
+   - **`测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD**。
 6. **⚠️ Shell 状态在两次工具调用之间不保持。** 上一位执行本项的 agent 就死在这上面：
    一次调用里的 `cd` 在下一次调用里看不见，它停下来排查为什么。
    **全程用绝对路径**，依赖仓库根的命令一律以 `cd E:/Minimax-H3 &&` 开头。
@@ -174,7 +174,7 @@ showValues: option(chart, 'showValues', options),
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - **`out/p13_probe/**` 与 `out/*.mp4` —— 只读**（P27 的证据目录）
 - `DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs` 及 P19–P27 的成果**
 - **不要动 `headroom` 的取值与 `showValues` 的语义**
 - **不要顺手修 B-2（末帧近黑）或 B-3（冻结 482 帧）** ——

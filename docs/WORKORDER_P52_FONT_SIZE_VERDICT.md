@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `3fce07c`（已推送） |
 | 基线 | **⚠️⚠️ 本机全量套件测不出稳定数字。** 三次连跑得到三个不同失败集合，<br>而每个失败文件单跑都绿。**⇒ 你报的每个数字都要注明：是否并发、是否清过探针。**<br>**开工前先自己测一次当基线**，不要沿用工单里的任何数字。 |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把 `—` 显示成替换字符）。
 **读非 ASCII 用字节判断，别信控制台。**
 
@@ -24,8 +24,8 @@
 
 **开工前记录 sha256，收尾比对**：
 - `studio/scripts/visual_qa.py`
-- `tests/test_p22_contrast_is_not_a_per_frame_gate.py`
-- `tests/test_p48_reaccept.py`
+- `测试/test_p22_contrast_is_not_a_per_frame_gate.py`
+- `测试/test_p48_reaccept.py`
 
 ---
 
@@ -151,7 +151,7 @@ def rule_font_size(a, declared_px=None, scale=1.0) -> Finding:
    而失败的 `test_a_finished_render_leaves_no_bundle_directory_behind` 恰恰是查残留的。
    **别成为下一个。**
 5. ⚠️ **不要与别的进程并发渲染** —— 本项若要造帧会用到渲染。
-6. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
+6. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
 7. ⚠️ py-3.10 有 cv2 但没有 pytest —— 需要 cv2 就写进普通函数用 3.10 驱动，
    3.12 里 **skip 而不是撒谎**。
 
@@ -167,9 +167,9 @@ def rule_font_size(a, declared_px=None, scale=1.0) -> Finding:
   ⚠️ **`p45_control_render.py` 把输出路径硬编码在 `out/p45_vlm/` —— 别原样跑它。**
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P51*.md` —— 只读
 - `DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
-- ⚠️ **不要动 `tests/test_p42*`、`test_p46*`、`test_p27*`、`test_p49*`、
-  `test_chart_type_defaults_are_real.py`、`tests/tautology_criterion.py`** ——
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- ⚠️ **不要动 `测试/test_p42*`、`test_p46*`、`test_p27*`、`test_p49*`、
+  `test_chart_type_defaults_are_real.py`、`测试/tautology_criterion.py`** ——
   **P50/P51/P49 的成果，守卫的守卫刚建好，别碰。**
 - **不要动 P19–P51 的任何成果**、不要改 `studio/src/**`（`visual_qa.py` 除外）
 - **⚠️ 不要把任何帧/图复制进仓库**

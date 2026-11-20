@@ -11,7 +11,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `88d1ae4`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `458 passed, 3 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 **⚠️ 网络**：本机代理时通时不通（推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`）。
 **但本项是提交但不推送。**
@@ -159,7 +159,7 @@ full_a/  full_b/  full_r2/
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/**` —— **只读**（`out/p13_probe/` 是本项的语料来源；`DiagOutputDir` 同）
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `themes.ts`**、`WCAG_TEXT`、`unavailable_findings()` 里其他三条占位符
 - **不要动 P19 的 `SIGNATURE_EQUAL`、P20 的 `DUP_THRESHOLD`、P21 的 `graph_scene_renderable`、
   P22 的 `theme_contrast` / `contrast_frame`**

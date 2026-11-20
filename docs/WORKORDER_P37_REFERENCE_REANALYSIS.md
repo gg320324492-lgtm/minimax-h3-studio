@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `c8a7b36` 或更新（**开工前先 `git log --oneline -3`**；P35 与 P36 可能已提交） |
 | 基线 | **先自己实测**（上次 `637 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -141,7 +141,7 @@ one gold accent」，**但 P16 已查出那段是规则不是测量**（**没有
    （P13 的 agent 在 480×270 下采样上测局部性、差异被平均掉）；
    写数字要么实测要么标注未测；确认变异生效前不要宣称存活；
    CRLF 用字节计数验；路径分隔符（**P17 的 `startswith('out/')` 在 Windows 上漏掉整个 `out/`**）；
-   别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -154,7 +154,7 @@ one gold accent」，**但 P16 已查出那段是规则不是测量**（**没有
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P3*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— **只读**（P27 的证据目录）；`DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `tokens.ts` 的任何值** —— 第 2 件事只是建议
 - **不要改任何场景组件**
 - **不要动 P19–P36 的任何成果**

@@ -105,7 +105,7 @@ P54 的形状与此完全相同，只是方向反过来（图谱在正确层，�
 **图谱未改**（判定是渲染器缺读者）。`types.tsx` 未改（回退保留，见第二节）。
 
 行号纪律：`Chart.tsx:137/196/211/238` 与 `types.tsx:404` 被 `docs/P22*`、`docs/P48*`、
-`studio/scripts/visual_qa.py` 按行号引用，且 `tests/test_line_refs_land_on_code.py` 守着它们。
+`studio/scripts/visual_qa.py` 按行号引用，且 `测试/test_line_refs_land_on_code.py` 守着它们。
 所以四处全部**原地改写、不增删行**：文件仍 267 行，改后逐行核对引用位仍在原处。
 行尾：改前后均为纯 CRLF（267 CRLF / 0 裸 LF，字节计数验证）。
 
@@ -161,7 +161,7 @@ ink 用仓库仪器 `ab_field.frame_ink()`（每行背景模型），不是临�
 
 ---
 
-## 六、守卫：`tests/test_p54_declared_chart_data_reaches_the_mark.py`
+## 六、守卫：`测试/test_p54_declared_chart_data_reaches_the_mark.py`
 
 ### 判据
 
@@ -189,9 +189,9 @@ ink 用仓库仪器 `ab_field.frame_ink()`（每行背景模型），不是临�
 实测（缺陷在位 = 变异 1 时）：
 
 ```
-tests/test_chart_type_defaults_are_real.py + test_chart_ab_matrix.py + test_chart_registry.py
+测试/test_chart_type_defaults_are_real.py + test_chart_ab_matrix.py + test_chart_registry.py
 38 passed, 1 skipped in 33.35s          ← 全绿
-tests/test_p54_declared_chart_data_reaches_the_mark.py
+测试/test_p54_declared_chart_data_reaches_the_mark.py
 AssertionError: a data key the graph declares does not reach the frame:
     charts_demo.json c05_bubble.sizes: 0 px changed while only this channel moved
     (baseline ink 2.110050%)
@@ -239,7 +239,7 @@ A/B 矩阵 = 选项是否活，P43 = 场景类型是否有渲染器，本守卫 
 | `charts/types.tsx` | `af416bcf…341feb6` | **同值**（未改） |
 | `charts/Chart.tsx` | `08c27447…573f39b2` | `df72a1b9…c2951158`（4 处，零行漂移） |
 | `pipeline/examples/charts_demo.json` | `61620122…e0a1d8fc` | **同值**（判定：图谱是对的） |
-| `tests/test_p48_reaccept.py` | 主树半成品 `4991e276…a3486106` | **同值**（半成品原样接入，注释已由其作者翻转） |
+| `测试/test_p48_reaccept.py` | 主树半成品 `4991e276…a3486106` | **同值**（半成品原样接入，注释已由其作者翻转） |
 
 - 输出全部在 `E:\Minimax-H3\.claude\worktrees\suspicious-lichterman-8ead0a\out\p54\`
   （gitignore 内）；`TMPDIR` 指项目内；`--public-dir` 指空目录（避免每 bundle 复制 773 MB）。

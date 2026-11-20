@@ -313,7 +313,7 @@ rule_duplicate / rule_contrast_frame / flicker），且与 P17 同一裁定路�
 
 ## 8. 守卫
 
-逐维度裁定本身由 `tests/test_p16_reference_is_not_an_input_free_measurement.py`
+逐维度裁定本身由 `测试/test_p16_reference_is_not_an_input_free_measurement.py`
 守住（**9 项**）。它守的是**裁定会失效**，不是「某个文件存在」。
 
 ### 8.1 工单那个问题的答案

@@ -135,7 +135,7 @@ to a chart to make it fit"。
   没有任何渲染路径能观察到"改道 `logo`"改变了输出。
 - **P26 之后**：`logo` 有了渲染器，锁因此**有了可保护的产物**。
   **锁本身未改**（`locked_fields.py` sha256 一字未变），
-  `tests/test_locked_fields.py::test_the_three_kinds_from_the_ledger_are_all_present`
+  `测试/test_locked_fields.py::test_the_three_kinds_from_the_ledger_are_all_present`
   仍钉着 `LOCKED_SCENE_TYPES == {'logo'}`。
 
 **⇒ 一句话**：`LOCKED_SCENE_TYPES` 锁的是**类型**（因为品牌 mark 是一个 scene 而不是一个字段）；
@@ -145,7 +145,7 @@ P26 之前它锁着一个无渲染器的类型（锁有效但不可证伪），P
 
 ## 四、守卫
 
-`tests/test_p26_scene_type_coverage.py`（**6 项**）。它回答的**另一条**问题（不重复 P21）：
+`测试/test_p26_scene_type_coverage.py`（**6 项**）。它回答的**另一条**问题（不重复 P21）：
 
 > `SceneType` 声明的每个类型，要么是 `SCENE_RENDERERS` 的键（有渲染器），
 > 要么是 `UNRENDERED_SCENE_TYPES` 的键（**记录在案的"有意不做"**），且不得同时在两边。
@@ -181,9 +181,9 @@ P26 之前它锁着一个无渲染器的类型（锁有效但不可证伪），P
 
 **M1 — 原始 `-rf` 输出**
 ```
-FAILED tests/test_p26_scene_type_coverage.py::test_every_scene_type_is_rendered_or_recorded_as_unrendered
-FAILED tests/test_p26_scene_type_coverage.py::test_the_maps_are_the_real_ones
-FAILED tests/test_p26_scene_type_coverage.py::test_a_renderer_key_deleted_from_the_map_would_be_uncovered
+FAILED 测试/test_p26_scene_type_coverage.py::test_every_scene_type_is_rendered_or_recorded_as_unrendered
+FAILED 测试/test_p26_scene_type_coverage.py::test_the_maps_are_the_real_ones
+FAILED 测试/test_p26_scene_type_coverage.py::test_a_renderer_key_deleted_from_the_map_would_be_uncovered
 3 failed, 3 passed in 0.08s
 ```
 承重的那一项红的理由（正确）：
@@ -196,9 +196,9 @@ E        ... = {'uncovered': ['quote'], 'both': [], 'phantom_renderers': [], 'ph
 
 **M2 — 原始 `-rf` 输出**
 ```
-FAILED tests/test_p26_scene_type_coverage.py::test_every_scene_type_is_rendered_or_recorded_as_unrendered
-FAILED tests/test_p26_scene_type_coverage.py::test_the_maps_are_the_real_ones
-FAILED tests/test_p26_scene_type_coverage.py::test_a_renderer_key_deleted_from_the_map_would_be_uncovered
+FAILED 测试/test_p26_scene_type_coverage.py::test_every_scene_type_is_rendered_or_recorded_as_unrendered
+FAILED 测试/test_p26_scene_type_coverage.py::test_the_maps_are_the_real_ones
+FAILED 测试/test_p26_scene_type_coverage.py::test_a_renderer_key_deleted_from_the_map_would_be_uncovered
 3 failed, 3 passed in 0.08s
 ```
 承重项红的理由（正确）：
@@ -210,8 +210,8 @@ E        ... = {'uncovered': ['p26_probe'], ...}
 
 **M3 — 原始 `-rf` 输出**
 ```
-FAILED tests/test_p26_scene_type_coverage.py::test_the_partition_check_can_say_no
-FAILED tests/test_p26_scene_type_coverage.py::test_a_renderer_key_deleted_from_the_map_would_be_uncovered
+FAILED 测试/test_p26_scene_type_coverage.py::test_the_partition_check_can_say_no
+FAILED 测试/test_p26_scene_type_coverage.py::test_a_renderer_key_deleted_from_the_map_would_be_uncovered
 2 failed, 4 passed in 0.07s
 ```
 判别力自检红的理由（正确 —— 判据恒"通过"被这两条专抓空转的测试杀死）：
@@ -230,7 +230,7 @@ E       assert [] == [...]
 |---|---|---|---|
 | `FinanceShowcaseWide.tsx` | `c56e836d8d0f0d8c` | 一致 | 292 |
 | `showcase-v1.ts` | `3294bd069eb6c44f` | 一致 | 400 |
-| `tests/test_p26_scene_type_coverage.py` | `d0c4026f3064e509` | 一致 | 0 |
+| `测试/test_p26_scene_type_coverage.py` | `d0c4026f3064e509` | 一致 | 0 |
 
 ---
 
@@ -244,8 +244,8 @@ E       assert [] == [...]
 | `studio/src/templates/finance-showcase/scenes/BrowserWindow.tsx` | **新增**：单窗口 `BrowserWindow` |
 | `studio/src/templates/finance-showcase/scenes/Brand.tsx` | **新增**：`Logo` + `Outro`（共用 `Lockup`） |
 | `studio/src/templates/finance-showcase/FinanceShowcaseWide.tsx` | 注册 7 个渲染器；**新增** `UNRENDERED_SCENE_TYPES` 决策表；`resolved.map` 一行**未动** |
-| `tests/test_p26_scene_type_coverage.py` | **新增**：6 项守卫 |
-| `tests/test_p21_props_path_gates_the_deliverable.py` | **改写 4 处 fixture**（3 个测试）：`quote`/`outro`/`card-grid` 现在是渲染类型，换成仍无渲染器的 `video`/`data-plane-3d`。**断言一字未改。** |
+| `测试/test_p26_scene_type_coverage.py` | **新增**：6 项守卫 |
+| `测试/test_p21_props_path_gates_the_deliverable.py` | **改写 4 处 fixture**（3 个测试）：`quote`/`outro`/`card-grid` 现在是渲染类型，换成仍无渲染器的 `video`/`data-plane-3d`。**断言一字未改。** |
 | `docs/P26_MISSING_RENDERERS.md` | **新增**：本文件（执行 agent 写；账本由指挥窗口改） |
 
 **未动**：`visual_qa.py` / `frame_baseline.py` / `render.mjs`（sha256 见下）；
@@ -254,7 +254,7 @@ E       assert [] == [...]
 `locked_fields.py`；`docs/UPGRADE_PROGRESS.md` / `UPGRADE_MASTER_PLAN.md` / `P1*.md` / `P2*.md`。
 
 **为什么没有抽取 `BrowserStack` 的单窗口部分**（工单允许"为复用而抽取公共部分"）：
-`tests/test_p4_9_ledger_numbers_resolve.py` 按**行号/字段**读 `BrowserStack.tsx:231/232`
+`测试/test_p4_9_ledger_numbers_resolve.py` 按**行号/字段**读 `BrowserStack.tsx:231/232`
 的 `spreadX`/`spreadZ` 默认值（4.9 两次假账的守卫），抽取会移动那些行。
 故 `BrowserWindow.tsx` 是**独立的、尺寸更大、构图不同**的组件（单窗口居中大图 vs
 栈在 z 轴扇开），复用共享 token（`TRAFFIC_LIGHTS`、`useDesign()` 角色），**不动 `BrowserStack.tsx`**。
@@ -284,11 +284,11 @@ E       assert [] == [...]
 | **本项开工基线**（实测，本机） | `522 passed, 4 skipped in 319.22s` |
 | **本项改完后**（实测，无并发改动） | **`528 passed, 4 skipped in 305.85s`**，退出码 0 |
 
-**522 + 6 = 528**：新增的 6 项全部来自 `tests/test_p26_scene_type_coverage.py`，
+**522 + 6 = 528**：新增的 6 项全部来自 `测试/test_p26_scene_type_coverage.py`，
 **无回归**。跑法（标准）：
 ```
-cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
-  --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
+cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
+  --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py
 ```
 （**未导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`。）
 

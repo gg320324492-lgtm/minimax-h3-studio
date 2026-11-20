@@ -33,7 +33,7 @@
  *  - every row of `TYPE_DEFAULT_ROWS` is a real option on a real type, and
  *    differs from the shared default it overrides. A row that restates the
  *    shared default is saying nothing, and the pixel guard
- *    (`tests/test_chart_type_defaults_are_real.py`) is what proves the rest.
+ *    (`测试/test_chart_type_defaults_are_real.py`) is what proves the rest.
  */
 
 import {

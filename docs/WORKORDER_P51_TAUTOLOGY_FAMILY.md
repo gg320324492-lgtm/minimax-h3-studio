@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `8073f38`（已推送） |
 | 基线 | **`757 passed, 4 skipped`**（⚠️ 本机并发下测不出稳定数字，见第五节） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把 `—` 显示成替换字符）。
 **读非 ASCII 用字节判断，别信控制台。**
 
@@ -23,11 +23,11 @@
 **⚠️ 本项会与 P49 并行跑，请用你独立的 scratch 目录，不要动它正在改的文件。**
 
 **开工前记录 sha256，收尾比对**：
-- `tests/test_p42_fade_is_not_a_freeze.py`
-- `tests/test_p46_probe_instruments.py`
-- `tests/test_visual_qa.py`
-- `tests/test_locked_fields_wiring.py`
-- `tests/test_p27_visual_acceptance_is_repeatable.py`
+- `测试/test_p42_fade_is_not_a_freeze.py`
+- `测试/test_p46_probe_instruments.py`
+- `测试/test_visual_qa.py`
+- `测试/test_locked_fields_wiring.py`
+- `测试/test_p27_visual_acceptance_is_repeatable.py`
 
 ---
 
@@ -62,10 +62,10 @@
 ### 3. 两条**活的**恒真断言（P50 报出，指挥窗口逐字核实）
 
 ```python
-# tests/test_p46_probe_instruments.py:229
+# 测试/test_p46_probe_instruments.py:229
 assert chart.unavailable(tmp_path / 'nope.png', transport=lambda *a: {}) is None or True
 
-# tests/test_visual_qa.py:771
+# 测试/test_visual_qa.py:771
 assert raw.decode('utf-8').isprintable() or True   # decodable is the assertion
 ```
 
@@ -182,7 +182,7 @@ and one `git checkout --` that discarded uncommitted work"*。
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删。**
 5. ⚠️ **不要与别的进程并发渲染** —— 已有三个 agent 因此制造过假红。
    **并注明你报的测试数字是否在并发下取得。**
-6. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
+6. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
 7. ⚠️ py-3.10 有 cv2 但没有 pytest —— 需要 cv2 就写进普通函数用 3.10 驱动，
    3.12 里 **skip 而不是撒谎**。
 
@@ -191,9 +191,9 @@ and one `git checkout --` that discarded uncommitted work"*。
 ## 四、不要动的东西
 
 - `docs/UPGRADE_PROGRESS.md` —— **账本由指挥窗口统一更新**
-- ⚠️ **`pipeline/examples/charts_demo.json`、`studio/src/**`、`tests/test_p49_camera_move_is_not_a_freeze.py`**
+- ⚠️ **`pipeline/examples/charts_demo.json`、`studio/src/**`、`测试/test_p49_camera_move_is_not_a_freeze.py`**
   —— **P49 正在改，不要碰**
-- ⚠️ **`tests/test_p42_fade_is_not_a_freeze.py`** —— ⚠️ **指挥窗口刚在它上面做过毒变异，
+- ⚠️ **`测试/test_p42_fade_is_not_a_freeze.py`** —— ⚠️ **指挥窗口刚在它上面做过毒变异，
   压在了那位 agent 的 commit 上**（已恢复，sha256 `0e2b3171…`）。
   **⚠️ 若你要动它，先 `git status` 与 `git log` 确认无人正在编辑，并在报告里说明你为什么需要动它。**
   **优先改那两条活的恒真断言所在的其他文件。**
@@ -203,8 +203,8 @@ and one `git checkout --` that discarded uncommitted work"*。
 - `DiagOutputDir` —— **禁止触碰**
 - **不要动 P19–P50 的任何成果**、不要改 `studio/**`
 
-**本指令授权你修改**：`tests/test_p46_probe_instruments.py`、
-`tests/test_visual_qa.py`、`tests/test_p27_visual_acceptance_is_repeatable.py`、
+**本指令授权你修改**：`测试/test_p46_probe_instruments.py`、
+`测试/test_visual_qa.py`、`测试/test_p27_visual_acceptance_is_repeatable.py`、
 `test_locked_fields_wiring.py`、必要时**新增**一个共享判据模块、相关测试、新增文档。
 ⚠️ **`test_locked_fields_wiring.py` 改动前先说明为什么必须改** —— 它有已验收的内容。
 

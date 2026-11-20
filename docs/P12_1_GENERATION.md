@@ -2,7 +2,7 @@
 
 > 执行 agent 交付。工单 `docs/WORKORDER_P36_P12_1_GENERATION.md`，基线 `c8a7b36`。
 > 本文件是**裁定与测量记录**，不是放行决定。
-> 产物：`pipeline/director/`（生成侧）、`tests/test_p12_1_depth_cue_generation.py`（守卫）、
+> 产物：`pipeline/director/`（生成侧）、`测试/test_p12_1_depth_cue_generation.py`（守卫）、
 > `studio/scripts/p12_1_depth_cue_probe.ts`（真实渲染探针）。
 
 ---
@@ -26,7 +26,7 @@
 判据（工单第1件事）：**A** = 有消费方，**且**有可解释的推导规则；
 **B** = 零消费方；**C** = 有消费方，但**定不出该生成什么值**。
 
-> **消费方不是查出来的，是跑出来的。** `tests/style_bible_consumption.py` 的
+> **消费方不是查出来的，是跑出来的。** `测试/style_bible_consumption.py` 的
 > 四段链（声明 → resolver 合并 → `useDesign()` 重发布 → 生产 `.tsx` 解构）
 > 实测结果，8 个键 `reachable`、2 个键 `no-resolver-binding`。
 
@@ -34,7 +34,7 @@
 |---|---|---|---|---|
 | 1 | `palette` | **C** | 22 处 `PALETTE` | 有消费方，**无推导**。值是品牌 hex；P16 已裁定色彩维度**无仪器可判**（参考片不在本机）。我生成的任何 hex 都是**编的**，不是生成的。 |
 | 2 | `typography` | **C** | 12 处 `TYPE` | 有消费方，且是**唯一被真实图谱设过的键**，但那一个值（`tracking: -0.055em`，默认 `-0.04em`）是**人工判断**，不是某条曲线的延续。**没有可延续的东西。** |
-| 3 | `spacing` | **C** | 12 处 `SPACE` | 有消费方，但生成它会**对抗一条不变量**：8×斐波那契刻度，由 `tests/test_space_scale.py` 钉住；且 `xs`/`xxl`/`hero` 三级已被实测为**死级**。生成器发的是没人读的数，还违反规矩。 |
+| 3 | `spacing` | **C** | 12 处 `SPACE` | 有消费方，但生成它会**对抗一条不变量**：8×斐波那契刻度，由 `测试/test_space_scale.py` 钉住；且 `xs`/`xxl`/`hero` 三级已被实测为**死级**。生成器发的是没人读的数，还违反规矩。 |
 | 4 | `radius` | **C** | 10 处 `RADIUS` | 有消费方，但四个值是**形状惯用法**不是刻度：`chip: 999` 是「胶囊」技巧，不是某一级。没有可延续的序列。 |
 | 5 | `shadow` | **C** | 8 处 `SHADOW` | 有消费方；四个具名角色（`near`/`medium`/`floating`/`glowAccent`）是**主题表面**，不是曲线。没有任何规则把意图映射到它们。 |
 | 6 | **`depthCue`** | **A** | `BrowserStack.tsx:293` 经 `depthCueAt` | **全仓唯一一个有实测推导规则的键**：P6.8 拟合出 `y` 等差、`blur = k·y`、`alpha` 等比，并撞到一个**真实天花板**（第5层 alpha 0.95，第6层需 1.18，不是颜色）。**长度由图谱真实的窗口数决定**，且超出即拒绝。 |
@@ -174,7 +174,7 @@ light: `k=2.671`, ratio `1.357`, y 步长 `12`）。
 
 ## 七、守卫：怎么保证「生成了真的被用」
 
-`tests/test_p12_1_depth_cue_generation.py`，14 项。
+`测试/test_p12_1_depth_cue_generation.py`，14 项。
 
 ### 7.1 主链路是真的
 

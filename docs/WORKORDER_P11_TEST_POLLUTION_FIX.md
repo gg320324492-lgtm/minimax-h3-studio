@@ -19,11 +19,11 @@
 
 环境（已实测，**不要改动**）：
 - pytest 只装在 **Python 3.12**：用 `py -3.12 -m pytest`
-- cv2 只装在 3.10 → `tests/test_take_selection_behaviour.py` 必须 `--ignore`
+- cv2 只装在 3.10 → `测试/test_take_selection_behaviour.py` 必须 `--ignore`
 - 标准跑法（**从仓库外跑**，既定协议）：
   ```
-  cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
-      --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
+  cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
+      --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py
   ```
 
 ---
@@ -32,7 +32,7 @@
 
 ### 现象
 
-`tests/test_chart_geometry.py` 有三条测试**原地改写** `studio/src/templates/finance-showcase/design/tokens.ts`：
+`测试/test_chart_geometry.py` 有三条测试**原地改写** `studio/src/templates/finance-showcase/design/tokens.ts`：
 
 ```python
 original = tok.read_bytes()
@@ -223,7 +223,7 @@ cd E:/Minimax-H3 && node studio/bin/still.mjs --comp FinanceShowcaseWide \
 
 错的方式和这个缺陷同源：**我把"文件 mtime 很新"当成了"有人改过它"的证据，
 而没有去查"是谁写的"** —— 事实上只需 grep 一次
-`tests/test_chart_geometry.py` 就能看到那三处 `write_bytes`。
+`测试/test_chart_geometry.py` 就能看到那三处 `write_bytes`。
 
 **教训**：一次"看起来像外部原因"的现象（本项目反复出现"有人改了文件"这类
 归因），第一反应应该是**在仓库内找写入方**，而不是找仓库外的原因。

@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(r'E:\Minimax-H3')
-EP01 = ROOT / 'ceo_mindread_ep01'
+EP01 = ROOT / '成片项目' / 'ceo_mindread_ep01'
 STUDIO_PUBLIC = ROOT / 'studio' / 'public'
 SCHEMA_PATH = ROOT / 'studio' / 'src' / 'schemas' / 'timeline-v2.schema.json'
 

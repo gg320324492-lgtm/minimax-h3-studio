@@ -40,7 +40,7 @@ Run:
   python studio/scripts/ab_field.py --props <graph.json> \\
       --set layout.field=value --frame 400 --out out/ab
   python studio/scripts/ab_field.py --registry
-  python -m pytest tests/test_chart_fields.py -q
+  python -m pytest 测试/test_chart_fields.py -q
 """
 
 from __future__ import annotations

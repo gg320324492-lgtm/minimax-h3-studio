@@ -63,7 +63,7 @@ TEMP 5.4 GB、C: 78 GB 可用（复验实测 **77.62 GB / 5.28 GB**，2026-10-01
 
 原「106 项测试通过」**当前不可复现**：`python -m pytest tests/ -q` 直接 collection ERROR
 （`No module named 'cv2'`）—— **pytest 只装在 Python 3.12、cv2 只装在 3.10，106 = 102 + 4
-劈在两个解释器里**。实测 **102 passed / 3.16s**（`--ignore=tests/test_take_selection_behaviour.py`，
+劈在两个解释器里**。实测 **102 passed / 3.16s**（`--ignore=测试/test_take_selection_behaviour.py`，
 该文件 4 条测试全需 cv2）。**裁定：不动环境**（用户决定），缺口已记进 `UPGRADE_PROGRESS.md`。
 
 另抓到 **「`lifecycle.check.ts` 60+ 项」是假账**（实测 29 个 `check(` 调用点 / 54 条断言），

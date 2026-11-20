@@ -1,7 +1,7 @@
 // showcase-v1 — Scene graph for product-film / data-showcase video (P3).
 //
 // MIRROR of pipeline/schemas/showcase-v1.schema.json. The two must stay in
-// sync — tests/test_showcase_schema_parity.py checks the scene-type list and
+// sync — 测试/test_showcase_schema_parity.py checks the scene-type list and
 // the camera/motion keys. Python authors the graph; TypeScript renders it.
 //
 // Design rules encoded here:
@@ -149,7 +149,7 @@ export const CameraSchema = z
  * so a re-added `ease` is REJECTED, while here zod would silently STRIP it. If the
  * declaration came back without a reader, the graph would be claiming an effect
  * again while validation reported success — defect one, one level
- * down. `tests/test_motion_ease_is_not_a_claim.py` guards both halves.
+ * down. `测试/test_motion_ease_is_not_a_claim.py` guards both halves.
  */
 export const MotionSchema = z
   .object({

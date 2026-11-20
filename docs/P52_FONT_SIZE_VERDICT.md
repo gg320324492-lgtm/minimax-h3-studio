@@ -16,7 +16,7 @@ verdict = FAIL if absolute_short else PASS
 
 while `median` — measured off the pixels two lines above — entered only the
 ratio. Measured by calling `rule_font_size` on the exact frame
-`tests/test_p22_contrast_is_not_a_per_frame_gate.py::_clean_frame` builds:
+`测试/test_p22_contrast_is_not_a_per_frame_gate.py::_clean_frame` builds:
 
 ```
 trusted True   worst 0.0   bands [20]   median 20.0
@@ -79,7 +79,7 @@ The cleanest case is a real corpus frame. `out/p13_probe/full_a/0002.png`
 measures bands `[6, 201]`, median 103.5px; add one 2px accent rule and it
 measures `[2, 6, 201]`, median 6.0px — **PASS becomes FAIL on a one-pixel design
 change.** That frame is also the one
-`tests/test_p24_per_job_baseline.py:384` requires to exit 0.
+`测试/test_p24_per_job_baseline.py:384` requires to exit 0.
 
 **(c) There is no valley at the bar.** 199 of 298 frames carry a sub-12px band,
 so "any ink below 12px" is red on two thirds of the corpus; 204 of 298 have a
@@ -189,7 +189,7 @@ building (1) now would be inventing a contract — which is the
 
 ## 5. The P22 test: it was **not** red, and why
 
-The work order expected `tests/test_p22_contrast_is_not_a_per_frame_gate.py:103`
+The work order expected `测试/test_p22_contrast_is_not_a_per_frame_gate.py:103`
 to go red, because it passes `--declared-px 20`. **It does not go red, and the
 reason is a measurement, not luck:**
 
@@ -214,9 +214,9 @@ assertion of the new contract rather than deleted:
 
 | file | was | now |
 |---|---|---|
-| `tests/test_visual_qa.py` | `test_font_size_fails_below_the_readability_bar` — one frame, `declared_px` 20 vs 11.25, assert PASS then FAIL | `test_font_size_reports_the_bands_and_gates_on_neither_side` — asserts the measurement is present, `value is None`, and that the verdict is identical across declared sizes |
-| `tests/test_visual_qa.py` | `test_font_size_reports_unverifiable_without_a_declared_size` | `test_font_size_reports_without_a_declared_size` — no declared size no longer blocks the *reporting*, only the ratio is absent |
-| `tests/test_p48_reaccept.py` | `test_rule_font_size_verdict_tracks_the_argument_not_the_frame` | `test_rule_font_size_no_longer_decides_on_the_argument`, on the same fixture, per that test's own failure message |
+| `测试/test_visual_qa.py` | `test_font_size_fails_below_the_readability_bar` — one frame, `declared_px` 20 vs 11.25, assert PASS then FAIL | `test_font_size_reports_the_bands_and_gates_on_neither_side` — asserts the measurement is present, `value is None`, and that the verdict is identical across declared sizes |
+| `测试/test_visual_qa.py` | `test_font_size_reports_unverifiable_without_a_declared_size` | `test_font_size_reports_without_a_declared_size` — no declared size no longer blocks the *reporting*, only the ratio is absent |
+| `测试/test_p48_reaccept.py` | `test_rule_font_size_verdict_tracks_the_argument_not_the_frame` | `test_rule_font_size_no_longer_decides_on_the_argument`, on the same fixture, per that test's own failure message |
 
 ⚠️ **P48's file changed, and the work order's "do not touch" list does not name
 it — but its sha256 is on the watch list, so it is reported here.** The old
@@ -224,11 +224,11 @@ test's assertion message read: *"If it now measures the frame, delete this
 characterisation and replace it with one that asserts the frame decides the
 verdict."* It does not measure the frame (§2), so the replacement asserts the
 measured truth instead, and says so in its own docstring. Nothing else in
-`tests/test_p48_reaccept.py` was touched.
+`测试/test_p48_reaccept.py` was touched.
 
 ## 6. Guard
 
-`tests/test_p52_font_size_verdict_is_not_the_caller_argument.py`, 9 tests.
+`测试/test_p52_font_size_verdict_is_not_the_caller_argument.py`, 9 tests.
 Every claim is reached by calling `vqa.main(argv)` or `vqa.rule_font_size(...)`
 and reading the verdict, the exit code and the report. Nothing greps the source
 and nothing asserts a name merely exists, so no test can pass on a machine that
@@ -299,7 +299,7 @@ each one (§9).
 ## 7. What this does NOT do
 
 * **No threshold moved.** `MIN_TYPE_PX = 12.0` is unchanged and still asserted
-  by `tests/test_visual_qa.py`. Nothing was retuned to make a number go green —
+  by `测试/test_visual_qa.py`. Nothing was retuned to make a number go green —
   there is no number to move.
 * **`--declared-px` was not removed.** It is still a CLI flag, still read, and
   still produces the ratio. It is no longer able to decide anything.
@@ -318,8 +318,8 @@ citations into that file were live, and one of them the guards could not see:
 
 | site | was | now | how it was found |
 |---|---|---|---|
-| `tests/test_p13_scene_cache_facts.py:257` → `ap.add_argument('--props', …)` | `:1501` | `:1556` | ⚠️ **not caught by any test** — `:1501` now names `ck('backdrop model is UNTRUSTED…')`, which is still code, and the guard only asks "is it code", never "is it the right code". Found by enumerating every `visual_qa.py:NNN` citation in the tree and diffing each target against the byte snapshot. |
-| `tests/test_line_refs_land_on_code.py` negative control → a blank line | `:751` | `:137` | caught by `test_the_criterion_can_still_say_no`, because P52 turned `:751` into the closing quote of `rule_contrast`'s docstring and the fixture stopped reproducing the defect it exists to reproduce |
+| `测试/test_p13_scene_cache_facts.py:257` → `ap.add_argument('--props', …)` | `:1501` | `:1556` | ⚠️ **not caught by any test** — `:1501` now names `ck('backdrop model is UNTRUSTED…')`, which is still code, and the guard only asks "is it code", never "is it the right code". Found by enumerating every `visual_qa.py:NNN` citation in the tree and diffing each target against the byte snapshot. |
+| `测试/test_line_refs_land_on_code.py` negative control → a blank line | `:751` | `:137` | caught by `test_the_criterion_can_still_say_no`, because P52 turned `:751` into the closing quote of `rule_contrast`'s docstring and the fixture stopped reproducing the defect it exists to reproduce |
 
 Both are fixed, and the fixture's docstring records that the target was
 re-pointed and why, so the next reader is not left with a bare number. `:137` is
@@ -359,8 +359,8 @@ Recorded before any edit and compared after the last, as the work order asks:
 | file | before | after |
 |---|---|---|
 | `studio/scripts/visual_qa.py` | `1674d5e71e98207c43a4b5b378db5525…` | `62a76c59906c5cb54117d3f8837b62d5…` — changed, by this task |
-| `tests/test_p22_contrast_is_not_a_per_frame_gate.py` | `da3ac3beb28eace37c371fbe8f2d00b7…` | `da3ac3beb28eace37c371fbe8f2d00b7…` — **byte-identical** |
-| `tests/test_p48_reaccept.py` | `cb234af7cbbd572b918a7494f9fd4002…` | `f7d56a2fa85f5651f2a465e97b35739c…` — changed, per §5 |
+| `测试/test_p22_contrast_is_not_a_per_frame_gate.py` | `da3ac3beb28eace37c371fbe8f2d00b7…` | `da3ac3beb28eace37c371fbe8f2d00b7…` — **byte-identical** |
+| `测试/test_p48_reaccept.py` | `cb234af7cbbd572b918a7494f9fd4002…` | `f7d56a2fa85f5651f2a465e97b35739c…` — changed, per §5 |
 
 `visual_qa.py` line endings were measured before the first edit — **0 CRLF,
 1645 LF** — and after the last: **0 CRLF, 1697 LF**. The edits introduced no CRLF,
@@ -371,11 +371,11 @@ so a CRLF-count check would not have caught it and it was checked anyway.
 | file | what |
 |---|---|
 | `studio/scripts/visual_qa.py` | `rule_font_size` rewritten; one new module constant `FONT_SIZE_NO_FRAME_CRITERION`. Nothing else. |
-| `tests/test_p52_font_size_verdict_is_not_the_caller_argument.py` | **new** — the guard, 9 tests |
-| `tests/test_visual_qa.py` | two tests that asserted the defect, replaced per §5 |
-| `tests/test_p48_reaccept.py` | one test replaced per its own failure message, per §5 |
-| `tests/test_p13_scene_cache_facts.py` | one drifted citation re-pointed, per §7.1 |
-| `tests/test_line_refs_land_on_code.py` | one negative-control fixture re-pointed, per §7.1 |
+| `测试/test_p52_font_size_verdict_is_not_the_caller_argument.py` | **new** — the guard, 9 tests |
+| `测试/test_visual_qa.py` | two tests that asserted the defect, replaced per §5 |
+| `测试/test_p48_reaccept.py` | one test replaced per its own failure message, per §5 |
+| `测试/test_p13_scene_cache_facts.py` | one drifted citation re-pointed, per §7.1 |
+| `测试/test_line_refs_land_on_code.py` | one negative-control fixture re-pointed, per §7.1 |
 | `docs/P52_FONT_SIZE_VERDICT.md` | **new** — this file |
 
 ## 11. Reproducing the measurements

@@ -230,7 +230,7 @@ browser-stack / dashboard / calendar）」。前半句只对 `showcase_demo.json
 
 ## 六、可复现性守卫
 
-`tests/test_p27_visual_acceptance_is_repeatable.py`，**真的跑它并断言判定**，
+`测试/test_p27_visual_acceptance_is_repeatable.py`，**真的跑它并断言判定**，
 判据一律是**归属**（4.9 的教训：不能只问「这个数字在仓库某处存在吗」）。
 
 - 从**图谱重新推导** scene 表与每个探针帧，再与报告记录的数值比对；

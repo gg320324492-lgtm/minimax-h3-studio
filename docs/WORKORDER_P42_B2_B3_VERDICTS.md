@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `08aefac`（已推送） |
 | 基线 | **先自己实测**（上次 `686 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -171,7 +171,7 @@ t=9.2–9.8s   淡出（峰值差 203,823 px）
    指挥窗口刚因此毁过一次 2049 行。**用 `read_bytes`/`write_bytes` 并断言行尾**；
    写数字要么实测要么标注未测；确认变异生效前不要宣称存活；
    CRLF 用字节计数验；路径分隔符；别把长跑命令管道进 `tail`；
-   `tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   `测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 5. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -186,7 +186,7 @@ t=9.2–9.8s   淡出（峰值差 203,823 px）
 - `docs/UPGRADE_PROGRESS.md` —— **账本由指挥窗口统一更新**（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P4*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— **只读**；`DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `charts_demo.json` 以外的任何图谱**（`showcase_demo.json` / `p29_*` 只读）
 - **不要改任何场景组件的渲染逻辑**
 - **不要动 P19–P40 的任何成果**

@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `6be7acc`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `415 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 **开工前记录 sha256，收尾比对**：
 - `studio/scripts/visual_qa.py`（现为 `9db0198e…`，**P18 全程未变** —— 本项预期会变）
@@ -172,7 +172,7 @@ point: a second threshold for the same question is a second answer.
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录（含 `out/p13_probe/` 51 项）；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要动 `qa_layers.py` 的 `PINNED_LAYERS` 语义** —— 先读它；
   若分类真的该变，**在同一提交里改并写明**
 - **不要实现 per-job 基线** —— 那是 P18 提的更大建议，未裁定

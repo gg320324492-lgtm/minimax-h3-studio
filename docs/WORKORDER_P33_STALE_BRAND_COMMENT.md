@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `1fb2613`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `617 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -42,7 +42,7 @@
  *
  * WHAT THAT LOCK ACTUALLY WAS. Until P26 it guarded a type that had NO renderer:
  * ... Registering a renderer gives the lock an artefact.
- * The lock itself is untouched; `tests/test_locked_fields.py` still pins it.
+ * The lock itself is untouched; `测试/test_locked_fields.py` still pins it.
  */
 ```
 
@@ -52,7 +52,7 @@
 |---|---|
 | `LOCKED_SCENE_TYPES = frozenset({'logo'})` | **P31 已改成 `frozenset({'logo', 'outro'})`** |
 | "The lock itself is untouched" | **P30 接线了品牌规则（`iter_scene_locked`）**；**P31 又纳入 outro 与 tagline** |
-| "`tests/test_locked_fields.py` still pins it" | **P30 把那条守卫从断言常量改成了断言行为** —— agent 明确报告「M1 红里含**两条被改写的旧守卫**，**证明它们不再是常量 pin**」 |
+| "`测试/test_locked_fields.py` still pins it" | **P30 把那条守卫从断言常量改成了断言行为** —— agent 明确报告「M1 红里含**两条被改写的旧守卫**，**证明它们不再是常量 pin**」 |
 
 **⇒ 这不是"过期"，这是本项目最核心的那类失效：一段注释在描述一件早已不成立的事，
 而读它的人会以为那是现状。**
@@ -148,7 +148,7 @@
 5. **⚠️ 高频复发**：先证明被测对象存在再测量；**测试必须用 `{'scenes': [...]}` 形状**
    （若本项涉及图谱）；确认变异生效前不要宣称存活（P21/P22/P24 均产出过 `NameError`）；
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾，P17 的 agent 污染了 1101 行**）；
-   路径分隔符；别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   路径分隔符；别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 
 ---
 
@@ -158,7 +158,7 @@
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs` 及 P19–P31 的成果**
 - **不要动品牌锁的两条裁定**（`{'logo','outro'}` 与 `('name','tagline')`）
 - **⚠️ 不要改 `Brand.tsx` 的渲染逻辑** —— **只改注释**

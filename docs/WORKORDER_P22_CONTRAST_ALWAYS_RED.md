@@ -11,7 +11,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `cb1902e`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `443 passed, 3 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 **⚠️ 网络**：本机代理时通时不通（推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`）。
 **但本项是提交但不推送。**
@@ -184,7 +184,7 @@ exactly that reason.
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `themes.ts` 的调色板值** —— 即便你判定某些对比度不合格，
   **改色板是一个设计决定，超出本项范围**。**给建议，不实施。**
 - **不要改 `WCAG_TEXT` 的值**，除非裁定 B 且**给出了 WCAG 适用范围的外部依据**

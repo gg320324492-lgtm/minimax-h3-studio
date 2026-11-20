@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `cbcab55`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `528 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`（该文件按 GBK 解码子进程输出而红）。
 
 **⚠️ 磁盘**：`render.mjs:43-47` 记录过 **118 个 bundle 把 C: 盘 TEMP 填到 46 GB**。
@@ -159,7 +159,7 @@ P24 进一步测出**像素也不同**（801 帧里 220 帧不同），**判定�
    - **路径分隔符**（P17 的 `startswith('out/')` 在 Windows 上漏掉了整个 `out/`）；
    - **别把长跑命令管道进 `tail`**（指挥窗口与 P21 agent 各栽过一次）；
    - **`PYTHONIOENCODING=utf-8` 会污染 `test_visual_qa.py`**；
-   - **`tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD**。
+   - **`测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD**。
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**（P20 的处理方式，**是本项目接受的做法**）。
 
@@ -172,7 +172,7 @@ P24 进一步测出**像素也不同**（801 帧里 220 帧不同），**判定�
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - **`out/p13_probe/**` 与 `out/*.mp4` —— 只读**（它们是别人的证据目录）
 - `DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs` 及 P19–P26 的成果**
 - **不要为了让验收通过而改任何判定、阈值或退出码** ——
   **那正是 P22/P19/P25 反复拒绝的"把红变绿"**

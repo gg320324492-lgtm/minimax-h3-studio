@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `f9d7148`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `395 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 **⚠️ 网络**：本机代理（`127.0.0.1:7897`）**时通时不通**。
 推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`
@@ -177,11 +177,11 @@ Exit 1 on any FAIL, and on any UNVERIFIABLE.
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录（含 `out/p13_probe/` 51 个文件）；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要实现四层门禁、不要改任何规则的判定逻辑** —— 结论未裁定，实施越界
 - **不要合并 `visual_qa.py` 与 `qa_report.py`** —— 它们服务于**不同管线**，
   先查清各自服务什么（工单第 3 条）
-- **不要改那两条钉住现状的守卫**（`tests/test_p13_scene_cache_facts.py`）——
+- **不要改那两条钉住现状的守卫**（`测试/test_p13_scene_cache_facts.py`）——
   若你的改动会让它们红，先读、确认钉的是现状，再决定
 
 **本指令授权你修改**：新增文档、新增测试文件。

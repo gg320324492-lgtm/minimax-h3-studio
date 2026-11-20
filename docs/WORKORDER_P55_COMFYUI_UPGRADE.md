@@ -21,7 +21,7 @@
 
 **⚠️ 本项目工作树里有不属于你的在制工作**（`studio/src/Root.tsx` 已改、
 `intro_video/`、`studio/public/audio/intro/`、`studio/src/templates/model-intro/`、
-`tests/test_p48_reaccept.py` 已改）——**全部不要碰、不要提交、不要恢复。**
+`测试/test_p48_reaccept.py` 已改）——**全部不要碰、不要提交、不要恢复。**
 
 ---
 
@@ -118,7 +118,7 @@ venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删**；
 5. ⚠️ **不要并发跑两个生成任务**（一块 GPU）；
 6. ⚠️ **GBK 控制台会把非 ASCII 显示成替换字符——读非 ASCII 用字节判断**；
-7. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
+7. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
 
 ---
 

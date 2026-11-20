@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "showcase-v1",
-  "description": "Scene graph for programmatic product-film / data-showcase video. P3 of docs/UPGRADE_MASTER_PLAN.md. Lives in pipeline/ (Python side) and is mirrored to a zod schema in studio/src/schemas/showcase-v1.ts — the two must stay in sync (see tests/test_showcase_schema_parity.py and tests/test_showcase_schema_mirrors_agree.py).",
+  "description": "Scene graph for programmatic product-film / data-showcase video. P3 of docs/UPGRADE_MASTER_PLAN.md. Lives in pipeline/ (Python side) and is mirrored to a zod schema in studio/src/schemas/showcase-v1.ts — the two must stay in sync (see 测试/test_showcase_schema_parity.py and 测试/test_showcase_schema_mirrors_agree.py).",
   "type": "object",
   "required": [
     "version",
@@ -167,7 +167,7 @@
       "additionalProperties": false,
       "properties": {
         "perspective": {
-          "description": "`exclusiveMinimum`, not `minimum`. zod says `z.number().positive()`, so 0 must be REJECTED: a perspective projection divides by it. Measured drift, not a reading — see tests/test_showcase_mirrors_agree_on_values.py.",
+          "description": "`exclusiveMinimum`, not `minimum`. zod says `z.number().positive()`, so 0 must be REJECTED: a perspective projection divides by it. Measured drift, not a reading — see 测试/test_showcase_mirrors_agree_on_values.py.",
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 20000

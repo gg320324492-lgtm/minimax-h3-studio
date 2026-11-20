@@ -238,7 +238,7 @@ Director,写什么都无效,而且**没有任何报错**。
 
 **注意 `depth` 的变化**:改前图谱写 `depth` 是静默无效;改后
 `StyleBibleSchema` 依然不声明它,所以**依然静默无效**,但新增的守卫
-会在合并侧把它报出来(见 `tests/test_style_bible_merges_only_declared.py`)。
+会在合并侧把它报出来(见 `测试/test_style_bible_merges_only_declared.py`)。
 守卫管的是**代码里的合并**,不是**图谱里的声明**——图谱侧写 `depth`
 仍然不会报错,这是开放 schema 的固有性质,本项不改(工单第四节明令
 不得加 `.strict()`)。

@@ -1,6 +1,6 @@
 # P29 — 7 个新渲染器的整片级验收（B-4 的闭合）
 
-> 本文件是 `tests/test_p29_renderers_are_used_by_a_graph.py` 顶部引用的那份
+> 本文件是 `测试/test_p29_renderers_are_used_by_a_graph.py` 顶部引用的那份
 > "acceptance" 文档。前一位 agent 在测试文件的 docstring 里指向了它，却没有写。
 > **一个指向不存在文件的引用，本身就是半成品的一个缺陷**，本项把它补上。
 
@@ -17,7 +17,7 @@ P27 视觉验收的四条阻断项之一：
 
 **闭合动作就是新增一份用到它们的图谱**：
 `pipeline/graphs/p29_new_renderer_showcase.json`（7 场景 / 1120 帧），
-外加一条守卫 `tests/test_p29_renderers_are_used_by_a_graph.py`。
+外加一条守卫 `测试/test_p29_renderers_are_used_by_a_graph.py`。
 
 **本项是接手验收，不是重写。** 前一位 agent 的半成品经过逐项复核：
 可用，改正两处（见 §二 与 §五），补一条它缺的守卫（§六）。

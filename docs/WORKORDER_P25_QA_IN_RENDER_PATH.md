@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `5159e96`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `494 passed, 3 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 
 **⚠️ 网络**：本机代理时通时不通（推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`）。
 **但本项是提交但不推送。**
@@ -167,7 +167,7 @@ read_baseline(path) / write_baseline(path, profile, subject)
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - `out/**` —— **只读**；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `render.mjs` 的清理逻辑**（`:95-108` 的 `cleanUp` + 信号处理）
 - **不要改 `visual_qa.py` 的四态语义与退出码条件**（`:1534`）
 - **不要动 `frame_baseline.py` 的"比判定不比数值"**（P24 实测判定可复现 1356/1356）

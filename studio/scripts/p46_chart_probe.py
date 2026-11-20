@@ -63,7 +63,7 @@ THE VOCABULARY IS FOUR TYPES, NOT NINE, AND THAT IS MEASURED
     is real work and is named as the open half of this dimension.
 
 NO OLLAMA REQUIRED: `ask()` takes the same `transport=` seam `vlm_critic` has,
-and `tests/test_p46_probe_instruments.py` exercises every branch through it.
+and `测试/test_p46_probe_instruments.py` exercises every branch through it.
 """
 
 from __future__ import annotations

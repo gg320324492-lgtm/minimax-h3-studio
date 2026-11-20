@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `f8f6d52`（已推送） |
 | 基线 | **`719 passed, 4 skipped`**（指挥窗口刚实测；⚠️ 历史基线数字已过期过，见第五节） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台会把省略号显示成替换字符，
 P40 那次差点被当成真的 U+FFFD）。
 
@@ -172,7 +172,7 @@ P41 工单明确要求过"实测 42 帧的真实耗时，**不要用单帧耗时
    会把纯 CRLF 文件整个翻成 LF —— 指挥窗口刚因此毁过 2049 行）。
 4. **⚠️ 磁盘**：`render.mjs` 记录过 **118 个 bundle 把 C: 盘 TEMP 填到 46 GB**。
    **输出到 E: 盘**，跑完清理，收尾报告写明造了什么、删了什么。
-5. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD ——
+5. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD ——
    写中文文档用 `read_bytes`/`write_bytes`。
 6. ⚠️ py-3.10 有 cv2 但没有 pytest —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
@@ -189,7 +189,7 @@ P41 工单明确要求过"实测 42 帧的真实耗时，**不要用单帧耗时
 - `studio/scripts/visual_qa.py`、`take_ranker.py`、`locked_fields.py` —— 不碰
 - `studio/src/**`（除非要回答"为什么这个选项没生效"，**那时只读、不改**）
 - `out/*.mp4`、`out/p13_probe/**` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 P19–P43 的任何成果**、不要改 `themes.ts`
 - **⚠️ 不要装任何模型、不要下载任何权重** —— `qwen2.5vl:7b` 已在本机
 - **⚠️ 不要把任何帧/图复制进仓库**（本项目从不跟踪媒体）

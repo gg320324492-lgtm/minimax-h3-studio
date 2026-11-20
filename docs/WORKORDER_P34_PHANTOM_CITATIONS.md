@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `830ba8b`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `632 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -32,7 +32,7 @@
 
 ### 簇 B1（8 处）：**指向一个从未存在过的测试文件**
 
-⚠️ **指挥窗口已复现**：`tests/test_design_system.py` **不在磁盘、`git log --all` 全历史无记录**。
+⚠️ **指挥窗口已复现**：`测试/test_design_system.py` **不在磁盘、`git log --all` 全历史无记录**。
 
 **八个引用点**：`Brand.tsx` / `BrowserStack.tsx` / `BrowserWindow.tsx` / `Cards.tsx` /
 `DataColumns.tsx` / `DataTable.tsx` / `KpiHero.tsx` / `Quote.tsx`。
@@ -42,13 +42,13 @@
 ```tsx
 // Fonts and scaling are NOT theme-scoped, so importing them is correct.
 // Everything that IS theme-scoped (palette, type, spacing, shadow) must come
-// from useDesign() — see tests/test_design_system.py.
+// from useDesign() — see 测试/test_design_system.py.
 ```
 
 **⇒ 前一位执行 agent 正确地没有只改一处** —— 改 1/8 会造成不一致，
 **而它也不知道正确的替代是哪个**。
 
-**⚠️ 指挥窗口已查到正确的替代**（`tests/test_showcase_schema_parity.py:283-300`）：
+**⚠️ 指挥窗口已查到正确的替代**（`测试/test_showcase_schema_parity.py:283-300`）：
 
 ```python
 def test_scenes_do_not_import_design_values_directly():
@@ -114,11 +114,11 @@ def test_scenes_do_not_import_design_values_directly():
 
 **要求**：
 
-1. **凡源码注释里出现的 `tests/xxx.py`（或任何文件路径）引用，必须在磁盘上存在**；
+1. **凡源码注释里出现的 `测试/xxx.py`（或任何文件路径）引用，必须在磁盘上存在**；
 2. ⚠️ **不能只断言"字符串在文件里"** —— **那正是本项目被欺骗八次的形状**。
    **要真的解析路径、检查存在**；
 3. ⚠️ **必须排除注释里合法的历史陈述** —— 例如
-   「这个测试曾在 `tests/old.py`、已删除」**是合法的历史**，
+   「这个测试曾在 `测试/old.py`、已删除」**是合法的历史**，
    守卫不能把这类也判红。**请设计一个能区分"当前引用"与"历史引用"的判据**
    （**若你认为做不到，就如实说**，并说明为什么）。
 
@@ -150,7 +150,7 @@ def test_scenes_do_not_import_design_values_directly():
    **要么保持那八个文件的行数不变，要么同步更新 `locked_fields.py` 的行号引用。**
 6. **⚠️ 高频复发**：先证明被测对象存在再测量；确认变异生效前不要宣称存活；
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾，P17 的 agent 污染了 1101 行**）；
-   路径分隔符；别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD；
+   路径分隔符；别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD；
    ⚠️ **`comment_blocks` 读不了 Python 的 `#`**（P33 踩过）—— 用 `tokenize`。
 7. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
@@ -163,7 +163,7 @@ def test_scenes_do_not_import_design_values_directly():
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`、`docs/P3*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs` 及 P19–P33 的成果**
   —— ⚠️ **注意：B2 那个失效在 `visual_qa.py:1155`，但上一份工单把它禁碰了；
   本项请把它一并修掉**（它只是一条注释的**行号**，不涉及判定逻辑）。
@@ -211,7 +211,7 @@ P12 = 零段｜P13 = B+C｜P14 = B+C｜P15 = B｜P16 = 缺输入｜P17 = B｜P18
 
 ## 七、2026-10-14 复查：GIT 判据对 tests/ 是失效的
 
-按 `tests/test_comment_citations_resolve.py` 的 GIT + MARKERS 双豁免标准，对 `docs/*.md` 跑了一遍全量复查（该测试本身只扫源码注释与 docstring，不解析 markdown，5 项全绿）。
+按 `测试/test_comment_citations_resolve.py` 的 GIT + MARKERS 双豁免标准，对 `docs/*.md` 跑了一遍全量复查（该测试本身只扫源码注释与 docstring，不解析 markdown，5 项全绿）。
 
 **初筛 137 处，逐条查证后真正该改的只有 2 处**，均在 `docs/P29_NEW_RENDERER_ACCEPTANCE.md` §三：`StatCard.tsx` 与 `CardGrid.tsx` 是幽灵文件名——这两个组件后来并入 `studio/src/templates/finance-showcase/scenes/Cards.tsx`，而文档仍按组件名当文件名引用。**行号全部仍然准确**（265 确为把 `c` 交给 `Card`、291 确为 `→ cards`、343 确为 `card.accent === true`），只需把文件名换成 `Cards.tsx`，已改。同表的 `BrowserWindow.tsx` / `DataTable.tsx` / `Quote.tsx` / `Brand.tsx` 都真实存在于 `scenes/`，不动。
 
@@ -221,6 +221,6 @@ P12 = 零段｜P13 = B+C｜P14 = B+C｜P15 = B｜P16 = 缺输入｜P17 = B｜P18
 2. **`take_critic.py` / `reference_analyze.py` 的约 30 处**是**如实记录该文件不存在**（「仓库至今无 `take_critic.py`」「`reference_analyze.py` 零实现」「该文件不存在」）。它们符合 MARKERS 豁免，只是措辞是中文，不在本测试现有的英文 marker 词表里。
 3. **计划类文档**（`UPGRADE_MASTER_PLAN.md:195` 的 6 份「最终文档集」、`REMOTION_INTEGRATION_PLAN_20260929.md` 的 `styles.tokens.ts`）列的是**打算产出**的文件，不是对现状的断言。
 4. **已划掉的条目**（`UPGRADE_PROGRESS.md:137` 的 `motionTokens.ts`，行首 `~~5.6~~`）是被取消的工单项。
-5. 其余是产物数据文件名（`job_state.json`、`reference_analysis.json` 等，落在 gitignore 目录里）与正则误捕（`.check.ts`、`index.js`、`tests/test_p37_...py`），不构成引用。
+5. 其余是产物数据文件名（`job_state.json`、`reference_analysis.json` 等，落在 gitignore 目录里）与正则误捕（`.check.ts`、`index.js`、`测试/test_p37_...py`），不构成引用。
 
 **结论**：marker 词表可以补中文否定词（没有/不存在/零实现/无此文件/未实现），但**不应对 GIT 判据本身动手**——它是这份测试的刻意取舍，两个方向都偏向红是真有理由的。若要让 tests/ 这类引用转绿，正确做法是在测试里为「2026-09-30 前 tests/ 未入库」加一条豁免，而不是改文档。

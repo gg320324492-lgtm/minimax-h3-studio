@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `072ad82`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `334 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 **开工前记录这些 sha256，收尾比对**（6.7/6.8 刚动过，别把它们弄脏）：
 - `studio/src/templates/finance-showcase/design/tokens.ts` → 应为 `698fb0f5…`
@@ -163,7 +163,7 @@
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要扩 schema。** 本项不实现 Director Agent，
   所以不需要任何新字段。若你认为需要，先写进设计，由指挥窗口裁定。
 - **不要改任何场景的构图。** 那会改变已交付画面，超出"测量与守卫"范畴。

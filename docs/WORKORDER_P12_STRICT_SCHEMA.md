@@ -11,7 +11,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `aec2c3d`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `355 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 **开工前记录 sha256，收尾比对**：
 - `studio/src/schemas/showcase-v1.ts`
@@ -27,7 +27,7 @@
 
 `c1e9ce1` 修掉了「合并了但未声明 → `success=true` 静默剥掉」：
 `radius` / `shadow` / `depthCue` 三段已接进 schema，`depth` 按裁定删掉合并。
-守卫 `tests/test_style_bible_merges_only_declared.py` 双向把关。
+守卫 `测试/test_style_bible_merges_only_declared.py` 双向把关。
 
 ### 2. **但根没动：`StyleBibleSchema` 仍然没有 `.strict()`**
 
@@ -80,7 +80,7 @@ undeclared keys that would become hard errors: (零)
 
 **JSON Schema 侧**：`definitions/StyleBible` 加 `"additionalProperties": false`。
 
-⚠️ **两侧镜像必须同时改** —— `tests/test_showcase_schema_parity.py` 是守卫，
+⚠️ **两侧镜像必须同时改** —— `测试/test_showcase_schema_parity.py` 是守卫，
 它会红。而本项目有过一次教训：**Python `jsonschema` 不解析 `$ref`，
 用错工具会得到相反的结论**（上一轮指挥窗口实测踩过）。
 验证编译请用 **Ajv 并加载该文件自己声明的 dialect**
@@ -153,7 +153,7 @@ P11 `audio`（声明了但没人读）、`c1e9ce1` 的四段（有人读但喂�
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要给 `SceneSchema` / `ShowcaseSchema` 改任何东西** —— 它们已有 `.strict()`
 - **不要碰 `chartLanguage` / `audioLanguage`** —— 它们是 P11 方向（声明了但没人读），
   修法不同（删声明还是接线消费方），不在本项范围

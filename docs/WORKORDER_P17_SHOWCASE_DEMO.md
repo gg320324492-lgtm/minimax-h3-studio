@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `434e059`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `478 passed, 3 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 
 **⚠️ 网络**：本机代理时通时不通（推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`）。
 **但本项是提交但不推送。**
@@ -170,7 +170,7 @@ P15 查明：`generative` 信号**死在类型边界上**——
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P18_QA_LAYERS.md`、`docs/P19_*.md`、`docs/P2*.md`
 - `out/**` —— **只读**；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要实现 H3 渲染器** —— 结论未裁定，实施越界
 - **不要改 `FinanceShowcaseWide.tsx` 的 `resolved.map` 那一行** ——
   P15 记录了它，但那是一条**待裁定**的线索，不是本项该动的地方

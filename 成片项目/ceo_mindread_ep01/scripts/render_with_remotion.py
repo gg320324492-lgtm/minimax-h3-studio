@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(r'E:\Minimax-H3')
-EP01 = ROOT / 'ceo_mindread_ep01'
+EP01 = ROOT / '成片项目' / 'ceo_mindread_ep01'
 STUDIO = ROOT / 'studio'
 VENV_PY = r'E:\Minimax-H3\third_party\ComfyUI\venv\Scripts\python.exe'
 

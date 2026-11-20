@@ -51,7 +51,7 @@ import {EnsureFonts} from '../common/EnsureFonts';
  *      carries `additionalProperties: false` and lists
  *      `bpm/format/project/scenes/style_bible/version` — no `audio`. Declaring
  *      it in zod alone would make the two sides disagree, which is the one thing
- *      `tests/test_showcase_schema_parity.py` exists to prevent. The Python
+ *      `测试/test_showcase_schema_parity.py` exists to prevent. The Python
  *      mirror is the authoring side; zod is the rendering side.
  *   3. IT WOULD CONTRADICT A GUARDED DESIGN DECISION. `beat/sfxProfile.check.ts`
  *      asserts "no mapped sound is a bgm — a table of event sounds must not map
@@ -73,7 +73,7 @@ import {EnsureFonts} from '../common/EnsureFonts';
  * If a music bed is genuinely wanted here, that is a DESIGN change and it is not
  * a one-line repair: decide the mix alongside `EVENT_SFX`, declare `audio` on
  * BOTH schema sides so the parity test stays meaningful, and give it a sane
- * default. `tests/test_undeclared_field_reads.py` is written to go red the day
+ * default. `测试/test_undeclared_field_reads.py` is written to go red the day
  * this comes back — so a reintroduction cannot be quiet.
  */
 
@@ -116,7 +116,7 @@ const SCENE_RENDERERS: Record<string, React.FC<{scene: Scene}>> = {
  * The declared scene types that are DELIBERATELY left to `MissingScene`.
  *
  * This is a DECISION TABLE, not a TODO list. P26's guard
- * (`tests/test_p26_scene_type_coverage.py`) requires every value of `SceneType`
+ * (`测试/test_p26_scene_type_coverage.py`) requires every value of `SceneType`
  * to be either a key of `SCENE_RENDERERS` or a key HERE — so a type added to the
  * schema with neither is a red guard rather than a film that renders
  * "not implemented in P4", and a renderer quietly deleted from the map is red

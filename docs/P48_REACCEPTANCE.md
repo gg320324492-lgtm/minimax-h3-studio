@@ -11,7 +11,7 @@
 |---|---|---|
 | HEAD（开工） | `05a2c5b` | `git rev-parse HEAD` |
 | 基线测试 | **752 passed, 4 skipped**（结论见 §零.1） | 标准跑法，无并发渲染 |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` | 未导出 `PYTHONIOENCODING` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` | 未导出 `PYTHONIOENCODING` |
 
 ### 零.1 ⚠️ 基线套件曾读出一次假红，原因是**我自己造成的并发渲染**
 
@@ -236,7 +236,7 @@ C  values[0] 12→11  → A vs C : 1226 px 差   （值真的画上去了）
 
 ⚠️ **这与 P22 已修的 `contrast` 是同一族**：「一个常数被当成逐帧测量来报告」。
 P22 把 `contrast` 移出逐帧路径、换成 UNAVAILABLE，**但 `font_size` 的同一形状没有被处理**。
-且守卫 `tests/test_visual_qa.py:205` 的 `test_font_size_fails_below_the_readability_bar`
+且守卫 `测试/test_visual_qa.py:205` 的 `test_font_size_fails_below_the_readability_bar`
 **正是在同一张帧上换 `declared_px` 断言 PASS→FAIL 的** —— 它把「判据跟着参数走」当成期望行为固定下来了。
 
 ### 四.4 元守卫的一个洞：**✅ 已于 P50 关闭 —— 本节保留为当时的记录，勿照此重开**
@@ -252,7 +252,7 @@ P22 把 `contrast` 移出逐帧路径、换成 UNAVAILABLE，**但 `font_size` �
 
 ### 四.4 元守卫的一个洞：`assert <表达式> or True` 从旁边走过去，而文件里就有一条
 
-`tests/test_p42_fade_is_not_a_freeze.py:478` 的 `test_this_file_asserts_no_always_true_condition`
+`测试/test_p42_fade_is_not_a_freeze.py:478` 的 `test_this_file_asserts_no_always_true_condition`
 是 P27 那条「不许有恒真断言」元守卫的**同形复制**。它识别
 `assert True` 和 `assert True or ...`（`ast.BoolOp` 且 `values[0]` 是 `True`）。
 **但它只检查 `values[0]`。** 于是：
@@ -366,9 +366,9 @@ c10_bar_long : 31 48 39 57 44 66 52 71         → 全 True  (8/8)
 - 开工：**`752 passed, 4 skipped`**（先经历一次由**我自己的并发渲染**造成的 `ENOBUFS` 假红，
   单跑即过，见 §零.1）。
 - 收尾：**`757 passed, 4 skipped`**（506.76s，标准跑法，无并发渲染）。
-  **757 − 752 = 5 = 本项新增的 5 条守卫（`tests/test_p48_reaccept.py`），零回归。**
+  **757 − 752 = 5 = 本项新增的 5 条守卫（`测试/test_p48_reaccept.py`），零回归。**
 
-**本项新增**：`docs/P48_REACCEPTANCE.md`（本文件）、`tests/test_p48_reaccept.py`（把 §四 的四条
+**本项新增**：`docs/P48_REACCEPTANCE.md`（本文件）、`测试/test_p48_reaccept.py`（把 §四 的四条
 发现钉成可复跑的判据）、`studio/scripts/p48_reaccept_scenes.py`（逐场景无损抽帧工具）。
 **未改动** `studio/src/**`、`pipeline/examples/charts_demo.json`、`themes.ts`、`out/charts_demo.mp4`。
 
@@ -400,7 +400,7 @@ c10_bar_long : 31 48 39 57 44 66 52 71         → 全 True  (8/8)
 - **`TMPDIR`/`TMP`/`TEMP`/`REMOTION_SCRATCH_DIR` 全部指向 E 盘**自己的 scratch 目录；
   `--public-dir` 指向**空目录**（`out/p48_reaccept/empty_public`），每 bundle 不复制 773 MB。
 - 造了什么：`out/p48_reaccept/**`（新片 1 个、逐场景 PNG ~60 张、对照 props）；`docs/P48_REACCEPTANCE.md`；
-  `tests/test_p48_reaccept.py`；`studio/scripts/p48_reaccept_scenes.py`。
+  `测试/test_p48_reaccept.py`；`studio/scripts/p48_reaccept_scenes.py`。
 - 删了什么：渲染 scratch 目录（`bundle()` 用完即删；每个 `single/<scene>/scratch` 已随进程清理）。
   **`studio/.remotion/water-renewal-bundle` 未触碰。**
 - **`out/charts_demo.mp4` 未覆盖**（本项只读证据片）。

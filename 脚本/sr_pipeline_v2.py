@@ -3,7 +3,7 @@
 
 Replaces pipe_fast.py / pipe_4k_fast.py / upscale_x4v3.py / full_pipeline.py.
 
-Defects fixed (all reproduced on this machine, see tests/diag):
+Defects fixed (all reproduced on this machine, see 测试/diag):
   1. FPS-AWARE. v1 hardcoded `-vsync 0 -r 24` on decode and `-framerate 24` on
      encode. Any non-24fps input is silently time-stretched: a 30fps / 2.334s
      clip came back as 2.917s (25% slow motion). v2 probes the exact rational
@@ -20,7 +20,7 @@ Defects fixed (all reproduced on this machine, see tests/diag):
      luminance step. v2 uses linear ramp weights that sum to exactly 1.0 across
      each overlap, so the weight function is continuous and no pixel is ever
      divided by a small weight.
-     MEASURED EFFECT (tests/seam_kernel_ab.py, 300-frame EP01 segment, both at
+     MEASURED EFFECT (测试/seam_kernel_ab.py, 300-frame EP01 segment, both at
      tile=512/overlap=32, scored at identical boundaries -- the only variable is
      the kernel): seam gradient energy mean -8.2%, p90 -10.7%, p99 -11.4%;
      worst-case outlier +4.1% (within noise at n=225). So this removes the DC

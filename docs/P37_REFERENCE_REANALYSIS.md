@@ -2,7 +2,7 @@
 
 > Work order: `docs/WORKORDER_P37_REFERENCE_REANALYSIS.md`.
 > 本文件记录**实测到的东西**、**逐维度裁定**，以及**需要人决定的一条**。
-> 仪器：`studio/scripts/reference_probe.py`。守卫：`tests/test_p37_reference_probe_works_without_the_film.py`。
+> 仪器：`studio/scripts/reference_probe.py`。守卫：`测试/test_p37_reference_probe_works_without_the_film.py`。
 
 ---
 
@@ -166,7 +166,7 @@ P16 的结论是「tokens.ts 那段注释是**规则**不是测量，**没有任
 
 ## 5. 守卫：如何在**没有那个 mp4 的机器**上工作
 
-### 5.1 设计（`tests/test_p37_reference_probe_works_without_the_film.py`）
+### 5.1 设计（`测试/test_p37_reference_probe_works_without_the_film.py`）
 
 **守卫从不打开片子。** 片源在仓库外（`Documents/…/xwechat_files/`），
 任何依赖它的测试都会在没有该文件的机器上变红 —— **那是测「谁装过微信」，
@@ -225,7 +225,7 @@ P16 的结论是「tokens.ts 那段注释是**规则**不是测量，**没有任
 |---|---|---|
 | 抽帧 jpg、`pass1.npz`（≈300MB）、`colour.json`、`ref_audio.wav` | **`E:/h3_p37_work/`** | ✅ **全部在 E 盘，仓库外** |
 | 仪器 `reference_probe.py` | `studio/scripts/` | ✅ 提交 |
-| 守卫 | `tests/test_p37_...py` | ✅ 提交 |
+| 守卫 | `测试/test_p37_...py` | ✅ 提交 |
 | **那个 mp4** | `Documents/…` | ✅ **只读，未复制、未移动、未修改** |
 
 ---

@@ -327,7 +327,7 @@ P13 的答案是「没有 scene 级入口 + 没有 scene 级 diff」。
 
 ## 7. 守卫
 
-`tests/test_p14_render_entry_points.py`，8 条，**全部实测行为**：
+`测试/test_p14_render_entry_points.py`，8 条，**全部实测行为**：
 
 | 守卫 | 断言的是 |
 |---|---|

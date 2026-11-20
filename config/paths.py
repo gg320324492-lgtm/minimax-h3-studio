@@ -98,7 +98,7 @@ def ffmpeg_available() -> bool:
 
 def ensure_scripts_on_path() -> None:
     """Make sibling scripts importable (comfy_utils, ffmpeg_env, ...)."""
-    for p in (ROOT, ROOT / 'ceo_mindread_ep01' / 'scripts', _CONFIG_DIR):
+    for p in (ROOT, ROOT / '成片项目' / 'ceo_mindread_ep01' / 'scripts', _CONFIG_DIR):
         s = str(p)
         if s not in sys.path:
             sys.path.insert(0, s)

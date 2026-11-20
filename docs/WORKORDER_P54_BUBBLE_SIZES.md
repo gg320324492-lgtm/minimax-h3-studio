@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | 指挥窗口派工时的 `main`（⚠️ **本仓有别的会话在提交**，见第四节） |
 | 基线 | **⚠️ 本机全量套件测不出稳定数字** —— 三次连跑三个不同失败集合，<br>而每个失败文件单跑都绿。**开工前自己测一次，并注明是否并发、是否清过探针。** |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。**读非 ASCII 用字节判断，别信控制台。**
 
 **⚠️ Shell 状态在两次工具调用之间不保持**。**全程用绝对路径**。
@@ -148,7 +148,7 @@
 - ⚠️ **一个窄而有意义的性质是什么？** 请给出你的判据，
   **并说明它为什么不会误报**；
 - ⚠️ **⚠️ P47 已经建过一条同族守卫**
-  （`tests/test_chart_type_defaults_are_real.py`，问"这个类型的默认该画什么"），
+  （`测试/test_chart_type_defaults_are_real.py`，问"这个类型的默认该画什么"），
   **⚠️ 请先读它，判断你的守卫是它的补充还是重复。**
   **若重复，请说明为什么不复用。**
 
@@ -178,7 +178,7 @@
    ⚠️ **⚠️ 指挥窗口上一轮忘了清自己 8 MB 的探针残留，
    而失败的 `test_a_finished_render_leaves_no_bundle_directory_behind` 恰恰是查残留的。别成为下一个。**
 5. ⚠️ **不要与别的进程并发渲染** —— 已有三个 agent 因此制造过假红。
-6. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
+6. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
 7. ⚠️ py-3.10 有 cv2 但没有 pytest —— 需要 cv2 就写进普通函数用 3.10 驱动。
 
 ---
@@ -192,22 +192,22 @@
   ?? intro_video/
   ?? from_e_root/
    M studio/src/Root.tsx
-   M tests/test_p48_reaccept.py   <- 本项自己的半成品（测试已翻转，渲染器与图谱还没改完）
+   M 测试/test_p48_reaccept.py   <- 本项自己的半成品（测试已翻转，渲染器与图谱还没改完）
   ?? studio/public/audio/intro/
   ?? studio/src/templates/model-intro/
   ```
   **⚠️ 那不是你的，不要碰、不要提交、不要为了让它变绿而改它。**
   **⚠️ 提交前先 `git status` 看一眼 —— 别的会话可能已经提交过了。**
-- ⚠️ **`studio/scripts/qa_layers.py`、`tests/test_p40_docstring_counts_match_code.py`**
+- ⚠️ **`studio/scripts/qa_layers.py`、`测试/test_p40_docstring_counts_match_code.py`**
   —— **P53 正在改，不要碰**
-- ⚠️ **`tests/test_p42*`、`test_p46*`、`test_p27*`、`test_p49*`、`test_p50*`、`test_p51*`、
-  `tests/tautology_criterion.py`** —— **别碰**
-- ⚠️ **`tests/test_chart_type_defaults_are_real.py`（P47 建的）—— 优先复用，别改；
+- ⚠️ **`测试/test_p42*`、`test_p46*`、`test_p27*`、`test_p49*`、`test_p50*`、`test_p51*`、
+  `测试/tautology_criterion.py`** —— **别碰**
+- ⚠️ **`测试/test_chart_type_defaults_are_real.py`（P47 建的）—— 优先复用，别改；
   若你确需改它，先在报告里说明为什么。**
 - `out/charts_demo.mp4`（P27 证据目录）、`out/p45_vlm/**`、`out/p48_reaccept/**` —— 只读
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P53*.md` —— 只读
 - `DiagOutputDir` —— **禁止触碰**
-- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 P19–P53 的任何成果**、不要改 `themes.ts`、
   不要动 `charts/options.ts`（P47 的 `TYPE_DEFAULT_ROWS` 刚落地）
 - **⚠️ 不要把任何帧/图复制进仓库**

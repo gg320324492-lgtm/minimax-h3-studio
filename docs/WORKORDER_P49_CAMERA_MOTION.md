@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `0f89de0`（已推送） |
 | 基线 | **`757 passed, 4 skipped`**（⚠️ 历史基线过期过多次，**实测为准**） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
-⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把 `—` 显示成替换字符，
 指挥窗口刚被它骗过一次）。**读非 ASCII 用字节判断，别信控制台。**
 
@@ -179,7 +179,7 @@ const ct = Math.min(frame / cameraMoveFrames(motion?.preset ?? 'premium', size.d
 5. ⚠️ **不要与别的进程并发渲染** —— 已有两个 agent 因此制造过假红
    （`still b failed on frame 870`、`test_p14` 的 `ENOBUFS`），**单跑即过**。
    ⚠️ **本项会与另一项并行跑，请用你独立的 scratch 目录。**
-6. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD —— 写中文用 `read_bytes`/`write_bytes`。
+6. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD —— 写中文用 `read_bytes`/`write_bytes`。
 7. ⚠️ py-3.10 有 cv2 但没有 pytest —— 需要 cv2 就写进普通函数用 3.10 驱动，3.12 里 **skip 而不是撒谎**。
 
 ---
@@ -194,7 +194,7 @@ const ct = Math.min(frame / cameraMoveFrames(motion?.preset ?? 'premium', size.d
 - `out/p48_reaccept/**` —— 只读（上一项的证据）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P48*.md` —— 只读
 - `DiagOutputDir` —— **禁止触碰**
-- ⚠️ **`tests/test_p42*.py:328` 有一条 `assert ... or True`** ——
+- ⚠️ **`测试/test_p42*.py:328` 有一条 `assert ... or True`** ——
   **那是另一项（P50）在修的，本项不要动它**
 - **不要动 P19–P48 的任何成果**、不要改 `themes.ts`、不要改 `visual_qa.py`
 - **⚠️ 不要把任何帧/图复制进仓库**

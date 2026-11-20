@@ -101,7 +101,7 @@ export const resolveStyleBible = (input?: unknown, themeName?: unknown): StyleBi
     // Every section merged here MUST also be declared in StyleBibleSchema, or zod
     // strips the graph's value before it arrives and `section()` returns the theme
     // default while still reporting success. `radius` / `shadow` / `depthCue` sat in
-    // exactly that state from P4 until P12. tests/test_style_bible_merges_only_declared.py
+    // exactly that state from P4 until P12. 测试/test_style_bible_merges_only_declared.py
     // is the guard; do not add a section here without adding it to the schema.
     shadow: mergeSection({...theme.shadow}, section('shadow')),
     depthCue: mergeList(theme.depthCue, section('depthCue')),

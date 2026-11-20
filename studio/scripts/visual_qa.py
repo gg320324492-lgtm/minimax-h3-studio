@@ -1107,7 +1107,7 @@ def rule_aspect(measured: tuple[int, int] | None, declared: tuple[int, int] | No
 #:
 #: IT IS A SCOPE TABLE, NOT AN EXEMPTION LIST. Anything not named here is reported
 #: on every path, so adding a rule cannot silently drop it from the frame report;
-#: and `tests/test_p22_contrast_is_not_a_per_frame_gate.py` asserts this set
+#: and `测试/test_p22_contrast_is_not_a_per_frame_gate.py` asserts this set
 #: equals the set of rules that actually take a frame, so a rule that stops
 #: reading frames fails the guard instead of inheriting an exemption.
 FRAME_SCOPED_RULES = frozenset({
@@ -1128,7 +1128,7 @@ def declared_scene_types() -> set[str]:
     rather than hidden: the alternative is a node subprocess, and a guard that
     cannot run without a node runtime cannot fail when node is missing. The
     suite must stay runnable with nothing but pytest — the same reasoning
-    `tests/style_bible_consumption.py` gives for parsing `StyleBibleSchema` the
+    `测试/style_bible_consumption.py` gives for parsing `StyleBibleSchema` the
     same way. What this file does NOT do is assert that a string appears in a
     source file and call that a behaviour: the verdict below is reached by
     running `main(argv)` and reading the report and the exit code.
@@ -1204,7 +1204,7 @@ def rule_graph_scene_renderable(props: dict) -> Finding:
     the words "not implemented in P4". Measured over the two schema mirrors:
     `SceneType` declares 22 values and `SCENE_RENDERERS` names 20 of them, so
     the 2 in between are `video` and `data-plane-3d`. (P40: the numbers here
-    are recomputed by `tests/test_p40_docstring_counts_match_code.py`.)
+    are recomputed by `测试/test_p40_docstring_counts_match_code.py`.)
 
     WHY THAT IS A DEFECT AND NOT A TODO. The ledger's line for step 3.2 reads
     "20 种 scene 类型注册" with the list of twenty spelled out beside it, struck
@@ -1443,7 +1443,7 @@ def run_on_frame(path: Path, declared_px: float | None = None,
 
 
 def self_test() -> int:
-    """The tool checking its own instruments. Run by tests/test_visual_qa.py too."""
+    """The tool checking its own instruments. Run by 测试/test_visual_qa.py too."""
     failures: list[str] = []
 
     def ck(name: str, ok: bool, detail: str = '') -> None:
@@ -1623,7 +1623,7 @@ def main(argv: list[str] | None = None) -> int:
     #   * the exclusion is a property of the SCOPE, written once, so a new rule
     #     cannot be silently exempted by adding its name to a list — anything
     #     not in `FRAME_SCOPED_RULES` is reported on every path, and
-    #     `tests/test_p22_contrast_is_not_a_per_frame_gate.py` asserts the set is
+    #     `测试/test_p22_contrast_is_not_a_per_frame_gate.py` asserts the set is
     #     exactly the rules that take a frame.
     #
     # So the gate does not need to "know the red is known": on the frame path the

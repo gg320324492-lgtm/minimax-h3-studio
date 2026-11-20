@@ -213,7 +213,7 @@ frame's signature *is* that luma); and a bar against a shifted word measures
 
 ## 5. WHAT A FUTURE CHANGE HAS TO RE-DERIVE
 
-`tests/test_p19_duplicate_population.py` is behavioural: it calls the rule and
+`测试/test_p19_duplicate_population.py` is behavioural: it calls the rule and
 asserts verdicts, and never searches the source for a constant. Two claims are
 checked structurally from the AST instead — that `take_ranker.m_duplicate` holds
 no 0.5 (cv2 is not importable under 3.12, so the module cannot be imported here,

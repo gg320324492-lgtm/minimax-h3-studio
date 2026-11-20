@@ -7,14 +7,14 @@ and the QA gates ask.
 
 Schema: pipeline/schemas/showcase-v1.schema.json
 Mirror:  studio/src/schemas/showcase-v1.ts (kept in sync by
-         tests/test_showcase_schema_parity.py)
+         测试/test_showcase_schema_parity.py)
 
 WHY THIS FILE NOW VALIDATES AGAINST `SCHEMA_PATH` INSTEAD OF A HAND-WRITTEN LIST.
 
 For most of the project's life this module declared the schema path above and
 never used it. Its validation was `_validate()`, a second, hand-maintained
 spelling of the same contract, and the two had drifted apart in BOTH
-directions. Measured on 35 probe graphs (`tests/test_pipeline_validates_the_schema.py`
+directions. Measured on 35 probe graphs (`测试/test_pipeline_validates_the_schema.py`
 runs them; the table is in that file's docstring):
 
   * Python accepted 8 graphs the JSON Schema REJECTED — including every case
@@ -40,7 +40,7 @@ the JSON Schema file is a declaration that for most of this project's life did
 not compile in any validator. A declaration nobody runs is a wish, not a
 contract. `camera.perspective: 0` and `format.width: 8` are the two places this
 mattered; both were fixed in the schema, toward zod, and both are pinned by
-`tests/test_showcase_mirrors_agree_on_values.py`.
+`测试/test_showcase_mirrors_agree_on_values.py`.
 
 WHY THE SCHEMA IS RUN BY CODE IN THIS FILE RATHER THAN BY `import jsonschema`.
 
@@ -70,7 +70,7 @@ each has a consumer that breaks when it is dropped:
     scenes that differ only in `durationInFrames` are "distinct" while sharing an
     id. This is the one probe where Python was RIGHT and the schema was silent,
     and it is the one place this file is deliberately stricter than its authority.
-    `tests/test_pipeline_validates_the_schema.py` pins the disagreement as a
+    `测试/test_pipeline_validates_the_schema.py` pins the disagreement as a
     known, intended one rather than letting it drift back to silent.
   * `scenes` must be a non-empty LIST OF OBJECTS — `additionalProperties` applies
     only to objects, so `{"scenes": {"a": 1}}` satisfies `items` vacuously, and

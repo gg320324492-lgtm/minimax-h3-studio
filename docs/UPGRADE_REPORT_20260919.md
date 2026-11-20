@@ -260,7 +260,7 @@ v2 (t256/o32)   SSIM +0.0009   锐度  +1.1   接缝worst -1.641   接缝mean +0
 2. **v2 默认档（t512/o32）不是全胜，是换了个更稳的取舍点。** SSIM 更高、接缝更低、时长精确；代价是拉普拉斯高频能量低 10.9。
 3. **本表已被 §4.9 取代为最终建议** —— 后续的网格扫描找到了更好的 `768/64`。本表保留用于说明"原默认档 vs 已交付母版"的差距。
 
-2. **锐度差是真实的，不是接缝能量造成的假象。** 剔除每个边界 ±32px 邻域后重测（`tests/sharpness_near_seams.py`）：v1 内部 1139.9 / v2 t512 内部 1051.2 / v2 t256 内部 1162.4。剔除接缝后排序不变，说明 t512 的"软"来自模型在大 tile 下更保守的输出，而非接缝污染指标。
+2. **锐度差是真实的，不是接缝能量造成的假象。** 剔除每个边界 ±32px 邻域后重测（`测试/sharpness_near_seams.py`）：v1 内部 1139.9 / v2 t512 内部 1051.2 / v2 t256 内部 1162.4。剔除接缝后排序不变，说明 t512 的"软"来自模型在大 tile 下更保守的输出，而非接缝污染指标。
 3. **t256 的"更锐"不等于"更好"，但也不能靠接缝值定罪。** 修正后的接缝 worst：v1 5.828 / t256-o16 5.616 / t256-o32 4.188 / t512-o32 3.674。表面看小 tile 接缝更差，但**它们边界数都是 7 或 3，样本量不同**，这个比较不成立（§4.8 结论 2）。定罪的依据应该换成**全画面统计的 SSIM**：小 tile 的 SSIM 更低（0.9588 vs 0.9618），而它的高频能量更高 —— 多出来的高频不对应源结构。最终结论见 §4.9（`768/64`）。
 
 > 锐度绝对值口径：`bench_v1_vs_v2.sharpness()` 用 `cv2.Laplacian(..., CV_64F)`（ksize=1）；`sharpness_near_seams.sharp_full()` 用 ksize=3。OpenCV 这两个核的方差相差 **12.4 倍**（float32/float64 无差异，已实测）。两套数各自内部可比，**不可跨表相减**。
@@ -292,7 +292,7 @@ Using -vsync 0 and -r can produce invalid output files
 
 前面所有"v1 vs v2"的比较都混了一个变量：v1 脚本调用裸 `ffmpeg`（本机 = Octave 4.2.11），而 v2 走仓库内 7.1.1。所以差值里可能有一部分只是编码器版本造成的。
 
-**隔离实验**（`tests/encoder_confound.py`）：拿**同一个已产出文件**，用两个二进制以相同参数各重编一次，再评分。两者之差就是"编码器版本效应"的下界。
+**隔离实验**（`测试/encoder_confound.py`）：拿**同一个已产出文件**，用两个二进制以相同参数各重编一次，再评分。两者之差就是"编码器版本效应"的下界。
 
 | 指标 | 4.2.11 | 7.1.1 | Δ |
 |---|---|---|---|
@@ -313,7 +313,7 @@ Using -vsync 0 and -r can produce invalid output files
 
 ### 4.8 tile/overlap 网格扫描：最优分块到底在哪
 
-13 个配置，全部在 EP01 前 300 帧片段上跑原生 2x（不加 Lanczos，保证边界落在整数像素），模型/编码/精度其余全同。`tests/sweep_tile_overlap.py`。
+13 个配置，全部在 EP01 前 300 帧片段上跑原生 2x（不加 Lanczos，保证边界落在整数像素），模型/编码/精度其余全同。`测试/sweep_tile_overlap.py`。
 
 **A 组：固定 tile=512，只动 overlap**
 
@@ -345,7 +345,7 @@ Using -vsync 0 and -r can produce invalid output files
 
 2. **接缝指标在跨分块配置之间不可比 —— 这是本次扫描最重要的方法论发现。** 看"边界数"这一列：t256 有 9 条边界，t640/t768 只有 1 条，t1024 是 0 条。`worst` 是 max，样本越少越不容易抽到坏值，于是**接缝"最好"的两个配置恰好就是边界最少的两个**（t640 1.527、t768 2.157），而 t1024 连一条边界都没有、根本无从测量。同理 `mean` 也不单调（o16→o128 走出 1.325/1.163/1.233/1.215/1.194/1.082，中间反复）。**接缝只能在相同 tile 几何下横向比较**，跨几何比较无效。§4.6 的融合核实验正是满足这个前提（两侧同为 512/32）才有效。
 
-3. **"小 tile 更锐"很可能是模型在缺上下文时的臆造，不是恢复出的细节。** 小 tile 的高频能量更高，但 SSIM 更低（t256 0.9650 vs t768 0.9674）。SSIM 衡量的是与 720p 源的结构对应关系 —— 多出来的高频**不对应源结构**，因此更像幻觉/伪影。这不只是边界伪影：`tests/sharpness_near_seams.py` 已剔除每条边界 ±32px 邻域后重测，t256 的内部锐度仍高于 t512（345.2 vs 325.4），说明差异来自"上下文不足导致的整块臆造"。
+3. **"小 tile 更锐"很可能是模型在缺上下文时的臆造，不是恢复出的细节。** 小 tile 的高频能量更高，但 SSIM 更低（t256 0.9650 vs t768 0.9674）。SSIM 衡量的是与 720p 源的结构对应关系 —— 多出来的高频**不对应源结构**，因此更像幻觉/伪影。这不只是边界伪影：`测试/sharpness_near_seams.py` 已剔除每条边界 ±32px 邻域后重测，t256 的内部锐度仍高于 t512（345.2 vs 325.4），说明差异来自"上下文不足导致的整块臆造"。
 
 **据此修正默认建议**：本项目源为 768x1344，**应尽量少分块**。
 
@@ -358,7 +358,7 @@ Using -vsync 0 and -r can produce invalid output files
 
 ### 4.9 最优配置：整集验证后的结论
 
-把 §4.8 选出的 `768/64` 拿到**整集 1455 帧 + 交付几何（1080x1920）**上验证，与已交付母版及此前各档对比（`tests/compare_ep01_masters.py`）。
+把 §4.8 选出的 `768/64` 拿到**整集 1455 帧 + 交付几何（1080x1920）**上验证，与已交付母版及此前各档对比（`测试/compare_ep01_masters.py`）。
 
 | 候选 | tile | 边界数 | SSIM↑ | 锐度↑ | 接缝worst↓ | 接缝mean↓ | 闪烁均值↓ | MB | 耗时 | 峰值显存 |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -400,7 +400,7 @@ v2 (768/64)   SSIM +0.0051   锐度 -17.0   接缝worst -2.713   接缝mean -0.5
 
 ### 4.10 运行时开关吞吐扫描：默认值已经是对的
 
-11 个变体，同一片段（300 帧），每次只改一个开关。`tests/sweep_perf.py`。
+11 个变体，同一片段（300 帧），每次只改一个开关。`测试/sweep_perf.py`。
 
 | 变体 | 耗时 | fps | 峰值显存 | 体积 | SSIM | 锐度 |
 |---|---|---|---|---|---|---|
@@ -441,7 +441,7 @@ v2 (768/64)   SSIM +0.0051   锐度 -17.0   接缝worst -2.713   接缝mean -0.5
 
 ### 4.11 边界用例：7/7 通过
 
-`tests/test_edge_cases.py` —— 断言的是**输出的真实属性**（ffprobe 逐项核对尺寸/帧率/帧数/有无音轨/是否有 fp32 回退），而不是只看返回码。因为原来那两个 bug 的特征恰恰是"要么晚崩、要么静默出错"。
+`测试/test_edge_cases.py` —— 断言的是**输出的真实属性**（ffprobe 逐项核对尺寸/帧率/帧数/有无音轨/是否有 fp32 回退），而不是只看返回码。因为原来那两个 bug 的特征恰恰是"要么晚崩、要么静默出错"。
 
 | 用例 | 结果 | 输出 |
 |---|---|---|
@@ -578,20 +578,20 @@ if SAGE_ATTENTION3_IS_AVAILABLE: register_attention_function("sage3", attention3
 | `sr_pipeline_v2.py` | **新增** | 统一超分管线（生产用）；文档字符串已按实测口径修正 |
 | `ffmpeg_env.py` | **新增** | ffmpeg/ffprobe 二进制单一解析点（含版本与来源上报） |
 | `_deprecated.py` | **新增** | v1 脚本弃用横幅的共享实现 |
-| `tests/bench_v1_vs_v2.py` | 新增 | v1/v2 单变量 A/B 基准（含接缝指标） |
-| `tests/compare_ep01_masters.py` | 新增 | EP01 多路母版对比；**接缝边界按各候选自身 tile 计算** |
-| `tests/sharpness_near_seams.py` | 新增 | 剔除接缝邻域后重测锐度，区分"真细节"与"接缝能量" |
-| `tests/seam_kernel_ab.py` | 新增 | 融合核单变量实验（同 tile/overlap，唯一变量=核） |
-| `tests/sweep_tile_overlap.py` | 新增 | tile/overlap 网格扫描 + Pareto 前沿（§4.7） |
-| `tests/sweep_perf.py` | 新增 | 运行时开关吞吐扫描（compile / fbatch / 编码器 / 精度 / preset） |
-| `tests/tiling_vs_untiled.py` | 新增 | 分块 vs **完全不分块**参考的差分实验（直接量出分块代价） |
-| `tests/test_edge_cases.py` | 新增 | 边界用例：奇数尺寸 / 非整数帧率 / 无音轨 / 2 帧 / 组合 |
-| `tests/check_undefined_names.py` | 新增 | 静态查"用了但没绑定"的名字（`shutil` 那一类，能编译但运行时炸） |
-| `tests/_selftest/broken.py` | 新增 | 上面那个检查器的自检夹具（**故意写错**，用于证明检查器真的会报） |
-| `tests/run_v1_peak.py` | 新增 | 给 v1 脚本补测进程内峰值显存（本机 NVML 已失效） |
-| `tests/rescore.py` | 新增 | 复用已产出的成片重新评分，无需重跑 |
-| `tests/encoder_confound.py` | 新增 | 量化"换 ffmpeg 二进制"本身对指标的影响（§4.7） |
-| `tests/run_remaining_experiments.sh` | 新增 | 把剩余 GPU 实验串行跑完，避免 GPU 空转 |
+| `测试/bench_v1_vs_v2.py` | 新增 | v1/v2 单变量 A/B 基准（含接缝指标） |
+| `测试/compare_ep01_masters.py` | 新增 | EP01 多路母版对比；**接缝边界按各候选自身 tile 计算** |
+| `测试/sharpness_near_seams.py` | 新增 | 剔除接缝邻域后重测锐度，区分"真细节"与"接缝能量" |
+| `测试/seam_kernel_ab.py` | 新增 | 融合核单变量实验（同 tile/overlap，唯一变量=核） |
+| `测试/sweep_tile_overlap.py` | 新增 | tile/overlap 网格扫描 + Pareto 前沿（§4.7） |
+| `测试/sweep_perf.py` | 新增 | 运行时开关吞吐扫描（compile / fbatch / 编码器 / 精度 / preset） |
+| `测试/tiling_vs_untiled.py` | 新增 | 分块 vs **完全不分块**参考的差分实验（直接量出分块代价） |
+| `测试/test_edge_cases.py` | 新增 | 边界用例：奇数尺寸 / 非整数帧率 / 无音轨 / 2 帧 / 组合 |
+| `测试/check_undefined_names.py` | 新增 | 静态查"用了但没绑定"的名字（`shutil` 那一类，能编译但运行时炸） |
+| `测试/_selftest/broken.py` | 新增 | 上面那个检查器的自检夹具（**故意写错**，用于证明检查器真的会报） |
+| `测试/run_v1_peak.py` | 新增 | 给 v1 脚本补测进程内峰值显存（本机 NVML 已失效） |
+| `测试/rescore.py` | 新增 | 复用已产出的成片重新评分，无需重跑 |
+| `测试/encoder_confound.py` | 新增 | 量化"换 ffmpeg 二进制"本身对指标的影响（§4.7） |
+| `测试/run_remaining_experiments.sh` | 新增 | 把剩余 GPU 实验串行跑完，避免 GPU 空转 |
 | `flashvsr_upscale.py` | 新增 | FlashVSR 驱动（ComfyUI API，schema 自发现） |
 | `tools/flashvsr_setup.py` | 新增 | FlashVSR 安装器（默认 dry-run + venv 快照回滚） |
 | `ceo_mindread_ep01/scripts/run_post_chain.sh` | **重写** | 改用 v2；合并 SR+Lanczos 为单次编码；**默认不覆盖已交付母版**（`PROMOTE=1` 才替换） |
@@ -599,14 +599,14 @@ if SAGE_ATTENTION3_IS_AVAILABLE: register_attention_function("sage3", attention3
 | `ceo_mindread_ep01/scripts/comfy_utils.py` | **新增** | 抽出被复制 5 份的产物定位逻辑 |
 | `ceo_mindread_ep01/scripts/gen_reference{s,_sheets}.py`, `gen_office.py` | 修补 | 改用 history 定位；`find_latest_video()` 改为直接抛错 |
 | `generate_4.py`, `gen_lulu.py`, `gen_remaining.py`, `gen_round_a.py` | 修补 | 产物定位改读 history；mtime 猜测降级为带 WARN 的兜底 |
-| `tests/test_steps_ab.py` | 修补 | 同上；并补上缺失的 `COMFY_OUT` 定义 |
+| `测试/test_steps_ab.py` | 修补 | 同上；并补上缺失的 `COMFY_OUT` 定义 |
 | `ceo_mindread_ep01/scripts/qa_final.py` | 修补 | **假检查改为真检查**；无音轨不再崩；目录可用 `EP01_FINAL_DIR` 覆盖 |
 | `ceo_mindread_ep01/scripts/burn_subtitles_v2.py` | 修补 | 每次运行独立临时目录（不再卡死链）；`-map 1:a:0?`；补 `import shutil` |
 | `ceo_mindread_ep01/scripts/mix_audio_v4.py` | 修补 | 画面母版可用 `EP01_MASTER` 覆盖 |
 | `ceo_mindread_ep01/scripts/finalize.py` | 修补 | 输出目录可用 `EP01_FINAL_DIR`/`EP01_DESKTOP_DIR` 覆盖 |
 | `ceo_mindread_ep01/scripts/select_takes.py` | 修补 | 720p 母版锁 crf 18 → 12（`EP01_LOCK_CRF` 可覆盖） |
 | 上述 13 个生产脚本 | 接线 | 统一走 `ffmpeg_env`（不再依赖 Octave 的 ffmpeg） |
-| `quality_compare.py`, `flicker_test.py`, `tests/compare_steps.py` | 修补 | 去掉 `-r 24` 重采样（不再改写帧率） |
+| `quality_compare.py`, `flicker_test.py`, `测试/compare_steps.py` | 修补 | 去掉 `-r 24` 重采样（不再改写帧率） |
 | `pipe_fast.py`, `pipe_4k_fast.py`, `upscale_x4v3.py`, `full_pipeline.py`, `upscale_to_4k.py` | 标记弃用 | 运行时打印缺陷清单并指向 v2 |
 
 ---
@@ -627,7 +627,7 @@ if SAGE_ATTENTION3_IS_AVAILABLE: register_attention_function("sage3", attention3
 **已自行完成、无需批准的（供复核）：**
 
 - 缺陷 1–12 的全部修复；13 个脚本接线 ffmpeg_env；5 个 v1 脚本加弃用横幅。
-- 新增 `tests/check_undefined_names.py` 并跑通全仓库 58 个文件（干净）。**注意它第一版是错的**（对故意写错的样例也报 clean），已修，自检夹具在 `tests/_selftest/broken.py`。
+- 新增 `测试/check_undefined_names.py` 并跑通全仓库 58 个文件（干净）。**注意它第一版是错的**（对故意写错的样例也报 clean），已修，自检夹具在 `测试/_selftest/broken.py`。
 - `qa_final.py` 复跑通过 16/16；`run_post_chain.sh` 通过 `bash -n`；全部改动脚本通过 `py_compile`。
 
 ---
@@ -671,39 +671,39 @@ $PY sr_pipeline_v2.py 720p.mp4 master_1080p.mp4 --tile 768 --overlap 64 \
     --out-width 1080 --out-height 1920 --codec x264 --crf 18 --preset slow --audio copy
 
 # A/B 基准
-$PY tests/bench_v1_vs_v2.py --silent
-$PY tests/rescore.py
+$PY 测试/bench_v1_vs_v2.py --silent
+$PY 测试/rescore.py
 
 # EP01 多路母版对比（接缝边界按各候选自身 tile 计算，且自动换算 Lanczos 缩放）
-$PY tests/compare_ep01_masters.py
+$PY 测试/compare_ep01_masters.py
 # 或指定候选：label=TILE:OVERLAP=path
-$PY tests/compare_ep01_masters.py \
+$PY 测试/compare_ep01_masters.py \
     --cand "v1 已交付=256:16=ceo_mindread_ep01/07_edit/EP01_PICTURE_MASTER_1080P.mp4" \
-    --cand "v2 新最优=768:64=tests/diag/bench/EP01_v2_t768o64.mp4"
+    --cand "v2 新最优=768:64=测试/diag/bench/EP01_v2_t768o64.mp4"
 
 # 锐度：整体 vs 剔除接缝邻域（区分真细节与接缝能量）
-$PY tests/sharpness_near_seams.py
+$PY 测试/sharpness_near_seams.py
 
 # 融合核单变量实验（需先产出两条同 tile/overlap 的片段）
-$PY tests/seam_kernel_ab.py
+$PY 测试/seam_kernel_ab.py
 
 # tile/overlap 网格扫描
-$PY tests/sweep_tile_overlap.py --phase all
+$PY 测试/sweep_tile_overlap.py --phase all
 
 # 分块 vs 完全不分块参考（直接量出分块代价）
-$PY tests/tiling_vs_untiled.py
+$PY 测试/tiling_vs_untiled.py
 
 # 运行时开关吞吐扫描 / 编码器版本混杂项 / 边界用例
-$PY tests/sweep_perf.py
-$PY tests/encoder_confound.py
-$PY tests/test_edge_cases.py
+$PY 测试/sweep_perf.py
+$PY 测试/encoder_confound.py
+$PY 测试/test_edge_cases.py
 
 # 静态查未定义名字（改动检查器后必须先跑自检夹具）
-$PY tests/check_undefined_names.py tests/_selftest/broken.py   # 应报 3 个
-$PY tests/check_undefined_names.py .                           # 应报干净
+$PY 测试/check_undefined_names.py 测试/_selftest/broken.py   # 应报 3 个
+$PY 测试/check_undefined_names.py .                           # 应报干净
 
 # 一次性把剩余 GPU 实验串行跑完
-bash tests/run_remaining_experiments.sh
+bash 测试/run_remaining_experiments.sh
 
 # ffmpeg 二进制解析上报 / 切换
 $PY ffmpeg_env.py
@@ -852,7 +852,7 @@ ok    FlashVSR-v1.1: 6.47 GB, all 4 files present
 
 两个观察：**`full` 模式的 SSIM 反而比 `tiny` 更低**（0.9468 vs 0.9507），而两者输出只差 1.4/255 —— 所以 **`tiny` 才是性价比档**，`full` 多花 2.7 倍时间换来的几乎是同一张图。
 
-**指标互相矛盾，所以我去看了像素**（`tests/visual_ab.py` 生成对照图，原生 4x 尺度不缩放，避免对比本身把纹理抹掉）：
+**指标互相矛盾，所以我去看了像素**（`测试/visual_ab.py` 生成对照图，原生 4x 尺度不缩放，避免对比本身把纹理抹掉）：
 
 - **平坦区域（皮肤）**：FlashVSR 明显更差 —— 平滑的颈部/胸前出现**颗粒状斑驳**，像加噪；Real-ESRGAN 干净。
 - **纹理区域（头发、百叶窗）**：FlashVSR **明显更好** —— 头发丝**一根根可辨**、百叶窗的横条**清晰分开**，而这两样在 Lanczos 和 Real-ESRGAN 里都是糊成一团、根本不存在。
@@ -866,7 +866,7 @@ ok    FlashVSR-v1.1: 6.47 GB, all 4 files present
 3. **SSIM 低估了 FlashVSR**：SSIM 奖励"与模糊源保持一致"，惩罚一切"新造出来的细节"——即使那些细节是对的。所以 0.9666 vs 0.9507 这个差距**不能**读成"Real-ESRGAN 画质更好"。
 4. 锐度 83 vs 13.7 这个 6 倍差，在皮肤上主要是噪点、在头发上主要是真结构 —— **单一标量指标无法区分这两者**，这正是必须看图的原因。
 
-**建议**：把 FlashVSR 定位为**重点镜头的可选增强**（`--mode tiny`，4×，约 5 s/帧），不作为全片默认路径。是否采用取决于你能接受多少"平滑表面带颗粒"—— 现在两张对照图在 `tests/diag/bench/visual_ab.png`（皮肤）和 `visual_ab_upper.png`（头发/背景），可以直接看。
+**建议**：把 FlashVSR 定位为**重点镜头的可选增强**（`--mode tiny`，4×，约 5 s/帧），不作为全片默认路径。是否采用取决于你能接受多少"平滑表面带颗粒"—— 现在两张对照图在 `测试/diag/bench/visual_ab.png`（皮肤）和 `visual_ab_upper.png`（头发/背景），可以直接看。
 
 
 **修好的驱动 bug（我自己写的）**：`SaveVideo` 节点原只传了 `video`+`filename_prefix`，缺 `format`/`codec` → 执行到最后一步报 `SaveVideo.execute() missing 1 required positional argument: 'format'`。**因为 SaveVideo 是最后一个节点，这个错误把前面 155 秒已经跑完的 FlashVSR 推理和 VAE 解码全丢了。** 已改为从节点自己的 schema（`defaults_for`）取全部输入，并显式钉住 `format=mp4`/`codec=h264`。同时给 `defaults_for` 补上了 `COMFY_DYNAMICCOMBO_V3`（级联下拉框）的处理——原先它落进"link-only"分支被赋 `None`。

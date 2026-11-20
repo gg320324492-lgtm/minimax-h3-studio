@@ -74,7 +74,7 @@
 > ⚠️ **我第一版把 240–440 段写成"逐像素相同"，那是错的。**
 > 那个结论来自 480×270 下采样比对 —— 差异被平均掉了。
 > **在错误的尺度上测量，等于什么都没测。**
-> 修正后的断言在 `tests/test_p13_scene_cache_facts.py::test_a_scene_change_is_confined_to_that_scene`
+> 修正后的断言在 `测试/test_p13_scene_cache_facts.py::test_a_scene_change_is_confined_to_that_scene`
 > 里对着噪声底比较，不是对着 0，并且把这个错误写进了 docstring。
 
 **所以"渲染器泄漏"不是不建的理由。真正的理由是：没有 scene 级入口可寻址，
@@ -183,7 +183,7 @@ node studio/bin/render.mjs --comp FinanceShowcaseWide \
   --out out/p13_probe/demo1.mp4 --crf 23 --concurrency 16
 ```
 
-守卫：`tests/test_p13_scene_cache_facts.py`。
+守卫：`测试/test_p13_scene_cache_facts.py`。
 依赖实测产物的两条会在 `out/p13_probe/` 缺失时 skip 并说明原因 ——
 **skip 不等于通过**。
 

@@ -151,7 +151,7 @@ export const DEFAULT_CHART_OPTIONS: ChartOptions = {
  * a working option inert (`test_type_options_is_not_a_runtime_gate`). This
  * table only ever supplies a value the graph did not supply, so it cannot
  * silence anything: a graph that writes `showArea: false` on an `area-chart`
- * gets a bare line, deliberately, and `tests/test_chart_type_defaults_are_real.py`
+ * gets a bare line, deliberately, and `测试/test_chart_type_defaults_are_real.py`
  * asserts that override still moves pixels.
  *
  * It is SPARSE on purpose. Only the (type, option) pairs where the type's own

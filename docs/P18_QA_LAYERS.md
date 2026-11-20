@@ -3,7 +3,7 @@
 > Status: **analysis only.** No four-layer gate was built, no rule's decision
 > logic was changed, and no new threshold was invented. The classification is
 > now written down as data (`studio/scripts/qa_layers.py`) and guarded
-> (`tests/test_p18_qa_layer_partition.py`). Whether to build a gate is left to
+> (`测试/test_p18_qa_layer_partition.py`). Whether to build a gate is left to
 > the commander; §3 says what I measured and what I would and would not build.
 
 **Verdict up front: B, with the real gap named in §3.2.** Building a "four-layer
@@ -223,7 +223,7 @@ tolerates — rather than noise. Nothing about that requires four layers.
 | File | What it is |
 |---|---|
 | `studio/scripts/qa_layers.py` | The partition as data. Derives layer behaviour by **calling** the rules. No gate, no exit code, no threshold. |
-| `tests/test_p18_qa_layer_partition.py` | 20 guards: exhaustiveness, exclusivity, the layer pin, the behavioural claims, and two integrity guards. |
+| `测试/test_p18_qa_layer_partition.py` | 20 guards: exhaustiveness, exclusivity, the layer pin, the behavioural claims, and two integrity guards. |
 | `docs/P18_QA_LAYERS.md` | This file. |
 
 Nothing else was touched. `visual_qa.py` and `qa_report.py` are **byte-identical
@@ -255,7 +255,7 @@ Fixed by inverting the direction — the grouping is now authored in
 an independent copy in the test file. Re-run:
 
 ```
-FAILED tests/test_p18_qa_layer_partition.py::test_the_layer_assignment_is_exactly_what_was_delivered
+FAILED 测试/test_p18_qa_layer_partition.py::test_the_layer_assignment_is_exactly_what_was_delivered
 E   AssertionError: the layer partition changed. If this re-classification is intended, update PINNED_LAYERS in the same commit and say so in docs/P18_QA_LAYERS.md — a rule that changes layer silently is exactly what this project has been bitten by.
 E   assert {'Technical':... 'contrast'], ...} == {'Technical':..., 'contrast'}
 E     Differing items:
@@ -339,7 +339,7 @@ opened read-only. Nothing under `studio/public/jobs/` or `out/` was written.
 
 **Test suite:** baseline **395 passed, 2 skipped**; after this change
 **415 passed, 2 skipped** (20 new guards, no existing test modified).
-`tests/test_p13_scene_cache_facts.py` was not modified and is green
+`测试/test_p13_scene_cache_facts.py` was not modified and is green
 (56 passed / 1 skipped across the three QA-adjacent files).
 
 ---
@@ -387,5 +387,5 @@ opened read-only. Nothing under `studio/public/jobs/` or `out/` was written.
 
 **What I did not do:** render anything, change a threshold, change a rule's
 decision logic, merge the two QA scripts, modify
-`tests/test_p13_scene_cache_facts.py`, or touch `out/` or
+`测试/test_p13_scene_cache_facts.py`, or touch `out/` or
 `studio/public/jobs/`.

@@ -11,7 +11,7 @@
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | 基线 | **先自己实测**，不要相信工单里的数字 |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
 
 ---
 
@@ -147,7 +147,7 @@ const depth = DEPTH_CUE[Math.min(i, DEPTH_CUE.length - 1)] ?? SHADOW.floating;
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 
 **本指令授权你修改**：`design/tokens.ts`、`design/themes.ts`、
 `design/styleBible.tsx`、`scenes/BrowserStack.tsx`，以及新增测试文件。
