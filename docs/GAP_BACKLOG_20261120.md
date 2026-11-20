@@ -165,12 +165,19 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 - 仍在的两条必要联接：`studio/public/jobs`（studio 的 staticFile 依赖）
   与 `.remotion/chrome-headless-shell`（Remotion 按此路径找浏览器）
 
-## G-05 私有备份/repo_backup 仍是旧路径 —— 已规避
+## G-05 私有备份/repo_backup 仍是旧路径 —— 已关闭（2026-11-21）
 
-`私有备份/repo_backup/` 里的备份脚本仍写 `E:\Minimax-H3` 与旧目录名。
+`私有备份/repo_backup/` 里的备份脚本曾写 `E:\Minimax-H3` 与旧目录名。
 该目录整体被 `.gitignore` 忽略（历史上因路径深度不匹配差点泄露到公开仓库），是**只读备份**。
 
-- 待办：若要把备份升级为当前结构，需要单独一轮操作（不急）
+- 已完成：对 repo_backup/ 下全部 14 个 `.py` 做与主仓库一致的字面替换——
+  项目目录加 `productions/` 前缀（正反斜杠两种写法，共 16 处）、
+  sys.path 注入补 `E:\Minimax-H3\scripts`（与主仓库同款，10 处）、
+  gen_tts_kokoro.py 的临时 wav 从 C 盘 Temp 改到 `E:/Minimax-H3/out/tmp/kokoro`。
+- 核验：grep 确认 repo_backup/ 内已无 `E:\ComfyUI` 裸路径、无未加 `productions/`
+  前缀的旧项目路径、无 C 盘实际路径（仅注释里的历史说明）。
+- 顺带说明：备份里的 `E:\ComfyUI` 在昨天目录归位时已同步成
+  `third_party\ComfyUI`，本轮只剩项目前缀与 sys.path 两类。
 
 ## G-06 Remotion 每次渲染会重新拷贝 jobs —— 已规避
 
