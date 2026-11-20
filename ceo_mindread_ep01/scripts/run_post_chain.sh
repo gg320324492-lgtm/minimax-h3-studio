@@ -42,7 +42,7 @@
 # the basis of this choice.
 set -e
 cd /e/Minimax-H3/ceo_mindread_ep01
-PY="E:/ComfyUI/venv/Scripts/python.exe"
+PY="E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe"
 SR="E:/Minimax-H3/sr_pipeline_v2.py"
 EDIT=07_edit
 REPORT=logs/upscale_v2_report.json

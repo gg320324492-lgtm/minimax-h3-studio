@@ -38,7 +38,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-COMFY = Path(r'E:\ComfyUI')
+COMFY = Path(r'E:\Minimax-H3\third_party\ComfyUI')
 INPUT_DIR = COMFY / 'input'
 OUTPUT_DIR = COMFY / 'output'
 NODE_DIR = COMFY / 'custom_nodes' / 'ComfyUI-FlashVSR_Ultra_Fast'

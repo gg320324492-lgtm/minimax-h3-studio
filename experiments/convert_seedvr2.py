@@ -3,8 +3,8 @@ to match ComfyUI's model_detection.py expectations."""
 import torch
 from pathlib import Path
 
-SRC = Path(r'E:/ComfyUI/models/seedvr2/seedvr2_ema_3b.pth')
-DST = Path(r'E:/ComfyUI/models/diffusion_models/seedvr2_ema_3b.safetensors')
+SRC = Path(r'E:/Minimax-H3/third_party/ComfyUI/models/seedvr2/seedvr2_ema_3b.pth')
+DST = Path(r'E:/Minimax-H3/third_party/ComfyUI/models/diffusion_models/seedvr2_ema_3b.safetensors')
 
 print(f'Loading {SRC.name}...')
 sd = torch.load(str(SRC), map_location='cpu', weights_only=False)

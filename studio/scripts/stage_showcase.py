@@ -15,9 +15,9 @@ this script is the only sanctioned way to produce a copy, and it writes a
 sidecar fingerprint so drift is detectable.
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/stage_showcase.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/stage_showcase.py \
       --graph pipeline/examples/showcase_demo.json --job showcase_demo
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/stage_showcase.py --check --job showcase_demo
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/stage_showcase.py --check --job showcase_demo
 """
 
 from __future__ import annotations

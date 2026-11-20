@@ -40,7 +40,14 @@ studio/.remotion/
 
 # 从 E:\ 根部挪入的历史工作内容（用户 2026-11-04 整理指令）。挪动≠收编：
 # 黑臭水体宣传片可能是其他会话的在制工作，保持 untracked，与在 E 盘根时一致。
-from_e_root/
+# 2026-11-20：该内容已归并进 water_renewal/（09_final/01_reference/05_audio/scripts），
+# from_e_root/ 目录已随之移除，此规则失效但保留说明以免误加。
+
+# 外部工具实体，一律不入库：
+#   third_party/ComfyUI    122GB（models + venv，2026-11-20 从 E:\ComfyUI 迁入）
+#   third_party/ollama     本地模型
+#   third_party/claude-skills  技能实体（C 盘只留联接）
+/third_party/
 
 # Project-local generated envs & audio (regenerable)
 **/acestep-env/
@@ -105,5 +112,6 @@ ceo_mindread_ep01/00_project/h3_prompts.compiled.json
 water_renewal/01_reference/
 water_renewal/05_audio/
 water_renewal/07_edit/
+water_renewal/09_final/
 water_renewal/*/rendered_frames/
 .cache/

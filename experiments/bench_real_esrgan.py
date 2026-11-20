@@ -9,7 +9,7 @@ from basicsr.archs.rrdbnet_arch import RRDBNet
 SRC = Path(r'C:\Users\pc\Desktop\MiniMax-H3-Outputs\A1_cyberpunk_768p.mp4')
 OUT = Path(r'E:\Minimax-H3\bench_real_esrgan')
 TMP = Path(r'E:\Minimax-H3\work_frames\bench_real_esrgan')
-MODEL = Path(r'E:\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth')
+MODEL = Path(r'E:\Minimax-H3\third_party\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth')
 
 def extract(src, dest, fps=24):
     dest.mkdir(parents=True, exist_ok=True)

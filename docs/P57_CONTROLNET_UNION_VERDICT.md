@@ -14,7 +14,7 @@
 
 | 项 | 值 |
 |---|---|
-| ComfyUI | `E:\ComfyUI` @ `423cbd20` v0.43.2（工单要求 0.38+ ✓，开工时实测确认） |
+| ComfyUI | `E:\Minimax-H3\third_party\ComfyUI` @ `423cbd20` v0.43.2（工单要求 0.38+ ✓，开工时实测确认） |
 | P55 回归 | v0.43.2 已按裁定接受为最终状态，新基准 md5 存档（`docs/P55_COMFYUI_UPGRADE.md`） |
 | GPU 串行 | 开工时队列空；P56 已完成（用户已裁定 t2v-only） |
 | model_patches | 开工前确认为空目录 |
@@ -23,7 +23,7 @@
 
 **权重**：`minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors`
 
-- 落盘 `E:\ComfyUI\models\model_patches\`，大小 **8,382,288,792 B** = HF 服务端
+- 落盘 `E:\Minimax-H3\third_party\ComfyUI\models\model_patches\`，大小 **8,382,288,792 B** = HF 服务端
   `content-length`（302 重定向后 200 响应头）逐字节一致。
 - **SHA256 `cd48bdc11b1f1a3b934746c898d25123754b335c13d37d5c421f8373079282b4`**
   与 HF API `tree` 端点返回的 `lfs.oid` 一致（certutil 本地计算，字节比对）。
@@ -155,9 +155,9 @@ pose_scale1.0_* / pose_scale0.0_*（生效性 A/B 对）+ canny/depth/hed/mlsd_s
 ## 七、磁盘纪律
 
 - 全部输出落在 `E:\Minimax-H3\out\p57\`（共 21 MB），**未在 E 盘根目录建任何
-  文件夹、未在 C 盘产生数据**（下载落 `E:\ComfyUI\models\model_patches`，aria2c
+  文件夹、未在 C 盘产生数据**（下载落 `E:\Minimax-H3\third_party\ComfyUI\models\model_patches`，aria2c
   控制文件同目录且已清除；SHA256/日志全在项目内）。
-- 大文件处置：8.38 GB 权重是交付物保留；`E:\ComfyUI\output\p57\` 的六条原件
+- 大文件处置：8.38 GB 权重是交付物保留；`E:\Minimax-H3\third_party\ComfyUI\output\p57\` 的六条原件
   已拷入项目证据目录后**删除**；对比帧 PNG 与短视频为裁定证据，保留。
 - 未触碰：`studio/.remotion/water-renewal-bundle`、P56 文件、`DiagOutputDir`、
   工作树在制工作（`studio/src/Root.tsx`、`tests/test_p48_reaccept.py`、
@@ -168,7 +168,7 @@ pose_scale1.0_* / pose_scale0.0_*（生效性 A/B 对）+ canny/depth/hed/mlsd_s
 
 新增（本工单授权范围内）：
 
-- `E:\ComfyUI\models\model_patches\minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors`（权重）
+- `E:\Minimax-H3\third_party\ComfyUI\models\model_patches\minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors`（权重）
 - `E:\Minimax-H3\workflows\video_minimax_h3_fun_controlnet_union.json`（官方模板第一份落盘副本；gitignored）
 - `E:\Minimax-H3\workflows\video_p57_{pose_s1,pose_s0,canny_s1,depth_s1,hed_s1,mlsd_s1}.json`（实验变体；gitignored）
 - `E:\Minimax-H3\out\p57\**`（证据；gitignored）

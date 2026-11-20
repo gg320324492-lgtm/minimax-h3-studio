@@ -12,7 +12,7 @@ the P10 audit found the duration check had never run on the one delivered props
 file for exactly that reason.
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/qa_report.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/qa_report.py \
       --video out/demo.mp4 --props public/jobs/<job>/props.json
 Exit 1 on any FAIL, and on any UNVERIFIABLE.
 """

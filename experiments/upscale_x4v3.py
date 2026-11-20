@@ -57,7 +57,7 @@ def main():
     t0 = time.time()
     model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64,
                             num_conv=32, upscale=4, act_type='prelu')
-    sd = torch.load(r'E:\ComfyUI\models\upscale_models\realesr-general-x4v3.pth',
+    sd = torch.load(r'E:\Minimax-H3\third_party\ComfyUI\models\upscale_models\realesr-general-x4v3.pth',
                     map_location='cpu', weights_only=False)
     if 'params_ema' in sd: sd = sd['params_ema']
     elif 'params' in sd: sd = sd['params']

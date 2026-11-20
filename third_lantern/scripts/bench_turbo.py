@@ -14,8 +14,8 @@ sys.path.insert(0, r'E:/Minimax-H3/third_lantern/scripts')
 import upgrade_performance as up
 
 SERVER = 'http://127.0.0.1:8188'
-COMFY_INPUT = Path(r'E:/ComfyUI/input')
-COMFY_OUTPUT = Path(r'E:/ComfyUI/output')
+COMFY_INPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/input')
+COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')
 BENCH = up.PROJECT / '10_benchmark'
 LORA768 = 'minimax_h3_fl2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors'
 

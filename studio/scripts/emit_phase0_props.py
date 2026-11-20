@@ -5,7 +5,7 @@ Reads ceo_mindread_ep01/00_project/timeline.json (v1), probes real frame counts 
 (same drive) so no copies are made.
 
 Run with any python that has stdlib only:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/emit_phase0_props.py
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/emit_phase0_props.py
 """
 
 from __future__ import annotations

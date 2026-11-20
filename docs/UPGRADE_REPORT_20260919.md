@@ -654,7 +654,7 @@ if SAGE_ATTENTION3_IS_AVAILABLE: register_attention_function("sage3", attention3
 ## 9. 复现命令
 
 ```bash
-PY="E:/ComfyUI/venv/Scripts/python.exe"
+PY="E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe"
 
 # 零 GPU 预检
 $PY sr_pipeline_v2.py in.mp4 --info

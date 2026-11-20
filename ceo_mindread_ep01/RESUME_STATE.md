@@ -20,7 +20,7 @@
 ## 重启后待做（按序）
 1. 启动 ComfyUI（桌面 Start-ComfyUI.bat 或 `cd /e/ComfyUI && venv/Scripts/python.exe main.py --listen 0.0.0.0 --port 8188 --disable-smart-memory --bf16-vae`）
 2. **验证显存干净**: `nvidia-smi --query-gpu=memory.used --format=csv,noheader` 应 < 2GB
-3. 后台跑 P2: `cd /e/Minimax-H3/ceo_mindread_ep01 && nohup bash -c '"E:/ComfyUI/venv/Scripts/python.exe" scripts/gen_keyframes_v3.py all 2>&1' > logs/gen_v3_all.log 2>&1 &`
+3. 后台跑 P2: `cd /e/Minimax-H3/ceo_mindread_ep01 && nohup bash -c '"E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe" scripts/gen_keyframes_v3.py all 2>&1' > logs/gen_v3_all.log 2>&1 &`
    - 12 takes（S01=124, S02=141, S03A/B/C=56x3, S04=192, S05B=192, S06=226x2, S07=192, S08=141, S09=56）
    - 预计 2~2.5h；seed 会实时写入 00_project/seed_manifest.json
    - 注意：重启后第一次跑 init 恢复正常（~25s），单镜 5~10 分钟

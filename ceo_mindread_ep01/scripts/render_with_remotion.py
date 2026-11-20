@@ -7,7 +7,7 @@ The old ffmpeg/PIL chain remains untouched as fallback; if this script fails,
 run_post_chain.sh still produces a delivery the previous way.
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/render_with_remotion.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/render_with_remotion.py \
       --job ep01_v3 --out 07_edit/EP01_V3_REMOTION.mp4 [--qa]
 """
 
@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(r'E:\Minimax-H3')
 EP01 = ROOT / 'ceo_mindread_ep01'
 STUDIO = ROOT / 'studio'
-VENV_PY = r'E:\ComfyUI\venv\Scripts\python.exe'
+VENV_PY = r'E:\Minimax-H3\third_party\ComfyUI\venv\Scripts\python.exe'
 
 
 def run(cmd, **kw) -> int:

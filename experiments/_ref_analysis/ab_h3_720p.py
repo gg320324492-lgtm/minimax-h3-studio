@@ -13,7 +13,7 @@ import urllib.request
 from pathlib import Path
 
 SERVER = 'http://127.0.0.1:8188'
-COMFY_OUTPUT = Path(r'E:/ComfyUI/output')
+COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')
 OUT = Path(r'E:/Minimax-H3/_ref_analysis')
 
 W, H, FPS = 1280, 720, 24

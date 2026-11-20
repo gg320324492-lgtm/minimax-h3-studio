@@ -8,7 +8,7 @@ AAC re-encode overshoot on transients keeps moving true peaks; the WAV hop plus 
     and TP ≤ -0.5 dBTP.
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/master_audio.py <video.mp4> [--target -14]
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/master_audio.py <video.mp4> [--target -14]
 """
 
 from __future__ import annotations

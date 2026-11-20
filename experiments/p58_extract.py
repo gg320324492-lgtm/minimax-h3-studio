@@ -14,7 +14,7 @@ extraction cost before any generation runs.
 Usage: python p58_extract.py <pose|depth>
 Writes out/p58/extract_<route>.json (run record) and moves the produced
 control video to out/p58/controls/p58_<route>_real.mp4, then copies it into
-E:\\ComfyUI\\input\\ for the generation stage.
+E:\\Minimax-H3\third_party\ComfyUI\\input\\ for the generation stage.
 """
 import json
 import shutil
@@ -28,8 +28,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from bench import api  # noqa: E402
 
 OUT = Path(r"E:\Minimax-H3\out\p58")
-COMFY_OUTPUT = Path(r"E:\ComfyUI\output")
-COMFY_INPUT = Path(r"E:\ComfyUI\input")
+COMFY_OUTPUT = Path(r"E:\Minimax-H3\third_party\ComfyUI\output")
+COMFY_INPUT = Path(r"E:\Minimax-H3\third_party\ComfyUI\input")
 CLIP = "p58_real.mp4"
 
 POSE_PROMPT = {

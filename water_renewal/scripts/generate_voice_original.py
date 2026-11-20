@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np,soundfile as sf
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from ffmpeg_env import FFMPEG,FFPROBE
-os.environ['HF_HUB_CACHE']='E:/ComfyUI/models/tts'
+os.environ['HF_HUB_CACHE']='E:/Minimax-H3/third_party/ComfyUI/models/tts'
 ROOT=Path(__file__).resolve().parents[1]
 CFG=json.loads((ROOT/'00_project/editorial.json').read_text(encoding='utf-8'))
 OUT=ROOT/'05_audio/narration';OUT.mkdir(parents=True,exist_ok=True)

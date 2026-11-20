@@ -9,7 +9,7 @@ All files stay under studio/public/audio/; synth originals keep their *_synth na
 Optionally patches a props JSON: narration.src/pumpEnvelope + project bpm.
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/import_real_assets.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/import_real_assets.py \
       --bgm /tmp/mixtrack_Digital_Clouds.mp3 \
       --sfx whoosh=/tmp/mixkit_1492.mp3 impact=/tmp/mixkit_1143.mp3 \
             coin=/tmp/mixkit_216.mp3 pop=/tmp/kenney/Audio/click_001.ogg \

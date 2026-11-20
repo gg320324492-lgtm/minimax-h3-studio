@@ -11,7 +11,7 @@ os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:7890'
 
 REPO = 'Comfy-Org/MiniMax-H3'
 # Use raw Windows path to avoid Git Bash /e/... prefix confusion
-LOCAL_DIR = Path(r'E:\ComfyUI\models')
+LOCAL_DIR = Path(r'E:\Minimax-H3\third_party\ComfyUI\models')
 
 FILES = [
     # HF API reports sizes in bytes; convert GB (10^9) → bytes for comparison.

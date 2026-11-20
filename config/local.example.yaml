@@ -7,10 +7,10 @@
 root: E:\Minimax-H3
 
 # ComfyUI 检出目录
-comfy_root: E:\ComfyUI
+comfy_root: E:\Minimax-H3\third_party\ComfyUI
 
 # 生产解释器（拥有 torch / kokoro / librosa / jsonschema）
-python: E:\ComfyUI\venv\Scripts\python.exe
+python: E:\Minimax-H3\third_party\ComfyUI\venv\Scripts\python.exe
 
 # 自带 ffmpeg（注意：tools/ 被 gitignore，新 clone 需要自行放入）
 ffmpeg_dir: E:\Minimax-H3\tools\ffmpeg-7.1.1-full_build\bin

@@ -17,7 +17,7 @@ meta:
 # 解释器：所有 Python 行为必须用这个验证（系统 python 会给出误导性错误）
 # ─────────────────────────────────────────────────────────────
 interpreter:
-  python: E:/ComfyUI/venv/Scripts/python.exe
+  python: E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe
   version: '3.12.10'
   node: '24.16.0'
 

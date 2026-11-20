@@ -9,7 +9,7 @@ a creative decision (where to cut, what each half should show), not something
 to guess from the text.
 
 Run:
-  E:/ComfyUI/venv/Scripts/python.exe pipeline/migrate_shotspecs.py --project ceo_mindread_ep01
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe pipeline/migrate_shotspecs.py --project ceo_mindread_ep01
 """
 
 from __future__ import annotations

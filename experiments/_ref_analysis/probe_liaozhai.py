@@ -16,8 +16,8 @@ from pathlib import Path
 
 SERVER = 'http://127.0.0.1:8188'
 R2V_WORKFLOW = Path(r'E:/Minimax-H3/video_minimax_h3_r2v.json')
-COMFY_INPUT = Path(r'E:/ComfyUI/input')
-COMFY_OUTPUT = Path(r'E:/ComfyUI/output')
+COMFY_INPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/input')
+COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')
 OUT = Path(r'E:/Minimax-H3/_ref_analysis')
 
 W, H, FPS, STEPS = 864, 480, 24, 8

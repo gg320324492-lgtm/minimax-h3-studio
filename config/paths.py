@@ -1,6 +1,6 @@
 """Central path/config layer (P0.4).
 
-Replaces the 200+ hardcoded `E:\\Minimax-H3` / `E:\\ComfyUI` / `C:\\Users\\...`
+Replaces the 200+ hardcoded `E:\\Minimax-H3` / `E:\\Minimax-H3\third_party\ComfyUI` / `C:\\Users\\...`
 strings with one resolvable source. Precedence:
 
     1. environment variable (H3_ROOT / COMFY_ROOT / H3_PYTHON)
@@ -61,7 +61,7 @@ def _resolve(key: str, env: str, default: Path) -> Path:
 ROOT = _resolve('root', 'H3_ROOT', _HERE.parent)
 
 #: ComfyUI checkout
-COMFY_ROOT = _resolve('comfy_root', 'COMFY_ROOT', Path(r'E:\ComfyUI'))
+COMFY_ROOT = _resolve('comfy_root', 'COMFY_ROOT', Path(r'E:\Minimax-H3\third_party\ComfyUI'))
 
 #: Python interpreter that owns torch/kokoro/librosa (never use system python here)
 PYTHON = _resolve('python', 'H3_PYTHON', COMFY_ROOT / 'venv' / 'Scripts' / 'python.exe')

@@ -7,6 +7,7 @@ import {CoverCard} from './templates/cover/CoverCard';
 import {FinanceShowcaseWide, SHOWCASE_DEFAULTS, showcaseMeta} from './templates/finance-showcase/FinanceShowcaseWide';
 import {ReportVertical, reportTotalFrames} from './templates/report/ReportVertical';
 import {Phase0Probe} from './templates/Phase0Probe';
+import {ModelIntro, modelIntroTotalFrames} from './templates/model-intro/ModelIntro';
 import {timelineTotalFrames} from './templates/common/TimelinePlayer';
 import type {TimelineV2} from './schemas/timeline-v2';
 import type {ReportData} from './schemas/report-data';
@@ -88,6 +89,15 @@ export const RemotionRoot: React.FC = () => {
         height={1920}
         fps={24}
         durationInFrames={150}
+      />
+      <Composition
+        id="ModelIntro"
+        component={ModelIntro}
+        width={1920}
+        height={1080}
+        fps={24}
+        durationInFrames={modelIntroTotalFrames(24)}
+        defaultProps={{}}
       />
     </>
   );

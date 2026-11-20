@@ -46,7 +46,7 @@ Control variables pinned across all six:
   has one, via 1344×768 reference pictures where the template derives size
   from `GetImageSize` (the local 512×512 inputs were cover-cropped to
   `p56_ref_first_1344x768.png` / `p56_ref_last_1344x768.png` in
-  `E:\ComfyUI\input\`);
+  `E:\Minimax-H3\third_party\ComfyUI\input\`);
 - duration 5 s → 124 frames (17k+5 grid, the templates' own expression);
 - one prompt body (comic-book two-cut scene, with a whip-pan transition),
   with per-modality framing lines: r2v references `<Picture 2>/<Picture 1>`,
@@ -133,7 +133,7 @@ proper review** — this task measured feasibility and speed only.
   `docs/P55_COMFYUI_UPGRADE.md`. That file does not exist on disk or in
   git (only `WORKORDER_P55_COMFYUI_UPGRADE.md` and the evidence under
   `from_e_root/out/p55/`). The precondition was instead confirmed from
-  evidence: `E:\ComfyUI` reports `comfyui_version 0.43.2`, and
+  evidence: `E:\Minimax-H3\third_party\ComfyUI` reports `comfyui_version 0.43.2`, and
   `from_e_root/out/p55/new_baseline_r2v_0432.mp4` matches the recorded
   md5 `d5e83c59…`. The missing P55 report itself is a gap its owner
   should close.
@@ -183,7 +183,7 @@ is a separate change, not part of this record.
 colour cards (found 2026-11-04 by the P55 session, re-verified here)
 
 While reviewing the fl2v comparison, the P55 session found that
-`E:\ComfyUI\input\p56_ref_first_1344x768.png` and
+`E:\Minimax-H3\third_party\ComfyUI\input\p56_ref_first_1344x768.png` and
 `p56_ref_last_1344x768.png` are flat colour, not content. Re-measured here
 (per-channel std across the whole frame):
 

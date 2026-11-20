@@ -32,7 +32,7 @@ from comfy_utils import resolve_output_file, wait_for_prompt  # noqa: E402
 DEADLINE_S = 3600  # P0.3: ComfyUI job wall-clock budget
 
 SERVER = 'http://127.0.0.1:8188'
-WORKFLOW = Path(r'E:\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
+WORKFLOW = Path(r'E:\Minimax-H3\third_party\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
 
 
 def log(msg):

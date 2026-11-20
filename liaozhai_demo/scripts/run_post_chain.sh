@@ -2,7 +2,7 @@
 # liaozhai_demo v2 post chain: timeline -> picture lock -> AnimeSharpV4 SR -> postfx -> audio -> subs -> final -> QA
 set -e
 cd /e/Minimax-H3/liaozhai_demo
-PY="E:/ComfyUI/venv/Scripts/python.exe"
+PY="E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe"
 SR="E:/Minimax-H3/sr_pipeline_v2.py"
 EDIT=07_edit
 FROM_STAGE="${FROM_STAGE:-1}"

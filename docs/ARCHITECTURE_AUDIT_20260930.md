@@ -1,6 +1,6 @@
 # 架构审计报告（2026-09-30）
 
-> P0 全库只读审计。方法：分区深挖 + 跨切面 grep/运行时实证；**所有行为均以生产解释器 `E:/ComfyUI/venv/Scripts/python.exe` 验证**（系统 Python 3.10 会给出误导性错误）。
+> P0 全库只读审计。方法：分区深挖 + 跨切面 grep/运行时实证；**所有行为均以生产解释器 `E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe` 验证**（系统 Python 3.10 会给出误导性错误）。
 > 配套：[UPGRADE_MASTER_PLAN.md](UPGRADE_MASTER_PLAN.md) · [UPGRADE_PROGRESS.md](UPGRADE_PROGRESS.md)
 
 ---
@@ -85,7 +85,7 @@
 
 ### 🟡 R11 — 14/195 脚本 + workflows/ 未入库
 含全部 4 个 `build_timeline.py`、3 个 `gen_clips.py`、`gen_keyframes_v3.py`、`gen_tts_kokoro.py`、全部 3 个 `tools/` 脚本。
-且 `workflows/` 副本**既不被读也不在版本控制**——生产脚本硬编码读 `E:\ComfyUI\user\default\workflows\`（当前两份字节相同，但无同步机制）。
+且 `workflows/` 副本**既不被读也不在版本控制**——生产脚本硬编码读 `E:\Minimax-H3\third_party\ComfyUI\user\default\workflows\`（当前两份字节相同，但无同步机制）。
 
 ### 🟡 R12 — 12 个 vendor skill 只存在于本机
 `.claude/skills/remotion-*` 全是未入库 symlink；`skills-lock.json` 不 pin commit 且哈希与磁盘不匹配。**全新 clone 只有 1 个可用 skill**。
@@ -129,7 +129,7 @@
 | 前缀 | 命中 | 分布 |
 |---|---|---|
 | `E:\Minimax-H3` | 202 | 98 文件 |
-| `E:\ComfyUI` | 103 | 43 文件 |
+| `E:\Minimax-H3\third_party\ComfyUI` | 103 | 43 文件 |
 | `C:\Users\...` | 40 | 26 文件 |
 
 仅 4 个路径 env 可覆盖（`EP01_MASTER` / `EP01_FINAL_DIR` / `EP01_DESKTOP_DIR` / `EP01_LOCK_CRF`）。
@@ -156,6 +156,6 @@ R2/R8/R11/R12 ──→ 生产硬化项（不阻塞主线）
 
 ## 7. 给 Agent 的三条硬约束
 
-1. **一切行为必须用 `E:/ComfyUI/venv/Scripts/python.exe` 验证。** 系统 Python 3.10 会给出与生产无关的错误。
+1. **一切行为必须用 `E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe` 验证。** 系统 Python 3.10 会给出与生产无关的错误。
 2. **不存在单一的「生产链」。** 判断某脚本是否生产，必须分别对照 `run_post_chain.sh`（链 A，唯一编排器）与 `render_with_remotion.py`（链 B，无编排者）；**两者上游均为手工**。
 3. **`docs/REMOTION_INTEGRATION_PLAN_20260929.md:209-256` 不是契约**（11 处字段不一致）。真正契约是 `studio/src/schemas/*.ts` + 其导出物。

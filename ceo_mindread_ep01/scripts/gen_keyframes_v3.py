@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comfy_utils import wait_for_prompt  # noqa: E402
 
 SERVER = 'http://127.0.0.1:8188'
-WORKFLOW = Path(r'E:\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
+WORKFLOW = Path(r'E:\Minimax-H3\third_party\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
 PROJECT = Path(r'E:\Minimax-H3\ceo_mindread_ep01')
 SEED_MANIFEST = PROJECT / '00_project' / 'seed_manifest.json'
 
@@ -125,7 +125,7 @@ def workflow_to_prompt(workflow, custom_prompt, ref_images, custom_seed, custom_
 
 
 def find_latest_video():
-    out_dir = Path(r'E:\ComfyUI\output')
+    out_dir = Path(r'E:\Minimax-H3\third_party\ComfyUI\output')
     files = list(out_dir.glob('MiniMax_H3*.mp4'))
     if not files:
         files = list(out_dir.rglob('*.mp4'))
@@ -141,7 +141,7 @@ def outputs_from_history(rec):
     Replaces mtime-guessing: /history/<pid> carries the exact filename the
     SaveVideo node wrote, so a concurrent job can never be mistaken for ours.
     """
-    out_dir = Path(r'E:\ComfyUI\output')
+    out_dir = Path(r'E:\Minimax-H3\third_party\ComfyUI\output')
     found = []
     for node_out in (rec.get('outputs') or {}).values():
         if not isinstance(node_out, dict):

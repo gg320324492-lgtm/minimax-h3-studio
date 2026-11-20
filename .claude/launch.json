@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "voice-ad-preview",
+      "runtimeExecutable": "E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe",
+      "runtimeArgs": ["-I", "E:/Minimax-H3/out/voice_ad/serve.py", "8137"],
+      "port": 8137
+    },
+    {
+      "name": "fish-callout-preview",
+      "runtimeExecutable": "E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe",
+      "runtimeArgs": ["-I", "E:/Minimax-H3/out/fish_callout/serve.py", "8138"],
+      "port": 8138
+    }
+  ]
+}

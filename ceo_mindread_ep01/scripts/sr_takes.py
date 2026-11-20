@@ -7,7 +7,7 @@ Uses the exact model/tile parameters approved for EP01 in UPGRADE_REPORT_2026091
 assembles at native 1080x1920 instead of re-encoding an SR'd master.
 
 Run under the ComfyUI venv (torch + basichsr deps live there):
-  E:/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/sr_takes.py
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/sr_takes.py
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(r'E:\Minimax-H3')
 EP01 = ROOT / 'ceo_mindread_ep01'
 SR_SCRIPT = ROOT / 'sr_pipeline_v2.py'
-VENV_PY = r'E:\ComfyUI\venv\Scripts\python.exe'
+VENV_PY = r'E:\Minimax-H3\third_party\ComfyUI\venv\Scripts\python.exe'
 
 SR_ARGS = ['--scale', '2', '--tile', '768', '--overlap', '64',
            '--out-width', '1080', '--out-height', '1920', '--audio', 'none']

@@ -6,7 +6,7 @@ and writes event['words'] = [{w, t, d}, ...]. Karaoke rendering uses the ASR wor
 surfaces (they may differ cosmetically from the TTS source text).
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/word_timestamps.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/word_timestamps.py \
       --timeline ceo_mindread_ep01/00_project/timeline_v2.json \
       --audio ceo_mindread_ep01/07_edit/EP01_WITH_AUDIO.mp4 \
       [--model small] [--in-place]

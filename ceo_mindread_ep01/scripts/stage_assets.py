@@ -5,7 +5,7 @@
 - Rewrites asset paths to public/-relative (jobs/<job>/...) and writes props.json.
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/stage_assets.py --job ep01_v3
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/stage_assets.py --job ep01_v3
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def main() -> int:
         import jsonschema
     except ImportError:
         print('jsonschema not installed in this python; run: '
-              'E:/ComfyUI/venv/Scripts/python.exe -m pip install jsonschema', file=sys.stderr)
+              'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe -m pip install jsonschema', file=sys.stderr)
         return 1
 
     schema = json.loads(SCHEMA_PATH.read_text(encoding='utf-8'))

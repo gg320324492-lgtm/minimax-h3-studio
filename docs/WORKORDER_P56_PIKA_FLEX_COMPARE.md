@@ -10,9 +10,9 @@
 | 项 | 值 |
 |---|---|
 | 前置 | `docs/P55_COMFYUI_UPGRADE.md` 的回归已通过（**开工前读它确认**） |
-| ComfyUI | E:\ComfyUI @ v0.43.2（P55 升级后） |
+| ComfyUI | E:\Minimax-H3\third_party\ComfyUI @ v0.43.2（P55 升级后） |
 | GPU | RTX 5090 32GB（**一块，不要并发跑两个生成任务**） |
-| 下载目标 | `E:\ComfyUI\models\loras\` |
+| 下载目标 | `E:\Minimax-H3\third_party\ComfyUI\models\loras\` |
 | 报告 | `E:\Minimax-H3\docs\P56_PIKA_FLEX_COMPARISON.md` |
 
 **⚠️ 本项目工作树里有不属于你的在制工作**（`studio/src/Root.tsx`、
@@ -113,13 +113,13 @@ model-intro 的真实需求，或自造一条含人物 + 对白 + 运镜的 prom
 
 - **原工作流 `workflows/video_minimax_h3_*.json` 三个文件**——只复制不改；
   ⚠️ **若对比后指挥窗口裁定切换，改原工作流是下一项，不是你**
-- `E:\ComfyUI\models\` 下其他已装模型——不删不挪
+- `E:\Minimax-H3\third_party\ComfyUI\models\` 下其他已装模型——不删不挪
 - 本项目工作树的在制工作（见零节）
 - `docs/UPGRADE_PROGRESS.md`——账本指挥窗口写
 - `DiagOutputDir`——禁止触碰
 - **P53/P54 的半成品**（`tests/test_p48_reaccept.py` 等）——不碰
 
-**本指令授权你修改**：`E:\ComfyUI\models\loras\`（新增两个 LoRA 文件）、
+**本指令授权你修改**：`E:\Minimax-H3\third_party\ComfyUI\models\loras\`（新增两个 LoRA 文件）、
 `workflows/`（**新增**对比工作流，不改原件）、
 `E:\Minimax-H3\docs\P56_PIKA_FLEX_COMPARISON.md`、
 必要的测量脚本（放 `E:\Minimax-H3\out\p56\` 或 studio/scripts/，说明是否值得留）。

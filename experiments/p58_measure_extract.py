@@ -28,7 +28,7 @@ EXTRACT = OUT / "extract"
 W, H, N = 864, 480, 124
 FRAME_IDX = [30, 62, 93]
 
-SRC = Path(r"E:\ComfyUI\input\p58_real.mp4")
+SRC = Path(r"E:\Minimax-H3\third_party\ComfyUI\input\p58_real.mp4")
 CTRL = {
     "pose": OUT / "controls" / "p58_pose_real_pose_real_00001_.mp4",
     "depth": OUT / "controls" / "p58_depth_real_depth_real_00001_.mp4",

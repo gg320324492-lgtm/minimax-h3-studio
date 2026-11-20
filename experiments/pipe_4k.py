@@ -35,7 +35,7 @@ print(f'  {len(frames)} frames')
 print('loading model...')
 # RRDBNet(num_in_ch, num_out_ch, scale, num_feat, num_block, num_grow_ch)
 model = RRDBNet(num_in_ch=3, num_out_ch=3, scale=SCALE, num_feat=64, num_block=23, num_grow_ch=32)
-sd = torch.load(r'E:\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth', map_location='cpu', weights_only=False)
+sd = torch.load(r'E:\Minimax-H3\third_party\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth', map_location='cpu', weights_only=False)
 if 'params_ema' in sd: sd = sd['params_ema']
 model.load_state_dict(sd, strict=True)
 model.eval().cuda()

@@ -18,7 +18,7 @@ import cv2
 
 W, H, N, FPS = 864, 480, 124, 24
 OUT = r"E:\Minimax-H3\out\p57\controls"
-DEST = r"E:\ComfyUI\input"
+DEST = r"E:\Minimax-H3\third_party\ComfyUI\input"
 os.makedirs(OUT, exist_ok=True)
 
 

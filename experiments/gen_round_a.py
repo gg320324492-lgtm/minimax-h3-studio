@@ -3,8 +3,8 @@ import json, shutil, sys, time, urllib.request
 from pathlib import Path
 
 SERVER = 'http://127.0.0.1:8188'
-WORKFLOW = Path(r'E:\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
-OUTPUT_DIR = Path(r'E:\ComfyUI\output\video')
+WORKFLOW = Path(r'E:\Minimax-H3\third_party\ComfyUI\user\default\workflows\video_minimax_h3_r2v.json')
+OUTPUT_DIR = Path(r'E:\Minimax-H3\third_party\ComfyUI\output\video')
 DESKTOP_DIR = Path(r'C:\Users\pc\Desktop\MiniMax-H3-Outputs')
 LOG = Path(r'E:\Minimax-H3\gen_round.log')
 

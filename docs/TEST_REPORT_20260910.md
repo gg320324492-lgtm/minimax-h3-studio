@@ -10,7 +10,7 @@
 | 项 | 结论 | 采纳 | 状态 |
 |----|------|------|------|
 | A. turbo LoRA 步数 | **8 步最优**: 快 1.96×, 画质肉眼无差, 时域更稳 | ✅ 已部署 | `video_minimax_h3_r2v.json` steps 20→8 |
-| B. 官方风格 embeddings | 10 个全部下载安装 (每个 <1.5MB) | ✅ 已安装 | `E:\ComfyUI\models\embeddings\minimaxh3_*` |
+| B. 官方风格 embeddings | 10 个全部下载安装 (每个 <1.5MB) | ✅ 已安装 | `E:\Minimax-H3\third_party\ComfyUI\models\embeddings\minimaxh3_*` |
 | C. ref2v turbo 新版本 | HF 上仍为 v0.1, 无更新 (fl2v 已有 v1.0/768p 专用版) | 挂观察 | 定期查 Comfy-Org/MiniMax-H3 |
 | D. x4v3 单次 4× vs 链式 | 链式锐度略胜 (137.7 vs 128.9 @1080p), x4v3 快 2.66× 且结构保真更高 (SSIM 0.950 vs 0.933) | ✅ 双轨 | 成片=链式, 草稿/预览=x4v3 |
 | E. NVENC vs x264 | 1080p 下 x264 仅 9.6s/60s 无瓶颈; 生成中显存满时 NVENC 无法开会话 | ❌ 不采纳 | - |

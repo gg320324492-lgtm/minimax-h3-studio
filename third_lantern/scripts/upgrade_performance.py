@@ -18,8 +18,8 @@ from pathlib import Path
 SERVER = 'http://127.0.0.1:8188'
 PROJECT = Path(r'E:/Minimax-H3/third_lantern')
 R2V_WORKFLOW = Path(r'E:/Minimax-H3/video_minimax_h3_r2v.json')
-COMFY_INPUT = Path(r'E:/ComfyUI/input')
-COMFY_OUTPUT = Path(r'E:/ComfyUI/output')
+COMFY_INPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/input')
+COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')
 UP = PROJECT / '03_video_raw_upgrade'
 FFMPEG = r'E:/Minimax-H3/tools/ffmpeg-7.1.1-full_build/bin/ffmpeg.exe'
 

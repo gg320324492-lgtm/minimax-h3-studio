@@ -124,7 +124,7 @@
 
 `grep -r "video_minimax_h3" --include=*.py` 全仓 12 个文件，两类引用逐一核验：
 
-1. **工作流文件路径引用**（10 个脚本指向 `E:\ComfyUI\user\default\workflows\` 副本、
+1. **工作流文件路径引用**（10 个脚本指向 `E:\Minimax-H3\third_party\ComfyUI\user\default\workflows\` 副本、
    1 个指向 `E:/Minimax-H3/video_minimax_h3_r2v.json`）：`user/` 目录不在 git 跟踪内，
    checkout 不触碰，升级后实测三个工作流副本仍在；
    `E:/Minimax-H3/video_minimax_h3_r2v.json` 这个引用升级前即失效（主仓库根无此文件），

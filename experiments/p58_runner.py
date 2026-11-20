@@ -25,7 +25,7 @@ from bench import api  # noqa: E402
 
 SEED = 1086599926715797  # template's own RandomNoise value, pinned for every run
 OUT = Path(r"E:\Minimax-H3\out\p58")
-COMFY_OUTPUT = Path(r"E:\ComfyUI\output")
+COMFY_OUTPUT = Path(r"E:\Minimax-H3\third_party\ComfyUI\output")
 
 
 class Vram:

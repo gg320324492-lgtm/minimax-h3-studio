@@ -12,7 +12,7 @@ Determinism: same ShotSpec + same config => byte-identical prompt. That is what
 makes prompt changes reviewable (diff the JSON) and reproducible (recompile).
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe pipeline/prompt_compiler.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe pipeline/prompt_compiler.py \
       --specs ceo_mindread_ep01/00_project/shot_specs.json \
       --out   ceo_mindread_ep01/00_project/h3_prompts.compiled.json
 """

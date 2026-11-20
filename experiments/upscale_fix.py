@@ -43,7 +43,7 @@ def main():
 
     print('[2/4] Loading Real-ESRGAN...')
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=SCALE)
-    sd = torch.load(r'E:\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth',
+    sd = torch.load(r'E:\Minimax-H3\third_party\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth',
                     map_location='cpu', weights_only=False)
     if 'params_ema' in sd: sd = sd['params_ema']
     model.load_state_dict(sd, strict=True)

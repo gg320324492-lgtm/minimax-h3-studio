@@ -3,7 +3,7 @@
 1. Re-export zod schemas and verify the committed .schema.json files match (drift = fail).
 2. Validate every public/jobs/*/props.json against its matching schema (smoke).
 
-Run from anywhere:  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/check_contract.py
+Run from anywhere:  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/check_contract.py
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 STUDIO = Path(__file__).resolve().parent.parent
-VENV_PY = r'E:\ComfyUI\venv\Scripts\python.exe'
+VENV_PY = r'E:\Minimax-H3\third_party\ComfyUI\venv\Scripts\python.exe'
 
 failures = 0
 

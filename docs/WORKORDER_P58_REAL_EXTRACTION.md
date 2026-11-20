@@ -11,7 +11,7 @@
 
 | 项 | 值 |
 |---|---|
-| ComfyUI | `E:\ComfyUI` @ v0.43.2（commit `423cbd20`，开工前实测确认） |
+| ComfyUI | `E:\Minimax-H3\third_party\ComfyUI` @ v0.43.2（commit `423cbd20`，开工前实测确认） |
 | 权重 | `models/model_patches/minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors`（8.38 GB，SHA256 `cd48bdc1…` 已双重核验） |
 | P57 工作流 | `E:\Minimax-H3\workflows\video_minimax_h3_fun_controlnet_union.json`（官方模板落盘副本） |
 | GPU | RTX 5090 32GB；P57 实测控制生成显存峰值 31.4–31.8 GB——**生成时不要并发任何 GPU 任务** |
@@ -30,7 +30,7 @@
    strength 是 skip add 的 alpha，=0 数学 no-op，源码 `comfy_extras/nodes_minimax_h3.py:515`）；
    五路全跑通；**但控制信号是程序化合成的（火柴人+球）**，
    "哪一路跟随最准"与"真实素材下能不能用"P57 不答——**本项答**。
-2. **提取节点内建**（指挥窗口已查 `E:\ComfyUI\comfy_extras\`）：
+2. **提取节点内建**（指挥窗口已查 `E:\Minimax-H3\third_party\ComfyUI\comfy_extras\`）：
    `nodes_sdpose.py`（SDPose）、`nodes_depth_anything_3.py`（Depth Anything 3）。
    ⚠️ **提取模型权重是否已下载未核实**（`models/` 下只见 `controlnet` 目录）——
    **开工先查，缺就下载并核 SHA256**（下载纪律同 P57：aria2c 分块 + 落盘校验，
@@ -38,7 +38,7 @@
 3. **真实素材候选**（按优先级）：
    - `E:\Minimax-H3\water_renewal\01_reference\` 或 `intro_video/` 的真实片段
      （⚠️ 781 MB 媒体未入库，只读，**用前先确认文件在**）；
-   - `E:\ComfyUI\input\` 已有素材；
+   - `E:\Minimax-H3\third_party\ComfyUI\input\` 已有素材；
    - 都不合适就自取一段 5–10 秒含人物动作的公开素材（**报告里写清来源**）。
 4. **P55 已验证 v0.43.2 同 seed 逐字节确定**——本项的 A/B 对照可以放心用同 seed。
 
@@ -95,7 +95,7 @@
 
 ## 四、不要动的东西
 
-- `E:\ComfyUI\models\model_patches\` 的 Union 2.0 权重——只读
+- `E:\Minimax-H3\third_party\ComfyUI\models\model_patches\` 的 Union 2.0 权重——只读
 - P57 的脚本与报告（`experiments/p57_*.py`、`docs/P57_*.md`）——参考，不改
 - 本项目在制工作（零节清单）
 - `docs/UPGRADE_PROGRESS.md`——账本指挥窗口写
@@ -103,7 +103,7 @@
 - `workflows/video_minimax_h3_fun_controlnet_union.json`——原件不改，
   需要变体就在 `out\p58\` 或 `workflows/` 用新文件名
 
-**本指令授权你**：下载提取模型权重到 `E:\ComfyUI\models\`（核 SHA256）、
+**本指令授权你**：下载提取模型权重到 `E:\Minimax-H3\third_party\ComfyUI\models\`（核 SHA256）、
 新增 `workflows/` 落盘副本、新增 `experiments/p58_*.py`、写报告。
 
 ---

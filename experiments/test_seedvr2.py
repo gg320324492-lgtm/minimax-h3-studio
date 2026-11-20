@@ -68,10 +68,10 @@ def build_workflow():
 
 
 def find_output_video():
-    out_dir = Path(r'E:\ComfyUI\output\video')
+    out_dir = Path(r'E:\Minimax-H3\third_party\ComfyUI\output\video')
     files = list(out_dir.glob('SeedVR2_test*.mp4'))
     if not files:
-        files = list(Path(r'E:\ComfyUI\output').rglob('*.mp4'))
+        files = list(Path(r'E:\Minimax-H3\third_party\ComfyUI\output').rglob('*.mp4'))
     if not files:
         return None
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)

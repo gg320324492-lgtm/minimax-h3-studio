@@ -36,7 +36,7 @@ npx remotion still CoverCard --props=<cover.json> --output=cover.png
 3. Node API 不读 remotion.config.ts；渲染参数必须显式传。
 4. 中文渲染字体走 `public/fonts/` 自托管（FontFace+delayRender），数字用 Bahnschrift（Windows 自带）。
 5. 音频母带：`scripts/master_audio.py`（WAV 中转 loudnorm，−14 LUFS），直接 MP4 上 loudnorm 不收敛。
-6. 契约自检：`E:/ComfyUI/venv/Scripts/python.exe scripts/check_contract.py`。
+6. 契约自检：`E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe scripts/check_contract.py`。
 
 ## 脚本
 

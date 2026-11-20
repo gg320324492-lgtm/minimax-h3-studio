@@ -10,7 +10,7 @@ Outputs (under studio/public/audio/):
   sfx_whoosh.m4a  sfx_impact.m4a  sfx_pop.m4a  sfx_ding.m4a  sfx_riser.m4a
   bgm_beats.json        exact beat grid {bpm, beat_interval, beats:[{t,bass}]} for the renderer
 
-Run: E:/ComfyUI/venv/Scripts/python.exe studio/scripts/make_audio_assets.py
+Run: E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/make_audio_assets.py
 """
 
 from __future__ import annotations

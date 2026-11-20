@@ -66,18 +66,18 @@
 
 ```bash
 # 短剧项目：生成 → 出片（含 QA）
-E:/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/build_timeline.py
-E:/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/render_with_remotion.py --job <id> --out 07_edit/<out>.mp4 --qa
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/build_timeline.py
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/render_with_remotion.py --job <id> --out 07_edit/<out>.mp4 --qa
 
 # 纯数据视频（零 GPU，模式 B）
 cd studio && node bin/render.mjs --comp ReportVertical --props <data.json> --out out/x.mp4
-E:/ComfyUI/venv/Scripts/python.exe scripts/master_audio.py out/x.mp4 && E:/ComfyUI/venv/Scripts/python.exe scripts/qa_report.py --video out/x.mp4 --props <data.json>
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe scripts/master_audio.py out/x.mp4 && E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe scripts/qa_report.py --video out/x.mp4 --props <data.json>
 
 # 迭代预览
 cd studio && pnpm dev        # Remotion Studio 实时预览
 
 # 契约/资产自检
-E:/ComfyUI/venv/Scripts/python.exe studio/scripts/check_contract.py
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/check_contract.py
 ```
 
 ## 文档索引

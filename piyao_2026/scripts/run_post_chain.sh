@@ -3,7 +3,7 @@
 # Prereq: all 15 clips present under 03_video_raw/ (scripts/gen_clips.py).
 set -e
 cd /e/Minimax-H3/piyao_2026
-PY="E:/ComfyUI/venv/Scripts/python.exe"
+PY="E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe"
 SR="E:/Minimax-H3/sr_pipeline_v2.py"
 EDIT=07_edit
 TILE=768

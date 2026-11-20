@@ -11,8 +11,8 @@
 | 项 | 值 |
 |---|---|
 | 前置 | `docs/P55_COMFYUI_UPGRADE.md` 回归通过；P56 若在跑则等它完成 |
-| ComfyUI | E:\ComfyUI @ v0.43.2（Union 2.0 要求 0.38.0+，已满足） |
-| 下载目标 | `E:\ComfyUI\models\model_patches\`（**该目录现为空**） |
+| ComfyUI | E:\Minimax-H3\third_party\ComfyUI @ v0.43.2（Union 2.0 要求 0.38.0+，已满足） |
+| 下载目标 | `E:\Minimax-H3\third_party\ComfyUI\models\model_patches\`（**该目录现为空**） |
 | GPU | RTX 5090 32GB |
 | 报告 | `E:\Minimax-H3\docs\P57_CONTROLNET_UNION_VERDICT.md` |
 
@@ -48,7 +48,7 @@ ControlNet-Union（legacy 版只含 `control_proj_in` + 5 个 control_blocks，�
 
 ### 第 1 步：下载 + 模板加载
 
-1. 下载 Union 2.0 到 `E:\ComfyUI\models\model_patches\`（落盘后核大小再继续，防网络截断）；
+1. 下载 Union 2.0 到 `E:\Minimax-H3\third_party\ComfyUI\models\model_patches\`（落盘后核大小再继续，防网络截断）；
 2. 从 ComfyUI 模板库加载 "MiniMax H3 Fun ControlNet Union" 工作流，**另存为
    `workflows/video_minimax_h3_fun_controlnet_union.json`**（这是它在本仓的第一份落盘副本）；
 3. 确认模板要求的节点在 0.43.2 下全部可解析。
@@ -98,15 +98,15 @@ ControlNet-Union（legacy 版只含 `control_proj_in` + 5 个 control_blocks，�
 
 ## 四、不要动的东西
 
-- `E:\ComfyUI\models\` 下其他已装模型——不删不挪
-- `E:\ComfyUI\custom_nodes\`——不装新节点（官方模板若要求额外自定义节点，**先报告**再决定）
+- `E:\Minimax-H3\third_party\ComfyUI\models\` 下其他已装模型——不删不挪
+- `E:\Minimax-H3\third_party\ComfyUI\custom_nodes\`——不装新节点（官方模板若要求额外自定义节点，**先报告**再决定）
 - 本项目工作树的在制工作（见零节）
 - **P56 的文件**（LoRA、对比工作流、对比帧）——不碰
 - `docs/UPGRADE_PROGRESS.md`——账本指挥窗口写
 - `DiagOutputDir`——禁止触碰
 - **P53/P54 的半成品**——不碰
 
-**本指令授权你修改**：`E:\ComfyUI\models\model_patches\`（新增 2.0 权重）、
+**本指令授权你修改**：`E:\Minimax-H3\third_party\ComfyUI\models\model_patches\`（新增 2.0 权重）、
 `workflows/`（**新增** fun_controlnet_union 工作流落盘副本）、
 `E:\Minimax-H3\docs\P57_CONTROLNET_UNION_VERDICT.md`、必要的测量脚本。
 

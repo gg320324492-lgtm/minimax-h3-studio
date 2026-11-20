@@ -24,8 +24,8 @@ prepend_to_path()
 
 SERVER = 'http://127.0.0.1:8188'
 PROJECT = Path(r'E:/Minimax-H3/third_lantern')
-COMFY_INPUT = Path(r'E:/ComfyUI/input')
-COMFY_OUTPUT = Path(r'E:/ComfyUI/output')
+COMFY_INPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/input')
+COMFY_OUTPUT = Path(r'E:/Minimax-H3/third_party/ComfyUI/output')
 TMP = PROJECT / '07_edit' / '2k_chunks'
 MAXF = 900
 

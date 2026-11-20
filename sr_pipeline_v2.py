@@ -67,7 +67,7 @@ from ffmpeg_env import FFMPEG, FFMPEG_SOURCE, FFPROBE, version as ffmpeg_version
 
 # ---------------------------------------------------------------- model zoo --
 
-COMFY_MODELS = Path(r'E:\ComfyUI\models\upscale_models')
+COMFY_MODELS = Path(r'E:\Minimax-H3\third_party\ComfyUI\models\upscale_models')
 
 # name -> (arch, ckpt filename, native scale, extra arch kwargs)
 MODELS = {

@@ -21,7 +21,7 @@
 
 ## 1. 环境与权重
 
-- ComfyUI `E:\ComfyUI` @ v0.43.2，commit `423cbd20511becb1f16122ab518e92e58bfa03d9`（开工实测，与工单一致）。
+- ComfyUI `E:\Minimax-H3\third_party\ComfyUI` @ v0.43.2，commit `423cbd20511becb1f16122ab518e92e58bfa03d9`（开工实测，与工单一致）。
 - Union 2.0 权重 `model_patches/minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors` 只读未动。
 - **提取权重开工核查：全部缺失**（`models/checkpoints`、`models/geometry_estimation` 均只有占位文件），按工单下载并以 aria2c 内置 checksum + 本地 `sha256sum` 双重核验：
 
@@ -124,8 +124,8 @@ face_point 2、score 0.5；DA3 mono、resolution 504、v2_style。
 
 ## 7. 磁盘纪律与改动文件
 
-- 一切新文件均在 `E:\Minimax-H3\` 内（`out/p58/` 共 63 MB 证据）或 `E:\ComfyUI\models/`（工单授权的权重 2.6 GB）；未在 E 根建目录、未在 C 盘产生数据。
-- 收尾清理：`E:\ComfyUI\output\p58\`（8 个中间 mp4）已删；`out/p58/` 保留全部裁定证据（extract/compare/runs/controls + 全部 JSON 记录）；`E:\ComfyUI\input\` 保留 `p58_real.mp4` 与两个控制 mp4 供复现。
+- 一切新文件均在 `E:\Minimax-H3\` 内（`out/p58/` 共 63 MB 证据）或 `E:\Minimax-H3\third_party\ComfyUI\models/`（工单授权的权重 2.6 GB）；未在 E 根建目录、未在 C 盘产生数据。
+- 收尾清理：`E:\Minimax-H3\third_party\ComfyUI\output\p58\`（8 个中间 mp4）已删；`out/p58/` 保留全部裁定证据（extract/compare/runs/controls + 全部 JSON 记录）；`E:\Minimax-H3\third_party\ComfyUI\input\` 保留 `p58_real.mp4` 与两个控制 mp4 供复现。
 - 在制工作（`studio/src/Root.tsx`、`intro_video/`、`studio/public/audio/intro/`、`studio/src/templates/model-intro/`）未碰；`workflows/video_minimax_h3_fun_controlnet_union.json` 原件未动（新变体 `workflows/video_p58_*.json`，该目录本被 gitignore，不入库）；P57 脚本与报告未改。
 
 新增文件（提交内容）：

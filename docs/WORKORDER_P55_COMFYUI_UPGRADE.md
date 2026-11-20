@@ -9,14 +9,14 @@
 
 | 项 | 值 |
 |---|---|
-| 升级对象 | `E:\ComfyUI`（**独立 git 仓库**，不是 Minimax-H3 项目的一部分） |
+| 升级对象 | `E:\Minimax-H3\third_party\ComfyUI`（**独立 git 仓库**，不是 Minimax-H3 项目的一部分） |
 | 当前版本 | v0.34.0（commit `12d52794`） |
 | 目标版本 | **v0.43.2**（tag 已在本地，`git tag` 可见；与 HEAD 差 442 个提交） |
-| python | `E:\ComfyUI\venv\Scripts\python.exe`（所有 pip 操作用这个 venv） |
+| python | `E:\Minimax-H3\third_party\ComfyUI\venv\Scripts\python.exe`（所有 pip 操作用这个 venv） |
 | GPU | RTX 5090 32GB |
 | 本项目仓库 | `E:\Minimax-H3`（工单、测试脚本、回归报告放这里） |
 
-**⚠️ E:\ComfyUI 工作树里有几个已删除的占位文件**（`models/*/put_*_files_here`）——
+**⚠️ E:\Minimax-H3\third_party\ComfyUI 工作树里有几个已删除的占位文件**（`models/*/put_*_files_here`）——
 那是装模型后删的 `.gitkeep`，**正常，不要恢复它们**。
 
 **⚠️ 本项目工作树里有不属于你的在制工作**（`studio/src/Root.tsx` 已改、
@@ -39,7 +39,7 @@
 
 ### 第 0 步：**先造回滚点，再动手**
 
-1. `E:\ComfyUI` 里 `git tag local-pre-upgrade-0.34`（或记录 `12d52794`）；
+1. `E:\Minimax-H3\third_party\ComfyUI` 里 `git tag local-pre-upgrade-0.34`（或记录 `12d52794`）；
 2. `venv\Scripts\python.exe -m pip freeze > E:\Minimax-H3\out\p55\pip_freeze_0.34.txt`
    （⚠️ 输出目录先建好；**写到 E 盘**）；
 3. 记录 `custom_nodes/` 清单（当前只有 `ComfyUI-FlashVSR_Ultra_Fast`）；
@@ -88,7 +88,7 @@ warning/error（区分"已知噪声"与"新出现的"）。
 ### 第 3 步：报告与提交
 
 - 回归报告写到 `E:\Minimax-H3\docs\P55_COMFYUI_UPGRADE.md`（中文，`read_bytes`/`write_bytes`）；
-- **E:\ComfyUI 的 checkout 不产生本项目提交**——你提交的是
+- **E:\Minimax-H3\third_party\ComfyUI 的 checkout 不产生本项目提交**——你提交的是
   `E:\Minimax-H3` 里的报告 + 新增脚本（显式路径 `git add`，**不推送**）。
 
 ---
@@ -125,8 +125,8 @@ venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.
 ## 五、不要动的东西
 
 - **本项目工作树里的在制工作**（见零节清单）——不碰
-- `E:\ComfyUI\models/` 下所有已装模型——**不删不挪**（本项不下载新模型）
-- `E:\ComfyUI/custom_nodes/ComfyUI-FlashVSR_Ultra_Fast`——只验证，不升级它
+- `E:\Minimax-H3\third_party\ComfyUI\models/` 下所有已装模型——**不删不挪**（本项不下载新模型）
+- `E:\Minimax-H3\third_party\ComfyUI/custom_nodes/ComfyUI-FlashVSR_Ultra_Fast`——只验证，不升级它
   （若它在新版 ComfyUI 下有兼容问题，报告，**不自行改它的代码**）
 - `E:\Minimax-H3\docs\UPGRADE_PROGRESS.md`——**账本由指挥窗口写**
 - `DiagOutputDir`——禁止触碰

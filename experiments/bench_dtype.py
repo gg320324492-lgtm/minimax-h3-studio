@@ -7,7 +7,7 @@ from pathlib import Path
 from PIL import Image
 from basicsr.archs.rrdbnet_arch import RRDBNet
 
-MODEL = Path(r'E:\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth')
+MODEL = Path(r'E:\Minimax-H3\third_party\ComfyUI\models\upscale_models\RealESRGAN_x2plus.pth')
 TMP = Path(r'E:\Minimax-H3\work_frames\bench_tile_batch')
 
 def load_model(scale=2, dtype=torch.float32):

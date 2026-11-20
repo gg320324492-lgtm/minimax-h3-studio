@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 import subprocess
 
-os.environ['HF_HUB_CACHE'] = 'E:/ComfyUI/models/tts'
+os.environ['HF_HUB_CACHE'] = 'E:/Minimax-H3/third_party/ComfyUI/models/tts'
 
 PROJECT = Path(r'E:/Minimax-H3/ceo_mindread_ep01')
 

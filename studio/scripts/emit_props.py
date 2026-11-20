@@ -7,7 +7,7 @@ delivery-quality renders run per-take SR first and pass --sr-dir.
 Supports titlecard (from titlecard_duration) and endcard (from endcard_start) segments.
 
 Usage (layout validation, raw clips):
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/emit_props.py \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/emit_props.py \
       --project-dir piyao_2026 --template psa-wide --job piyao_check \
       --width 1920 --height 1080
 """

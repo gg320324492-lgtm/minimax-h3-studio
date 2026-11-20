@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 import os
-os.environ['HF_HUB_CACHE'] = 'E:/ComfyUI/models/tts'
+os.environ['HF_HUB_CACHE'] = 'E:/Minimax-H3/third_party/ComfyUI/models/tts'
 
 PROJECT = Path(r'E:/Minimax-H3/liaozhai_demo')
 OUT = PROJECT / '05_audio' / 'NARR'

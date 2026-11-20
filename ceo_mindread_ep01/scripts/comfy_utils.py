@@ -30,7 +30,7 @@ _prepend_ffmpeg()
 
 from pathlib import Path
 
-COMFY_OUTPUT = Path(r'E:\ComfyUI\output')
+COMFY_OUTPUT = Path(r'E:\Minimax-H3\third_party\ComfyUI\output')
 
 
 def outputs_from_history(rec, output_dir: Path | None = None) -> list[Path]:

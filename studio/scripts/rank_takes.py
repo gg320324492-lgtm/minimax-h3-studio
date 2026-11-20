@@ -12,8 +12,8 @@ Fail-closed: a shot with no usable take is an ERROR (the old code silently
 dropped it with `continue`, shortening the episode without a non-zero exit).
 
 Usage:
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/rank_takes.py --project ceo_mindread_ep01
-  E:/ComfyUI/venv/Scripts/python.exe studio/scripts/rank_takes.py --project ceo_mindread_ep01 --dry-run
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/rank_takes.py --project ceo_mindread_ep01
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/rank_takes.py --project ceo_mindread_ep01 --dry-run
   ... --override S06=S06_T02 --override S05A=S05A_v1
 """
 

@@ -2,7 +2,7 @@
 
 Sources:
   - the local r2v/t2v skeletons in E:\\Minimax-H3\\workflows (untouched)
-  - the official Pika H3 Flex templates shipped inside E:\\ComfyUI
+  - the official Pika H3 Flex templates shipped inside E:\\Minimax-H3\third_party\ComfyUI
     (comfyui_workflow_templates_json), flattened with the P55 expand logic
 
 Written to E:\\Minimax-H3\\workflows\\ (gitignored, like every workflow here):
@@ -35,9 +35,9 @@ from p56_runner import expand_subgraphs, flat_nodes_to_prompt, to_prompt
 ROOT = Path(r'E:\Minimax-H3')
 WF = ROOT / 'workflows'
 TEMPLATES = Path(
-    r'E:\ComfyUI\venv\Lib\site-packages\comfyui_workflow_templates_json'
+    r'E:\Minimax-H3\third_party\ComfyUI\venv\Lib\site-packages\comfyui_workflow_templates_json'
     r'\templates')
-COMFY_INPUT = Path(r'E:\ComfyUI\input')
+COMFY_INPUT = Path(r'E:\Minimax-H3\third_party\ComfyUI\input')
 
 SEED = 261662374822964
 MP = 0.98

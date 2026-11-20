@@ -25,8 +25,8 @@ studio/public/audio/
 2. **重新生成拍网格与包络**（真实音乐的拍点需要检测，推荐 librosa）：
 
 ```bash
-E:/ComfyUI/venv/Scripts/python.exe -c "import librosa" 2>/dev/null || \
-  E:/ComfyUI/venv/Scripts/python.exe -m pip install librosa
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe -c "import librosa" 2>/dev/null || \
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe -m pip install librosa
 ```
 
 参考实现（Phase 5 调研验证的配方）：`librosa.beat.beat_track(units='time', start_bpm=120)`，
