@@ -74,15 +74,16 @@ take_ranker 改动前的备份——说明后续某次运行把它挪走了，�
 - 待办：`pip install flash-attn`（需与 torch 2.11.0+cu128 匹配，编译可能失败）
 - 影响面：仅 `water_renewal/scripts/generate_voice.py` 的重新生成旁白流程
 
-## G-04 根目录的 6 个成片项目联接不可删 —— 已规避
+## G-04 根目录成片项目联接 —— 已关闭
 
-`ceo_mindread_ep01/` `liaozhai_demo/` `piyao_2026/` `third_lantern/` `water_renewal/`
-`intro_video/` 现在是**目录联接**，指向 `成片项目/` 下的实体。
+原 6 条联接（`ceo_mindread_ep01/` 等指向 `成片项目/`）已于 2026-11-20
+随路径全量改写一并移除，项目根现在只剩真实目录。
 
-- 作用：老脚本里的 `E:/Minimax-H3/成片项目/water_renewal/...` 绝对路径仍可解析
-- 风险：**删掉联接 = 断掉所有旧路径引用**
-- 已加 `.gitignore` 规则忽略这 6 条联接路径，避免 git 在两处各登记一份内容
-- 待办：若将来要把绝对路径全部改写为 `成片项目/...`，改完才能删联接
+- 121 处绝对路径引用改写完成（`E:\`、`E:/`、`/e/` 三种写法）
+- 关联坑：git 切换分支会**透过联接写回真实文件**，切分支前需先拆联接；
+  详见记忆 `project-directory-layout`
+- 仍在的两条必要联接：`studio/public/jobs`（studio 的 staticFile 依赖）
+  与 `.remotion/chrome-headless-shell`（Remotion 按此路径找浏览器）
 
 ## G-05 H3_local_private/repo_backup 仍是旧路径 —— 已规避
 
