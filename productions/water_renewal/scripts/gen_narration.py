@@ -16,7 +16,7 @@ from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
 _prepend_ffmpeg()
 
 PROJECT = Path(r'E:/Minimax-H3/productions/water_renewal')
-OUT = PROJECT / 'assets' / 'narration'
+OUT = PROJECT / '05_audio' / 'narration'
 OUT.mkdir(parents=True, exist_ok=True)
 
 VOICE = 'zm_yunyang'
@@ -56,8 +56,10 @@ def main():
     print('ready', flush=True)
 
     manifest = []
+    tmpdir = PROJECT / '05_audio' / 'tmp'
+    tmpdir.mkdir(parents=True, exist_ok=True)
     for slug, text in LINES:
-        wav = Path(f'E:/Minimax-H3/out/tmp/kokoro_{slug}.wav')
+        wav = tmpdir / f'kokoro_{slug}.wav'
         m4a = OUT / f'{slug}.m4a'
         t0 = time.time()
         chunks = []
@@ -76,7 +78,7 @@ def main():
         manifest.append({'slug': slug, 'text': text, 'file': str(m4a), 'duration': round(d, 3)})
         print(f'  {slug}: {d:.2f}s  {text[:18]}...  ({time.time()-t0:.1f}s)', flush=True)
 
-    (PROJECT / 'work' / 'narration_manifest.json').write_text(
+    (PROJECT / '01_reference' / 'narration_manifest.json').write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
     total = sum(m['duration'] for m in manifest)
     print(f'TOTAL narration: {total:.1f}s')

@@ -62,22 +62,29 @@ select_takes 现在直接写 09_final/（并确保目录存在），finalize 里
 00_project -> 09_final 的复制已删除。提交 0867d5e + 18d11c0。
 tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 
-## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 待办
+## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 已关闭（2026-11-21）
 
 2026-11-20 把 `from_e_root/黑臭水体治理宣传片剪辑` 并入 `productions/water_renewal/` 时，
 这批脚本的根路径已全部重映射到项目内（不再指向已不存在的 `E:/promo_video`、
 也不再写 C 盘桌面），但**脚本内部期待的子目录结构仍是旧的**，需要逐文件适配：
 
-| 脚本 | 仍期待 | 当前实际 |
+| 脚本 | 仍期待 | 修复后指向 |
 |---|---|---|
-| `build_video.py` | `A=ROOT/'assets'`、`W=ROOT/'work'/'build'`、`OUT=ROOT/'output'` | `01_reference/`、`07_edit/`、`09_final/` |
+| `build_video.py` | `A=ROOT/'assets'`、`W=ROOT/'work'/'build'`、`OUT=ROOT/'output'` | `A=05_audio/music/`、`W=07_edit/build/`、`OUT=09_final/`；H3 素材读 `01_reference/h3_clips/`、narration manifest 读 `01_reference/narration_manifest.json` |
 | `gen_h3_clips.py` | `PROJECT/'assets'/'h3'` | `01_reference/h3_clips/` |
-| `gen_narration.py` | `OUT=PROJECT/'assets'/'narration'` | `05_audio/narration/` |
-| `gen_cover.py` | `OUT=.../assets/cover` | `01_reference/cover/` |
+| `gen_narration.py` | `OUT=PROJECT/'assets'/'narration'` | `05_audio/narration/`；manifest 写 `01_reference/narration_manifest.json`、临时 wav 落 `05_audio/tmp/` |
+| `gen_cover.py` | `OUT=.../assets/cover` | `01_reference/cover/`（重映射时已改对，本轮核对无误） |
 
 - 之所以不在本轮直接改：这几条路径各自对应哪一版产物需要按成片实际内容判断，
   猜错会让脚本把素材写到错误的目录——属于"修复任务"，按约定登记为缺口。
 - 影响面：只影响 water_renewal 的重跑（成片已交付，`09_final/` 在位）。
+- **2026-11-21 修复说明**：原始素材（C 盘桌面旧目录）已不存在，故把仍在的
+  素材副本归位到项目内——8 个第一批视频从 `studio/public/jobs/water-renewal/`
+  （prepare_media.py 的转码副本）拷回 `01_reference/videos/`（保持 `_raw.mp4`
+  原文件名，V 表只需改相对路径）；24 张第一批照片 `01_reference/A09..A32.jpg`
+  （640×480，EXIF 已转正，与微信导出图同源同分辨率）按 P 表 fid 顺序拷入
+  `01_reference/photos/p01..p24.jpg`，`norm_photos()` 改读该目录。4 个脚本
+  均已用 ComfyUI venv ast.parse 验证通过。
 
 ---
 

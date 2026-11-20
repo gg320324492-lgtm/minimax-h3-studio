@@ -21,12 +21,12 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import prepend_to_path as _p  # noqa: E402
 _p()
 
-SRC = Path(r'E:/Minimax-H3/productions/water_renewal')
+SRC = Path(r'E:/Minimax-H3/productions/water_renewal/01_reference')
 ROOT = Path(r'E:/Minimax-H3/productions/water_renewal')
-A = ROOT / 'assets'
-W = ROOT / 'work' / 'build'
+A = ROOT / '05_audio' / 'music'          # bgm/ambience stems (gen_bgm.py writes here)
+W = ROOT / '07_edit' / 'build'           # intermediate build artifacts
 SC = W / 'scenes'
-OUT = ROOT / 'output'
+OUT = ROOT / '09_final'
 for d in (W, SC, OUT):
     d.mkdir(parents=True, exist_ok=True)
 
@@ -37,14 +37,14 @@ FONT_BD = 'C\:/Windows/Fonts/msyhbd.ttc'
 FONT_RG = 'C\:/Windows/Fonts/NotoSansSC-VF.ttf'
 
 V = {
-    '4ea2': '4ea227e2e2317ab51fa610d9e711a4c3_raw.mp4',
-    '8e2c': '8e2c023a88a34c9ca73d6439b2dd9465_raw.mp4',
-    'dd78': 'dd78eb8b3c9dff99866c0a01dba1d800_raw.mp4',
-    'a7':   '000284a734037dcc3c2061baffa75948_raw.mp4',
-    'fa':   'fa5960e3c26c04392c4cdac888f8d9d9_raw.mp4',
-    '1ed4': '1ed4eff7a81ab77f952731b0cd85da29_raw.mp4',
-    'b51':  '51dd3920f2916597ee7938944b3972a9_raw.mp4',
-    'riv':  '3938e323d52417820363a14e4c5961df_raw.mp4',
+    '4ea2': 'videos/4ea227e2e2317ab51fa610d9e711a4c3_raw.mp4',
+    '8e2c': 'videos/8e2c023a88a34c9ca73d6439b2dd9465_raw.mp4',
+    'dd78': 'videos/dd78eb8b3c9dff99866c0a01dba1d800_raw.mp4',
+    'a7':   'videos/000284a734037dcc3c2061baffa75948_raw.mp4',
+    'fa':   'videos/fa5960e3c26c04392c4cdac888f8d9d9_raw.mp4',
+    '1ed4': 'videos/1ed4eff7a81ab77f952731b0cd85da29_raw.mp4',
+    'b51':  'videos/51dd3920f2916597ee7938944b3972a9_raw.mp4',
+    'riv':  'videos/3938e323d52417820363a14e4c5961df_raw.mp4',
 }
 # photo index -> file id (sorted WeChat export order, see contact sheets)
 P = {1: '257', 2: '258', 3: '260', 4: '261', 5: '262', 6: '263', 7: '264',
@@ -60,7 +60,7 @@ BLUR = {}
 def scene_schedule():
     """Narration-driven schedule: narration times chain with a fixed GAP, scenes
     wrap around them. Guarantees zero speech overlap (v2's N01/N02 collided)."""
-    man = json.loads((ROOT / 'work' / 'narration_manifest.json').read_text(encoding='utf-8'))
+    man = json.loads((ROOT / '01_reference' / 'narration_manifest.json').read_text(encoding='utf-8'))
     nd = {m['slug']: m['duration'] for m in man}
     GAP = LEAD + TAIL - XF                      # 1.3s of silence between lines
     narr = {1: 7.0}                             # intro plays 7s before first line
@@ -112,10 +112,10 @@ def norm_photos():
     kd = W / 'kb'
     nd.mkdir(parents=True, exist_ok=True)
     kd.mkdir(parents=True, exist_ok=True)
-    files = sorted(f for f in os.listdir(SRC) if f.lower().endswith(('.jpg', '.jpeg', '.png')))
+    files = sorted(os.listdir(SRC / 'photos'))
     for idx, fid in P.items():
         src = next(f for f in files if fid in f)
-        im = Image.open(SRC / src)
+        im = Image.open(SRC / 'photos' / src)
         im = ImageOps.exif_transpose(im).convert('RGB')
         im.thumbnail((7680, 7680), Image.LANCZOS)
         sw, sh = im.size
@@ -183,7 +183,7 @@ def render_shot(shot, out, dur):
              str(out)])
     elif kind == 'h3':
         _, name = shot[:2]
-        run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(A / 'h3' / name),
+        run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(ROOT / '01_reference' / 'h3_clips' / name),
              '-vf', f'fps={FPS},eq=saturation=1.03:contrast=1.03,format=yuv420p',
              '-t', f'{dur}', '-c:v', 'libx264', '-crf', '16', '-preset', 'fast', str(out)])
     elif kind == 'ph':
@@ -369,7 +369,7 @@ def overlay():
 
 
 def make_ass():
-    man = json.loads((ROOT / 'work' / 'narration_manifest.json').read_text(encoding='utf-8'))
+    man = json.loads((ROOT / '01_reference' / 'narration_manifest.json').read_text(encoding='utf-8'))
 
     def ts(t):
         h = int(t // 3600); m = int(t % 3600 // 60); s = t % 60
@@ -416,7 +416,7 @@ def make_ass():
 
 
 def audio_mix():
-    man = json.loads((ROOT / 'work' / 'narration_manifest.json').read_text(encoding='utf-8'))
+    man = json.loads((ROOT / '01_reference' / 'narration_manifest.json').read_text(encoding='utf-8'))
     cmd = ['ffmpeg', '-y', '-loglevel', 'error']
     cmd += ['-i', str(A / 'bgm_score.wav')]                      # 0
     for m in man:                                                 # 1..12

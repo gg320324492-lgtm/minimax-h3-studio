@@ -19,7 +19,7 @@ from pathlib import Path
 
 SERVER = 'http://127.0.0.1:8188'
 PROJECT = Path(r'E:/Minimax-H3/productions/water_renewal')
-OUT_DIR = PROJECT / 'assets' / 'h3'
+OUT_DIR = PROJECT / '01_reference' / 'h3_clips'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 W, H = 864, 480          # 0.4MP 16:9 (per workflow size table)
