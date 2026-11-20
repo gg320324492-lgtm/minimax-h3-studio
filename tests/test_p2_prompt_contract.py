@@ -6,6 +6,12 @@ ZERO prompt literals. This is the same class of risk the P0 review caught for
 gen_keyframes_v3 (core logic living only on one machine, or prompts leaking
 into a public repo).
 
+2026-11-21 裁剪：本文件原有 9 例，按测试甄别报告（out/工具/测试甄别.md）方案二
+删除 2 例以 `git ls-files` 跟踪状态为断言对象的账本用例：
+`test_prompt_data_files_are_not_tracked` 与 `test_pipeline_modules_are_tracked`。
+保留 7 例：prompt 留在数据文件（源码无字面量）、shotspec 原子性 / 帧网格校验、
+编译器确定性 / 负向约束不翻倍 / 端到端产物形状。
+
 Run:
   python -m pytest tests/test_p2_prompt_contract.py -q
 """
@@ -13,9 +19,7 @@ Run:
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,14 +27,6 @@ sys.path.insert(0, str(ROOT / 'pipeline'))
 
 import prompt_compiler  # noqa: E402
 import shotspec  # noqa: E402
-
-
-def _git(*args: str) -> str:
-    import shutil
-
-    git = shutil.which('git') or r'C:\Program Files\Git\cmd\git.exe'
-    return subprocess.run([git, '-c', 'core.quotepath=false', *args], cwd=ROOT, capture_output=True,
-                          text=True).stdout
 
 
 def test_compiler_has_no_project_prompt_literals():
@@ -47,19 +43,6 @@ def test_compiler_has_no_project_prompt_literals():
 def test_generation_script_has_no_prompt_literals():
     src = (ROOT / 'productions' / 'ceo_mindread_ep01' / 'scripts' / 'gen_keyframes_v3.py').read_text(encoding='utf-8')
     assert '<Picture 1>' not in src, 'generator must load prompts from JSON'
-
-
-def test_prompt_data_files_are_not_tracked():
-    for rel in ('productions/ceo_mindread_ep01/00_project/h3_generation.json',
-                'productions/ceo_mindread_ep01/00_project/shot_specs.json'):
-        assert _git('-c', 'core.quotepath=false', 'ls-files', rel).strip() == '', (
-            f'{rel} holds project prompts and must stay local-only')
-
-
-def test_pipeline_modules_are_tracked():
-    """Core production logic must be in git, not only on this machine."""
-    tracked = _git('-c', 'core.quotepath=false', 'ls-files', 'pipeline/').split()
-    assert len(tracked) >= 2, f'pipeline/ not tracked: {tracked}'
 
 
 def test_shotspec_rejects_non_atomic_prompts():

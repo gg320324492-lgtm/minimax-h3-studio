@@ -18,9 +18,7 @@ WHAT IS AND IS NOT GUARDED HERE, and why the line is drawn narrowly.
 Guarded, in this one file:
 
   * any comment that states `LOCKED_SCENE_TYPES = <literal>` or
-    `BRAND_CONTENT_KEYS = <literal>` must state what the module actually holds;
-  * any `showcase-v1.ts:A-B` reference must point at a range that really
-    contains one of the locked scene types.
+    `BRAND_CONTENT_KEYS = <literal>` must state what the module actually holds.
 
 Not guarded, deliberately: every other comment in the repository. Timestamps,
 "this bug happened in P9", changelog prose and historical asides are all legal
@@ -42,6 +40,12 @@ comment is measured against it.
 was edited to always agree is green forever and protects nothing, so the
 predicate is exercised against the ORIGINAL P26 text — the exact comment this
 file was written for — and is required to reject it.
+
+2026-11-21 裁剪：本文件原有 5 例，其中 2 例以「行号引用落点在仓库文件的第几行」为
+断言对象（`test_a_showcase_v1_line_reference_points_at_a_locked_scene_type`、
+`test_comments_elsewhere_that_cite_brand_tsx_by_line_still_land_on_code`），属
+账本类，按测试甄别报告（out/工具/测试甄别.md）方案二删除。保留的 3 例：2 例守卫
+元测试（guard 仍在岗、criterion 仍能说 no）与 1 例诚实性检查本身。
 """
 from __future__ import annotations
 
@@ -55,8 +59,6 @@ sys.path.insert(0, str(ROOT / 'studio' / 'scripts'))
 import locked_fields as lf  # noqa: E402
 
 BRAND_TSX = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'scenes' / 'Brand.tsx'
-SCHEMA_TS = ROOT / 'studio' / 'src' / 'schemas' / 'showcase-v1.ts'
-LOCKED_FIELDS_PY = ROOT / 'studio' / 'scripts' / 'locked_fields.py'
 
 
 # ── reading the source under test ──────────────────────────────────────────
@@ -71,10 +73,7 @@ def comment_blocks(src: str, path: Path | None = None) -> list[str]:
 
     Python is read through `tokenize` rather than a `#` regex, because a `#`
     inside a string literal is not a comment and this file is about not being
-    fooled by text that merely looks like something. A regex version of this
-    function found no comments at all in `locked_fields.py` and made the
-    citation guard below fail for the wrong reason — which is at least louder
-    than passing for the right one.
+    fooled by text that merely looks like something.
     """
     if path is not None and path.suffix == '.py':
         import io
@@ -199,87 +198,5 @@ def test_the_criterion_can_still_say_no():
     )
 
 
-# ── line references, the second way that comment rotted ────────────────────
-
-def test_a_showcase_v1_line_reference_points_at_a_locked_scene_type():
-    """`showcase-v1.ts:36` used to be cited for the `logo` enum entry.
-
-    `logo` is at line 82 and `outro` at 83; line 36 is a paragraph about Zod
-    strictness. The reference was presumably true once and was not updated when
-    P12 grew the file — the same failure as the value claims above, in a
-    different notation. Which types must appear is derived from the lock, not
-    written here.
-    """
-    schema = SCHEMA_TS.read_text(encoding='utf-8').splitlines()
-    refs: list[tuple[int, int]] = []
-    for block in comment_blocks(BRAND_TSX.read_text(encoding='utf-8'), BRAND_TSX):
-        for m in re.finditer(r'showcase-v1\.ts:(\d+)(?:-(\d+))?', block):
-            lo = int(m.group(1))
-            refs.append((lo, int(m.group(2)) if m.group(2) else lo))
-
-    assert refs, (
-        'no showcase-v1.ts line reference left in Brand.tsx. That is legitimate '
-        'if the comment was rewritten, but the line references are no longer '
-        'being checked and this guard should be revisited, not left to rot.'
-    )
-
-    wanted = frozenset(lf.LOCKED_SCENE_TYPES)
-    bogus = [r for r in refs
-             if not wanted & set(re.findall(r"'([^']*)'", '\n'.join(schema[r[0] - 1:r[1]])))]
-    assert not bogus, (
-        f'{BRAND_TSX.name} cites showcase-v1.ts line(s) {bogus} for the locked '
-        f'scene type(s) {sorted(wanted)}, but those lines contain none of them. '
-        'An unmaintained line reference sends a reader to the wrong code and '
-        'they will not always notice — that is the whole point of this file.'
-    )
-
-
-# ── the coupling that punishes editing a heavily-cited file ────────────────
-
-def _is_comment_line(line: str) -> bool:
-    s = line.strip()
-    return not s or s.startswith(('//', '*', '/*'))
-
-
-def test_comments_elsewhere_that_cite_brand_tsx_by_line_still_land_on_code():
-    """Growing this file's comment must not silently break citations INTO it.
-
-    `locked_fields.py` cites Brand.tsx by line number eight times — `Brand.tsx:93`
-    is `{name}`, `:156-157` is Outro's `c.name`/`c.tagline` — and those numbers
-    are only true as long as Brand.tsx keeps its length. Rewriting a comment
-    block here added 35 lines and pushed every one of those citations into the
-    middle of the new comment, where they still "resolve" to text and still read
-    as a confident claim. Nothing failed.
-
-    The check is deliberately weak — a cited line must not be blank or a
-    comment — because the alternative is guessing what a citation was *meant*
-    to point at. It cannot catch every wrong line; it catches the common one,
-    which is a file that moved under a citation that was right yesterday.
-
-    A citation to a comment line is legal in principle (several point at
-    `locked_fields.py`'s own ruling notes), so if one appears here it will need
-    an exemption rather than a quieter assertion.
-    """
-    cited: list[tuple[int, int]] = []
-    for block in comment_blocks(LOCKED_FIELDS_PY.read_text(encoding='utf-8'), LOCKED_FIELDS_PY):
-        for m in re.finditer(r'Brand\.tsx:(\d+)(?:-(\d+))?', block):
-            lo = int(m.group(1))
-            cited.append((lo, int(m.group(2)) if m.group(2) else lo))
-
-    assert cited, (
-        'no Brand.tsx line citation found in locked_fields.py. Either the '
-        'citations were removed — which is fine — or the notation changed and '
-        'this guard is no longer checking anything.'
-    )
-
-    lines = BRAND_TSX.read_text(encoding='utf-8').splitlines()
-    landed_on_comment = [(lo, hi) for lo, hi in cited
-                         if any(_is_comment_line(l) for l in lines[lo - 1:hi])]
-
-    assert not landed_on_comment, (
-        f'locked_fields.py cites {BRAND_TSX.name} at line(s) {landed_on_comment}, '
-        'and those lines are blank or comments — the file has moved under the '
-        'citation. Editing a comment here changes the line numbers eight '
-        'citations depend on; keep this file the same length, or re-derive them '
-        f'in {LOCKED_FIELDS_PY.name} at the same time.'
-    )
+if __name__ == '__main__':
+    raise SystemExit(__import__('pytest').main([__file__, '-q']))

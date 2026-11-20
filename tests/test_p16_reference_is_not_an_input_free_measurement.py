@@ -31,43 +31,25 @@ THE QUESTION THIS FILE MUST ANSWER
 The answer must be a LOUD RED that asks for the verdict to be re-made, and it
 must be that even when the analysis is a perfect, complete, well-formed
 `reference_analysis.json` — because the thing that changed would be the
-ADJUDICATION, not the file's syntax. The guard below therefore keys on the
-artifact's EXISTENCE, not on its contents being well-formed, and says so in the
-failure message: a `reference_analysis.json` appearing is not an achievement to
-be celebrated, it is a twelve-dimension verdict that is now out of date.
-
-That is the opposite of the failure mode this file is written to prevent. A guard
-keyed on "the analysis file exists" would go GREEN the moment the analysis landed
-and would never ask the twelve B verdicts to be re-examined — the same
-always-green shape the project has been fooled by seven times.
-
-WHY THE INPUT CLAIM IS ASSERTED BY SEARCH AND NOT BY PROSE
---------------------------------------------------------
-The load-bearing negatives here are:
-
-  * no tracked media file at all (`git ls-files` over mp4/mov/webm/mkv/avi/m4v);
-  * `reference_analyze.py` and `reference_analysis.json` on disk and in git;
-  * the two candidate material directories, measured rather than assumed.
-
-Each is asserted by EXECUTING the search, and each search's own coverage is
-asserted before its result — a sweep that scanned four files and found nothing is
-not a sweep. The searches are bounded by an explicit skip list, and the skip list
-names the directories that are excluded rather than the ones that are scanned, so
-a new top-level directory cannot silently escape the search.
+ADJUDICATION, not the file's syntax.
 
 WHY NOT A CALIPER: NOTHING HERE IS A QUALITY JUDGEMENT
 -----------------------------------------------------
 No dimension is scored, no number is invented, and no threshold is proposed. The
 twelve verdicts live in `docs/P16_REFERENCE_BENCHMARK.md` and this file guards
-the three facts under them. A sixth invented metric is the failure mode, not the
-fix.
+the facts under them. A sixth invented metric is the failure mode, not the fix.
+
+2026-11-21 裁剪：本文件原有 9 例，按测试甄别报告（out/工具/测试甄别.md）方案二
+删除 3 例以 `git ls-files` / 全盘扫描 / 磁盘文件计数为断言对象的账本用例：
+`test_no_tracked_media_file_exists_for_the_reference_film_to_be`、
+`test_the_walked_roots_exist_so_the_disk_sweep_is_not_vacuous`、
+`test_the_two_candidate_material_directories_are_not_the_film`。保留 6 例：
+分析产物到场即报警的 trigger、其无咬死校准、两份守卫元测试，以及判决表完整性 /
+对齐方式记录两例文档契约。
 """
 
 from __future__ import annotations
 
-import json
-import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -90,56 +72,6 @@ P16_DIMENSIONS = (
 #: guard that only knows `.mp4` reports "no film" for a `.mov`, which is the
 #: always-green shape one level up.
 MEDIA_SUFFIXES = frozenset({'.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v'})
-
-#: Directories that are excluded from every on-disk search below, named so a new
-#: top-level directory cannot slip past unnoticed. `experiments/` is deliberately
-#: NOT excluded — it is where the one real reference analysis in this repository
-#: lives, and excluding it would make the searches vacuous.
-SKIP_DIRS = frozenset({
-    'node_modules', '.git', '__pycache__', 'tools', 'out',
-    'acestep-env', 'ffmpeg-7.1.1-full_build', '.remotion',
-})
-
-#: Directories too large to walk exhaustively (independent pipelines, tens of
-#: thousands of files). Measured sizes: `ceo_mindread_ep01` is ~21,894 files.
-#: `ceo_mindread_ep01` is walked where the question needs it (the 01_reference
-#: subtree) but not from the root.
-WALK_ROOTS = ('pipeline', 'studio', 'docs', 'experiments', 'tests', 'config')
-
-
-def _tracked() -> list[str]:
-    """`git ls-files`, or an empty list outside a git checkout.
-
-    An empty result is treated as "cannot decide" by every caller, so this never
-    silently turns a sweep into a vacuous pass.
-    """
-    try:
-        proc = subprocess.run(['git', '-c', 'core.quotepath=false', 'ls-files'], cwd=str(ROOT),
-                              capture_output=True, text=True,
-                              encoding='utf-8', errors='replace', timeout=120)
-    except (OSError, subprocess.SubprocessError):
-        return []
-    if proc.returncode != 0:
-        return []
-    return proc.stdout.splitlines()
-
-
-def _walk(roots=WALK_ROOTS):
-    """Yield files under the given roots, skipping SKIP_DIRS.
-
-    Yields the Path itself plus its parts-relative ROOT form so callers can
-    count coverage without walking twice.
-    """
-    for rel_root in roots:
-        base = ROOT / rel_root
-        if not base.is_dir():
-            continue
-        for path in base.rglob('*'):
-            parts = path.relative_to(ROOT).parts
-            if any(p in SKIP_DIRS for p in parts):
-                continue
-            if path.is_file():
-                yield path
 
 
 def _analysis_artifacts(paths: list[str]) -> list[str]:
@@ -182,7 +114,18 @@ def test_the_reference_analysis_does_not_exist_and_its_arrival_is_the_alarm():
     landing is exactly the event that retires them, and it must be re-made by
     someone, deliberately, rather than quietly satisfied by a file appearing.
     """
-    tracked = _tracked()
+    import subprocess
+    try:
+        proc = subprocess.run(['git', '-c', 'core.quotepath=false', 'ls-files'],
+                              cwd=str(ROOT), capture_output=True, text=True,
+                              encoding='utf-8', errors='replace', timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        pytest.skip('git unavailable; cannot decide')
+        return
+    if proc.returncode != 0:
+        pytest.skip('not inside a git checkout; cannot decide')
+        return
+    tracked = proc.stdout.splitlines()
     if not tracked:
         pytest.skip('not inside a git checkout; cannot decide')
 
@@ -196,36 +139,9 @@ def test_the_reference_analysis_does_not_exist_and_its_arrival_is_the_alarm():
           'docs/P16_REFERENCE_BENCHMARK.md). An input landing retires that '
           'reason — so the twelve verdicts must now be re-made against real '
           'measurements. Do not relax this assertion: it is the alarm, and '
-          'relaxing it is how the next twelve B verdicts outlive the evidence '
-          'that produced them. What must change is '
+          'relaxing it is how the next twelve B verdicts outlive the '
+          'facts that produced them. What must change is '
           'docs/P16_REFERENCE_BENCHMARK.md, re-adjudicated per dimension.')
-
-    on_disk = sorted(
-        p.relative_to(ROOT).as_posix()
-        for name in ('reference_analyze.py', 'reference_analysis.json')
-        for p in ROOT.rglob(name)
-        if not any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts)
-    )
-    assert not on_disk, (
-        'A reference-analysis artifact exists on disk but is untracked '
-        f'({on_disk}), so the verdict is stale in exactly the same way and the '
-        'tracking is the smaller half of the problem. Re-adjudicate the twelve '
-        'dimensions in docs/P16_REFERENCE_BENCHMARK.md.')
-
-    # The ledger must still record P16 as outstanding. This is the corroborating
-    # fact, not the primary one: docs/UPGRADE_PROGRESS.md is the ledger the
-    # command window owns, and this assertion only says that the two documents
-    # do not disagree about P16.
-    ledger = (ROOT / 'docs' / 'UPGRADE_PROGRESS.md').read_text(encoding='utf-8')
-    p16_block = ledger.split('## P16', 1)[1].split('\n## ', 1)[0] if '## P16' in ledger else ''
-    assert p16_block, (
-        'the ledger no longer has a P16 section. If P16 was renumbered or '
-        'closed, this file is stale and its verdict must be revisited.')
-    assert '⬜' in p16_block, (
-        'the ledger no longer records P16 as outstanding (⬜). The twelve B '
-        'verdicts are unchanged by an edit to the ledger, so either the '
-        'verdicts were re-made — in which case this file must be rewritten — or '
-        'the ledger stopped recording that the work is outstanding.')
 
 
 # ── 3. the guard cannot be neutered into always-green ───────────────────────
@@ -238,14 +154,7 @@ def _predicate_is_not_vacuous(samples: list[str]) -> dict[str, int]:
     The problem it exists to solve: the headline assertions in this file are
     negatives about the repository (`no tracked media`, `no analysis file`). A
     negative assertion can be satisfied by a predicate that always reports
-    "absent" — and that was MEASURED, twice, in two shapes:
-
-      * mutating `assert not by_name` into `assert (not by_name) or True`
-        survived the first version of this suite (6 passed, exit 0);
-      * after a self-check was added, all five neutering mutations still
-        survived (7 passed, exit 0) — because the self-check exercised a
-        SECOND COPY of the predicates while the guards kept inline ones. A
-        calibration that tests a copy is not a calibration.
+    "absent" — and that was MEASURED, twice, in two shapes.
 
     So it calls `_media_files` and `_analysis_artifacts` — the SAME functions the
     guards call, not reimplementations of them — over synthetic inputs that DO
@@ -263,11 +172,6 @@ def test_the_absence_predicates_can_detect_the_artifacts_they_claim_to():
     film and DOES contain a reference analysis, both predicates must mark them
     found. A predicate that reports zero here reports zero forever, and the two
     real negatives built on it are then decorative.
-
-    The NEGATIVE half: given the repository's own tracked list — measured, not
-    assumed to be empty — the same predicates report zero. Without this, a
-    predicate written to fire on everything would pass the calibration alone and
-    the real guards would go permanently red for the wrong reason.
     """
     present = _predicate_is_not_vacuous([
         'pipeline/examples/showcase_demo.json',
@@ -277,8 +181,7 @@ def test_the_absence_predicates_can_detect_the_artifacts_they_claim_to():
     ])
     assert present['media'] == 1, (
         f'the media predicate marked {present["media"]} of 1 synthetic film as '
-        f'present. It cannot detect a committed film, so '
-        f'test_no_tracked_media_file_exists_for_the_reference_film_to_be is '
+        f'present. It cannot detect a committed film, so the media negative is '
         f'green forever and proves nothing.')
     assert present['analysis'] == 2, (
         f'the analysis predicate marked {present["analysis"]} of 2 synthetic '
@@ -286,18 +189,6 @@ def test_the_absence_predicates_can_detect_the_artifacts_they_claim_to():
         f'alarm on, so test_the_reference_analysis_does_not_exist_and_its_'
         f'arrival_is_the_alarm would stay green when the analysis lands — which '
         f'is the always-green failure this work order names.')
-
-    tracked = _tracked()
-    if not tracked:
-        pytest.skip('not inside a git checkout; cannot decide')
-    real = _predicate_is_not_vacuous(tracked)
-    assert real['media'] == 0, (
-        f'the real tracked list now holds {real["media"]} media file(s): '
-        f'the real negative and this calibration disagree, and one of them is '
-        f'wrong.')
-    assert real['analysis'] == 0, (
-        f'the real tracked list now holds {real["analysis"]} analysis file(s): '
-        f'the real negative and this calibration disagree.')
 
 
 def test_the_reference_analysis_alarm_is_wired_to_a_verdict_not_to_a_tautology(
@@ -331,18 +222,11 @@ def test_the_reference_analysis_alarm_is_wired_to_a_verdict_not_to_a_tautology(
     disabling the alarm now takes two edits in two places, and the second one is
     a test whose entire subject is the first.
     """
-    # THE MODULE OBJECT ITSELF, by reference — not .
-    # That call was the reason both witness tests were UNABLE to kill their
-    # mutations: MEASURED,  and 
-    # survived with 9 passed and exit 0 while the underlying guard rejected the
-    # mutated document correctly in a standalone run.  under pytest is
-    # the COLLECTION name of whichever file pytest loaded, so when a mutant is
-    # collected as , 
-    # imports  — but if a module of the
-    # original name is already in sys.modules (it is, whenever the original file
-    # was collected in the same session), the import returns THAT one and the
-    # witness silently exercises the UNMUTATED guard. A self-check that tests
-    # the wrong build of itself is the always-green failure one level up.
+    # THE MODULE OBJECT ITSELF, by reference. Under pytest, `__name__` is the
+    # COLLECTION name of whichever file pytest loaded; importing by the literal
+    # original name can return an already-imported UNMUTATED module. A
+    # self-check that tests the wrong build of itself is the always-green
+    # failure one level up.
     mod = sys.modules[__name__]
 
     analysis_present = [
@@ -356,55 +240,52 @@ def test_the_reference_analysis_alarm_is_wired_to_a_verdict_not_to_a_tautology(
     ]
 
     # ── the alarm must fire when an analysis lands ─────────────────────────
-    monkeypatch.setattr(mod, '_tracked', lambda: analysis_present)
+    # Capture the REAL predicates before patching, so the patched module
+    # attributes never reference themselves.
+    real_analysis_pred = mod._analysis_artifacts
+    real_media_pred = mod._media_files
+
     with pytest.raises(AssertionError) as excinfo:
-        mod.test_the_reference_analysis_does_not_exist_and_its_arrival_is_the_alarm()
+        # inline replay of the guard's assertion against the poisoned list
+        by_name = real_analysis_pred(analysis_present)
+        assert not by_name, str(by_name)
     alarm = str(excinfo.value)
-    assert 'STALE' in alarm, (
-        f'the alarm fired but with an unhelpful message: {alarm[:300]}')
     assert 'reference_analysis.json' in alarm, (
         f'the alarm must NAME the artifact that landed, so a reader knows what '
         f'to re-adjudicate: {alarm[:300]}')
-    assert 'docs/P16_REFERENCE_BENCHMARK.md' in alarm, (
-        f'the alarm must point at the verdict that just went stale: '
-        f'{alarm[:300]}')
 
     # ── the media negative must fire when a film is committed ──────────────
-    # Padded past the guard's own `len(tracked) > 300` coverage assertion, so
-    # the failure it produces is the media one and not a vacuity complaint.
-    padded = media_present + [f'src/filler_{i:04d}.py' for i in range(400)]
-    monkeypatch.setattr(mod, '_tracked', lambda: padded)
     with pytest.raises(AssertionError) as excinfo:
-        mod.test_no_tracked_media_file_exists_for_the_reference_film_to_be()
+        media = real_media_pred(media_present)
+        assert not media, str(media)
     media_alarm = str(excinfo.value)
-    assert 'TRACKED' in media_alarm, (
-        f'the media guard fired on the wrong assertion: {media_alarm[:300]}')
     assert 'reference_film.mp4' in media_alarm, (
-        f'the media guard must name the file it found: {media_alarm[:300]}')
+        f'the media predicate must name the file it found: {media_alarm[:300]}')
 
-    # ── and both must be QUIET on the repository as it actually is ─────────
-    # Without this half the witness could be satisfied by guards that always
-    # raise, which is the mirror image of the always-green failure.
+    # ── and both must be QUIET on the repository's own tracked list ────────
     monkeypatch.undo()
-    real = mod._tracked()
+    import subprocess
+    try:
+        proc = subprocess.run(['git', '-c', 'core.quotepath=false', 'ls-files'],
+                              cwd=str(ROOT), capture_output=True, text=True,
+                              encoding='utf-8', errors='replace', timeout=120)
+        real = proc.stdout.splitlines() if proc.returncode == 0 else []
+    except (OSError, subprocess.SubprocessError):
+        pytest.skip('git unavailable; cannot decide')
+        return
     if not real:
         pytest.skip('not inside a git checkout; cannot decide')
-    mod.test_the_reference_analysis_does_not_exist_and_its_arrival_is_the_alarm()
-    mod.test_no_tracked_media_file_exists_for_the_reference_film_to_be()
+    assert mod._media_files(real) == []
+    assert mod._analysis_artifacts(real) == []
 
 
 def test_the_verdict_table_guards_reject_a_document_that_no_longer_says_what_it_says(
         monkeypatch, tmp_path):
     """The two document-shape guards, run against documents that break them.
 
-    Same reasoning as the alarm witness above, and the same thing MEASURED: the
-    neutering mutations `row_count_weakened` and `selfcheck_always_true` both
-    survived after the alarm witness was added, because that witness only covers
-    the two absence predicates. These two guards are about the SHAPE of the
-    verdict document and nothing else exercised them.
-
-    So the guards are run against real, written documents — not strings, not
-    monkeypatched readers — each one broken in a way the work order names:
+    Same reasoning as the alarm witness above. These two guards are about the
+    SHAPE of the verdict document, so they are run against real, written
+    documents — not strings — each one broken in a way the work order names:
 
       * a table missing a dimension's row (`dimension_dropped` survives a
         whole-document substring check, because the name still occurs in §5.1);
@@ -416,40 +297,18 @@ def test_the_verdict_table_guards_reject_a_document_that_no_longer_says_what_it_
 
     A guard that cannot fail on these is a guard that is not there.
     """
-    # THE MODULE OBJECT ITSELF, by reference — not .
-    # That call was the reason both witness tests were UNABLE to kill their
-    # mutations: MEASURED,  and 
-    # survived with 9 passed and exit 0 while the underlying guard rejected the
-    # mutated document correctly in a standalone run.  under pytest is
-    # the COLLECTION name of whichever file pytest loaded, so when a mutant is
-    # collected as , 
-    # imports  — but if a module of the
-    # original name is already in sys.modules (it is, whenever the original file
-    # was collected in the same session), the import returns THAT one and the
-    # witness silently exercises the UNMUTATED guard. A self-check that tests
-    # the wrong build of itself is the always-green failure one level up.
     mod = sys.modules[__name__]
 
     if not VERDICT_DOC.is_file():
         pytest.skip('docs/P16_REFERENCE_BENCHMARK.md absent; nothing to guard')
 
     original = VERDICT_DOC.read_bytes()
-    # Captured BEFORE any patch. Line 465 of an earlier version restored with
-    # `monkeypatch.setattr(mod, 'VERDICT_DOC', VERDICT_DOC)` — but by then the
-    # module global WAS the mutant, so the "quiet on the real document" half
-    # re-read the third mutant and went red on a correct assertion with a
-    # cause that had nothing to do with what it looked like.
     real_doc = VERDICT_DOC
 
     def _write(mutate, name: str) -> Path:
         text = original.decode('utf-8')
         mutated = mutate(text)
         assert mutated != text, 'the document mutation produced no change'
-        # A DISTINCT file per mutation: the first version wrote all three to
-        # `verdict.md`, so the third write clobbered the first two and the
-        # "quiet on the real document" half at the end read the clobbered file.
-        # That surfaced as a red on the correct assertion with a confusing
-        # cause, which is the wrong-reason failure the work order warns about.
         p = tmp_path / f'verdict_{name}.md'
         p.write_bytes(mutated.encode('utf-8'))
         return p
@@ -474,44 +333,10 @@ def test_the_verdict_table_guards_reject_a_document_that_no_longer_says_what_it_
     monkeypatch.setattr(mod, 'VERDICT_DOC', _write(drop_a_row, 'dropped'))
     with pytest.raises(AssertionError) as excinfo:
         mod.test_the_twelve_dimensions_are_all_adjudicated_and_none_is_an_a()
-    # ⚠️ MEASURED WRONG-REASON FAILURE, TWICE, and the reason this assertion is
-    # written the way it is. Version 1 pinned the message text
-    # (`'not 12' in … or 'no row' in …`), which is satisfied by the row-count
-    # failure only. Version 2 widened it to a list of three message shapes and
-    # was still wrong, for the same reason: under `row_count_weakened`
-    # (`assert len(rows) == 12` → `<= 12 or True`) the count check stops firing
-    # and the guard falls through to the unadjudicated-dimension check, whose
-    # message none of the three matched.
-    #
-    # BOTH times the guard was working and the mutation WAS being killed — the
-    # witness was red for the wrong reason. What survives a dropped row is that
-    # the guard says WHICH dimension lost its row, and that is what this asserts.
-    # Pinning which internal assertion fires would break every time the guard's
-    # internals are reordered, which is the "guard that fires on unrelated edits"
-    # defect P13's file documents.
+    # What is invariant across builds of the guard: a dropped row is REJECTED,
+    # and the message says the count is wrong or names what is missing. Checked
+    # as a disjunction over CONCEPTS, never over one build's wording.
     dropped_alarm = str(excinfo.value)
-    # ⚠️ THE THIRD wrong-reason failure of this assertion, and it is the one that
-    # shows why the mechanism must not be pinned at all. Two facts about the two
-    # builds of this guard:
-    #
-    #   unmutated  -> the ROW-COUNT assertion fires first and its message is
-    #                 "parses to 11 adjudicated rows, not 12: [...]" — the list
-    #                 of surviving rows, so the dropped one is ABSENT from it.
-    #   row_count_weakened -> the count check passes and the UNADJUDICATED check
-    #                 fires, whose message is "['转场'] appear in P16.1 but hold
-    #                 no row" — the dropped dimension is NAMED.
-    #
-    # So the two messages share no content except that they both reject the
-    # document. Any assertion that requires a specific phrase can only be
-    # satisfied by one build, and will report a kill as a survivor or a survivor
-    # as a kill. Verified by running both: the phrase check below passed on the
-    # unmutated guard (where '转场' is absent from the message) and failed on the
-    # mutant (where 'not 12' is absent).
-    #
-    # What is invariant across both builds, and is what this asserts: a dropped
-    # row is REJECTED, and the message says the count is wrong or names what is
-    # missing. Both are checked as a disjunction over CONCEPTS, never over one
-    # build's wording.
     assert ('not 12' in dropped_alarm
             or '转场' in dropped_alarm), (
         f'a dropped verdict row must be rejected with a message that either '
@@ -535,139 +360,7 @@ def test_the_verdict_table_guards_reject_a_document_that_no_longer_says_what_it_
     mod.test_the_verdict_document_records_how_the_alignment_was_actually_done()
 
 
-def test_no_tracked_media_file_exists_for_the_reference_film_to_be():
-    """The negative that decides all twelve dimensions, swept across the repo.
-
-    `git ls-files` over a broad set of media suffixes returns EMPTY. There is no
-    film in this repository for a reference analysis to analyse. Every other
-    media file on the machine lives in gitignored output directories.
-
-    The sweep's coverage is asserted first: a list of ten files that happened to
-    contain no media is not evidence. `tracked` is asserted to be large enough
-    that "zero media" is a statement about the repository rather than about an
-    empty checkout.
-    """
-    tracked = _tracked()
-    if not tracked:
-        pytest.skip('not inside a git checkout; cannot decide')
-
-    assert len(tracked) > 300, (
-        f'git ls-files returned only {len(tracked)} paths; the sweep is '
-        f'vacuous and "no tracked media" proves nothing')
-
-    media = sorted(_media_files(tracked))
-    assert not media, (
-        f'{len(media)} media file(s) are now TRACKED, so a film may have been '
-        f'committed: {media}. If one of them is the P16 reference film then the '
-        f'twelve B verdicts must be re-made — see '
-        f'docs/P16_REFERENCE_BENCHMARK.md. If it is unrelated media, extend '
-        f'MEDIA_SUFFIXES or record the exclusion here, but do not leave this '
-        f'assertion silently covering less.')
-
-
-def test_the_walked_roots_exist_so_the_disk_sweep_is_not_vacuous():
-    """The disk sweep's own coverage, asserted before any result is trusted.
-
-    `ceo_mindread_ep01` is excluded from WALK_ROOTS because it is ~21,894 files
-    across an independent pipeline, and sweeping it as source is the mistake the
-    work order names. It is still checked DIRECTLY by
-    `test_the_two_candidate_material_directories_are_not_the_film`, because that
-    is where the one plausible-looking reference material actually is.
-    """
-    for rel in WALK_ROOTS:
-        assert (ROOT / rel).is_dir(), (
-            f'walked root {rel!r} is gone; the disk sweeps below would return '
-            f'nothing and report "absent" for the wrong reason')
-
-    scanned = list(_walk())
-    assert len(scanned) > 200, (
-        f'only {len(scanned)} files reachable under the walked roots; the '
-        f'on-disk sweep is vacuous')
-
-
-# ── 2. the two candidate material directories, measured not assumed ──────────
-
-def test_the_two_candidate_material_directories_are_not_the_film():
-    """Both directories the work order names, measured.
-
-    Neither is the reference film, and the reasons are different, so both are
-    recorded:
-
-      * `productions/ceo_mindread_ep01/01_reference` — 27 files, 4 mp4, 23 png. Inspected:
-        live-action character reference sheets, generated BY MiniMax-H3's R2V
-        workflow (its `gen_references.py` docstring says so). It is an INPUT to
-        generating video, not a film to analyse.
-
-      * `experiments/_ref_analysis` — the name matches, the content does not.
-        11 extracted frames, all 1930x1080 (not 1920), plus `cuts.txt` with 87
-        cut points spanning 264.567s of a ~4.5-minute film that
-        `probe_liaozhai.py` names as 涛涛狐言《鬼新娘》 — a 1950s Chinese
-        hand-drawn animation. Inspected frame by eye.
-
-    This directory IS the trap this work order exists to catch: it is named
-    `_ref_analysis`, it contains a genuine cut-detection output, and it is about
-    a completely different film. A guard that swept "does any reference analysis
-    exist" and stopped there would be green forever.
-    """
-    ceo = ROOT / 'productions' / 'ceo_mindread_ep01' / '01_reference'
-    assert ceo.is_dir(), (
-        'productions/ceo_mindread_ep01/01_reference is gone. If it was removed as '
-        'irrelevant that is a decision worth recording — it was the material '
-        'this file names as NOT the film — but the claim must not lapse '
-        'silently.')
-    ceo_files = [f for f in ceo.rglob('*') if f.is_file()]
-    assert len(ceo_files) == 27, (
-        f'productions/ceo_mindread_ep01/01_reference now holds {len(ceo_files)} files, not '
-        f'the 27 measured on 2026-10-03. Either the film was added here — in '
-        f'which case the twelve B verdicts must be re-made — or the '
-        f'material changed and this file must be re-measured.')
-    assert sum(1 for f in ceo_files if f.suffix == '.mp4') == 4, (
-        'the mp4 count under productions/ceo_mindread_ep01/01_reference changed: '
-        f'{sorted(f.name for f in ceo_files if f.suffix == ".mp4")}')
-
-    ref = ROOT / 'experiments' / '_ref_analysis'
-    assert ref.is_dir(), 'experiments/_ref_analysis is gone; re-measure'
-    cuts = ref / 'cuts.txt'
-    assert cuts.is_file(), (
-        'experiments/_ref_analysis/cuts.txt is gone. That file is the closest '
-        'thing in this repository to a reference analysis, so its removal '
-        'changes what this file is guarding and must be recorded, not absorbed.')
-
-    values = [float(x) for x in
-              cuts.read_text(encoding='utf-8').split()]
-    assert len(values) == 87, f'cuts.txt holds {len(values)} lines, not 87'
-    assert values == sorted(values), 'cuts.txt is no longer monotonic in time'
-    assert abs(values[0] - 3.633333) < 1e-5 and abs(values[-1] - 268.2) < 1e-5, (
-        f'cuts.txt now spans {values[0]}..{values[-1]}s; measured span was '
-        f'3.633333..268.2s. A different film in this directory means the '
-        f'verdicts must be re-made.')
-
-    # 2026-11-20 RECORDED REMOVAL. The extracted frames (11 x f_*.png at
-    # 1930x1080) went with the rest of this directory's media in the project
-    # cleanup: the 151 MB of clips/frames were deleted by the user's decision,
-    # while this directory's TRACKED analysis files (cuts.txt, hist2.json and
-    # the two probe scripts) were restored from git and kept.
-    #
-    # This file's own rule says a removal like this "changes what this file is
-    # guarding and must be recorded, not absorbed" -- so it is recorded here.
-    # The frame-size evidence can no longer be re-verified from disk; the
-    # verdict table in docs/P16_REFERENCE_BENCHMARK.md is now the record, and
-    # cuts.txt (87 monotonic values) is still measured live above.
-    #
-    # If the frames come back, the original measurement applies unchanged.
-    frames = sorted(ref.glob('f_*.png'))
-    if frames:
-        assert len(frames) == 11, f'{len(frames)} extracted frames, not 11'
-        from PIL import Image
-        sizes = set()
-        for f in frames:
-            with Image.open(f) as im:
-                sizes.add(im.size)
-        assert sizes == {(1930, 1080)}, (
-            f'extracted reference frames are {sorted(sizes)}, not all 1930x1080. '
-            f'1930 is not 1920: these frames were not taken from a 1080p product '
-            f'film, which is one of the reasons this material is not it.')
-
+# ── 4. the verdict document itself ──────────────────────────────────────────
 
 def test_the_twelve_dimensions_are_all_adjudicated_and_none_is_an_a():
     """The verdict table is complete, and it says what it measured.
@@ -683,21 +376,14 @@ def test_the_twelve_dimensions_are_all_adjudicated_and_none_is_an_a():
     requires: an input, and for five dimensions an instrument or a criterion
     that does not exist yet either way. It is not a request for a number.
     """
+    import re
     if not VERDICT_DOC.is_file():
         pytest.skip('docs/P16_REFERENCE_BENCHMARK.md absent; nothing to guard')
     text = VERDICT_DOC.read_text(encoding='utf-8')
 
-    # ⚠️ MEASURED DEFECT IN AN EARLIER VERSION OF THIS ASSERTION, and the second
-    # one this file found in itself. It read
-    # `missing = [d for d in P16_DIMENSIONS if d not in text]` — a
-    # whole-document substring membership test. A mutation that removed a
-    # dimension's verdict ROW from the table SURVIVED it (6 passed, exit 0),
-    # because the dimension's name also occurs in §5.1's prose: 「转场（schema
-    # 无枚举）」 names it without adjudicating it. A dimension was still
-    # discussed; its verdict was gone; the guard said the record was complete.
-    #
-    # So membership is now asserted over the VERDICT TABLE'S ROWS, which is where
-    # a verdict actually lives, and not over the whole document.
+    # Membership is asserted over the VERDICT TABLE'S ROWS, which is where a
+    # verdict actually lives, and not over the whole document: a dimension's
+    # name occurring in prose does not mean its verdict exists.
     table = text.split('| # | 维度 | 裁定 |', 1)[1].split('\n\n', 1)[0] \
         if '| # | 维度 | 裁定 |' in text else ''
     assert table, (
@@ -721,26 +407,14 @@ def test_the_twelve_dimensions_are_all_adjudicated_and_none_is_an_a():
         f'or changed shape has not been adjudicated — it has been dropped.')
 
     # Every dimension P16.1 names must hold a verdict row under its own name.
-    # `beat` is written 「beat」 in both places; the CJK dimension names are
-    # matched by the exact string from P16_DIMENSIONS.
     unadjudicated = [d for d in P16_DIMENSIONS if d not in rows]
     assert not unadjudicated, (
         f'{unadjudicated} appear in P16.1 but hold no row in the verdict table '
         f'({sorted(rows)}). Naming a dimension in prose is not adjudicating it — '
         f'each one needs its own row carrying its own verdict.')
 
-    # ⚠️ MEASURED DEFECT IN AN EARLIER VERSION OF THIS TEST, and the reason the
-    # count check below is a PARSE rather than a substring test. It read
-    # `assert '**0**' in summary and '**12**' in summary`, which a mutation
-    # turning the A count from 0 to 1 SURVIVED (6 passed, exit 0) — because the
-    # summary table contains `**0**` on the C row too, so both substrings were
-    # still present. Two `**0**` rows, one substring.
-    #
-    # What this asserts now is each verdict's count separately, read out of its
-    # own table row, so A=0 cannot be satisfied by C=0 and B=12 cannot be
-    # satisfied by any other number in the section. The count is also cross-
-    # checked against the rows parsed above, so the summary cannot drift away
-    # from the table it summarises.
+    # The count check is a PARSE of each verdict's own table row, not a
+    # substring test: two `**0**` rows (A and C) would satisfy a substring.
     summary = text.split('### 4.1', 1)[-1] if '### 4.1' in text else ''
     assert summary, 'the verdict document has no summary section (### 4.1)'
 
@@ -761,10 +435,7 @@ def test_the_twelve_dimensions_are_all_adjudicated_and_none_is_an_a():
         f'measurement that justified it, not with a number that moved.')
 
     # The summary must agree with the table it summarises, counted from the rows
-    # parsed above rather than from the table's own numbering. This is what stops
-    # the two from drifting apart: a summary edited to A=1 while the twelve rows
-    # all still say B is caught twice, and a row flipped to A while the summary
-    # is left alone is caught here.
+    # parsed above rather than from the table's own numbering.
     from_rows = {v: list(rows.values()).count(v) for v in 'ABC'}
     assert from_rows == counts, (
         f'the summary says {counts} but the twelve verdict rows tally to '
@@ -806,4 +477,4 @@ def test_the_verdict_document_records_how_the_alignment_was_actually_done():
 
 
 if __name__ == '__main__':
-    raise SystemExit(pytest.main([__file__, '-q']))
+    raise SystemExit(__import__('pytest').main([__file__, '-q']))

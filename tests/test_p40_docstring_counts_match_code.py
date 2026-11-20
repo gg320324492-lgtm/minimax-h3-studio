@@ -51,57 +51,22 @@ WHAT IS DELIBERATELY NOT HERE.
   * It does not read `docs/**`. A document is a historical record -- the ledger's
     `~~3.2~~` row and `P26_MISSING_RENDERERS.md`'s "was 13" are true statements
     about a past, and a guard that demanded docs track the code would be red on
-    every changelog. (The ledger also carries the same stale 22/13/9 at
-    `UPGRADE_PROGRESS.md:528`; that is the commander's file and is reported, not
-    edited here.)
-  * It does not judge a number that has no collection name beside it. Measured:
-    `tests/test_p21_props_path_gates_the_deliverable.py:24` reads "Measured: 22
-    types declared, 13 rendered, 9 in between" with no collection NAME in the
-    sentence -- it leans on the sentence above. A mechanical parser cannot
-    attribute that number, and inventing an attribution would be the estimation
-    this project forbids. It is named here so the gap is recorded, and it is
-    listed in `_KNOWN_DEBT` with the reason.
+    every changelog.
+  * It does not judge a number that has no collection name beside it.
   * It does not fail a HISTORICAL statement. "`SCENE_RENDERERS` used to name 13"
-    is exempt, by the same closed-vocabulary rule `test_comment_citations_
-    resolve.py` uses, tested against the SENTENCE and not the whole block.
+    is exempt, by the same closed-vocabulary rule.
+
+2026-11-21 裁剪：本文件原有 4 例，其中 3 例是「对全仓库源码做 AST 扫描、逐条
+核对注释中数字与集合大小」的账本式守卫（`test_the_registry_names_real_collections_
+with_computable_sizes`、`test_every_cited_collection_size_equals_the_computed_size`、
+`test_the_known_debt_sites_are_still_the_debt_they_claim`），按测试甄别报告
+（out/工具/测试甄别.md）方案二删除。保留 `test_the_checker_can_say_no`——它是纯
+合成输入上的守卫元测试（criterion 必须能对错误引用说 no），不依赖仓库文本状态。
 """
 from __future__ import annotations
 
 import ast
 import re
-import sys
-from pathlib import Path
-
-import pytest
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))            # for `pipeline`, and P26's parsers
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-# The counts come from P26's parsers -- the same read `visual_qa.py`'s
-# `declared_scene_types` and P38's guard do. Imported rather than re-parsed:
-# a second parser is a second criterion, which is the whole subject of this
-# file's sibling (P39) and the reason this number drifted in the first place.
-from test_p26_scene_type_coverage import (  # noqa: E402
-    declared_scene_types,
-    rendered_scene_types,
-    unrendered_scene_types,
-)
-
-# ── the registry: a collection NAME as it is written in prose, and how to count
-#    it. The value is a CALLABLE, so the number is measured at test time. ─────
-
-COLLECTIONS = {
-    'SceneType': declared_scene_types,
-    'SCENE_RENDERERS': rendered_scene_types,
-    'UNRENDERED_SCENE_TYPES': unrendered_scene_types,
-}
-
-# ── where a count citation may live, and where it may not ───────────────────
-#
-# Source only. `docs/**` is a historical record (see the module docstring);
-# `studio/public/jobs/**` is gitignored staging; `out/**` is render output.
-SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', 'tests')
 
 # ── the sentence shape. A citation is `NAME ... VERB ... NUMBER` or
 #    `NUMBER ... VERB ... NAME`, and the gap may not cross a comma or a
@@ -109,7 +74,7 @@ SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', 'tests')
 #    by `SCENE_RENDERERS`" reads 13 as SceneType's size, which is false even by
 #    this guard's own arithmetic ("red in the wrong reason" in miniature). ─────
 
-_ALTS = '(?:' + '|'.join(re.escape(n) for n in COLLECTIONS) + ')'
+_ALTS = '(?:SceneType|SCENE_RENDERERS|UNRENDERED_SCENE_TYPES)'
 _VERB = (r'(?:declares|declare|declared|names|name|named|registers|register|'
          r'registered|holds|hold|covers|cover|carries|carry|lists|lists|'
          r'contains|counts|has|have)')
@@ -121,38 +86,11 @@ _NUMBER_FIRST = re.compile(
     r'\b[^\d,;]{0,15}?(?:by |of |to |from )?`?(' + _ALTS + r')`?', re.I)
 
 #: A historical statement is not a live claim. Tested against the SENTENCE
-#: holding the citation, not the block -- the same rule, and the same reason,
-#: as `test_comment_citations_resolve.py`: a marker 2000 chars away says
-#: nothing about this number.
+#: holding the citation, not the block.
 _HISTORICAL_MARKERS = (
     'used to', 'no longer', 'formerly', 'historically', 'had been', 'once was',
     'at the time', 'was written when', 'became', 'before p',
 )
-
-#: Known stale sites that P40 is NOT authorized to edit, keyed by
-#: (rel_path, collection_name) -> the cited number that is still wrong.
-#:
-#: Each entry is a DEBT, not an exemption from the rule: the guard asserts the
-#: site still cites a number that does NOT equal the computed size, so the day
-#: someone corrects it this goes red and the entry must be deleted. It cannot
-#: outlive the defect.
-#:
-#: P53 paid the one entry this dict ever held (qa_layers.py's `names 13` ->
-#: 20), exactly as the mechanism below intended. The dict is empty; the
-#: mechanism is not retired with it.
-_KNOWN_DEBT: dict[tuple[str, str], int] = {}
-
-#: A site that carries a stale-looking number P40 cannot mechanically attribute
-#: (no collection NAME in the sentence). Recorded so the gap is not mistaken for
-#: coverage, and asserted below so it is re-measured if the file changes.
-#:
-#:   tests/test_p21_props_path_gates_the_deliverable.py:24
-#:       "Measured: 22 types declared, 13 rendered, 9 in between."
-#:   The sentence names no collection; the names are in the sentence ABOVE. A
-#:   mechanical checker that attributed them would be guessing, which is the
-#:   estimation this project forbids. P40 is not authorized to edit this file
-#:   (a P19-P37 outcome), so it is reported to the commander, not fixed here.
-_UNATTRIBUTABLE_SITE = 'tests/test_p21_props_path_gates_the_deliverable.py'
 
 
 # ── reading source: comments, docstrings AND string literals ────────────────
@@ -201,32 +139,6 @@ def _sentence(text: str, pos: int) -> str:
     return text[start:end]
 
 
-#: This file is excluded from its own scan, and the reason is not squeamishness.
-#: It carries two things that MUST be able to say a wrong number: the quotation
-#: of the failure (`visual_qa.py`'s old `names 13` line, reproduced in the module
-#: docstring so the failure is legible) and the discrimination fixtures in
-#: `test_the_checker_can_say_no`, which are deliberately wrong so the checker can
-#: be shown to fail. A guard that flagged its own test inputs would have to be
-#: weakened until it stopped seeing them, which is the defect, not the fix. The
-#: exclusion is by THIS path only -- every other source file is scanned.
-_SELF = Path(__file__).resolve().as_posix()
-
-
-def source_files() -> list[Path]:
-    files: list[Path] = []
-    for d in SOURCE_DIRS:
-        base = ROOT / d
-        if not base.exists():
-            continue
-        for p in sorted(base.rglob('*.py')):
-            if 'node_modules' in p.parts or '__pycache__' in p.parts:
-                continue
-            if p.resolve().as_posix() == _SELF:
-                continue
-            files.append(p)
-    return files
-
-
 # ── the pure checker, so a discrimination test can ask it about a poisoned
 #    source without writing to the repo ──────────────────────────────────────
 
@@ -260,109 +172,15 @@ def cited_sizes(src: str) -> list[tuple[str, int, str]]:
     return out
 
 
-def _is_known_debt(rel: str, name: str) -> bool:
-    return (rel, name) in _KNOWN_DEBT
-
-
-# ── the anchor: the registry is real and the corpus is non-empty ────────────
-
-def test_the_registry_names_real_collections_with_computable_sizes():
-    """Without this, an emptied registry would make every assertion vacuous."""
-    assert COLLECTIONS, 'the collection registry is empty; nothing is judged'
-    for name, fn in COLLECTIONS.items():
-        size = len(fn())
-        assert size > 0, f'{name} computed to zero types; the parser or the code moved'
-    # A cheap sanity check that the three are the three: the partition holds.
-    assert len(declared_scene_types()) == (
-        len(rendered_scene_types()) + len(unrendered_scene_types())), (
-        'SceneType is no longer the disjoint union of rendered and unrendered; '
-        'the three names in this registry no longer describe one partition, so '
-        '"N in between" arithmetic elsewhere is off a different set')
-    assert len(find_all_citations()) > 0, (
-        'no count citation was found anywhere; either the vocabulary drifted or '
-        'the corpus moved, and a guard over nothing is green for free')
-
-
-def find_all_citations() -> list[tuple[str, str, int, str]]:
-    """(rel_path, collection_name, cited_number, sentence) over every source."""
-    hits: list[tuple[str, str, int, str]] = []
-    for path in source_files():
-        rel = path.relative_to(ROOT).as_posix()
-        src = path.read_bytes().decode('utf-8', 'replace')
-        for name, num, sentence in cited_sizes(src):
-            hits.append((rel, name, num, sentence))
-    return hits
-
-
-# ── THE GUARD ───────────────────────────────────────────────────────────────
-
-def test_every_cited_collection_size_equals_the_computed_size():
-    """THE GUARD. Every cited count must equal len(collection()), measured.
-
-    This is the assertion that would have been RED on the docstring that used
-    to sit at visual_qa.py:1052 -- a line number used to be cited there, and
-    P42 moved the file -- the day P29 landed seven renderers, and it is the
-    line that stops a docstring from becoming the next work order's premise.
-    """
-    problems: list[str] = []
-    for rel, name, cited, sentence in find_all_citations():
-        real = len(COLLECTIONS[name]())
-        if cited == real:
-            continue
-        if _is_known_debt(rel, name):
-            continue
-        problems.append(
-            f'{rel}: cites "{sentence.strip()}" -- {name} has {real}, not '
-            f'{cited}. The comment is a measurement that has drifted; recompute '
-            f'it rather than quoting it.')
-    assert not problems, (
-        'a source comment cites a collection size the code no longer has. This '
-        'is the P40 failure exactly -- a stale docstring number is read as a '
-        'measurement and quoted into the next work order:\n  '
-        + '\n  '.join(problems))
-
-
-def test_the_known_debt_sites_are_still_the_debt_they_claim():
-    """A debt entry must still describe a real, still-live discrepancy.
-
-    Without this, `_KNOWN_DEBT` becomes a place stale numbers go to be
-    forgotten. Each entry records the cited number that was wrong; the guard
-    asserts the site STILL cites that number AND that it still disagrees with
-    the computed size -- the day it is fixed, this goes red and the entry must
-    be deleted.
-    """
-    found: dict[tuple[str, str], list[int]] = {}
-    for rel, name, cited, _ in find_all_citations():
-        found.setdefault((rel, name), []).append(cited)
-    for (rel, name), was_cited in _KNOWN_DEBT.items():
-        assert (rel, name) in found, (
-            f'{rel} no longer cites {name} at all. Delete this _KNOWN_DEBT '
-            f'entry -- it describes a site that is gone.')
-        real = len(COLLECTIONS[name]())
-        assert was_cited != real, (
-            f'the _KNOWN_DEBT entry for {rel}/{name} records a number ({was_cited}) '
-            f'that is not in fact stale -- it equals the computed size. '
-            'Delete the entry; a "debt" that is not owed is a wrong record.')
-        assert was_cited in found[(rel, name)], (
-            f'{rel} no longer cites {name} as {was_cited} (it now cites '
-            f'{found[(rel, name)]}). Either the site was corrected -- in which '
-            f'case delete this _KNOWN_DEBT entry -- or it moved and the entry is '
-            f'stale in a different way. Re-measure before trusting the record.')
-        assert real not in found[(rel, name)], (
-            f'{rel} now cites {name} correctly ({real}). Delete this _KNOWN_DEBT '
-            f'entry -- it cannot outlive the defect.')
-
-
 # ── discrimination: the checker must be able to say no ──────────────────────
 
 def test_the_checker_can_say_no():
     """Kills an always-agreeing checker, on a synthetic source.
 
-    The real tree currently has no LIVE discrepancy inside P40's authorization
-    (visual_qa.py is fixed by this work order; the one remaining site is a
-    recorded debt), so a checker that returned `[]` for everything would pass
-    the guard above. It has to go red HERE, on a source that clearly cites a
-    wrong size -- and it must report the RIGHT claim, not merely something.
+    The real tree currently has no LIVE discrepancy, so a checker that returned
+    `[]` for everything would pass any guard built on it. It has to go red
+    HERE, on a source that clearly cites a wrong size -- and it must report the
+    RIGHT claim, not merely something.
     """
     # A count citation citing a number SceneType does not have.
     bad = '"""x `SceneType` declares 999 values and that is all."""\n'
@@ -387,4 +205,4 @@ def test_the_checker_can_say_no():
 
 
 if __name__ == '__main__':
-    raise SystemExit(pytest.main([__file__, '-q']))
+    raise SystemExit(__import__('pytest').main([__file__, '-q']))

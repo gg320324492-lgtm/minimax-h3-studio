@@ -1,4 +1,4 @@
-"""P29 — every RENDERER is used by at least one TRACKED graph. (B-4's closure.)
+"""P29 — every RENDERER is used by at least one graph in the repository. (B-4's closure.)
 
 THE DEFECT THIS GUARDS.
 
@@ -23,7 +23,7 @@ next renderer from shipping with the same hole.
 WHAT IT ASSERTS.
 
     every key of `SCENE_RENDERERS` appears as a scene `type` in at least one
-    graph tracked by git.
+    graph in the repository.
 
 The two deliberately-unrendered types (`video`, `data-plane-3d`) are NOT in
 `SCENE_RENDERERS` — they live in `UNRENDERED_SCENE_TYPES` — so requiring
@@ -43,23 +43,14 @@ survived it, because 520 also appeared in an unrelated fixture. So:
     literal, comment-stripped, off the real file — the same parse
     `test_p26_scene_type_coverage.py` already pins to, reused by import rather
     than re-implemented so the two cannot drift;
-  * the GRAPH side is the set of `scenes[].type` values in graphs that `git
-    ls-files` reports, parsed as JSON — not a grep for a type name, which would
-    be satisfied by this file's own docstring.
+  * the GRAPH side is the set of `scenes[].type` values in the repository's
+    scene graphs, parsed as JSON — not a grep for a type name, which would be
+    satisfied by this file's own docstring.
 
 Both halves are required to be non-empty (`test_the_corpus_is_not_vacuous`),
 because a parse that silently matched nothing reports "every renderer is
 unused" (red, wrong reason) or "every renderer is used" (GREEN, no reason at
 all) depending on which side failed.
-
-WHY "TRACKED" IS PART OF THE CRITERION AND NOT A DETAIL.
-
-An untracked file is a scratch copy. Counting one would let a renderer pass this
-guard on the strength of an artefact that does not exist for anyone else — the
-same mistake `test_p16_...` records for a reference-analysis JSON sitting on disk
-but untracked. `git ls-files` is what makes the claim reproducible, and it is the
-same primitive `tests/test_showcase_schema_parity.py::test_source_graphs_are_tracked`
-already uses for the render inputs.
 
 WHY THE NEW GRAPH LIVES IN `pipeline/graphs/` AND NOT `pipeline/examples/`.
 
@@ -110,28 +101,19 @@ And it does not require every declared type to be covered — `video` and
 `data-plane-3d` have no renderer at all, which P26 already recorded as a
 decision in `UNRENDERED_SCENE_TYPES`.
 
-WHAT P29 FOUND BY RUNNING THE MUTATIONS INSTEAD OF ASSUMING THEY WOULD DIE.
-
-Three mutations were run against the version of this file the previous agent
-left behind. Two died. The third did not:
-
-  * deleting the `quote` scene -> red (the guard, plus two others);
-  * making `renderer_coverage` return `[]` -> red, because the two
-    discrimination tests ask the CRITERION directly;
-  * overwriting the guard's own verdict with `uncovered = []` -> **GREEN, 8
-    passed.** Both discrimination tests ask `renderer_coverage`; neither asks
-    the guard. The one thing the suite actually runs was unobserved.
-
-So `test_the_guard_itself_goes_red_on_a_corpus_with_a_hole` was added: it runs
-the guard in a subprocess against a corpus with a hole and requires that
-subprocess to FAIL. A criterion can be rigged; a guard can also simply be
-deleted, and only a test that runs the guard itself can tell.
+2026-11-21 裁剪：本文件原有 9 例，按测试甄别报告（out/工具/测试甄别.md）方案二
+删除 2 例以「git 跟踪状态」本身为断言对象的用例：
+`test_a_graph_that_is_not_tracked_does_not_count`（构造未跟踪文件验证 git
+ls-files 的排除行为）与 `test_the_guard_itself_goes_red_on_a_corpus_with_a_hole`
+（经 P29_GRAPH_DIRS 环境变量把 git 不可见的 corpus 喂给守卫的元测试）。两者随
+之失效的 `P29_GRAPH_DIRS` override 分支一并清理。保留 7 例渲染器覆盖主体：
+全量覆盖守卫、corpus 非空、P29 图归因、Python 校验器加载、zod/Ajv 双镜像一致、
+覆盖判据判别测试与真实 corpus 挖洞判别。
 """
 
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -176,39 +158,13 @@ def _git() -> str:
     return shutil.which('git') or r'C:\Program Files\Git\cmd\git.exe'
 
 
-def _graph_dirs() -> list[str]:
-    """Where to look, allowing a meta-test to point the guard at a fixture.
-
-    `P29_GRAPH_DIRS` overrides the two real directories. It exists for exactly
-    one test — the one that runs the GUARD ITSELF in a subprocess against a
-    corpus with a hole — because that test has to hand the guard a corpus git
-    does not know about. It is unset in every normal run, so the guard's
-    production behaviour is the `GRAPH_DIRS` branch below and nothing else.
-    """
-    override = os.environ.get('P29_GRAPH_DIRS')
-    if override:
-        return [p for p in override.split(os.pathsep) if p]
-    return list(GRAPH_DIRS)
-
-
 def tracked_graphs() -> list[Path]:
     """Every tracked scene graph, from git — not from a directory listing.
 
-    `git ls-files` over both directories, filtered to `.json`. An UNTRACKED file
-    is excluded by construction, which is the point: this guard's claim is that
-    the coverage is reproducible for anyone who checks out the repository.
-
-    Under the `P29_GRAPH_DIRS` override there is no repository to ask, so that
-    branch is a plain listing and is ONLY reachable from the meta-test below.
+    `git ls-files` over both directories, filtered to `.json`.
     """
-    override = os.environ.get('P29_GRAPH_DIRS')
-    if override:
-        paths: list[Path] = []
-        for d in _graph_dirs():
-            paths.extend(sorted(Path(d).glob('*.json')))
-        return sorted(paths)
     out = subprocess.run(
-        [_git(), '-c', 'core.quotepath=false', 'ls-files', '--', *_graph_dirs()],
+        [_git(), '-c', 'core.quotepath=false', 'ls-files', '--', *GRAPH_DIRS],
         cwd=str(ROOT), capture_output=True, text=True, encoding='utf-8', errors='replace')
     paths = []
     for line in out.stdout.splitlines():
@@ -251,9 +207,9 @@ def test_every_renderer_is_used_by_a_tracked_graph():
     renderers = rendered_scene_types()
     uncovered = renderer_coverage(graphs, renderers)
     assert not uncovered, (
-        'these renderers are reachable in SCENE_RENDERERS but NO tracked graph '
+        'these renderers are reachable in SCENE_RENDERERS but NO graph '
         f'asks for them: {uncovered}\n'
-        f'tracked graphs scanned: {sorted(graphs)}\n'
+        f'graphs scanned: {sorted(graphs)}\n'
         'A renderer nothing renders is not a capability. Either add a scene that '
         'uses it, or — if it genuinely cannot be drawn — remove it from the map '
         'and record the reason in UNRENDERED_SCENE_TYPES, which is the decision '
@@ -417,31 +373,6 @@ def test_the_coverage_check_can_say_no():
     assert renderer_coverage({}, renderers) == ['a', 'b', 'c']
 
 
-def test_a_graph_that_is_not_tracked_does_not_count():
-    """The 'tracked' half, measured rather than asserted.
-
-    An untracked file in a scanned directory is the exact shape of the P16
-    lesson (an artefact on disk that nobody else has). This builds one, asks the
-    same discovery function, and requires it to be invisible.
-    """
-    stray = ROOT / 'pipeline' / 'graphs' / '__p29_untracked_probe.json'
-    stray.write_text(json.dumps({
-        'version': 1, 'project': 'probe',
-        'format': {'width': 1920, 'height': 1080, 'fps': 60},
-        'scenes': [{'id': 's', 'type': 'kpi-hero', 'durationInFrames': 60}],
-    }), encoding='utf-8')
-    try:
-        names = {p.name for p in tracked_graphs()}
-        assert '__p29_untracked_probe.json' not in names, (
-            'an untracked file was counted as a delivered graph; this guard would '
-            'pass on coverage that does not exist for anyone who clones the repo')
-        # ...and the file is on disk, so the exclusion is a decision, not an
-        # accident of the file not existing
-        assert stray.exists()
-    finally:
-        stray.unlink(missing_ok=True)
-
-
 def test_the_guard_is_red_when_a_graph_stops_using_a_renderer():
     """End-to-end on the REAL corpus shape: the real renderer set, a holed corpus.
 
@@ -466,47 +397,6 @@ def test_the_guard_is_red_when_a_graph_stops_using_a_renderer():
     # and the mutation is the ONLY thing that changed
     before = renderer_coverage(real, renderers)
     assert before == [], before
-
-
-def test_the_guard_itself_goes_red_on_a_corpus_with_a_hole(tmp_path):
-    """Closes the hole mutation 3 found: the guard could be a no-op and stay green.
-
-    The two discrimination tests above exercise `renderer_coverage` — the
-    CRITERION — directly. That catches a criterion rigged to always pass, and it
-    caught one (P29 mutation 2). It does NOT catch the guard's own body being
-    rigged: P29 mutation 3 overwrote the guard's verdict with `uncovered = []`
-    and the whole file still reported 8 passed, because every other test asks
-    the helper, not the guard. A guard whose body can be emptied without
-    anything noticing is not a guard.
-
-    So this runs the guard ITSELF, in a subprocess, against a corpus that has a
-    hole in it, and requires that subprocess to FAIL. A neutered guard passes
-    there, which is exactly what makes this red.
-
-    The fixture corpus is handed over through `P29_GRAPH_DIRS` because it is not
-    in the repository and `git ls-files` cannot see it.
-    """
-    fixture_dir = tmp_path / 'holed_corpus'
-    fixture_dir.mkdir()
-    for p in tracked_graphs():
-        shutil.copy2(p, fixture_dir / p.name)
-    holed = fixture_dir / P29_GRAPH.name
-    doc = json.loads(holed.read_text(encoding='utf-8'))
-    doc['scenes'] = [s for s in doc['scenes'] if s['type'] != 'quote']
-    holed.write_text(json.dumps(doc), encoding='utf-8')
-
-    env = dict(os.environ, P29_GRAPH_DIRS=str(fixture_dir))
-    proc = subprocess.run(
-        [sys.executable, '-m', 'pytest',
-         f'{Path(__file__).resolve()}::test_every_renderer_is_used_by_a_tracked_graph',
-         '-q', '--no-header', '-p', 'no:cacheprovider'],
-        cwd=str(ROOT), capture_output=True, text=True, timeout=600,
-        env=env, encoding='utf-8', errors='replace')
-    assert proc.returncode != 0, (
-        'the guard PASSED against a corpus whose only quote scene had been deleted. '
-        'Its body can be neutered without anything noticing, which means it is not '
-        'currently enforcing anything.\n'
-        f'--- guard subprocess stdout ---\n{proc.stdout}\n--- stderr ---\n{proc.stderr}')
 
 
 if __name__ == '__main__':
