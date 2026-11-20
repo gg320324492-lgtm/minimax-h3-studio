@@ -66,8 +66,8 @@
 
 ```bash
 # 短剧项目：生成 → 出片（含 QA）
-E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe 成片项目/ceo_mindread_ep01/scripts/build_timeline.py
-E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe 成片项目/ceo_mindread_ep01/scripts/render_with_remotion.py --job <id> --out 07_edit/<out>.mp4 --qa
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe productions/ceo_mindread_ep01/scripts/build_timeline.py
+E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe productions/ceo_mindread_ep01/scripts/render_with_remotion.py --job <id> --out 07_edit/<out>.mp4 --qa
 
 # 纯数据视频（零 GPU，模式 B）
 cd studio && node bin/render.mjs --comp ReportVertical --props <data.json> --out out/x.mp4

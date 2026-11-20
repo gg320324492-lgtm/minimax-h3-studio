@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `5ede23b`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `517 passed, 3 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`（该文件按 GBK 解码子进程输出而红）。
 
 **⚠️ 磁盘**：`render.mjs:43-47` 记录过 **118 个 bundle 把 C: 盘 TEMP 填到 46 GB**。
@@ -151,7 +151,7 @@
    - **路径分隔符**（P17 的 `startswith('out/')` 在 Windows 上漏掉了整个 `out/`）；
    - **别把长跑命令管道进 `tail`**（指挥窗口与 P21 agent 各栽过一次）；
    - **`PYTHONIOENCODING=utf-8` 会污染 `test_visual_qa.py`**；
-   - **`测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD** ——
+   - **`tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD** ——
      你写中文文档要字节级验（**用 `read_bytes`/`write_bytes`，别用 `read_text`/`write_text`**）。
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**（P20 的处理方式，**是本项目接受的做法**）。
@@ -164,7 +164,7 @@
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - `out/**` —— **只读**；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs`**
 - **不要动 P19–P25 的任何成果**
 - **不要为了"让账本对上"而改数字** —— 那是把假账改成另一种假账。

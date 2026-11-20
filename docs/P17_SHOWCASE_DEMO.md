@@ -1,7 +1,7 @@
 # P17 — Showcase Demo：能不能做出来，以及做出来会被什么拦住
 
 > 结论 **B**，含 **C** 的一半。下面每一个数字都是本次实测，不是引述。
-> 配套守卫：`测试/test_p17_showcase_demo_verdict.py`（本次新增 16 项，现 **17 项**）。
+> 配套守卫：`tests/test_p17_showcase_demo_verdict.py`（本次新增 16 项，现 **17 项**）。
 >
 > ⚠️ **2026-10-03 修订（P25 之后）**：第③条判定已被 P25（`32ed7e9`）改写，
 > 详见 **第 3.5 节**与 **第五节**。**第①、②条不变**（无 H3 渲染器、
@@ -77,7 +77,7 @@ EXIT=1
 
 ### 1.4 P15 那条"差一行"的线索：至今没改，且比记录的更彻底
 
-`测试/test_generative_signal_has_no_consumer.py`（P15）已经钉住"`generative` 无消费者"。
+`tests/test_generative_signal_has_no_consumer.py`（P15）已经钉住"`generative` 无消费者"。
 本次实测**确认它至今没改**，并把边界说得更准：
 
 - `generative` 在 `showcase-v1.ts:373` 被算出，在 `:316` 被声明；
@@ -336,7 +336,7 @@ P25 让 H3 那一条从"手动跑才拦得住"变成"渲染路径里拦得住（
 
 ## 五、守卫：真的跑了，并断言了判定
 
-`测试/test_p17_showcase_demo_verdict.py`，**原 16 项，现 17 项**（P25 后新增 1 项）。
+`tests/test_p17_showcase_demo_verdict.py`，**原 16 项，现 17 项**（P25 后新增 1 项）。
 
 **没有一条断言"源码里有 `premium`"或"某个数字出现了"。**
 每一条能力断言都走 `vqa.main(argv)`，读**返回值**和**打印的报告**。
@@ -344,16 +344,16 @@ P25 让 H3 那一条从"手动跑才拦得住"变成"渲染路径里拦得住（
 ### 5.1 它回答的那个问题
 
 ```
-测试/test_p17_showcase_demo_verdict.py::test_a_graph_asking_for_a_generative_scene_is_blocked
-测试/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
-测试/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_many_is_still_blocked
+tests/test_p17_showcase_demo_verdict.py::test_a_graph_asking_for_a_generative_scene_is_blocked
+tests/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
+tests/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_many_is_still_blocked
 ```
 **⇒ 会被拦住的（实测 EXIT≠0）**，且报告必须点名 `scenes[3]=video` 这种可操作的定位。
 
 ```
-测试/test_p17_showcase_demo_verdict.py::test_a_one_second_film_passes_the_graph_gate
-测试/test_p17_showcase_demo_verdict.py::test_a_five_minute_film_passes_the_graph_gate
-测试/test_p17_showcase_demo_verdict.py::test_a_640x480_at_24fps_film_passes_the_graph_gate
+tests/test_p17_showcase_demo_verdict.py::test_a_one_second_film_passes_the_graph_gate
+tests/test_p17_showcase_demo_verdict.py::test_a_five_minute_film_passes_the_graph_gate
+tests/test_p17_showcase_demo_verdict.py::test_a_640x480_at_24fps_film_passes_the_graph_gate
 ```
 **⇒ 拦不住的（实测 EXIT==0）** —— 这几条是**钉住"时长 / 规格 / premium 拦不住"这个事实**，
 正是工单要求的那个答案。**P25 没有推翻它们，也没有碰它们。**
@@ -361,8 +361,8 @@ P25 让 H3 那一条从"手动跑才拦得住"变成"渲染路径里拦得住（
 ### 5.1.1 ⚠️ 2026-10-03：两条守卫被**重写**，不是被删掉
 
 ```
-测试/test_p17_showcase_demo_verdict.py::test_the_only_production_caller_of_the_showcase_gate_is_the_render_path
-测试/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+tests/test_p17_showcase_demo_verdict.py::test_the_only_production_caller_of_the_showcase_gate_is_the_render_path
+tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
 ```
 **它们原来断言的是相反的事**（生产路径零调用点 / `render.mjs` 零 QA 调用），
 P25 把那两个事实改掉了，它们因此转红 —— **那是正确的行为**。
@@ -376,7 +376,7 @@ P25 把那两个事实改掉了，它们因此转红 —— **那是正确的行
 **第三条新守卫**：
 
 ```
-测试/test_p17_showcase_demo_verdict.py::test_the_frame_gate_is_not_wired_and_must_not_be
+tests/test_p17_showcase_demo_verdict.py::test_the_frame_gate_is_not_wired_and_must_not_be
 ```
 **⇒ 钉住"逐帧门禁不应接"这个裁定**，而不是让它作为一条没人注意的空白留着
 （理由见 3.5.2：801/801 全红且红不来自渲染；成本 57–69 倍）。
@@ -400,9 +400,9 @@ P25 把那两个事实改掉了，它们因此转红 —— **那是正确的行
 
 **M1**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_a_graph_asking_for_a_generative_scene_is_blocked
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_many_is_still_blocked
+FAILED tests/test_p17_showcase_demo_verdict.py::test_a_graph_asking_for_a_generative_scene_is_blocked
+FAILED tests/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
+FAILED tests/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_many_is_still_blocked
 3 failed, 13 passed in 3.82s
 ```
 ```
@@ -414,9 +414,9 @@ E       + PASS
 
 **M2**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_a_graph_asking_for_a_generative_scene_is_blocked
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_many_is_still_blocked
+FAILED tests/test_p17_showcase_demo_verdict.py::test_a_graph_asking_for_a_generative_scene_is_blocked
+FAILED tests/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
+FAILED tests/test_p17_showcase_demo_verdict.py::test_a_demo_that_is_one_h3_shot_among_many_is_still_blocked
 3 failed, 13 passed in 3.85s
 ```
 ```
@@ -430,8 +430,8 @@ E       assert 'PASS' == 'FAIL'
 
 **M3**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_no_h3_renderer_exists_in_the_render_source
+FAILED tests/test_p17_showcase_demo_verdict.py::test_every_generative_type_is_gated_not_only_video
+FAILED tests/test_p17_showcase_demo_verdict.py::test_no_h3_renderer_exists_in_the_render_source
 2 failed, 14 passed in 3.91s
 ```
 ```
@@ -443,7 +443,7 @@ E           AssertionError: SCENE_RENDERERS now routes ['data-plane-3d'] — a g
 
 **M4**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_schema_places_no_upper_bound_on_scene_duration
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_schema_places_no_upper_bound_on_scene_duration
 1 failed, 15 passed in 4.52s
 ```
 ```
@@ -470,7 +470,7 @@ fd7e6927b8af11ecc4aabc7b412ac5a73cc0dac74007a0c6593efe5206140d21  pipeline_manif
 
 **M1 的原始 `-rf` 输出**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
 1 failed, 16 passed in 6.93s
 ```
 ```
@@ -485,8 +485,8 @@ E        +  where False = _gate_command_judges_the_props("...
 
 **M2 的原始 `-rf` 输出**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_frame_gate_is_not_wired_and_must_not_be
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_frame_gate_is_not_wired_and_must_not_be
 2 failed, 15 passed in 6.85s
 ```
 ```
@@ -540,7 +540,7 @@ E         Use -v to get more diff
 本文件的 docstring 早就写着「a command that is built and never executed is
 not a gate」——**现在要判的是"被构建了、在死代码里执行"**。
 
-**修法不是正则，是一个动态观测**：`测试/_p17b_reach.mjs`。
+**修法不是正则，是一个动态观测**：`tests/_p17b_reach.mjs`。
 
 ```
 它做的事：把 render.mjs 自己的顶层代码放进一个 vm 沙箱跑一遍，
@@ -582,8 +582,8 @@ parser 暴露给用户代码，而本仓库没有、也不该为了一个测试�
 
 **M3 的原始 `-rf` 输出**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_probe_observes_the_real_render_path
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_probe_observes_the_real_render_path
 2 failed, 18 passed in 27.04s
 ```
 ```
@@ -598,8 +598,8 @@ E       assert 0 >= 1
 
 **M5 的原始 `-rf` 输出**
 ```
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
-FAILED 测试/test_p17_showcase_demo_verdict.py::test_the_probe_observes_the_real_render_path
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_render_entry_point_calls_the_props_gate_in_code_not_in_a_comment
+FAILED tests/test_p17_showcase_demo_verdict.py::test_the_probe_observes_the_real_render_path
 2 failed, 18 passed in 26.83s
 ```
 ```
@@ -679,10 +679,10 @@ M5 才是"真调用被移除"，它被杀。
    花括号配平**把模板文本全涂白了**，于是洞里的代码也没了。
    ② **"断言文件里不出现 `if (false)`"**：这条**在干净文件上就是错的** ——
    实测 `render.mjs` 的**注释里**就有一行 `if (0)`，第一版标记把它数成了死分支。
-   ⇒ 两者都已删除，换成 `测试/_p17b_reach.mjs` 的**动态观测**。
+   ⇒ 两者都已删除，换成 `tests/_p17b_reach.mjs` 的**动态观测**。
    **写下来是因为它们正是"再加一条正则"这个动作的两种形状。**
 
-9. **探测器自己也错了六次**，全部记在 `测试/_p17b_reach.mjs` 的注释里，
+9. **探测器自己也错了六次**，全部记在 `tests/_p17b_reach.mjs` 的注释里，
    其中两次值得在这里点出来：
    - **`String.replace` 的回调拿到的是 `(match, p1…pn, offset, whole)`，
      没有 groups 数组。** 我把整个 `match` 当 groups 传进去，
@@ -694,7 +694,7 @@ M5 才是"真调用被移除"，它被杀。
      `--props`"**。**一个只会说"否"的探测器比没有更坏**，这条与 5.4 里
      "探测不了不许读成不可达"是同一条规矩。
 
-10. **⚠️ 我用 Python 打补丁把 `测试/test_p17_showcase_demo_verdict.py`
+10. **⚠️ 我用 Python 打补丁把 `tests/test_p17_showcase_demo_verdict.py`
     整个文件变成了 CRLF（1101 个 CR，HEAD 是 0）。**
     `p.write_text()` 在 Windows 上默认翻转行尾，而我没有显式 `newline=''`。
     **P23 栽在 `grep -c` 上、P22 栽在 Edit 上，这次栽在我自己的脚本上。**
@@ -746,8 +746,8 @@ M5 才是"真调用被移除"，它被杀。
 
 标准跑法：
 ```
-cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
-  --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py
+cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
+  --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
 ```
 
 ---
@@ -758,22 +758,22 @@ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
 
 | 文件 | 性质 |
 |---|---|
-| `测试/test_p17_showcase_demo_verdict.py` | **新增**，16 项守卫 |
+| `tests/test_p17_showcase_demo_verdict.py` | **新增**，16 项守卫 |
 | `docs/P17_SHOWCASE_DEMO.md` | **新增**，本文件 |
 
 **2026-10-03 第③条改写（P25 之后）：**
 
 | 文件 | 性质 |
 |---|---|
-| `测试/test_p17_showcase_demo_verdict.py` | **改写两条 + 新增一条**（16 → 17 项）；未删任何一条 |
+| `tests/test_p17_showcase_demo_verdict.py` | **改写两条 + 新增一条**（16 → 17 项）；未删任何一条 |
 | `docs/P17_SHOWCASE_DEMO.md` | 改写第 3.2 / 3.5 / 四 / 五 节 |
 
 **2026-10-03 修 5.4 那个真漏洞：**
 
 | 文件 | 性质 |
 |---|---|
-| `测试/test_p17_showcase_demo_verdict.py` | **再新增两项**（17 → 20 项）；第②条重写的守卫加了动态可达性断言；未删、未放松任何一条 |
-| `测试/_p17b_reach.mjs` | **新增**：把 render.mjs 自己的顶层代码跑一遍并观测闸有没有被 spawn 的探测器 |
+| `tests/test_p17_showcase_demo_verdict.py` | **再新增两项**（17 → 20 项）；第②条重写的守卫加了动态可达性断言；未删、未放松任何一条 |
+| `tests/_p17b_reach.mjs` | **新增**：把 render.mjs 自己的顶层代码跑一遍并观测闸有没有被 spawn 的探测器 |
 | `docs/P17_SHOWCASE_DEMO.md` | 新增第 5.4 / 5.5 / 6.2 节，改写第七节数字 |
 
 **本次改写未改动任何生产代码。** 未动 `visual_qa.py`、

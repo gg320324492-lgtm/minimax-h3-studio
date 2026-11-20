@@ -13,7 +13,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `16841c3`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `346 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 **开工前记录 sha256，收尾比对**（这几对镜像刚被校准过）：
 - `studio/src/schemas/showcase-v1.ts` → 应为 `653313f45b3257700ebbeaf41fb27d3adb93676222fe884c2df3e05470f0aeb6`
@@ -116,7 +116,7 @@ depth:                   success=true   keysAfter=[]
   **它们与现有 7 键的 `z.record(z.string(), z.unknown())` 不是同一种形状**，
   这个不对称本身要说明。
 - JSON Schema 侧 `definitions/StyleBible` 同步。
-- **`测试/test_showcase_schema_parity.py` 必须仍然绿** —— 那是两侧镜像的守卫。
+- **`tests/test_showcase_schema_parity.py` 必须仍然绿** —— 那是两侧镜像的守卫。
 
 **若你裁定 B，删之前必须确认零消费方**（给 grep），
 且要检查 `studio/src` 里是否有别的地方读那些导出。
@@ -177,7 +177,7 @@ depth:                   success=true   keysAfter=[]
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要给 `StyleBibleSchema` 加 `.strict()`** —— 那是上游有意的设计，
   改了会让「图谱没设的键」从"忽略"变成"报错"，超出本项范围。
   **但若你认为它该改，写进报告，由指挥窗口裁定。**

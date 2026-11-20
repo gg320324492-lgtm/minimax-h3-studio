@@ -17,7 +17,7 @@ types, five renders of the SAME global frame:
     chart.type:  bar | line | area | volume | sparkline
 
 Every one of those five types reads the same `values` field (measured, not
-assumed — `测试/test_p46_probe_instruments.py` renders them and a type that
+assumed — `tests/test_p46_probe_instruments.py` renders them and a type that
 silently
 fell back to another would produce a byte-identical pair). If the type field
 were inert, all five frames would be byte-identical. They are not, and the

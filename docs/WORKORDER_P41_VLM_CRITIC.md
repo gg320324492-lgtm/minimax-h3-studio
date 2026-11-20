@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `08aefac`（已推送） |
 | 基线 | **先自己实测**（上次 `686 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -160,7 +160,7 @@ P36 的第二条红在 `SyntaxError` 且 pytest 收集阶段就中止）。
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾**；
    **且 `read_text` + `write_text` 会把纯 CRLF 文件整个翻成 LF**
    —— 指挥窗口刚因此毁过一次 2049 行并复原）；
-   路径分隔符；别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   路径分隔符；别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 5. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -175,7 +175,7 @@ P36 的第二条红在 `SyntaxError` 且 pytest 收集阶段就中止）。
 - `docs/UPGRADE_PROGRESS.md` —— **账本由指挥窗口统一更新**（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P4*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— **只读**；`DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` 的判定逻辑** —— 你只加新的
 - **不要动 P19–P40 的任何成果**、不要改 `locked_fields.py`
 - **⚠️ 不要装任何模型、不要下载任何权重** —— `qwen2.5vl:7b` 已在本机

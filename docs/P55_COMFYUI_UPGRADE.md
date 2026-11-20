@@ -164,7 +164,7 @@ venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.
    `compare_new_baseline.json`）——即新版行为稳定可复现，旧基准
    （`baseline_r2v_034.mp4`，md5 `f13a831c…`）自该裁定起作废，仅留作证据。
 3. **旧内容处置**：按"可弃则弃"——旧 seed 的复现性不再作为约束；
-   项目脚本/工作流引用经回归⑤验证在新版下全部成立，无需代码适配；
+   项目scripts/工作流引用经回归⑤验证在新版下全部成立，无需代码适配；
    SR 管线（pipe_fast/pipe_4k_fast）在 0.34 下的实测数字未在 0.43.2 重测，
    已在记忆中标注，待下次使用时实测。
 4. **解锁**：P56（Pika Flex 对比，需 0.43.2+）与 P57（ControlNet Union 2.0，需 0.38+）

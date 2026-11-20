@@ -29,7 +29,7 @@ import cv2
 import numpy as np
 
 ROOT = Path(r'E:\Minimax-H3')
-sys.path.insert(0, str(ROOT / '脚本'))
+sys.path.insert(0, str(ROOT / 'scripts'))
 sys.path.insert(0, str(ROOT))
 from ffmpeg_env import FFPROBE  # noqa: E402
 

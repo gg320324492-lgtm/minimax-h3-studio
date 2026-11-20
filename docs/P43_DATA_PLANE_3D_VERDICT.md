@@ -165,7 +165,7 @@ real kpi-hero frame        ink_frac=0.0211 lap_var=    18.4 mean|grad|=0.533 p99
 P21 的失败方向测试**拿 `data-plane-3d` 当「没有渲染器的类型」的样本**，并断言 FAIL：
 
 ```python
-# 测试/test_p21_props_path_gates_the_deliverable.py:183-192
+# tests/test_p21_props_path_gates_the_deliverable.py:183-192
 """...the fixture's `outro` now has a renderer, so it was swapped for
 `data-plane-3d`, which is still left to `MissingScene`."""
 doc['scenes'].append({'id': 'g_gap', 'type': 'data-plane-3d', 'durationInFrames': 60})
@@ -180,7 +180,7 @@ assert _verdict_for(report, RULE) == vqa.FAIL, report
 ### 4.2 P29 的孤儿渲染器守卫：**渲染器必须被 graph 用到**
 
 ```python
-# 测试/test_p29_renderers_are_used_by_a_graph.py:253-260
+# tests/test_p29_renderers_are_used_by_a_graph.py:253-260
 'the these renderers are reachable in SCENE_RENDERERS but NO tracked graph asks for them: ...'
 'A renderer nothing renders is not a capability. Either add a scene that uses it, or ...'
 ```

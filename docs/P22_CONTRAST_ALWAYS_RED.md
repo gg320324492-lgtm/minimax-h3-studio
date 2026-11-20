@@ -216,7 +216,7 @@ while the theme path gained one it previously could not produce on demand.
 
 ## 8. Guard
 
-`测试/test_p22_contrast_is_not_a_per_frame_gate.py`, 15 tests. Every claim is
+`tests/test_p22_contrast_is_not_a_per_frame_gate.py`, 15 tests. Every claim is
 reached by **running `vqa.main(argv)`** and reading the exit code and the
 report. Nothing asserts that a string is in a source file, and nothing asserts
 that a constant is merely *named* — `test_neither_wcag_threshold_moved` asserts

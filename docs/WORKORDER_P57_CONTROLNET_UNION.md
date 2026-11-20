@@ -17,7 +17,7 @@
 | 报告 | `E:\Minimax-H3\docs\P57_CONTROLNET_UNION_VERDICT.md` |
 
 **⚠️ 本项目工作树里有不属于你的在制工作**（`studio/src/Root.tsx`、
-`测试/test_p48_reaccept.py`、`intro_video/` 等）——**不碰、不提交、不恢复。**
+`tests/test_p48_reaccept.py`、`intro_video/` 等）——**不碰、不提交、不恢复。**
 
 ---
 
@@ -91,7 +91,7 @@ ControlNet-Union（legacy 版只含 `control_proj_in` + 5 个 control_blocks，�
 4. ⚠️ **一块 GPU，与 P56 串行**；**外推等于没测**（每条实测计时）；
 5. ⚠️ **磁盘**：视频放 `E:\Minimax-H3\out\p57\`，收尾删大文件留对比帧与表格；
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删**；
-6. ⚠️ `测试/test_markdown_text_is_intact.py` 守 U+FFFD——中文报告用 `read_bytes`/`write_bytes`；
+6. ⚠️ `tests/test_markdown_text_is_intact.py` 守 U+FFFD——中文报告用 `read_bytes`/`write_bytes`；
 7. ⚠️ GBK 控制台读非 ASCII 用字节判断。
 
 ---

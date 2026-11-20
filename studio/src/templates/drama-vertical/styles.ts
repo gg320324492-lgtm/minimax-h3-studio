@@ -1,4 +1,4 @@
-// drama-vertical 样式集 —— 自 成片项目/ceo_mindread_ep01/scripts/burn_subtitles_v2.py STYLES 逐字段移植。
+// drama-vertical 样式集 —— 自 productions/ceo_mindread_ep01/scripts/burn_subtitles_v2.py STYLES 逐字段移植。
 // 设计稿 1080×1920。样式改动必须双端同步（qa_final.py 引用 PIL 侧同源数值）。
 
 import type {StyleSet} from '../common/styleSet';

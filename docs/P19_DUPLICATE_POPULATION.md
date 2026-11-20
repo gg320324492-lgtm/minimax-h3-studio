@@ -45,7 +45,7 @@ existed.** That is verdict **B**, and it takes precedence over A.
 
 ### 1a. A fourth number, and a third value
 
-The "same" rule is also applied at `成片项目/ceo_mindread_ep01/scripts/select_takes.py:90`
+The "same" rule is also applied at `productions/ceo_mindread_ep01/scripts/select_takes.py:90`
 with **`< 1.0`**, not 0.5. And `rank_takes.py:40-43` already carried a KNOWN
 LIMIT that contradicted the reuse it was being cited for:
 
@@ -213,7 +213,7 @@ frame's signature *is* that luma); and a bar against a shifted word measures
 
 ## 5. WHAT A FUTURE CHANGE HAS TO RE-DERIVE
 
-`测试/test_p19_duplicate_population.py` is behavioural: it calls the rule and
+`tests/test_p19_duplicate_population.py` is behavioural: it calls the rule and
 asserts verdicts, and never searches the source for a constant. Two claims are
 checked structurally from the AST instead — that `take_ranker.m_duplicate` holds
 no 0.5 (cv2 is not importable under 3.12, so the module cannot be imported here,

@@ -1,7 +1,7 @@
 # P15 — SR Router: the routing signal has no consumer, and nothing shipped needs one
 
 > Measured on this machine at `a7366fe`, node v24.16.0, py 3.12.
-> Guard: `测试/test_generative_signal_has_no_consumer.py` (6 tests).
+> Guard: `tests/test_generative_signal_has_no_consumer.py` (6 tests).
 > This file records measurements. It does not implement anything.
 
 ## Verdict: B — not worth building, and the input signal is inert
@@ -71,7 +71,7 @@ Each such path was checked here rather than assumed closed:
 The Python side has a mirror that *is* consumed — `scene_graph.py:179`
 `GENERATIVE_TYPES`, with `ResolvedScene.generative` (:209) and
 `generative_scenes()` (:291) — but that is the Python planner reading its own
-model, not the TS renderer reading the prop. `测试/test_showcase_schema_parity.py`
+model, not the TS renderer reading the prop. `tests/test_showcase_schema_parity.py`
 pins the two sets against each other. That mirror is real; it is not a consumer
 of the TS flag.
 
@@ -142,7 +142,7 @@ a failure mode this project has already paid for somewhere:
   reads "declared" as "working".
 
 **Basis for preferring annotation over deletion**, from the project's own
-precedent: `测试/test_undeclared_field_reads.py:26-28` already names six
+precedent: `tests/test_undeclared_field_reads.py:26-28` already names six
 declared-but-inert fields (`notes`, `audioEvents`, `transitionOut`, `focus`,
 ``ease`, `chart.baseline`) and deliberately does **not** delete them, calling
 them *"ledger entries, not this file's job"*, with the rule stated as: *"a
@@ -158,7 +158,7 @@ not to wire or restructure before the verdict is adjudicated.
 
 ## 5. The guard
 
-`测试/test_generative_signal_has_no_consumer.py`, 6 tests. Every assertion is
+`tests/test_generative_signal_has_no_consumer.py`, 6 tests. Every assertion is
 on observable behaviour or on a sweep that is anchored so it cannot pass by
 matching nothing — never on file absence.
 
@@ -187,8 +187,8 @@ Injected: `export const SR_CUE = (r: {generative: boolean}): number => (r.genera
 
 ```
 .F..F.                                                                   [100%]
-FAILED 测试/test_generative_signal_has_no_consumer.py::test_no_scene_module_can_receive_the_generative_flag
-FAILED 测试/test_generative_signal_has_no_consumer.py::test_no_production_source_reads_the_generative_flag
+FAILED tests/test_generative_signal_has_no_consumer.py::test_no_scene_module_can_receive_the_generative_flag
+FAILED tests/test_generative_signal_has_no_consumer.py::test_no_production_source_reads_the_generative_flag
 E   AssertionError: scene modules now mention `generative`: ['KpiHero.tsx']. The routing signal has a consumer; this file must be re-justified or retired.
 E   AssertionError: the `generative` routing signal now has a consumer:
 E     studio\src\templates\finance-showcase\scenes\KpiHero.tsx:line 178: .generative
@@ -202,8 +202,8 @@ source sweep. Red for the right reason in both cases.
 
 ```
 FF....                                                                   [100%]
-FAILED 测试/test_generative_signal_has_no_consumer.py::test_generative_is_produced_on_the_resolved_scene
-FAILED 测试/test_generative_signal_has_no_consumer.py::test_no_scene_module_can_receive_the_generative_flag
+FAILED tests/test_generative_signal_has_no_consumer.py::test_generative_is_produced_on_the_resolved_scene
+FAILED tests/test_generative_signal_has_no_consumer.py::test_no_scene_module_can_receive_the_generative_flag
 E   AssertionError: {'setMembers': ['data-plane-3d'], 'flags': [['kpi-hero', False], ['video', False]]}
 E   assert ['data-plane-3d'] == ['data-plane-3d', 'video']
 E   AssertionError: {'flagOnResolved': False, 'filesScanned': 3, 'reads': [], 'exported': []}
@@ -274,7 +274,7 @@ per the work order.
 ## 10. Reproducing
 
 ```bash
-cd /e/Minimax-H3 && py -3.12 -m pytest 测试/test_generative_signal_has_no_consumer.py -q -rf
+cd /e/Minimax-H3 && py -3.12 -m pytest tests/test_generative_signal_has_no_consumer.py -q -rf
 ```
 
 Node-backed tests skip if `npx` is absent; the sweep, the anchor and the graph

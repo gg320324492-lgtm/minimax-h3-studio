@@ -154,7 +154,7 @@ Brief / Script / Data / Reference
 ### P2 前置契约（开工前必须先定，否则事后补救成本高）
 
 Prompt Compiler 会**生成** prompt，而 prompt 现在住在 gitignored 的
-`成片项目/ceo_mindread_ep01/00_project/h3_generation.json` 里——这与 P0 复验 R1 修掉的
+`productions/ceo_mindread_ep01/00_project/h3_generation.json` 里——这与 P0 复验 R1 修掉的
 `gen_keyframes_v3` 是**同构风险**：核心生产逻辑可能只存在于本机。
 
 P2 第一条验收项固定为：

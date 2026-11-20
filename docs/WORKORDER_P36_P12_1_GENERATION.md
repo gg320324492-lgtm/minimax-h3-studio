@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `c8a7b36` + `6e8b3d5`（**工作树可能已有 P35 的提交**，请先 `git log --oneline -3` 确认） |
 | 基线 | **先自己实测**（上次是 `637 passed, 4 skipped`，P35 之后可能更多） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -138,7 +138,7 @@ P35 的 M4 第一版红在 `NameError` 上（颜色对、理由错）。
 5. **⚠️ 高频复发**：先证明被测对象存在再测量；确认变异生效前不要宣称存活；
    **别让探针的异常变成判定**（P31/P34 各栽过一次：一对相同的 `KeyError` 被比较成 "INERT"）；
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾**）；
-   路径分隔符；别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   路径分隔符；别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -150,7 +150,7 @@ P35 的 M4 第一版红在 `NameError` 上（颜色对、理由错）。
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P3*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `scene_graph.py` 与 `styleBible.tsx`** —— **它们是下游，本项只该喂它们**
 - **不要扩 schema**（十键已定，且 `.strict()` 已加）
 - **不要动 P19–P35 的任何成果**

@@ -11,7 +11,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `d75224b` |
 | 基线 | **先自己实测**，不要相信下面这个数字 |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 **开工前记录 `studio/src/templates/finance-showcase/design/tokens.ts` 的 sha256，收尾比对。**
 当前应为 `6a89a5b4537794187e0ac2d8a0add9c7a0dc07a6135c337d4a225b9381bd9c3c`。
@@ -71,7 +71,7 @@ export const SPACE = {xs: 8, sm: 16, md: 24, lg: 40, xl: 64, xxl: 104, hero: 168
 第 51–53 行），并靠这份镜像对着**渲染真值**校准到 0.2% 误差
 （5 根柱 334px vs 333.6px、16 根柱 104.5px vs 104.2px）。
 
-**改这三个值会直接打掉那份校准。** 而 `测试/test_chart_geometry.py:170`
+**改这三个值会直接打掉那份校准。** 而 `tests/test_chart_geometry.py:170`
 的 `test_space_tokens_come_from_the_renderer` 正是为了抓这件事而写的
 ——它断言镜像值 == `tokens.ts` 里的真值。
 
@@ -108,8 +108,8 @@ export const SPACE = {xs: 8, sm: 16, md: 24, lg: 40, xl: 64, xxl: 104, hero: 168
 ### 第 2 步：无论判定如何，给刻度加守卫（**本项一定做**）
 
 不管动不改值，`SPACE` 现在**没有任何守卫**保护它的结构性质。
-`测试/test_showcase_schema_parity.py:292` 只把 `'SPACE'` 当成一个**名字**检查，
-`测试/test_chart_geometry.py` 只保证镜像与真值一致——
+`tests/test_showcase_schema_parity.py:292` 只把 `'SPACE'` 当成一个**名字**检查，
+`tests/test_chart_geometry.py` 只保证镜像与真值一致——
 **没有任何一条断言说这个阶梯应该是 1:2:3:5:8:13:21。**
 
 请新增一条守卫，断言**你判定后应当成立的那个性质**：

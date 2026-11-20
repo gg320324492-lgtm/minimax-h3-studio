@@ -75,7 +75,7 @@
 | `BENCHMARK_20260929.md:57` | 引用的两个样本渲染已删除；其再生成器产出版本 0，通不过现行 schema |
 
 ### 🟡 R8 — 无依赖清单、无测试、无版本约束
-零个 `requirements.txt`/`pyproject.toml`/`pytest.ini`。Python 依赖全部隐式寄居 ComfyUI venv（torch/kokoro/librosa/jsonschema…）。`qwen-tts` 未装 → `成片项目/liaozhai_demo/scripts/gen_narration_v2.py:35` 是死分支。`tests/` 目录（SR 升级决策的全部证据脚本）已随删除消失。
+零个 `requirements.txt`/`pyproject.toml`/`pytest.ini`。Python 依赖全部隐式寄居 ComfyUI venv（torch/kokoro/librosa/jsonschema…）。`qwen-tts` 未装 → `productions/liaozhai_demo/scripts/gen_narration_v2.py:35` 是死分支。`tests/` 目录（SR 升级决策的全部证据脚本）已随删除消失。
 
 ### 🟡 R9 — 混音总线是视频容器，~495 MB 死重量
 `master_audio.py` 在**视频文件上原地母带**，`audioBus.premixed` 指向该 MP4。7 个 job 的 `PREMIXED.mp4` 全部含高码率 h264 视频轨（liaozhai 单个 233 MB / 25.5 Mbps），而 `<Audio>` 只取音频 → 97% 重量被丢弃。
@@ -119,7 +119,7 @@
 - **63 行字节级完全相同**：`get_font`/`wrap_text`/`text_width`（字幕排版 32 行）· `outputs_from_history`（11 行）· `record_seed` · `submit`/`log`/`check`/`enc_args`/`adur`
 - **仅差一个常量**：`api`（timeout）· `wait_for` · `run` · `normalize` · `clip_path` · `save` · `mix_audio.main`（162 行仅差 4 行）· `qa_final.main`
 - **hoist 先例已在库中**：`ffmpeg_env.py`（21 个调用点）证明该模式在本仓库已验证可行
-- **未传播的重构**：`成片项目/third_lantern/scripts/gen_clips.py:104-134` 的 `_base_graph()` 是 H3 sampler graph 的 DRY 抽取，未向另两个项目传播
+- **未传播的重构**：`productions/third_lantern/scripts/gen_clips.py:104-134` 的 `_base_graph()` 是 H3 sampler graph 的 DRY 抽取，未向另两个项目传播
 - **不可抽取**：`gen_sfx.py`（三套互不相交声音库，相似度 24.6%）与 `gen_bgm.py`（14.6%）——创作而非管线
 
 ---

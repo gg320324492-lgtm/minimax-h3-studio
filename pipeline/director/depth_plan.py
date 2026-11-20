@@ -36,7 +36,7 @@ stored blurs and misses the other 4 by 1px, because the strings were rounded by
 hand after fitting.
 
 So this module CARRIES the measured strings rather than computing them, and the
-guard (`测试/test_p12_1_depth_cue_generation.py`) asserts the carried copy
+guard (`tests/test_p12_1_depth_cue_generation.py`) asserts the carried copy
 still equals `themes.ts` -- if a theme ramp is refitted, the generator's copy is
 declared stale instead of quietly emitting the old numbers.
 

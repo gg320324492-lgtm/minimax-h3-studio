@@ -13,7 +13,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `8492875`（**本地，未推送** —— 推送因 TLS 握失败，网络整体不通，`curl https://github.com` 返回 HTTP 000） |
 | 基线 | **先自己实测**（上次是 `373 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 ⚠️ **不要尝试推送** —— 推送由指挥窗口裁定，且当前网络不通。
 
@@ -104,7 +104,7 @@ if not props.exists():
 如果它已经实现了 B 的语义，接上它比重新发明要好。
 
 ⚠️ **注意一个已存在的守卫**：
-`测试/test_p13_scene_cache_facts.py` 有一条
+`tests/test_p13_scene_cache_facts.py` 有一条
 `test_that_gate_still_exits_zero_so_nothing_upstream_notices`，
 **它断言当前的"退出 0"行为**（那是 P13 勘察刻意钉住的"现状"）。
 **你修好之后它会红 —— 那正是它该红的时刻**，
@@ -158,7 +158,7 @@ if not props.exists():
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录（含 `out/p13_probe/`）；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要实现 P13 的缓存** —— 那是另一项，且结论是"现在不建"
 - **不要顺手改 `ab_field.py`** —— 它是**正确**的那一方，
   要做的是让 `visual_qa.py` 与它一致（或论证为什么不一致），不是改它

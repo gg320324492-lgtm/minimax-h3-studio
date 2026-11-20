@@ -131,7 +131,7 @@ changed shape".
   means pass" is the failure this project has already paid for once.
 - **No threshold is created.** There is nothing to tune; that is the whole point.
 - **No `rule_*` function was added.** `qa_layers._rule_functions()` reads every
-  `rule_*` off the AST and `测试/test_p18_qa_layer_partition.py` pins the result in
+  `rule_*` off the AST and `tests/test_p18_qa_layer_partition.py` pins the result in
   `PINNED_LAYERS`. A new rule function would have required editing a partition P18
   owns and this work order does not authorise. A baseline is also not a rule: it
   reports no verdict of its own about an artefact, it compares two reports. Keeping
@@ -191,7 +191,7 @@ Both new files are LF-only (0 CRLF) and end with a newline. `out/**` was read on
 | file | purpose |
 |---|---|
 | `studio/scripts/frame_baseline.py` | the comparison (new) |
-| `测试/test_p24_per_job_baseline.py` | the guard, 11 tests (new) |
+| `tests/test_p24_per_job_baseline.py` | the guard, 11 tests (new) |
 | `docs/P24_PER_JOB_BASELINE.md` | this document (new) |
 
 ---

@@ -70,7 +70,7 @@ const VALUE_FLAGS = new Set([
 ]);
 // The ONE boolean flag, and it is the only one — see the comment above. It lives
 // in BOOL_FLAGS only, NOT in VALUE_FLAGS: a flag in both sets would be reported
-// twice, and `测试/test_p14_render_entry_points.py` parses this message to build
+// twice, and `tests/test_p14_render_entry_points.py` parses this message to build
 // its own copy of the surface. One flag, one set.
 const BOOL_FLAGS = new Set(['gate-props']);
 for (const a of argv) {

@@ -3,7 +3,7 @@
 > 执行 agent 交付。工单 `docs/WORKORDER_P38_SCENE_PLANNER.md`，基线 `12509b0`。
 > 本文件是**测量记录**，不是放行/退回裁定。
 > **本项没有实现 ScenePlanner，一行生产代码都没有改。**
-> 交付物是 `测试/test_p12_2_scene_planner_verdict.py`（13 条守卫）——**守卫的对象
+> 交付物是 `tests/test_p12_2_scene_planner_verdict.py`（13 条守卫）——**守卫的对象
 > 是本裁定的前提**，不是某个规划器。
 
 ---
@@ -114,7 +114,7 @@ Planner 要重新决定的事，brief 已经决定了。
 > ⚠️ **本项不修它**（工单第四节：不改 `scene_graph.py`，**它是下游**）。
 > 但**必须点名**：它当前是本仓库唯一一个被文档指认为"判据"、
 > 而实测**结构上无法说出"不"**的函数。它的两个"消费者"里，
-> `测试/test_showcase_schema_parity.py:195` 只断言它**与 resolver 一致** ——
+> `tests/test_showcase_schema_parity.py:195` 只断言它**与 resolver 一致** ——
 > 而两者同源，所以一致是必然的，**不是证据**。
 
 ### 2.3 证据二：漂移是**真的**，而且**没人测**
@@ -219,7 +219,7 @@ Storyboard 若插在这两端之间，**它拿到的就是它被要求输出的�
 
 ---
 
-## 五、守卫（`测试/test_p12_2_scene_planner_verdict.py`，13 条）
+## 五、守卫（`tests/test_p12_2_scene_planner_verdict.py`，13 条）
 
 **守卫的对象是本裁定的前提。** 只写在文档里的裁定会静默腐烂：
 一旦有人加了意图来源、修好了节拍仪器、或让 `generate_graph` 开始碰场景类型，
@@ -283,7 +283,7 @@ E       AssertionError: the delivered graphs declare {'showcase_demo.json': 128.
 E       assert {'showcase_de...se.json': 126} == {'showcase_demo.json': 128.998, ..., 'p29_new_renderer_showcase.json': 120.19}
 E          Differing items:
 E          {'p29_new_renderer_showcase.json': 126} != {'p29_new_renderer_showcase.json': 120.19}
-E:\Minimax-H3\测试\test_p12_2_scene_planner_verdict.py:374: AssertionError
+E:\Minimax-H3\tests\test_p12_2_scene_planner_verdict.py:374: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_the_tempo_nominated_by_the_reference_film_is_a_different_track
 1 failed, 12 passed in 0.18s
@@ -330,7 +330,7 @@ FAILED ::test_the_graph_the_generator_produces_really_validates - pipeline.sc...
 >   assert unrendered_gaps(['bar-chart', 'video'], rendered) == ['video']
 E       AssertionError: assert [] == ['video']
 E         Right contains one more item: 'video'
-E:\Minimax-H3\测试\test_p12_2_scene_planner_verdict.py:474: AssertionError
+E:\Minimax-H3\tests\test_p12_2_scene_planner_verdict.py:474: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_p12_2_scene_planner_verdict.py::test_the_helpers_can_say_no - AssertionError: assert [] == ['video']
 1 failed, 12 passed in 0.17s
@@ -352,7 +352,7 @@ brief_with('video') now yields: data-plane-3d
 E           assert generated.emitted_keys == {'depthCue'}, (
 E       AssertionError: the generator emits [] now for a brief that P12.1 measured as emitting depthCue. ...
 E       assert frozenset() == {'depthCue'}
-E:\Minimax-H3\测试\test_p12_2_scene_planner_verdict.py:415: AssertionError
+E:\Minimax-H3\tests\test_p12_2_scene_planner_verdict.py:415: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_p12_2_scene_planner_verdict.py::test_generate_graph_places_no_restraint_on_the_scene_type - Assertion...
 FAILED ::test_p12_2_scene_planner_verdict.py::test_there_is_no_storyboard_and_the_chain_has_no_hole_for_one - Ass...
@@ -373,7 +373,7 @@ FAILED ::test_p12_2_scene_planner_verdict.py::test_there_is_no_storyboard_and_th
 ### 复原核对（四次之后）
 
 ```
-26506baf6472bb873998064c994adcae6bd99e601249317c79e107b47619d349 *测试/test_p12_2_scene_planner_verdict.py
+26506baf6472bb873998064c994adcae6bd99e601249317c79e107b47619d349 *tests/test_p12_2_scene_planner_verdict.py
 ac3b4ad198c0ed2f02c3962f3d1232c069236a9191d89c4c830c4c7a8dd8ac39 *pipeline/director/style_bible.py
 7ba78bdc14a64900c5c422195692f9ebefa25adf0a7d38cf2bf96ee4d7d843df *pipeline/scene_graph.py
 9348e8651e7ec668823696b56c3a31f14baa6f92033bf1f7dd406d7c2660a5a3 *studio/src/templates/finance-showcase/design/styleBible.tsx
@@ -435,7 +435,7 @@ FAILED ::test_the_unrendered_set_is_the_two_generative_types_not_nine
 E       AssertionError: the unrendered set is ['video']. ...
 E       assert {'video'} == {'data-plane-3d', 'video'}
 E          Extra items in the right set: 'data-plane-3d'
-E:\Minimax-H3\测试\test_p12_2_scene_planner_verdict.py:231: AssertionError
+E:\Minimax-H3\tests\test_p12_2_scene_planner_verdict.py:231: AssertionError
 =========================== short test summary info ===========================
 1 failed, 12 passed in 0.26s
 ```
@@ -462,7 +462,7 @@ so the 2 in between are `video` and `data-plane-3d`.
 
 ### 8.5 第 3 件事：给「docstring 里的集合大小」真的上了守卫
 
-**新守卫**：`测试/test_p40_docstring_counts_match_code.py`（4 条测试）。
+**新守卫**：`tests/test_p40_docstring_counts_match_code.py`（4 条测试）。
 
 **它守卫的失效正是本项暴露的**：一段 docstring 写「names 13」，而代码是 20 ——
 docstring 成了过期数字的来源，被指挥窗口照抄进工单，工单又把它传给下一个 agent。
@@ -488,7 +488,7 @@ docstring 成了过期数字的来源，被指挥窗口照抄进工单，工单�
 **P40 未获授权修改该文件**（工单只授权 `visual_qa.py:1051-1054`），
 所以它被记为 `_KNOWN_DEBT` 并**断言仍是错数字**，交由指挥窗口处理。
 
-**⚠️ 一处守卫够不到、如实说出**：`测试/test_p21_props_path_gates_the_deliverable.py:24`
+**⚠️ 一处守卫够不到、如实说出**：`tests/test_p21_props_path_gates_the_deliverable.py:24`
 写「Measured: 22 types declared, 13 rendered, 9 in between」——**该句子里没有任何集合名**
 （名字在上一句）。机械解析无法归属这三个数字，硬要归属就是本项目禁止的估计。
 它记在 `_UNATTRIBUTABLE_SITE` 里，不改（P19–P37 成果），报告给指挥窗口。

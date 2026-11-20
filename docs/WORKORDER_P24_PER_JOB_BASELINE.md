@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `946aa86`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `467 passed, 3 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 
 **⚠️ 网络**：本机代理时通时不通（推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`）。
 **但本项是提交但不推送。**
@@ -165,7 +165,7 @@ font_size, freeze, safe_area
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P18_QA_LAYERS.md`、`docs/P19_*.md`、`docs/P2*.md`
 - `out/**` —— **只读**；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 UNVERIFIABLE 的语义** —— 它退出非零是 `2cac275` 立的规矩，
   **「测不了就当过」正是本项目修过的失效**
 - **不要动 `unavailable_findings()` 的占位符**、P19 的 `SIGNATURE_EQUAL`、

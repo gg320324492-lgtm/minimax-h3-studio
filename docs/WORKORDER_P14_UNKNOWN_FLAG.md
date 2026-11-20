@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `893c101`（**本地，未推送** —— 网络整体不通，`curl https://github.com` 返回 HTTP 000，已连续多次） |
 | 基线 | **先自己实测**（上次是 `387 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 ⚠️ **不要尝试推送。** 推送由指挥窗口裁定，当前网络不通。
 
@@ -106,7 +106,7 @@ const codec = get('codec', 'h264');                     // 未知 key → undefi
 
 `render.mjs` 必须**对未知 flag 报错**。
 
-⚠️ **注意一个已被 P14 钉住的事实**：`测试/test_p14_render_entry_points.py` 里
+⚠️ **注意一个已被 P14 钉住的事实**：`tests/test_p14_render_entry_points.py` 里
 可能有一条守卫**钉住了"当前静默忽略"的行为**（上一轮 agent 明确说
 "pinned the current behavior with a note that it must be rewritten (not deleted) when fixed"）。
 
@@ -170,7 +170,7 @@ const codec = get('codec', 'h264');                     // 未知 key → undefi
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录（含 `out/p13_probe/`）；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要实现 P14 的长驻 worker 或分级渲染** —— 已裁定 B + C，**不要重新讨论**
 - **不要改 `render.mjs` 的清理逻辑**（那段是为修 46 GB 事故写的）
 - **不要改 `still.mjs`** —— 它是**正确**的那一方

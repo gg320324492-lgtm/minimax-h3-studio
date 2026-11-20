@@ -21,14 +21,14 @@
 ## 1. 存在性证明：全仓有多少条活的恒真断言
 
 ⚠️ **扫描范围要选对。** 第一次扫 `rglob('test_*.py')` 得到 **180 条**，
-其中 177 条来自 `成片项目/liaozhai_demo/acestep-env/`（一个 vendored venv）。
+其中 177 条来自 `productions/liaozhai_demo/acestep-env/`（一个 vendored venv）。
 **在错误的尺度上测等于没测。** 限定到本项目 `tests/`：
 
 ```
 TOTAL flagged assert lines: 3
-测试/test_p46_probe_instruments.py:229  [OR_TRUE]  chart.unavailable(...) is None or True
-测试/test_pipeline_validates_the_schema.py:332  [SELF_CMP]  sg.schema() is sg.schema()
-测试/test_visual_qa.py:771  [OR_TRUE]  raw.decode('utf-8').isprintable() or True
+tests/test_p46_probe_instruments.py:229  [OR_TRUE]  chart.unavailable(...) is None or True
+tests/test_pipeline_validates_the_schema.py:332  [SELF_CMP]  sg.schema() is sg.schema()
+tests/test_visual_qa.py:771  [OR_TRUE]  raw.decode('utf-8').isprintable() or True
 ```
 
 ⚠️ **第三条工单没有提到。** `test_pipeline_validates_the_schema.py:332`
@@ -88,9 +88,9 @@ S20  legit  -          -        -        n/a      assert len(xs) == 0 or "skip" 
 ### 并集会让谁变红？—— **实测：谁都不会**
 
 ```
-测试/test_locked_fields_wiring.py                          TOTAL 0
-测试/test_p42_fade_is_not_a_freeze.py                      TOTAL 0
-测试/test_p27_visual_acceptance_is_repeatable.py           TOTAL 0
+tests/test_locked_fields_wiring.py                          TOTAL 0
+tests/test_p42_fade_is_not_a_freeze.py                      TOTAL 0
+tests/test_p27_visual_acceptance_is_repeatable.py           TOTAL 0
 ```
 
 ⚠️ **这与工单的预期相反，工单问"会让另外两个文件的测试变红吗"——
@@ -235,8 +235,8 @@ restore test_tautology_criterion.py  sha 3621f8628eb31dff -> 3621f8628eb31dff OK
   all mutations red for the right reason: True
 ```
 
-⚠️ **变异打在谁身上**：M1/M3 只碰 `测试/tautology_criterion.py`，
-M2 只碰 `测试/test_tautology_criterion.py` —— **两个都是本项几分钟前新建的文件**。
+⚠️ **变异打在谁身上**：M1/M3 只碰 `tests/tautology_criterion.py`，
+M2 只碰 `tests/test_tautology_criterion.py` —— **两个都是本项几分钟前新建的文件**。
 **没有在任何人正在编辑的文件上做字节级改写**，
 也没有用 `git checkout --`（工单第四节点名的那个错误）。
 
@@ -250,12 +250,12 @@ M2 只碰 `测试/test_tautology_criterion.py` —— **两个都是本项几分
 
 | 文件 | 改了什么 |
 |---|---|
-| `测试/tautology_criterion.py` | **新增**。唯一的判据，四条具名规则 |
-| `测试/test_tautology_criterion.py` | **新增**。守卫的守卫 + 全仓扫描 + "守卫不写盘"证明 |
-| `测试/test_p46_probe_instruments.py` | `:229` 修成真断言（I），并补上从未被断言的"不开 socket" |
-| `测试/test_visual_qa.py` | `:771` 换成 U+FFFD 判据（III），不再是恒真 |
-| `测试/test_p27_visual_acceptance_is_repeatable.py` | 判据委托到共享模块（实测严格更强） |
-| `测试/test_p42_fade_is_not_a_freeze.py` | `_tautology_offenders` 委托（其自带元守卫照常跑同一份代码） |
-| `测试/test_locked_fields_wiring.py` | **未改动** —— 结论是"不必改" |
+| `tests/tautology_criterion.py` | **新增**。唯一的判据，四条具名规则 |
+| `tests/test_tautology_criterion.py` | **新增**。守卫的守卫 + 全仓扫描 + "守卫不写盘"证明 |
+| `tests/test_p46_probe_instruments.py` | `:229` 修成真断言（I），并补上从未被断言的"不开 socket" |
+| `tests/test_visual_qa.py` | `:771` 换成 U+FFFD 判据（III），不再是恒真 |
+| `tests/test_p27_visual_acceptance_is_repeatable.py` | 判据委托到共享模块（实测严格更强） |
+| `tests/test_p42_fade_is_not_a_freeze.py` | `_tautology_offenders` 委托（其自带元守卫照常跑同一份代码） |
+| `tests/test_locked_fields_wiring.py` | **未改动** —— 结论是"不必改" |
 
 ⚠️ 账本 `docs/UPGRADE_PROGRESS.md` **未动**，由指挥窗口统一更新。

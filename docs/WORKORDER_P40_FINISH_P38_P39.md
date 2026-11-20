@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `12509b0`（已推送） |
 | 基线 | **先自己实测**（见第一节第 3 条：**当前有 1 条已知红**） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -70,7 +70,7 @@
 
 ### 3. P39（守卫判据）：**改动已完成，未提交**
 
-`测试/test_p4_9_ledger_numbers_resolve.py`：**`381 insertions / 46 deletions`**。
+`tests/test_p4_9_ledger_numbers_resolve.py`：**`381 insertions / 46 deletions`**。
 
 **它做的事**（从 diff 可见）：
 
@@ -166,7 +166,7 @@ FAILED test_p14_render_entry_points.py                                ← GBK �
    **在错误的尺度上测等于没测**；写数字要么实测要么标注未测；
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾**）；
    路径分隔符；别把长跑命令管道进 `tail`；
-   `测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   `tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 7. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -181,13 +181,13 @@ FAILED test_p14_render_entry_points.py                                ← GBK �
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P3*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `DataColumns.tsx` / `BrowserStack.tsx`**（P39 只改断言方式）
 - **不要改 `scene_graph.py` 与 P36 的生成器**
 - **不要动 P19–P37 的任何成果**
 - **⚠️ `visual_qa.py` 只授权你改 `:1051-1054` 那段 docstring 的数字**（若核实为过期）
 
-**本指令授权你修改**：`测试/test_p4_9_ledger_numbers_resolve.py`、
+**本指令授权你修改**：`tests/test_p4_9_ledger_numbers_resolve.py`、
 `docs/P12_2_SCENE_PLANNER.md`、新增测试与文档、
 `visual_qa.py:1051-1054` 的 docstring 数字。
 

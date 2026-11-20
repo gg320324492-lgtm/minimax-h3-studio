@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `a8156c5`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 **506 passed, 3 skipped**，另有 2 条新守卫） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 
 **⚠️ 网络**：本机代理时通时不通（推送前先测 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`）。
 **但本项是提交但不推送。**
@@ -61,8 +61,8 @@
 
 指挥窗口实测：
 
-- `成片项目/ceo_mindread_ep01/01_reference/` —— **19 MB**，含 `ceo` / `intern` / `office` 三个子目录
-- `成片项目/ceo_mindread_ep01/scripts/gen_references.py` 与 `gen_reference_sheets.py` 存在
+- `productions/ceo_mindread_ep01/01_reference/` —— **19 MB**，含 `ceo` / `intern` / `office` 三个子目录
+- `productions/ceo_mindread_ep01/scripts/gen_references.py` 与 `gen_reference_sheets.py` 存在
 - ⚠️ **那是 EP01 那条独立管线，不是 showcase 的**
 
 **请核实**：这些参考素材**与总计划说的"参考片 24–40s"是同一部吗？**
@@ -163,7 +163,7 @@
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**（P20 的处理方式，**是本项目接受的做法**）。
 7. **行尾用字节计数验**（`read_bytes` / `write_bytes`），**别用 `read_text`/`write_text`**。
-8. **`测试/test_markdown_text_is_intact.py` 现在守着全仓 markdown 的 U+FFFD** ——
+8. **`tests/test_markdown_text_is_intact.py` 现在守着全仓 markdown 的 U+FFFD** ——
    你写任何中文文档都要字节级验，**新增一个替换字符守卫就会红**。
 
 ---
@@ -175,7 +175,7 @@
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - `ceo_mindread_ep01/**`、`piyao_2026/**`、`third_lantern/**` —— **独立管线，只读**
 - `out/**` —— **只读**；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs`**
 - **不要动 P19–P25 的任何成果**
 - **不要实现 `reference_analyze.py`** —— 结论未裁定，实施越界

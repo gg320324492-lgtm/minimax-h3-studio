@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | 上游 | 本地领先 `origin/main` **12 个提交，未推送** |
 | 基线 | `235 passed, 2 skipped` |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 **开工前记录 `studio/src/templates/finance-showcase/design/tokens.ts` 的 sha256，收尾比对。**
 应为 `6a89a5b4537794187e0ac2d8a0add9c7a0dc07a6135c337d4a225b9381bd9c3c`，`lg: 40` 恰好 1 次。
@@ -36,7 +36,7 @@
 
 ### 根因（已用 AST 直接打印验证）
 
-守卫在 `测试/test_chart_geometry.py` 里这样收集绑定：
+守卫在 `tests/test_chart_geometry.py` 里这样收集绑定：
 
 ```python
 bound: dict[str, ast.AST] = {}

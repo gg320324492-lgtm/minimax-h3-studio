@@ -430,4 +430,4 @@ Phase 1 用一次性进程（bundle ~10–30s，对 60s 成片可接受）；Pha
 - 生态项目：github.com/{gyoridavid/short-video-maker, calesthio/OpenMontage, Agents365-ai/video-podcast-maker, Vincentwei1021/video-shotcraft, ATH-MaaS/Pixelle-Video, 0xsline/OpenChatCut, harry0703/MoneyPrinterTurbo, remotion-dev/template-tiktok, remotion-dev/skills, heygen-com/hyperframes}
 - H3 模型：huggingface.co/MiniMaxAI/MiniMax-H3（模型卡+Community License）；blog.comfy.org（H3 Day-0 support）；github.com/kijai/ComfyUI-WanVideoWrapper（备用栈生态）
 - TTS：github.com/{RVC-Boss/GPT-SoVITS, index-tts（IndexTTS-2）, FunAudioLLM/CosyVoice2-0.5B, modelbest/VoxCPM, hexgrad/Kokoro-82M-v1.1-zh}；github.com/m-bain/whisperX
-- 本机盘点：`成片项目/ceo_mindread_ep01/00_project/{environment_report.md, timeline.json, dialogue.json}`、`scripts/{build_timeline, mix_audio_v4, burn_subtitles_v2, qa_final}.py`、`video_minimax_h3_{r2v,t2v}.json`
+- 本机盘点：`productions/ceo_mindread_ep01/00_project/{environment_report.md, timeline.json, dialogue.json}`、`scripts/{build_timeline, mix_audio_v4, burn_subtitles_v2, qa_final}.py`、`video_minimax_h3_{r2v,t2v}.json`

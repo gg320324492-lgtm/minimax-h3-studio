@@ -13,7 +13,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `a05b4b8`（**本地，未推送** —— 网络整体不通，`curl https://github.com` 返回 HTTP 000，已连续四次） |
 | 基线 | **先自己实测**（上次是 `379 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 ⚠️ **不要尝试推送。** 推送由指挥窗口裁定，当前网络不通。
 
@@ -176,7 +176,7 @@ P13 的答案是「没有 scene 级入口 + 没有 scene 级 diff」。
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录（含 `out/p13_probe/`，51 个文件）；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要实现长驻 worker 或分级渲染** —— 结论未裁定，实现越界
 - **不要改 `render.mjs` 的清理逻辑** —— 那段逻辑是为修 46 GB 事故写的，
   长驻化会绕过它，**那是本项要评估的风险，不是本项要动手的地方**

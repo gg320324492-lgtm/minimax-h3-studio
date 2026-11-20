@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `a7366fe`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `389 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 **⚠️ 网络**：这台机器有一个**时通时不通的代理**（`127.0.0.1:7897`）。
 **推送前先测**：`curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`。
@@ -170,7 +170,7 @@ P12「零段值得建」、P13「B + C」、P14「B + C」。**不要为了交�
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要实现 SR Router、不要扩 schema、不要接线 `generative` 的消费方** ——
   结论未裁定，实施越界。**第 2 件事只要建议 + 依据。**
 - **不要碰任何 SR / 模型 / 权重相关的东西** —— 本项不下载、不推理、不调用 SR

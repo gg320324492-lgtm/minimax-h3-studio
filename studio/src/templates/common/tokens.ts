@@ -1,4 +1,4 @@
-// 字幕样式令牌 —— 自 成片项目/ceo_mindread_ep01/scripts/burn_subtitles_v2.py 的 STYLES 字典
+// 字幕样式令牌 —— 自 productions/ceo_mindread_ep01/scripts/burn_subtitles_v2.py 的 STYLES 字典
 // 逐字段精确移植（2026-09-29 版本）。样式改动必须双端同步，qa_final.py 的字幕宽度
 // 检查引用 PIL 侧同源数值。
 // 坐标系：1080×1920 设计稿（y 为 PIL draw.text 的 top 像素）。

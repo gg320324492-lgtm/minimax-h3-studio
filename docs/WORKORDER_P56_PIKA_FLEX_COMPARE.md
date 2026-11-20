@@ -16,7 +16,7 @@
 | 报告 | `E:\Minimax-H3\docs\P56_PIKA_FLEX_COMPARISON.md` |
 
 **⚠️ 本项目工作树里有不属于你的在制工作**（`studio/src/Root.tsx`、
-`测试/test_p48_reaccept.py`、`intro_video/` 等）——**不碰、不提交、不恢复。**
+`tests/test_p48_reaccept.py`、`intro_video/` 等）——**不碰、不提交、不恢复。**
 
 ---
 
@@ -104,7 +104,7 @@ model-intro 的真实需求，或自造一条含人物 + 对白 + 运镜的 prom
 4. ⚠️ **一块 GPU 串行跑**；**外推等于没测**（每条都实测计时）；
 5. ⚠️ **下载校验**：LoRA 文件落盘后核大小（1.96 GB 级）再加载，防止网络截断；
 6. ⚠️ **磁盘**：视频放 `E:\out\p56\`，收尾删大文件留表格与对比帧；
-7. ⚠️ `测试/test_markdown_text_is_intact.py` 守 U+FFFD——中文报告用 `read_bytes`/`write_bytes`；
+7. ⚠️ `tests/test_markdown_text_is_intact.py` 守 U+FFFD——中文报告用 `read_bytes`/`write_bytes`；
 8. ⚠️ GBK 控制台读非 ASCII 用字节判断。
 
 ---
@@ -117,7 +117,7 @@ model-intro 的真实需求，或自造一条含人物 + 对白 + 运镜的 prom
 - 本项目工作树的在制工作（见零节）
 - `docs/UPGRADE_PROGRESS.md`——账本指挥窗口写
 - `DiagOutputDir`——禁止触碰
-- **P53/P54 的半成品**（`测试/test_p48_reaccept.py` 等）——不碰
+- **P53/P54 的半成品**（`tests/test_p48_reaccept.py` 等）——不碰
 
 **本指令授权你修改**：`E:\Minimax-H3\third_party\ComfyUI\models\loras\`（新增两个 LoRA 文件）、
 `workflows/`（**新增**对比工作流，不改原件）、

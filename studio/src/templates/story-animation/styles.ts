@@ -1,4 +1,4 @@
-// story-animation 样式集 —— 自 成片项目/liaozhai_demo/scripts/burn_subtitles.py STYLES 逐字段移植。
+// story-animation 样式集 —— 自 productions/liaozhai_demo/scripts/burn_subtitles.py STYLES 逐字段移植。
 // 设计稿 1920×1080（成片超分到 2560×1440，样式坐标随设计稿等比缩放）。
 // 该项目字体偏好 msyhbd（雅黑粗体）→ 全样式 fontWeight 700。
 // title_*/end_*/corner 为片头卡/结束卡/角标固定元素，不可移动。

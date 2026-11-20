@@ -170,7 +170,7 @@
 
 ## 七、三条变异（外加两条），原始 `-rf` 输出
 
-守卫文件：`测试/test_brand_lock_wiring.py`（30 条）。
+守卫文件：`tests/test_brand_lock_wiring.py`（30 条）。
 变异脚本：`_p30_mutation_run.py`。
 
 > ⚠️ 脚本里有一个**探针**，在跑测试之前先测锁的可观测行为。
@@ -340,9 +340,9 @@ content keys that are 11.1 levers: NONE
 | 文件 | 改了什么 |
 |---|---|
 | `studio/scripts/locked_fields.py` | 新增 `iter_scene_locked` / `BRAND_CONTENT_KEYS`；`diff_locked` 两通道走同一 `emit()`；`_counterpart_path` 支持场景级路径；`_anchor` 分命名空间；`coverage_report` 加 `scene_locks` 并让 `by_kind['brand']` 非空；**删除了 `diff_locked` 里两个从未被使用的死变量** `b_by_path`/`a_by_path` |
-| `测试/test_brand_lock_wiring.py` | **新增**，30 条，全部断言 `diff_locked` 的行为 |
-| `测试/test_locked_fields.py` | `_brand_graph`/`_brand_scene_index` 两个 helper；`test_the_three_kinds_from_the_ledger_are_all_present` 的常量断言改为行为断言 |
-| `测试/test_locked_fields_wiring.py` | `test_the_module_under_test_still_declares_what_the_contract_assumptions` 的 `assert 'logo' in LOCKED_SCENE_TYPES` 改为行为断言 |
+| `tests/test_brand_lock_wiring.py` | **新增**，30 条，全部断言 `diff_locked` 的行为 |
+| `tests/test_locked_fields.py` | `_brand_graph`/`_brand_scene_index` 两个 helper；`test_the_three_kinds_from_the_ledger_are_all_present` 的常量断言改为行为断言 |
+| `tests/test_locked_fields_wiring.py` | `test_the_module_under_test_still_declares_what_the_contract_assumptions` 的 `assert 'logo' in LOCKED_SCENE_TYPES` 改为行为断言 |
 | `_p30_mutation_run.py` | **新增**，变异脚本 + 行为探针（临时产物，已清理） |
 
 **未触碰**：`visual_qa.py` / `frame_baseline.py`（sha256 与工单给定值一致）、
@@ -351,7 +351,7 @@ content keys that are 11.1 levers: NONE
 
 ### ⚠️ 留给下一个人的两处过期注释（**本项未改，超出授权范围**）
 
-- `Brand.tsx:15-29`：*"The lock itself is untouched; `测试/test_locked_fields.py` still pins it."*
+- `Brand.tsx:15-29`：*"The lock itself is untouched; `tests/test_locked_fields.py` still pins it."*
   —— 两句现在都不成立了（锁被接线了，测试也改成断言行为了）。
 - `Brand.tsx:29` 引用的 `showcase-v1.ts:36`，实际 `'logo'` 在 **:82**；
   `locked_fields.py` docstring 里的 `showcase-v1.ts:100`，实际 `content` 在 **:256**。

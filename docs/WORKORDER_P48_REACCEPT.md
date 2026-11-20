@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `4f6fb1c`（已推送） |
 | 基线 | **`752 passed, 4 skipped`**（⚠️ 历史基线过期过三次，**实测为准，不要往工单数字上凑**） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把 `—` 显示成替换字符，
 指挥窗口刚被它骗过一次）。**且读源码里的非 ASCII 时用字节判断，不要信控制台。**
 
@@ -163,7 +163,7 @@ rule_graph_scene_renderable  rule_missing_asset  rule_duplicate_check_props
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删。**
 8. ⚠️ **不要与别的进程并发渲染** —— 指挥窗口与 agent 并发过，
    52 次渲染里一条红在 `still b failed on frame 870`，**单独重跑即成功**。
-9. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD ——
+9. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD ——
    写中文文档用 `read_bytes`/`write_bytes`。
 10. ⚠️ py-3.10 有 cv2 但没有 pytest —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
     在 3.12 套件里 **skip 而不是撒谎**。
@@ -177,7 +177,7 @@ rule_graph_scene_renderable  rule_missing_asset  rule_duplicate_check_props
 - ⚠️ **`out/p13_probe/**`、`out/p45_vlm/**` —— 只读**
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P47*.md` —— 只读
 - `DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **⚠️ `pipeline/examples/charts_demo.json` —— 本项原则上不改它。**
   它是被验收的对象。**若你要为第 3(c) 的对照渲染临时改它，用副本，不要动原件**，
   **并在交付里报告你造了什么副本、删了没有。**

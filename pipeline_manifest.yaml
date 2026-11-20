@@ -26,14 +26,14 @@ interpreter:
 # ─────────────────────────────────────────────────────────────
 system_modules:
   ffmpeg_env:
-    path: 脚本/ffmpeg_env.py
+    path: scripts/ffmpeg_env.py
     role: ffmpeg/ffprobe 二进制解析器（自带 7.1.1；PATH 上是 Octave 的 4.2.11 陷阱）
     callers: 21
     caveat: >
       R4：tools/ 被 gitignore，新 clone 缺自带 ffmpeg 时会把 CWD 注入 PATH。
       P0.4 config 层落地后复查。
   sr_pipeline_v2:
-    path: 脚本/sr_pipeline_v2.py
+    path: scripts/sr_pipeline_v2.py
     role: Real-ESRGAN 超分引擎（流式、零磁盘中间产物、tile/overlap 可调）
     callers: run_post_chain.sh, sr_takes.py + 3 个旧项目 run_post_chain.sh（subprocess，零 import）
     caveat: R2 —— 现行引擎从未产出过交付母版（母版由已崩溃的 pipe_4k_fast.py 生成）
@@ -42,40 +42,40 @@ system_modules:
 # 链 A：ffmpeg 6 段链（唯一有编排器的链）
 # ─────────────────────────────────────────────────────────────
 chain_a_ffmpeg:
-  orchestrator: 成片项目/ceo_mindread_ep01/scripts/run_post_chain.sh
+  orchestrator: productions/ceo_mindread_ep01/scripts/run_post_chain.sh
   stages:
     - name: select_takes
-      path: 成片项目/ceo_mindread_ep01/scripts/select_takes.py
+      path: productions/ceo_mindread_ep01/scripts/select_takes.py
       caveat: R2/P1 —— T01 硬编码默认，无评分函数；override 仅 CLI argv 且编排器不传参
     - name: build_timeline
-      path: 成片项目/ceo_mindread_ep01/scripts/build_timeline.py
+      path: productions/ceo_mindread_ep01/scripts/build_timeline.py
       note: 双写 v1(:162) + v2(:195)，两条链的共同上游
     - name: super_resolve
-      path: 脚本/sr_pipeline_v2.py
+      path: scripts/sr_pipeline_v2.py
       args: '--tile 768 --overlap 64 --out-width 1080 --out-height 1920'
     - name: mix_audio
-      path: 成片项目/ceo_mindread_ep01/scripts/mix_audio_v4.py
+      path: productions/ceo_mindread_ep01/scripts/mix_audio_v4.py
       note: loudnorm −14 LUFS + sidechain 鸭化（WAV 中转前的响度工程在此）
     - name: burn_subtitles
-      path: 成片项目/ceo_mindread_ep01/scripts/burn_subtitles_v2.py
+      path: productions/ceo_mindread_ep01/scripts/burn_subtitles_v2.py
       note: 同时被 qa_final.py 当库 import（STYLES 字典）
     - name: finalize
-      path: 成片项目/ceo_mindread_ep01/scripts/finalize.py
+      path: productions/ceo_mindread_ep01/scripts/finalize.py
     - name: qa
-      path: 成片项目/ceo_mindread_ep01/scripts/qa_final.py
+      path: productions/ceo_mindread_ep01/scripts/qa_final.py
       checks: 16
 
 # ─────────────────────────────────────────────────────────────
 # 链 B：Remotion 链（无编排者，只能手工单条命令）
 # ─────────────────────────────────────────────────────────────
 chain_b_remotion:
-  entry: 成片项目/ceo_mindread_ep01/scripts/render_with_remotion.py
+  entry: productions/ceo_mindread_ep01/scripts/render_with_remotion.py
   steps:
     - karaoke（可选）: studio/scripts/word_timestamps.py
-    - stage: 成片项目/ceo_mindread_ep01/scripts/stage_assets.py
+    - stage: productions/ceo_mindread_ep01/scripts/stage_assets.py
     - render: studio/bin/render.mjs
     - master（可选）: studio/scripts/master_audio.py
-    - qa（可选）: 成片项目/ceo_mindread_ep01/scripts/qa_final.py
+    - qa（可选）: productions/ceo_mindread_ep01/scripts/qa_final.py
   encoder_contract: x264 crf18 + jpeg + colorSpace=bt709 + concurrency=16
   caveat: >
     render.mjs 的 crf/concurrency 默认是 undefined —— README 宣称的「内置」不准确；
@@ -85,13 +85,13 @@ chain_b_remotion:
 # 上游生产脚本（手工执行，产物被下游消费）
 # ─────────────────────────────────────────────────────────────
 upstream_manual:
-  - path: 成片项目/ceo_mindread_ep01/scripts/gen_tts_kokoro.py
+  - path: productions/ceo_mindread_ep01/scripts/gen_tts_kokoro.py
     role: Kokoro-82M 中文 TTS（CEO=zm_yunyang / INTERN=zf_xiaoxiao / 心声=lowpass 4k）
-  - path: 成片项目/ceo_mindread_ep01/scripts/gen_audio_assets.py
+  - path: productions/ceo_mindread_ep01/scripts/gen_audio_assets.py
     role: ffmpeg lavfi 合成 BGM/SFX
-  - path: 成片项目/ceo_mindread_ep01/scripts/gen_office.py
+  - path: productions/ceo_mindread_ep01/scripts/gen_office.py
     role: OFFICE_MASTER_REFERENCE（被 gen_keyframes_v3 硬引用为 <Picture 3>）
-  - path: 成片项目/ceo_mindread_ep01/scripts/comfy_utils.py
+  - path: productions/ceo_mindread_ep01/scripts/comfy_utils.py
     role: ComfyUI history 解析
     caveat: R3 —— fallback_newest 默认 True，mtime 猜测静默生效（P0.3 修复）
 
@@ -205,22 +205,22 @@ experiments:
 # ─────────────────────────────────────────────────────────────
 deprecated:
   scripts:
-    - path: 成片项目/ceo_mindread_ep01/scripts/_archive/
+    - path: productions/ceo_mindread_ep01/scripts/_archive/
       reason: 全部被 *_v2/v3/v4 取代；含全库唯一 -shortest（burn_subtitles_pil.py:255）
-    - path: 成片项目/ceo_mindread_ep01/scripts/gen_references.py
+    - path: productions/ceo_mindread_ep01/scripts/gen_references.py
       reason: 产出被 gen_reference_sheets 消费（删则断），但功能上已被取代
       status: deprecated_but_dependent
   artifacts:
-    - path: 成片项目/ceo_mindread_ep01/09_final_v2/
+    - path: productions/ceo_mindread_ep01/09_final_v2/
       reason: 与 09_final/ 三个 mp4 md5 全同、非硬链接，~89MB 纯冗余；时间戳反而更早
-    - path: 成片项目/ceo_mindread_ep01/00_project/seed_manifest_v1_20steps.json
+    - path: productions/ceo_mindread_ep01/00_project/seed_manifest_v1_20steps.json
       reason: 与当前 seed_manifest.json md5 全同，内容写的是 4step —— 文件名误导
 
 # ─────────────────────────────────────────────────────────────
 # 质量门禁（当前全部无自动执行 —— P0 接线）
 # ─────────────────────────────────────────────────────────────
 qa_gates:
-  qa_final: 成片项目/ceo_mindread_ep01/scripts/qa_final.py        # 16 项，链 A 末段
+  qa_final: productions/ceo_mindread_ep01/scripts/qa_final.py        # 16 项，链 A 末段
   qa_report: studio/scripts/qa_report.py                  # 10 项，零调用方
   check_contract: studio/scripts/check_contract.py        # 2 项，零调用方
   enforced: false

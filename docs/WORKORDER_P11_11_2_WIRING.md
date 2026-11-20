@@ -17,11 +17,11 @@
 
 **环境（已实测，不要改）**：
 - pytest 只装在 **Python 3.12**：用 `py -3.12 -m pytest`
-- cv2 只装在 3.10 → `测试/test_take_selection_behaviour.py` 必须 `--ignore`
+- cv2 只装在 3.10 → `tests/test_take_selection_behaviour.py` 必须 `--ignore`
 - 标准跑法（**从仓库外跑**，这是既定协议）：
   ```
-  cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
-      --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py
+  cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
+      --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
   ```
 - 预期：**`235 passed, 2 skipped`**（已在 `994b7a8` / `9254f2d` / `bc3bc3d` 之上实测确认）。数字对不上就是你的改动有问题，先查清再往下
 
@@ -51,7 +51,7 @@
 
 ### 你要交付什么
 
-**新增 `测试/test_locked_fields_wiring.py`**（不要改 `测试/test_locked_fields.py`，
+**新增 `tests/test_locked_fields_wiring.py`**（不要改 `tests/test_locked_fields.py`，
 那 14 条已覆盖"攻击动作被抓住"，本文件覆盖的是**接线契约**，两者不重叠）。
 
 必须在文件头 docstring 里写明这一条，且不得弱化：

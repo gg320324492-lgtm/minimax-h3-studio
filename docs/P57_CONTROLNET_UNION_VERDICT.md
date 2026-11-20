@@ -160,7 +160,7 @@ pose_scale1.0_* / pose_scale0.0_*（生效性 A/B 对）+ canny/depth/hed/mlsd_s
 - 大文件处置：8.38 GB 权重是交付物保留；`E:\Minimax-H3\third_party\ComfyUI\output\p57\` 的六条原件
   已拷入项目证据目录后**删除**；对比帧 PNG 与短视频为裁定证据，保留。
 - 未触碰：`studio/.remotion/water-renewal-bundle`、P56 文件、`DiagOutputDir`、
-  工作树在制工作（`studio/src/Root.tsx`、`测试/test_p48_reaccept.py`、
+  工作树在制工作（`studio/src/Root.tsx`、`tests/test_p48_reaccept.py`、
   `intro_video/`、`studio/public/audio/intro/`、`studio/src/templates/model-intro/`、
   `from_e_root/`）。
 

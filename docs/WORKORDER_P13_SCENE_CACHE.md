@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `4a07867`（**本地，未推送** —— 上一轮推送因 TLS 握失败，网络整体不通，`curl https://github.com` 返回 HTTP 000） |
 | 基线 | **先自己实测**（上次是 `365 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 ⚠️ **不要尝试推送** —— 推送由指挥窗口裁定，且当前网络不通。
 
@@ -178,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— cv2 只装在 3.10，本项 `--ignore`
 - **不要实现 scene 级缓存或 bundle 复用** —— 结论未裁定，实现越界
 - **不要删任何已有的 bundle 目录或 out/ 目录**
 

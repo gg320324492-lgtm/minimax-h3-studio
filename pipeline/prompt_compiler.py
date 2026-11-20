@@ -13,8 +13,8 @@ makes prompt changes reviewable (diff the JSON) and reproducible (recompile).
 
 Usage:
   E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe pipeline/prompt_compiler.py \
-      --specs 成片项目/ceo_mindread_ep01/00_project/shot_specs.json \
-      --out   成片项目/ceo_mindread_ep01/00_project/h3_prompts.compiled.json
+      --specs productions/ceo_mindread_ep01/00_project/shot_specs.json \
+      --out   productions/ceo_mindread_ep01/00_project/h3_prompts.compiled.json
 """
 
 from __future__ import annotations

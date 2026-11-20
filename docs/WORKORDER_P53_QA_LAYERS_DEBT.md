@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | 指挥窗口派工时的 `main`（⚠️ **本仓有别的会话在提交**，见第四节） |
 | 基线 | **⚠️ 本机全量套件测不出稳定数字** —— 三次连跑三个不同失败集合，<br>而每个失败文件单跑都绿。**开工前自己测一次，并注明是否并发、是否清过探针。** |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把 `—` 显示成替换字符）。
 **读非 ASCII 用字节判断，别信控制台。**
 
@@ -23,7 +23,7 @@
 
 **开工前记录 sha256，收尾比对**：
 - `studio/scripts/qa_layers.py`
-- `测试/test_p40_docstring_counts_match_code.py`
+- `tests/test_p40_docstring_counts_match_code.py`
 
 ---
 
@@ -40,7 +40,7 @@
 'placeholder. No threshold — …'
 ```
 
-**实测（用 `测试/test_p26_scene_type_coverage.py` 自己的解析器）**：
+**实测（用 `tests/test_p26_scene_type_coverage.py` 自己的解析器）**：
 
 | | 散文写的 | 实测真实 |
 |---|---|---|
@@ -53,7 +53,7 @@ P38 订正了 `visual_qa.py:1051-1054` 的 docstring，**漏了这里**。
 
 ### 2. ⚠️⚠️ 而它**不是漏网之鱼** —— 它是**登记在案的未偿还债务**
 
-`测试/test_p40_docstring_counts_match_code.py` 有 `_KNOWN_DEBT`：
+`tests/test_p40_docstring_counts_match_code.py` 有 `_KNOWN_DEBT`：
 
 ```python
 _KNOWN_DEBT = {('studio/scripts/qa_layers.py', 'SCENE_RENDERERS'): …}
@@ -155,7 +155,7 @@ P40 的守卫只管**集合大小**这类数字，**不管"某规则在某条件
 4. ⚠️ **磁盘**：本项基本不渲染。**若你渲染，输出到 E 盘**，跑完清理。
    ⚠️ **⚠️ 指挥窗口上一轮忘了清自己 8 MB 的探针残留，
    而失败的 `test_a_finished_render_leaves_no_bundle_directory_behind` 恰恰是查残留的。别成为下一个。**
-5. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
+5. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD。
 6. ⚠️ py-3.10 有 cv2 但没有 pytest —— 需要 cv2 就写进普通函数用 3.10 驱动。
 
 ---
@@ -169,25 +169,25 @@ P40 的守卫只管**集合大小**这类数字，**不管"某规则在某条件
   ?? intro_video/
   ?? from_e_root/
    M studio/src/Root.tsx
-   M 测试/test_p48_reaccept.py   <- P54 的半成品，不要碰
+   M tests/test_p48_reaccept.py   <- P54 的半成品，不要碰
   ?? studio/public/audio/intro/
   ?? studio/src/templates/model-intro/
   ```
   **⚠️ 那不是你的，不要碰、不要提交、不要为了让它变绿而改它。**
   **⚠️ 并且：既然别的会话会提交，你的提交可能与它撞车 ——
   `git add` 务必用显式路径，且提交前先 `git status` 看一眼。**
-- ⚠️ **`测试/test_p42*`、`test_p46*`、`test_p27*`、`test_p49*`、`test_p50*`、
-  `test_p51*`、`test_chart_type_defaults_are_real.py`、`测试/tautology_criterion.py`**
+- ⚠️ **`tests/test_p42*`、`test_p46*`、`test_p27*`、`test_p49*`、`test_p50*`、
+  `test_p51*`、`test_chart_type_defaults_are_real.py`、`tests/tautology_criterion.py`**
   —— **P49/P50/P51 的成果，别碰**
 - `out/charts_demo.mp4`、`out/p45_vlm/**`、`out/p48_reaccept/**` —— 只读
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P52*.md` —— 只读
 - `DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `studio/src/**`**（本项只改 `studio/scripts/qa_layers.py` 与测试）
 - **不要动 P19–P52 的任何成果**
 
 **本指令授权你修改**：`studio/scripts/qa_layers.py`、
-`测试/test_p40_docstring_counts_match_code.py`（**仅限 `_KNOWN_DEBT` 那一条与其守卫**）、
+`tests/test_p40_docstring_counts_match_code.py`（**仅限 `_KNOWN_DEBT` 那一条与其守卫**）、
 相关测试、新增文档。
 
 ---

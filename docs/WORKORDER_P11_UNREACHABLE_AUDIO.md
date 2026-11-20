@@ -12,7 +12,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `9f74bc4` |
 | 基线 | `261 passed, 2 skipped` |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 `tokens.ts` sha256 应为 `6a89a5b4537794187e0ac2d8a0add9c7a0dc07a6135c337d4a225b9381bd9c3c`。
 

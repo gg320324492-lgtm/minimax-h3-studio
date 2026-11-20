@@ -7,8 +7,8 @@ surfaces (they may differ cosmetically from the TTS source text).
 
 Usage:
   E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/word_timestamps.py \
-      --timeline 成片项目/ceo_mindread_ep01/00_project/timeline_v2.json \
-      --audio 成片项目/ceo_mindread_ep01/07_edit/EP01_WITH_AUDIO.mp4 \
+      --timeline productions/ceo_mindread_ep01/00_project/timeline_v2.json \
+      --audio productions/ceo_mindread_ep01/07_edit/EP01_WITH_AUDIO.mp4 \
       [--model small] [--in-place]
 """
 

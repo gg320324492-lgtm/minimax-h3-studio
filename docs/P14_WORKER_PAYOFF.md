@@ -179,7 +179,7 @@ bash 侧 wall 1981 / 1999 / 2190 ms ⇒ **进程启动 + 模块加载 ≈ 300–
 
 ### 4.1 决定性的一条：生产管线一天只渲一次
 
-`成片项目/ceo_mindread_ep01/scripts/render_with_remotion.py:70` 是唯一的生产调用点：
+`productions/ceo_mindread_ep01/scripts/render_with_remotion.py:70` 是唯一的生产调用点：
 
 ```python
 if run(['node', STUDIO / 'bin' / 'render.mjs',
@@ -327,7 +327,7 @@ P13 的答案是「没有 scene 级入口 + 没有 scene 级 diff」。
 
 ## 7. 守卫
 
-`测试/test_p14_render_entry_points.py`，8 条，**全部实测行为**：
+`tests/test_p14_render_entry_points.py`，8 条，**全部实测行为**：
 
 | 守卫 | 断言的是 |
 |---|---|

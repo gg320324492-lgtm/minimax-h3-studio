@@ -44,14 +44,14 @@ import {EnsureFonts} from '../common/EnsureFonts';
  * wiring is hard — it is that wiring would be wrong. Four measured facts:
  *
  *   1. NO PRODUCER. Of the 17 tracked .json files, exactly one has a top-level
- *      `audio`, and it is `成片项目/piyao_2026/09_final/delivery_manifest.json`, where
+ *      `audio`, and it is `productions/piyao_2026/09_final/delivery_manifest.json`, where
  *      `audio` is the free-text string `"AAC 48kHz stereo, loudnorm -14 LUFS"`.
  *      Not a graph, not a `src`. Neither delivered showcase graph sets it.
  *   2. THE PYTHON MIRROR FORBIDS IT. `pipeline/schemas/showcase-v1.schema.json`
  *      carries `additionalProperties: false` and lists
  *      `bpm/format/project/scenes/style_bible/version` — no `audio`. Declaring
  *      it in zod alone would make the two sides disagree, which is the one thing
- *      `测试/test_showcase_schema_parity.py` exists to prevent. The Python
+ *      `tests/test_showcase_schema_parity.py` exists to prevent. The Python
  *      mirror is the authoring side; zod is the rendering side.
  *   3. IT WOULD CONTRADICT A GUARDED DESIGN DECISION. `beat/sfxProfile.check.ts`
  *      asserts "no mapped sound is a bgm — a table of event sounds must not map
@@ -73,7 +73,7 @@ import {EnsureFonts} from '../common/EnsureFonts';
  * If a music bed is genuinely wanted here, that is a DESIGN change and it is not
  * a one-line repair: decide the mix alongside `EVENT_SFX`, declare `audio` on
  * BOTH schema sides so the parity test stays meaningful, and give it a sane
- * default. `测试/test_undeclared_field_reads.py` is written to go red the day
+ * default. `tests/test_undeclared_field_reads.py` is written to go red the day
  * this comes back — so a reintroduction cannot be quiet.
  */
 
@@ -116,7 +116,7 @@ const SCENE_RENDERERS: Record<string, React.FC<{scene: Scene}>> = {
  * The declared scene types that are DELIBERATELY left to `MissingScene`.
  *
  * This is a DECISION TABLE, not a TODO list. P26's guard
- * (`测试/test_p26_scene_type_coverage.py`) requires every value of `SceneType`
+ * (`tests/test_p26_scene_type_coverage.py`) requires every value of `SceneType`
  * to be either a key of `SCENE_RENDERERS` or a key HERE — so a type added to the
  * schema with neither is a red guard rather than a film that renders
  * "not implemented in P4", and a renderer quietly deleted from the map is red

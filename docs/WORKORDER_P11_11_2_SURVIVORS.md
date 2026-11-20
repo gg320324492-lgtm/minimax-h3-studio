@@ -10,9 +10,9 @@
 |---|---|
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `5c29b10` |
-| 当前状态 | `测试/test_locked_fields_wiring.py`（457 行）与 `studio/scripts/locked_fields_mutation.py`（187 行）**均为未跟踪，一件都没提交** |
+| 当前状态 | `tests/test_locked_fields_wiring.py`（457 行）与 `studio/scripts/locked_fields_mutation.py`（187 行）**均为未跟踪，一件都没提交** |
 | 基线（含本项） | `259 passed, 2 skipped` |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 `tokens.ts` sha256 应为 `6a89a5b4537794187e0ac2d8a0add9c7a0dc07a6135c337d4a225b9381bd9c3c`。
 
@@ -44,7 +44,7 @@
 自检确为重言式检测。`tokens.ts` 全程 `6a89a5b4…`。
 
 **你自报的两条自查，均核实为真**：
-`成片项目/liaozhai_demo/acestep-env` 21894 文件 / 341 MB / 99 秒（你指出这不只是性能，
+`productions/liaozhai_demo/acestep-env` 21894 文件 / 341 MB / 99 秒（你指出这不只是性能，
 而是「把整个仓库当源码」这个问法就错了——这一点写进了代码注释，很好）；
 自检第一版「数 `assert` 存在性」被 `assert True` 骗过（属实）。
 
@@ -59,7 +59,7 @@
 
 ### 1. 把 6 条存活逐条判定，写进代码（不是提交信息）
 
-判定写在 `测试/test_locked_fields_wiring.py` 里
+判定写在 `tests/test_locked_fields_wiring.py` 里
 `test_every_contract_test_still_makes_a_comparison`（当前第 379 行）的 docstring 或紧邻注释里。
 每条给出：**真漏洞 / 无效变异 + 理由**。
 

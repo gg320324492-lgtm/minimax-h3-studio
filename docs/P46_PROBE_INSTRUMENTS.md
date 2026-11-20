@@ -38,7 +38,7 @@
 |---|---|
 | HEAD（开工时） | `f078c95` |
 | **基线测试** | **`719 passed, 4 skipped`**（实测，与工单数字一致） |
-| 基线跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=.../test_take_selection_behaviour.py` |
+| 基线跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=.../test_take_selection_behaviour.py` |
 | ollama | 在跑；`qwen2.5vl:7b`，`5969245856` 字节。**未安装、未下载、未修改。** |
 | 参考片 | `C:/Users/pc/Documents/xwechat_files/wxid_uibqlezvenv522_4379/msg/video/2026-10/47b43f61516c23d169ddd34b00695ab2_raw.mp4`（`ffprobe` 实测 1280×720 / 60fps / **5082 帧** / h264 / 有 aac 音轨） |
 | ffmpeg | 4.2.11（**无 `drawtext`**——这一点后面有用） |
@@ -559,7 +559,7 @@ P37 的死因原文：「对齐布局」需要一个**声明的参照框**；
 
 ---
 
-## 七、变异测试（`测试/test_p46_probe_instruments.py`）
+## 七、变异测试（`tests/test_p46_probe_instruments.py`）
 
 工单 §三.9 要求：本项动了 `reference_probe`，必须配变异测试，
 且守卫**绝不能依赖 ollama 在跑**。
@@ -582,7 +582,7 @@ P37 的死因原文：「对齐布局」需要一个**声明的参照框**；
 ### M1 — 色彩：无测量却判 A
 
 ```
-$ python -m pytest 测试/test_p46_probe_instruments.py -rf -q
+$ python -m pytest tests/test_p46_probe_instruments.py -rf -q
 # 变异前 sha256[:16] = 33b0cd53c7ce11e5   变异后 = 093acf15e14f7181   退出码 = 1
 ================================== FAILURES ===================================
 ________________ test_colour_is_b_when_no_colour_was_measured _________________
@@ -614,7 +614,7 @@ E
 E         - B
 E         + A
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:114: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:114: AssertionError
 _________ test_a_failed_colour_pass_cannot_take_the_other_eleven_down _________
 
     def test_a_failed_colour_pass_cannot_take_the_other_eleven_down():
@@ -640,7 +640,7 @@ E
 E         - B
 E         + A
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:155: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:155: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_colour_is_b_when_no_colour_was_measured - AssertionError: a col...
 FAILED ::test_a_failed_colour_pass_cannot_take_the_other_eleven_down - Assert...
@@ -650,7 +650,7 @@ FAILED ::test_a_failed_colour_pass_cannot_take_the_other_eleven_down - Assert...
 ### M2 — 色彩：verdict 写成常量 `B`
 
 ```
-$ python -m pytest 测试/test_p46_probe_instruments.py -rf -q
+$ python -m pytest tests/test_p46_probe_instruments.py -rf -q
 # 变异前 sha256[:16] = 33b0cd53c7ce11e5   变异后 = 504d926a21e81584   退出码 = 1
 ================================== FAILURES ===================================
 ___________ test_colour_is_a_only_when_frames_were_actually_sampled ___________
@@ -676,7 +676,7 @@ E
 E         - A
 E         + B
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:135: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:135: AssertionError
 _______________ test_m2_a_constant_colour_still_reaches_a_here ________________
 
     def test_m2_a_constant_colour_still_reaches_a_here():
@@ -694,7 +694,7 @@ E
 E         - A
 E         + B
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:179: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:179: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_colour_is_a_only_when_frames_were_actually_sampled - AssertionE...
 FAILED ::test_m2_a_constant_colour_still_reaches_a_here - AssertionError: ass...
@@ -704,7 +704,7 @@ FAILED ::test_m2_a_constant_colour_still_reaches_a_here - AssertionError: ass...
 ### M3 — 色彩：判据忽略测量值
 
 ```
-$ python -m pytest 测试/test_p46_probe_instruments.py -rf -q
+$ python -m pytest tests/test_p46_probe_instruments.py -rf -q
 # 变异前 sha256[:16] = 33b0cd53c7ce11e5   变异后 = 61144b829213f748   退出码 = 1
 ================================== FAILURES ===================================
 ________________ test_colour_is_b_when_no_colour_was_measured _________________
@@ -736,7 +736,7 @@ E
 E         - B
 E         + A
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:114: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:114: AssertionError
 _________ test_a_failed_colour_pass_cannot_take_the_other_eleven_down _________
 
     def test_a_failed_colour_pass_cannot_take_the_other_eleven_down():
@@ -762,7 +762,7 @@ E
 E         - B
 E         + A
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:155: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:155: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_colour_is_b_when_no_colour_was_measured - AssertionError: a col...
 FAILED ::test_a_failed_colour_pass_cannot_take_the_other_eleven_down - Assert...
@@ -772,7 +772,7 @@ FAILED ::test_a_failed_colour_pass_cannot_take_the_other_eleven_down - Assert...
 ### M4 — 图表分类器：模型缺席仍报字母
 
 ```
-$ python -m pytest 测试/test_p46_probe_instruments.py -rf -q
+$ python -m pytest tests/test_p46_probe_instruments.py -rf -q
 # 变异前 sha256[:16] = 171711c355fc59c5   变异后 = 22928242425180f5   退出码 = 1
 ================================== FAILURES ===================================
 ________ test_chart_probe_reports_unavailable_when_the_model_is_absent ________
@@ -787,7 +787,7 @@ tmp_path = WindowsPath('C:/Users/pc/AppData/Local/Temp/pytest-of-pc/pytest-211/t
 E       AssertionError: the chart probe answered 'E' with no model running
 E       assert 'E' is None
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:220: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:220: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_chart_probe_reports_unavailable_when_the_model_is_absent - Asse...
 1 failed, 19 passed in 6.44s
@@ -796,7 +796,7 @@ FAILED ::test_chart_probe_reports_unavailable_when_the_model_is_absent - Asse...
 ### M5 — 字体：忽略期望值
 
 ```
-$ python -m pytest 测试/test_p46_probe_instruments.py -rf -q
+$ python -m pytest tests/test_p46_probe_instruments.py -rf -q
 # 变异前 sha256[:16] = 9a74fdbf61e6d132   变异后 = 50fbbea20b727e05   退出码 = 1
 ================================== FAILURES ===================================
 _____ test_font_probe_ignoring_the_expectation_scores_worse_than_reading ______
@@ -834,7 +834,7 @@ tmp_path = WindowsPath('C:/Users/pc/AppData/Local/Temp/pytest-of-pc/pytest-212/t
 E       AssertionError: the always-SERIF reader was marked CORRECT on a sans card. The criterion is ignoring the expected class — which is exactly mutation M5, and this row is the only thing standing between it and the report: {'path': 'C:\\Users\\pc\\AppData\\Local\\Temp\\pytest-of-pc\\pytest-212\\test_font_probe_ignoring_the_e0\\sans.png', 'expected': 'SANS', 'answers': ['SERIF'], 'raw': ['SERIF'], 'seconds': [0.001], 'correct': True, 'not_reproducible': False}
 E       assert True is False
 
-E:\Minimax-H3\测试\test_p46_probe_instruments.py:296: AssertionError
+E:\Minimax-H3\tests\test_p46_probe_instruments.py:296: AssertionError
 =========================== short test summary info ===========================
 FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
 1 failed, 19 passed in 6.41s
@@ -856,7 +856,7 @@ FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
 
 这正是 P16 守卫文件自己写着的那句：
 *"a calibration that tests a copy of the predicate is not a calibration"*。
-本项目把它写在 `测试/test_p16_*.py` 里，我又在另一个文件里重新犯了一次。
+本项目把它写在 `tests/test_p16_*.py` 里，我又在另一个文件里重新犯了一次。
 
 **修法不是换断言，是把判据变成可达的**：把打分逻辑抽成
 `p46_font_measure.score_one()`，测试直接调它、断言它返回的 `correct` 字段。
@@ -879,7 +879,7 @@ FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
 | 5 | **`np.full_like(uint8, np.nan)`**：`compensate()` 的裁剪边框没写成 NaN，`~np.isnan` 选中了**每一个**像素 | numpy 的 `RuntimeWarning: invalid value encountered in cast` | 残差被边框稀释。修好后植入平移的残差从 0.847 变 **0.000** |
 | 6 | **缩放搜索只能表达一半刻度**：`((h-nh)//2, ...)` 对 `s<1` 恒为负、`s>1` 的 paste 直接抛 `could not broadcast (734,1305) into (7,13)` | 植入缩放对照跑不通 | 一台表达不了自己一半刻度的缩放仪，会对**推轨**回答"没有相机运动" |
 | 7 | **固定采样步长 `every=30`** 让 2 秒测试片只采到 1 帧 | `frames_sampled: 1` | 两秒的片和八十四秒的片看起来一样"被测过" |
-| 8 | **注释里引用了一个不存在的文件**：`测试/test_p46_chart_probe.py` | 全量套件里 `test_comment_citations_resolve` 转红 | 那条守卫**正是为这个缺陷写的**（它自己的 docstring 讲的就是八个文件引用了一个不存在的 `测试/test_design_system.py`）。我在一处犯了它要抓的错，已改成真实路径 |
+| 8 | **注释里引用了一个不存在的文件**：`tests/test_p46_chart_probe.py` | 全量套件里 `test_comment_citations_resolve` 转红 | 那条守卫**正是为这个缺陷写的**（它自己的 docstring 讲的就是八个文件引用了一个不存在的 `tests/test_design_system.py`）。我在一处犯了它要抓的错，已改成真实路径 |
 | 9 | **变异脚本自己的锚点失效**：重构把 `ok = (...)` 的缩进从 8 空格改成 4，第一版 M5 锚点找不到目标（`AssertionError: anchor not found`） | 脚本抛错才没静默 | 若那条断言写成"变异成功"，我就会**以为变异跑过了**。现在脚本里有 `assert before != after` 与 `assert sha(f) == before` 两条 |
 
 ⚠️ 第 5、6 两条是我**自己写的仪器里的 bug**，都是"红在错误的理由上"的近亲：
@@ -902,7 +902,7 @@ FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
   `_unquantise()`；`probe()` 接入并对失败做隔离；`adjudicate()` 的 `色彩` 改为读测量
 
 **新增测试 / 文档**
-- `测试/test_p46_probe_instruments.py`
+- `tests/test_p46_probe_instruments.py`
 - `docs/P46_PROBE_INSTRUMENTS.md`（本文件）
 
 ⚠️ **未改动**：`studio/src/**`（§3.2 的缺陷只报告）、`vlm_critic.py`、
@@ -929,7 +929,7 @@ FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
 | `studio/scripts/p46_font_probe.py` | 14992 | 0 / 364 | `728750adb23332606d2dc4288639c572` |
 | `studio/scripts/p46_font_measure.py` | 8947 | 0 / 202 | `9a74fdbf61e6d132c2a13556e0138b01` |
 | `studio/scripts/p46_camera_probe.py` | 13461 | 0 / 294 | `51113e80a4ac13edd6c0e940318bc7db` |
-| `测试/test_p46_probe_instruments.py` | 21241 | 0 / 453 | `88cf1cf1479e73e5bd9751fe9cbf54f9` |
+| `tests/test_p46_probe_instruments.py` | 21241 | 0 / 453 | `88cf1cf1479e73e5bd9751fe9cbf54f9` |
 
 ⚠️ **行尾全部为 LF，CRLF 计数为 0**——工单 §三.7 记着指挥窗口曾因此毁过 2049 行
 （`read_text` + `write_text` 把纯 CRLF 翻成 LF）。本项**只新建、不重写**
@@ -971,7 +971,7 @@ FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
 ?? studio/scripts/p46_chart_probe.py
 ?? studio/scripts/p46_font_measure.py
 ?? studio/scripts/p46_font_probe.py
-?? 测试/test_p46_probe_instruments.py
+?? tests/test_p46_probe_instruments.py
 ```
 
 ⇒ **本项只碰了这 9 个文件**，`studio/src/**` 一行未改。
@@ -980,8 +980,8 @@ FAILED ::test_font_probe_ignoring_the_expectation_scores_worse_than_reading
 ## 十一、全量测试
 
 ```
-$ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
-      --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py
+$ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q \
+      --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py
 ```
 
 | 轮次 | 结果 |
@@ -993,10 +993,10 @@ $ cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q \
 ⚠️ **第一轮那两条红，性质不同，必须分开说**：
 
 **（1）`test_comment_citations_resolve` —— 是我的错**（§八 第 8 条）。
-我在两处 docstring 里写了 `测试/test_p46_chart_probe.py`，
-而真实文件名是 `测试/test_p46_probe_instruments.py`。
+我在两处 docstring 里写了 `tests/test_p46_chart_probe.py`，
+而真实文件名是 `tests/test_p46_probe_instruments.py`。
 **这条守卫的 docstring 讲的正是"八个文件引用了一个不存在的
-`测试/test_design_system.py`"—— 我在一处重新犯了它要抓的错。**
+`tests/test_design_system.py`"—— 我在一处重新犯了它要抓的错。**
 已改；单独重跑 **5 passed**。
 
 **（2）`test_p14_render_entry_points::test_every_known_flag_still_renders`
@@ -1007,7 +1007,7 @@ E  Symbol(kError): Error: connect ENOBUFS 127.0.0.1:65531 - Local
 E    at internalConnect (node:net:1169:16)
 E    errno: -4060, code: 'ENOBUFS', syscall: 'connect', port: 65531
 E  assert 1 == 0
-E:\Minimax-H3\测试\test_p14_render_entry_points.py:323: AssertionError
+E:\Minimax-H3\tests\test_p14_render_entry_points.py:323: AssertionError
 ```
 
 ⚠️ **我没有因为"单跑是绿的"就把它记成环境问题**——那正是

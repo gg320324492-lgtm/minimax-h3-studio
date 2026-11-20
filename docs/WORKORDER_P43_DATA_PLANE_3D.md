@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `f1e8795`（已推送） |
 | 基线 | **先自己实测**（上次 `719 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -156,7 +156,7 @@ node_modules/@react-three     —— 不存在
    指挥窗口刚因此毁过 2049 行）；路径分隔符；**别把长跑命令管道进 `tail`**。
 6. **⚠️ 磁盘**：`render.mjs` 记录过 **118 个 bundle 把 C: 盘 TEMP 填到 46 GB**。
    **输出到 E: 盘**，跑完清理，收尾报告写明造了什么、删了什么。
-7. **⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD** ——
+7. **⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD** ——
    写中文文档用 `read_bytes`/`write_bytes`。
 8. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
@@ -173,7 +173,7 @@ node_modules/@react-three     —— 不存在
 - `docs/UPGRADE_PROGRESS.md` —— **账本由指挥窗口统一更新**（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md` —— 只读
 - `out/p13_probe/**` 与 `out/*.mp4` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要做 `video`**（见第 2 条：不在 Three.js 授权范围内、且无素材）
 - **不要改 `GENERATIVE_SCENE_TYPES`**（P15 记录的"差一行"线索是**待裁定**的）
 - **不要动 P19–P42 的任何成果**、不要改 `themes.ts`

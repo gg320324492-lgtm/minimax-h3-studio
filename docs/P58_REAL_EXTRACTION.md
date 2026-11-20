@@ -36,7 +36,7 @@
 
 ## 2. 真实素材
 
-按工单优先级取第 1 顺位：`成片项目/water_renewal/07_edit/WaterRenewal_1080p.mp4`
+按工单优先级取第 1 顺位：`productions/water_renewal/07_edit/WaterRenewal_1080p.mp4`
 （1920×1080@30fps，198.06s，495,113,808 B，只读未动；真实纪录片实拍，非合成）。
 
 镜头选择过程落盘：`out/p58/water_scan_2s.jpg`（全片每 2s 总览）、`out/p58/scan_w*.jpg`（候选窗口细扫）、`out/p58/check_shot_169_174.jpg`（边界确认）。

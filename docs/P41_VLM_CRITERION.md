@@ -175,7 +175,7 @@ $ python studio/scripts/vlm_critic.py f0825.png --expect 88 --model no-such-mode
 
 ## 7. The guard
 
-`测试/test_p41_vlm_critic.py` calls the criterion with the model replaced at
+`tests/test_p41_vlm_critic.py` calls the criterion with the model replaced at
 the `transport=` seam. **No test opens a socket, loads a model, or needs a
 GPU**, because a guard that needs 6 GB of weights is a guard that is red on CI
 for a reason unrelated to the code.
@@ -190,9 +190,9 @@ short-circuits when a transport is supplied, on the grounds that **a judge that
 has been replaced cannot be absent**. Both settings now give `19 passed`:
 
 ```
-$ python -m pytest 测试/test_p41_vlm_critic.py -q
+$ python -m pytest tests/test_p41_vlm_critic.py -q
 19 passed
-$ VLM_CRITIC_HOST=http://127.0.0.1:1 python -m pytest 测试/test_p41_vlm_critic.py -q
+$ VLM_CRITIC_HOST=http://127.0.0.1:1 python -m pytest tests/test_p41_vlm_critic.py -q
 19 passed
 ```
 

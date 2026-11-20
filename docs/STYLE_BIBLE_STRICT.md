@@ -96,7 +96,7 @@ declared keys. Only strictness at the parser catches it.
 
 ## The guard
 
-`测试/test_style_bible_schema_is_strict.py`. It calls `safeParse` and asserts
+`tests/test_style_bible_schema_is_strict.py`. It calls `safeParse` and asserts
 the **returned value** — never that a `.strict()` string appears in the source,
 which would be satisfied by this file's own 60-line comment explaining that it
 is strict. (This project has been fooled by text-presence assertions five times;

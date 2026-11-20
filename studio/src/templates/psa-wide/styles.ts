@@ -1,4 +1,4 @@
-// psa-wide 样式集 —— 自 成片项目/piyao_2026/scripts/burn_subtitles.py STYLES 逐字段移植。
+// psa-wide 样式集 —— 自 productions/piyao_2026/scripts/burn_subtitles.py STYLES 逐字段移植。
 // 设计稿 1920×1080（MAX_TEXT_WIDTH=1700）。msg/step/card/title/corner 为屏幕固定元素
 //（手机弹窗/步骤条/角标），不可参与碰撞错行；end_ai 为浅色药丸底板（radius 999）。
 

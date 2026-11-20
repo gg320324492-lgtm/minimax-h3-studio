@@ -109,7 +109,7 @@ PIPELINES = {
 #: with it. The grouping is now authored, and `layer_of` is derived from it; see
 #: the note on `build_report`.
 #:
-#: The CURRENT assignment is pinned in `测试/test_p18_qa_layer_partition.py` as
+#: The CURRENT assignment is pinned in `tests/test_p18_qa_layer_partition.py` as
 #: `PINNED_LAYERS`. That pin is what makes a re-classification a deliberate act:
 #: someone has to change the test, in the same commit, to move a rule between
 #: layers -- which is the whole point of guarding a classification rather than
@@ -303,7 +303,7 @@ def _emitted_names() -> dict[str, list[str]]:
     # Two PNGs for the pair-taking rules, written to a temp dir and removed.
     # NOT read from out/: that tree is gitignored, so a test that depended on it
     # would pass on the machine that made it and fail on every fresh clone —
-    # the reason 测试/test_visual_qa.py states this in its own header.
+    # the reason tests/test_visual_qa.py states this in its own header.
     import tempfile
     from PIL import Image
     with tempfile.TemporaryDirectory(prefix='qa_layers_') as td:

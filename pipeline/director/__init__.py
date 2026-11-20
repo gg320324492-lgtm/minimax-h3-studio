@@ -3,7 +3,7 @@
 Only the depth cue is generated. The other nine `StyleBible` keys are refused
 with a measured reason each -- see `style_bible.REFUSED` and
 docs/P12_1_GENERATION.md. Nothing in this package imports from `tests/`; the
-guard in `测试/test_p12_1_depth_cue_generation.py` is what checks that every
+guard in `tests/test_p12_1_depth_cue_generation.py` is what checks that every
 key emitted here has a consumer, so production code does not have to trust a
 list it wrote itself.
 """

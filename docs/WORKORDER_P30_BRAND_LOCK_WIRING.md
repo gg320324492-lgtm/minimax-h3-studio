@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `2561136`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `561 passed, 4 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`** —— 它会污染 `test_visual_qa.py`。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -172,7 +172,7 @@ coverage_report([含 logo 的图谱]).by_kind.brand == []
    （P21/P22/P24 均产出过 `NameError`）；CRLF 用字节计数验
    （**`p.write_text()` 在 Windows 上翻译行尾，P17 的 agent 污染了 1101 行**）；
    路径分隔符（P17 的 `startswith('out/')` 在 Windows 上漏掉整个 `out/`）；
-   别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 6. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**（P20 的处理方式，**是本项目接受的做法**）。
 
@@ -185,7 +185,7 @@ coverage_report([含 logo 的图谱]).by_kind.brand == []
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`、`docs/P2*.md`
 - **`out/p13_probe/**` 与 `out/*.mp4` —— 只读**（P27 的证据目录）
 - `DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 `visual_qa.py` / `frame_baseline.py` / `render.mjs` 及 P19–P29 的成果**
 - **不要动 11.2 那 14 条 `LOCK_RULES`** —— **它们都实测在工作**
   （`unexercised` 与 `by_kind` 都有真实命中）

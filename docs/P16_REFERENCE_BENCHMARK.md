@@ -120,7 +120,7 @@ studio/src/templates/finance-showcase/design/tokens.ts（源码注释）
 
 指挥窗口给了三批候选。逐一核实：
 
-### 3.1 `成片项目/ceo_mindread_ep01/01_reference/` —— **不是**（实测）
+### 3.1 `productions/ceo_mindread_ep01/01_reference/` —— **不是**（实测）
 
 ```
 19M  27 个文件  三个子目录 ceo / intern / office
@@ -133,7 +133,7 @@ office/OFFICE_02_DESK.mp4  268868 字节
 **目视了 `ceo/CEO_MASTER_REFERENCE.png` 与 `office/OFFICE_MASTER_REFERENCE.png`：
 真人在镜前的角色定妆照**（西装中年男性、深色办公室）。这不是运动图形产品片。
 
-`成片项目/ceo_mindread_ep01/scripts/gen_references.py` 的 docstring 自述了它是什么：
+`productions/ceo_mindread_ep01/scripts/gen_references.py` 的 docstring 自述了它是什么：
 
 > Generate MASTER_REFERENCE images using **MiniMax-H3 R2V pipeline**. … We use the
 > R2V workflow: take a generic reference photo as Picture 1 … We extract the first
@@ -200,7 +200,7 @@ wrong」——图谱原声明 126 BPM，与这条 Mixtrack 音轨的 129.2 差 3
 **B** = 缺输入 / 缺仪器 / **判据定不出**；**C** = 本项目已有同口径的实测。
 
 > **前提（适用于全部 12 个维度）**：本裁定**不含**「输入存在」这一层。
-> `成片项目/ceo_mindread_ep01/01_reference/`（真人定妆照）、`experiments/_ref_analysis/`
+> `productions/ceo_mindread_ep01/01_reference/`（真人定妆照）、`experiments/_ref_analysis/`
 > （动画片探针）**都不是**参考片，**参考片本身不在本机也不在仓库**（第 3 节实测）。
 > 因此**没有任何一个维度满足 A 的「有输入」**。下面仍然逐维度记录**除了输入之外
 > 还缺什么**——因为将来片源补齐时，这些缺口会立刻显形，而那时再查一遍要重做全部分析。
@@ -313,7 +313,7 @@ rule_duplicate / rule_contrast_frame / flicker），且与 P17 同一裁定路�
 
 ## 8. 守卫
 
-逐维度裁定本身由 `测试/test_p16_reference_is_not_an_input_free_measurement.py`
+逐维度裁定本身由 `tests/test_p16_reference_is_not_an_input_free_measurement.py`
 守住（**9 项**）。它守的是**裁定会失效**，不是「某个文件存在」。
 
 ### 8.1 工单那个问题的答案

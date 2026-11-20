@@ -173,7 +173,7 @@ def format_value(v: float, fmt: str = 'auto') -> str:
 
     PORTED, NOT SHARED. The real one is TypeScript inside the renderer, and
     calling it would mean a node subprocess per probe. The port is pinned to
-    the shipped semantics by `测试/test_p41_vlm_critic.py`, which runs both —
+    the shipped semantics by `tests/test_p41_vlm_critic.py`, which runs both —
     the Python one and the real `formatValue` via tsx — over a corpus of
     values and every declared format, and fails if they disagree. That test is
     what makes this a mirror with a guard rather than a second opinion: P24

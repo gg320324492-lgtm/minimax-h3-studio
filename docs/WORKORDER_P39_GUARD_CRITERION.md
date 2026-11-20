@@ -11,9 +11,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `12509b0`（已推送） |
 | 基线 | **先自己实测**（⚠️ 见第一节第 3 条：**当前有 1 条已知红**，不是你的） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**。
 
 **⚠️ Shell 状态在两次工具调用之间不保持** —— 有 agent 因此中断过。
@@ -27,7 +27,7 @@
 `git commit` 卷走的）。
 
 **开工前记录 sha256，收尾比对**：
-- `测试/test_p4_9_ledger_numbers_resolve.py`
+- `tests/test_p4_9_ledger_numbers_resolve.py`
 
 ---
 
@@ -35,7 +35,7 @@
 
 ### 1. 缺陷：**同一个文件里两种判据**
 
-`测试/test_p4_9_ledger_numbers_resolve.py`：
+`tests/test_p4_9_ledger_numbers_resolve.py`：
 
 **前半段（`:280-292`）已经是按字段名判定的** —— 而且判得很精确：
 
@@ -79,7 +79,7 @@ ValidationScene.tsx:12 <BlendSequence from={330} .../>
 ### 3. ⚠️ 当前基线：**1 条已知红**，不是你的
 
 ```
-FAILED 测试/test_p4_9_ledger_numbers_resolve.py::test_the_two_numbers_4_9_invented_still_exist_nowhere
+FAILED tests/test_p4_9_ledger_numbers_resolve.py::test_the_two_numbers_4_9_invented_still_exist_nowhere
 3 failed 时共有三条，其中另两条是：
   · test_markdown_text_is_intact  ← 已在 058dc5c 修掉
   · test_p14_render_entry_points  ← GBK 控制台把省略号显示成替换字符，纯假象
@@ -157,7 +157,7 @@ FAILED 测试/test_p4_9_ledger_numbers_resolve.py::test_the_two_numbers_4_9_inve
 3. **每条毒变异之后从快照复原，收尾核对 sha256。**
 4. **⚠️ 高频复发**：先证明被测对象存在再测量；确认变异生效前不要宣称存活；
    CRLF 用字节计数验（**`p.write_text()` 在 Windows 上翻译行尾**）；
-   路径分隔符；别把长跑命令管道进 `tail`；`测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
+   路径分隔符；别把长跑命令管道进 `tail`；`tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD。
 5. **py-3.10 有 cv2 但没有 pytest** —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
 
@@ -172,12 +172,12 @@ FAILED 测试/test_p4_9_ledger_numbers_resolve.py::test_the_two_numbers_4_9_inve
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新（**你报告，我改**）
 - `docs/UPGRADE_MASTER_PLAN.md`、`docs/P1*.md`~`docs/P3*.md`
 - `out/p13_probe/**` 与 `out/*.mp4` —— 只读；`DiagOutputDir` —— **禁止触碰**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `DataColumns.tsx` / `BrowserStack.tsx`** ——
   **本项只改断言方式，不改被断言的代码**
 - **不要动 P19–P37 的任何成果**、不要改 `scene_graph.py` 与 P36 的生成器
 
-**本指令授权你修改**：`测试/test_p4_9_ledger_numbers_resolve.py`、必要时新增测试与文档。
+**本指令授权你修改**：`tests/test_p4_9_ledger_numbers_resolve.py`、必要时新增测试与文档。
 
 ---
 

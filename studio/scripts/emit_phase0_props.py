@@ -1,6 +1,6 @@
 """Emit Phase-0 dummy timeline props + hardlink EP01 assets into studio/public/jobs/phase0/.
 
-Reads 成片项目/ceo_mindread_ep01/00_project/timeline.json (v1), probes real frame counts of
+Reads productions/ceo_mindread_ep01/00_project/timeline.json (v1), probes real frame counts of
 04_video_selected clips, and writes a DramaVertical props JSON. Assets are hardlinked
 (same drive) so no copies are made.
 

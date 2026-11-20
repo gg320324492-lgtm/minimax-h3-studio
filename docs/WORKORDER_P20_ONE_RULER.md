@@ -2,7 +2,7 @@
 
 > 给执行 agent。本文件**自包含**。你只负责执行，**不做放行/退回裁定**。
 > 这是 P19（`d8b9f05`）记录但**明确超范围未修**的一条：
-> `成片项目/ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
+> `productions/ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
 
 ---
 
@@ -13,9 +13,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `83b4705`（已推送，与 `origin/main` 同步） |
 | 基线 | **先自己实测**（上次是 `424 passed, 2 skipped`） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**（cv2 只装在 3.10）。
 
 **⚠️ 网络**：本机代理时通时不通。推送前先测
 `curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://github.com`。
@@ -163,7 +163,7 @@ select_takes.py:90  if _RANKER.signature_distance(a._sig, b._sig) < 1.0:   ← �
 - `docs/UPGRADE_PROGRESS.md` —— 账本由指挥窗口统一更新
 - `docs/UPGRADE_MASTER_PLAN.md`
 - `out/` 下任何证据目录（含 `out/p13_probe/` 51 项）；`DiagOutputDir`
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要改 `visual_qa.py` 的 `SIGNATURE_EQUAL = 0.0`** —— P19 刚定，
   它量的是**不同的问题**（同一帧 vs 两段独立素材）
 - **不要合并两把尺子**（`visual_qa` 的与 `take_ranker` 的）——
@@ -172,7 +172,7 @@ select_takes.py:90  if _RANKER.signature_distance(a._sig, b._sig) < 1.0:   ← �
 - **不要顺手修 P18 留下的其余四项**（`contrast` 永久失败 /
   `--props` 不检查交付物 / `flicker` 缺失 / 总计划措辞）
 
-**本指令授权你修改**：`成片项目/ceo_mindread_ep01/scripts/select_takes.py`、
+**本指令授权你修改**：`productions/ceo_mindread_ep01/scripts/select_takes.py`、
 `studio/scripts/rank_takes.py`、相关测试、新增文档。
 
 ---

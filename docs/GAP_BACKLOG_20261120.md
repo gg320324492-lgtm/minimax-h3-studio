@@ -1,10 +1,32 @@
 # 缺口清单 GAP_BACKLOG —— 2026-11-20 目录归位与清理的遗留项
 
 > 背景：2026-11-20 对本项目做了 E 盘根归并（ComfyUI 迁入 `third_party/`）、
-> 目录归位（成片项目收进 `成片项目/`、脚本收进 `脚本/`、杂项归入 `out/`）与一轮清理。
+> 目录归位（成片项目收进 `productions/`、脚本收进 `scripts/`、杂项归入 `out/`）与一轮清理。
 > 该轮**以整理为主**，凡是需要改代码修复的问题一律不在当轮处理，在此登记为缺口。
 >
 > 状态约定：`待办` / `待验证` / `已规避` / `已关闭`
+
+---
+
+## G-10 目录命名 —— 已关闭（2026-11-20 改回英文）
+
+本日一度把成片目录改成中文（成片项目/ 测试/ 脚本/ 私有备份/ 等），**当天已全部改回英文**：
+
+    productions/   6 个成片项目
+    tests/         测试套件
+    scripts/       ffmpeg_env.py、sr_pipeline_v2.py
+    H3_local_private/   私有备份
+    out/workflows/ out/logs/ out/studio_jobs/ out/tools/
+
+**为什么改回**：中文目录名在四处在持续制造问题，每一处都会静默出错——
+1. `git ls-files` 默认把非 ASCII 路径输出成八进制转义（`"æ..."`），
+   测试拿这个输出去开文件必然失败；
+2. `subprocess.run(..., text=True)` 按系统 locale（本机 GBK）解码 git 的 UTF-8 输出，
+   中文路径变乱码；
+3. 守护测试里的路径正则只认 `tests|studio|pipeline|docs|tools`，改名就得逐个改；
+4. 每一条绝对路径、每一个 manifest 条目都要跟着改，改漏一处就断。
+
+**结论**：本项目的目录名保持英文。中文只用在**文档正文与注释**里，不进路径。
 
 ---
 
@@ -12,17 +34,17 @@
 
 目录归位后跑 `pytest tests/`，出现若干 E（error）与 F（failure）。
 
-**已修（当轮）**：收集期报错的 2 个用例 —— `测试/test_p20_one_ruler.py`、
-`测试/test_take_selection_behaviour.py`，根因是 `ffmpeg_env.py` 搬到 `脚本/` 后
+**已修（当轮）**：收集期报错的 2 个用例 —— `tests/test_p20_one_ruler.py`、
+`tests/test_take_selection_behaviour.py`，根因是 `ffmpeg_env.py` 搬到 `scripts/` 后
 `studio/scripts/take_ranker.py` 的 sys.path 没跟上（`ModuleNotFoundError: ffmpeg_env`）。
 修后两个用例能正常收集。
 
-**2026-11-20 补记**：tests/ 改名为 测试/ 时，暴露出**相对路径引用**也被迁移影响
+**2026-11-20 补记**：tests/ 改名为 tests/ 时，暴露出**相对路径引用**也被迁移影响
 （`ROOT / 'ceo_mindread_ep01' / 'scripts'` 这类不带 Minimimax-H3 前缀的写法，
 前一轮只改了绝对路径，漏了这些）。已修 7 个文件（config/paths.py、
-测试/test_p20_one_ruler.py、测试/test_p0_regressions.py、
-测试/test_p16_reference_is_not_an_input_free_measurement.py、
-测试/test_p2_prompt_contract.py、及 3 个生产脚本）。
+tests/test_p20_one_ruler.py、tests/test_p0_regressions.py、
+tests/test_p16_reference_is_not_an_input_free_measurement.py、
+tests/test_p2_prompt_contract.py、及 3 个生产脚本）。
 修后 **801 个用例全部收集成功、0 收集错误**（改名前是 793 收集 + 1 错误）。
 
 **未修（遗留）**：修完再跑，进度条上仍可见 **≥4 个 FAILURE**
@@ -37,13 +59,13 @@
 
 ## G-09 sr_takes.py 指向的 shot_manifest 不存在 —— 待办
 
-`成片项目/ceo_mindread_ep01/scripts/sr_takes.py:30` 读的是
+`productions/ceo_mindread_ep01/scripts/sr_takes.py:30` 读的是
 `EP01 / '00_project' / 'shot_manifest.json'`，但该文件实际位于
 `09_final/shot_manifest.json`（`09_final_v2/` 下另有一份）。
 
 **这不是目录迁移造成的**：该行自最初的提交 9e96377 起就是这样写的，
 `00_project/shot_manifest.json` 从未进过版本库（.gitignore 里也没有它），
-只在磁盘上存在过；`私有备份/shot_manifest.before_takeranker.json` 就是它被
+只在磁盘上存在过；`H3_local_private/shot_manifest.before_takeranker.json` 就是它被
 take_ranker 改动前的备份——说明后续某次运行把它挪走了，脚本没跟着改。
 
 - 现象：`python sr_takes.py --help` 直接 FileNotFoundError
@@ -72,11 +94,11 @@ take_ranker 改动前的备份——说明后续某次运行把它挪走了，�
 当前跑的是手动 PyTorch 实现，功能正常但推理慢。
 
 - 待办：`pip install flash-attn`（需与 torch 2.11.0+cu128 匹配，编译可能失败）
-- 影响面：仅 `成片项目/water_renewal/scripts/generate_voice.py` 的重新生成旁白流程
+- 影响面：仅 `productions/water_renewal/scripts/generate_voice.py` 的重新生成旁白流程
 
 ## G-04 根目录成片项目联接 —— 已关闭
 
-原 6 条联接（`ceo_mindread_ep01/` 等指向 `成片项目/`）已于 2026-11-20
+原 6 条联接（`ceo_mindread_ep01/` 等指向 `productions/`）已于 2026-11-20
 随路径全量改写一并移除，项目根现在只剩真实目录。
 
 - 121 处绝对路径引用改写完成（`E:\`、`E:/`、`/e/` 三种写法）
@@ -94,12 +116,12 @@ take_ranker 改动前的备份——说明后续某次运行把它挪走了，�
 
 ## G-06 Remotion 每次渲染会重新拷贝 jobs —— 已规避
 
-`studio/public/jobs` 现在是联接 → `out/工作室渲染/`（911M）。
+`studio/public/jobs` 现在是联接 → `out/studio_jobs/`（911M）。
 Remotion 打包时会把 `public/` 整目录拷进 `studio/.remotion/*-bundle/`
 （实测上次打包产出 1.5G 的 jobs 拷贝，本轮已清掉）。
 
 - 代价：每次渲染前会多出一次 1.5G 的临时拷贝
-- 已缓解：`out/工作室渲染/` 里 5 个 `ep01_*` 的视频已用 NTFS 硬链接去重（320MB 零占用），
+- 已缓解：`out/studio_jobs/` 里 5 个 `ep01_*` 的视频已用 NTFS 硬链接去重（320MB 零占用），
   且 3 个 `PREMIXED.mp4` 已剥离无用视频轨（375MB → 8.4MB）
 - 待办：若渲染变慢，可考虑把 `public/jobs` 改回实体目录、只把归档产物放 out/
 
@@ -118,7 +140,7 @@ Remotion 认的浏览器位置是 `studio/node_modules/.remotion/chrome-headless
 
 **起因**：2026-11-20 重装 `studio/node_modules` 时，Remotion 触发了浏览器下载，
 该下载中断，只留下一个 32MB 的 zip 与 download.lock →
-`测试/test_chart_type_defaults_are_real.py`（真跑 Remotion 渲染）先报 5 个 error 再卡死，
+`tests/test_chart_type_defaults_are_real.py`（真跑 Remotion 渲染）先报 5 个 error 再卡死，
 整个测试套件跑到 26% 就挂住。
 
 **修法**：删掉未完成的下载目录，改建联接
@@ -126,7 +148,7 @@ Remotion 认的浏览器位置是 `studio/node_modules/.remotion/chrome-headless
 修后该文件 **11 passed in 30.86s**，手工跑 `node studio/bin/still.mjs` 也正常出图。
 
 **遗留**：`pnpm install` 重建 node_modules 后这个联接会没，届时需重跑
-`out/工具脚本/link_chrome_nm.bat` 重建（不必重新下载 270MB）。
+`out/工具scripts/link_chrome_nm.bat` 重建（不必重新下载 270MB）。
 
 ---
 
@@ -140,7 +162,7 @@ Remotion 认的浏览器位置是 `studio/node_modules/.remotion/chrome-headless
 | `experiments/_ref_analysis` | 151 MB |
 | `out/_legacy`（35 个历史杂散目录归拢处） | 43 MB |
 | ComfyUI `output/` + `input/` | 1.3 GB |
-| `成片项目/ceo_mindread_ep01/_archive_20260910_rerun`（9 月重跑归档） | 398 MB |
+| `productions/ceo_mindread_ep01/_archive_20260910_rerun`（9 月重跑归档） | 398 MB |
 | `studio/node_modules`（pnpm 硬链接重建） | 1.1 GB → 240 MB |
 | **合计** | **约 13.5 GB** |
 

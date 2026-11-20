@@ -145,7 +145,7 @@ P6 行当前内容（`UPGRADE_MASTER_PLAN.md:131`，该行自 `8fcd15f` 起未�
 | 项 | 内容 |
 |---|---|
 | 刻度值 | **未改动**。`SPACE` 仍是 `8:16:24:40:64:104:168`。 |
-| 守卫 | 新增 `测试/test_space_scale.py`（2 条断言，见下） |
+| 守卫 | 新增 `tests/test_space_scale.py`（2 条断言，见下） |
 | 标注 | `tokens.ts` 的 `SPACE` 上方补注释：比例依据 + 三个死刻度的实测消费点计数 + **计数是怎么测的** + 指向本文档 |
 
 ### 守卫断言的两条性质
@@ -180,7 +180,7 @@ P6 行当前内容（`UPGRADE_MASTER_PLAN.md:131`，该行自 `8fcd15f` 起未�
 与工单表（sm 1 / md 8 / lg 10 / xl 10）**不一致**，工单把
 `studio/scripts/chart_geometry.py` 的镜像常量与 docstring 里的复述也计入了消费点。
 本文的数字只数**渲染器**（`studio/src/**`，跳过注释行），
-理由见 `测试/test_space_scale.py` 里 `_renderer_sources()` 的说明：
+理由见 `tests/test_space_scale.py` 里 `_renderer_sources()` 的说明：
 镜像的真伪由 `test_chart_geometry.py` 管，这里问的是"设计刻度有没有被画画的代码读到"。
 
 **同名诱饵已排除**（本项目曾因此把 `sizes`/`sizeBy`/`showArea` 误判为惰性）：

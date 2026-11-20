@@ -12,9 +12,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `79e62e7`（已推送） |
 | 基线 | **`739 passed, 4 skipped`**（⚠️ 历史基线过期过，**实测为准，不要往工单数字上凑**） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把省略号显示成替换字符）。
 
 **⚠️ Shell 状态在两次工具调用之间不保持**。**全程用绝对路径**。
@@ -178,7 +178,7 @@ ink_frac  c03_area: 0.00568      <- 8.4 倍
    `types.tsx` 与 `options.ts` **是纯 CRLF**，先测再动）。
 4. **⚠️ 磁盘**：输出到 **E: 盘**，跑完清理，写明造了什么、删了什么。
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删。**
-5. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 U+FFFD ——
+5. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 U+FFFD ——
    写中文文档用 `read_bytes`/`write_bytes`。
 6. ⚠️ py-3.10 有 cv2 但没有 pytest —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
    在 3.12 套件里 **skip 而不是撒谎**。
@@ -195,7 +195,7 @@ ink_frac  c03_area: 0.00568      <- 8.4 倍
 - `out/*.mp4`、`out/p13_probe/**`、`out/p45_vlm/**`、`out/ab_matrix/**` —— 只读；
   `DiagOutputDir` —— **禁止触碰**
 - ⚠️ **`out/charts_demo.mp4` —— 是 P27 的证据目录，只读，不覆盖**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 P19–P46 的任何成果**、不要改 `themes.ts`
 - **⚠️ 不要改 `DEFAULT_CHART_OPTIONS` 以外的任何 `options.ts` 内容**，
   **除非第 1 件事裁定了必须改**

@@ -33,7 +33,7 @@
 ## 一、7 键逐键三态结论
 
 判读方式不是文本存在性断言，而是一条**四段链**（实现见
-`测试/style_bible_consumption.py`）：
+`tests/style_bible_consumption.py`）：
 
 ```
 图谱键 --[1. StyleBibleSchema 声明]--> 活过 zod parse
@@ -306,14 +306,14 @@ resolveStyleBible(PARSED doc)   RADIUS.card = 20   depthCue = ["0 14px 40px rgba
 工单 §1.2 说 `visual_qa.py` 的 `missing_asset` **仍在读**
 `props.audio` / `audioEvents` / `narration`。实测：该函数已按 P11 收敛，
 docstring 明写收敛理由，实现里 `declared` **仅剩 4 条硬编码 SFX**。
-`测试/test_undeclared_field_reads.py:281` 有守卫锁住这一点。
+`tests/test_undeclared_field_reads.py:281` 有守卫锁住这一点。
 **AssetPlan 是死头的结论不变**，但"仍在读"的描述已过期。
 
 ---
 
 ## 五、交付物
 
-### 5.1 新增：`测试/style_bible_consumption.py`（只读辅助）
+### 5.1 新增：`tests/style_bible_consumption.py`（只读辅助）
 
 四段链的推导器，纯 Python + 正则，**不依赖 node**（沿用
 `test_undeclared_field_reads.py` 的理由：需要 node 运行时才能失败的守卫价值更低）。
@@ -326,7 +326,7 @@ docstring 明写收敛理由，实现里 `declared` **仅剩 4 条硬编码 SFX*
 2. **消费方判定限定"从 `useDesign()` 解构"**，而不是"词出现过"。
    理由见 §1.3 的 `camera` 同名 prop 陷阱。
 
-### 5.2 新增：`测试/test_style_bible_no_dumb_declarations.py`（12 个测试）
+### 5.2 新增：`tests/test_style_bible_no_dumb_declarations.py`（12 个测试）
 
 - 前提锚定：`StyleBibleSchema` 是开放的（非 `.strict()`）
 - **反空转**：`useDesign()` 解构索引非空且含 `PALETTE`/`TYPE`/`MOTION`/`SPACE`
@@ -378,7 +378,7 @@ def generate_style_bible(brief: dict, *, allowed: dict[str, set[str]]) -> dict:
 
 **三个不可协商的点：**
 
-1. **消费方清单必须由 `测试/style_bible_consumption.py` 推导**，
+1. **消费方清单必须由 `tests/style_bible_consumption.py` 推导**，
    不接受手写。手写清单就是下一次惰性字段审计的起点。
 2. **`unapplied` 必须显式返回**。静默丢弃 = 把哑声明换个地方生成。
 3. **子键粒度必须带**（§3.2 第三层）。键粒度的 `allowed` 挡不住
@@ -420,7 +420,7 @@ E       AssertionError: a delivered graph declares a style_bible key with no ren
 E           showcase_demo.json sets style_bible.ghostKey -> no-declaration. The graph validates and renders unchanged.
 E       assert not ['showcase_demo.json sets style_bible.ghostKey -> no-declaration. The graph validates and renders unchanged.']
 
-E:\Minimax-H3\测试\test_style_bible_no_dumb_declarations.py:217: AssertionError
+E:\Minimax-H3\tests\test_style_bible_no_dumb_declarations.py:217: AssertionError
 =========================== short test summary info ===========================
 FAILED test_style_bible_no_dumb_declarations.py::test_no_delivered_graph_declares_a_key_nothing_reads
 FAILED test_style_bible_no_dumb_declarations.py::test_the_one_key_the_demo_graph_sets_is_reachable
@@ -442,7 +442,7 @@ E       AssertionError: assert 'resolver-bound-but-unused' == 'reachable'
 E         
 E         - reachable
 E         + resolver-bound-but-unused
-E:\Minimax-H3\测试\test_style_bible_no_dumb_declarations.py:272: AssertionError
+E:\Minimax-H3\tests\test_style_bible_no_dumb_declarations.py:272: AssertionError
 =========================== short test summary info ===========================
 FAILED test_style_bible_no_dumb_declarations.py::test_reachability_of_every_declared_key
 FAILED test_style_bible_no_dumb_declarations.py::test_the_two_unconsumed_keys_are_dumb_declarations_today

@@ -172,7 +172,7 @@ at the same time.」
 
 ---
 
-## 四、守卫：`测试/test_p28_volume_domain_covers_baseline.py`（13 条）
+## 四、守卫：`tests/test_p28_volume_domain_covers_baseline.py`（13 条）
 
 判据一律来自 **React 真实渲染出的 markup**（`renderToStaticMarkup` + `<Player>`，无 bundle、无 Chrome，
 与 `test_chart_baseline_is_read.py` 同一套已验证的 harness），**没有一条断言源码里出现某个常数**。

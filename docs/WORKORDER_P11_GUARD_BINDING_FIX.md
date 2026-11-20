@@ -13,7 +13,7 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | 上游 | 本地领先 `origin/main` **10 个提交，未推送** |
 | 基线 | `235 passed, 2 skipped` |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
 **开工前先记录 `studio/src/templates/finance-showcase/design/tokens.ts` 的 sha256，收尾时比对。**
 当前应为 `6a89a5b453779418…`，`lg: 40` 恰好出现 1 次。
@@ -27,7 +27,7 @@
 
 **但那条结构性守卫有一个真漏洞。**
 
-`测试/test_chart_geometry.py` 的 `test_no_test_in_this_module_can_reach_the_real_tokens`
+`tests/test_chart_geometry.py` 的 `test_no_test_in_this_module_can_reach_the_real_tokens`
 检查的是**接收者的名字**：
 
 ```python

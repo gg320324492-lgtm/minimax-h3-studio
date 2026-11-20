@@ -309,7 +309,7 @@ const rampLength = THEMES['premium-dark'].depthCue.length;
 // repeats at window 3, which is exactly where a correct five-deep ramp clamps,
 // and both checks pass. Shrinking depthCue is precisely the mutation this file
 // was written to survive, so the floor is asserted FIRST and independently, and
-// it is the same floor 测试/test_depth_cue_layers.py pins.
+// it is the same floor tests/test_depth_cue_layers.py pins.
 check(
   'the ramp is at least four layers deep',
   rampLength >= 4,

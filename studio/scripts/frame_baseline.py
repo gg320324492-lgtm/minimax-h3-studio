@@ -47,7 +47,7 @@ WHAT A BASELINE DOES NOT DO HERE, and why each is refused:
 WHY IT IS A SEPARATE MODULE AND NOT A `rule_*` FUNCTION
 -------------------------------------------------------
 `qa_layers._rule_functions()` reads every `rule_*` function off the AST, and
-`测试/test_p18_qa_layer_partition.py` pins the resulting per-layer membership
+`tests/test_p18_qa_layer_partition.py` pins the resulting per-layer membership
 in `PINNED_LAYERS`. A new rule function would have to be added to that pin,
 which would make this file's arrival a change to a partition P18 owns and this
 work order does not authorise. A baseline is also not a rule: it reports no

@@ -13,9 +13,9 @@
 | 仓库 | `E:\Minimax-H3`（git，分支 `main`） |
 | HEAD | `cd7f74a`（已推送） |
 | 基线 | **`719 passed, 4 skipped`**（⚠️ 历史基线过期过两次，**实测为准，不要往工单数字上凑**） |
-| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/测试/ -q --ignore=E:/Minimax-H3/测试/test_take_selection_behaviour.py` |
+| 跑法 | `cd /tmp && py -3.12 -m pytest E:/Minimax-H3/tests/ -q --ignore=E:/Minimax-H3/tests/test_take_selection_behaviour.py` |
 
-⚠️ `测试/test_take_selection_behaviour.py` **必须 `--ignore`**。
+⚠️ `tests/test_take_selection_behaviour.py` **必须 `--ignore`**。
 ⚠️ **标准跑法不要导出 `PYTHONIOENCODING`**（GBK 控制台把省略号显示成替换字符，
 P40 那次差点被当成真的 U+FFFD）。
 
@@ -154,7 +154,7 @@ P37 说需要光流/单应估计，且注明**片子确实有 3D 透视运动**�
    **让探针永远判"通过"**（守卫红）、
    **让判据忽略期望值**（守卫红）。**各贴 `-rf` 原始输出。**
    ⚠️ **守卫绝不能依赖 ollama 在跑** —— CI 与别人的机器上没有它。
-10. ⚠️ `测试/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD ——
+10. ⚠️ `tests/test_markdown_text_is_intact.py` 守着全仓 markdown 的 U+FFFD ——
     写中文文档用 `read_bytes`/`write_bytes`。
 11. ⚠️ py-3.10 有 cv2 但没有 pytest —— 若测量需要 cv2，写进普通函数并用 3.10 脚本驱动，
     在 3.12 套件里 **skip 而不是撒谎**。
@@ -173,7 +173,7 @@ P37 说需要光流/单应估计，且注明**片子确实有 3D 透视运动**�
 - `studio/scripts/visual_qa.py`、`take_ranker.py`、`locked_fields.py` —— 不碰
 - `out/*.mp4`、`out/p13_probe/**`、`out/p45_vlm/**` —— 只读；
   `DiagOutputDir` —— **禁止触碰**；`studio/.remotion/water-renewal-bundle` —— **不是你的，别删**
-- `测试/test_take_selection_behaviour.py` —— 本项 `--ignore`
+- `tests/test_take_selection_behaviour.py` —— 本项 `--ignore`
 - **不要动 P19–P45 的任何成果**、不要改 `themes.ts`
 - **⚠️ 不要装任何模型、不要下载任何权重** —— `qwen2.5vl:7b` 已在本机
 - **⚠️ 不要把任何帧/图复制进仓库**（本项目从不跟踪媒体）
