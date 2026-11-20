@@ -146,13 +146,21 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 - 影响：HF 上的模型要改走 ModelScope；新分支推不上去
 - 待办：确认 GitHub 是否长期不可达；若恢复，`git push origin chore/comfyui-into-project`
 
-## G-03 Qwen3-TTS 缺 flash-attn —— 待办
+## G-03 Qwen3-TTS 缺 flash-attn —— 已关闭（2026-11-21，不修）
 
-`third_party/tts/venv` 加载 Qwen3TTSModel 时告警 `flash-attn is not installed`，
-当前跑的是手动 PyTorch 实现，功能正常但推理慢。
+`water_renewal/scripts/generate_voice.py` 重新生成旁白时 Qwen3-TTS 走手动
+PyTorch 实现（无 flash-attn），功能正常、推理稍慢。只在重跑旁白时才相关，
+成片已交付，不影响任何现有产物。
 
-- 待办：`pip install flash-attn`（需与 torch 2.11.0+cu128 匹配，编译可能失败）
-- 影响面：仅 `productions/water_renewal/scripts/generate_voice.py` 的重新生成旁白流程
+**不修的依据**：
+- flash-attn 官方只发布 Linux 预编译 wheel；Windows 只有源码包，
+  需要本地 CUDA toolkit + MSVC 编译环境（本机未配）。
+- 已开启 Windows 长路径支持（LongPathsEnabled=1）并重试，仍因缺少编译
+  工具链失败——不是路径问题，是平台不支持。
+- 收益仅是重跑旁白时的推理速度，不值得为此搭建 CUDA 编译链。
+
+**若将来确需提速**：换用支持 Windows 的注意力实现（如 PyTorch SDPA，
+Qwen3-TTS 代码里已有回退），或找第三方 Windows wheel（需自行审计来源）。
 
 ## G-04 根目录成片项目联接 —— 已关闭
 
