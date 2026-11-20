@@ -52,3 +52,22 @@
   `私有备份/`，以及 `out/` 下的 `日志/`、`工具/`、`工作流/`、`渲染素材/`、
   `会话归档/`、`归档_P13视觉QA/`、`工单_P53/`、`工单_P55/`…`工单_P58/`。
 - 新建本地目录时优先用中文，让人一眼看懂用途。
+
+## 目录速查（2026-11-20 归位后）
+
+| 目录 | 内容 | 入库 |
+|---|---|---|
+| `productions/` | 六个成片项目（ceo_mindread_ep01 / liaozhai_demo / piyao_2026 / third_lantern / water_renewal / intro_video） | 部分（脚本与 00_project 入库，媒体不入） |
+| `scripts/` | `ffmpeg_env.py`（ffmpeg 解析器）、`sr_pipeline_v2.py`（超分引擎）——被多项目引用，勿移动 | ✓ |
+| `tests/` | 守护测试（用 `third_party/ComfyUI/venv` 的 python 跑 pytest） | ✓ |
+| `studio/` | Remotion 合成层；`studio/public/jobs` 是指向 `out/渲染素材/` 的联接 | ✓（node_modules 除外） |
+| `out/工单_P53…P58/` | 各工单的生成输出与证据 | ✗ |
+| `out/工作流/` `out/日志/` | ComfyUI 工作流 JSON / 运行日志 | ✗ |
+| `out/渲染素材/` | Remotion 渲染素材（`studio/public/jobs` 联接的目标） | ✗ |
+| `out/工具/` | 一次性运维脚本（路径迁移/台账/审计产物） | ✗ |
+| `out/会话归档/` | 从 C 盘迁出的旧会话记录 | ✗ |
+| `out/归档_P13视觉QA/` | P13 视觉 QA 的证据归档 | ✗ |
+| `third_party/` | ComfyUI（含 99GB 模型与 venv）/ tts / claude-skills / chrome-headless-shell / 各缓存——整体不入库 | ✗ |
+| `私有备份/` | Mixkit 授权音频与含 prompt/种子的脚本备份——**泄露过一次，勿入库勿删** | ✗ |
+| `tools/` | 自带 ffmpeg-7.1.1-full_build（PATH 上有 Octave 的 4.2.11 陷阱）+ `check_c_drive.py` C 盘守卫 | ✗ |
+| `docs/` `experiments/` `pipeline/` `config/` | 文档 / 实验脚本 / 管线模块 / 配置 | ✓ |
