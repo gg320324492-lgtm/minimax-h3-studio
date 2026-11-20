@@ -36,7 +36,7 @@ metadata:
 
 - 片段生成：`video_minimax_h3_r2v.json`（角色一致）/ `_t2v.json`（首末帧）；帧长 17k+5；Turbo LoRA 8-step。
 - 生成长度 ≠ 呈现长度：`Shot.trimBefore` + `durationInFrames` 裁剪解耦，选片后对齐节奏点。
-- 逐片段超分：`ceo_mindread_ep01/scripts/sr_takes.py`（x2plus fp16 tile768/64 → 1080×1920）。
+- 逐片段超分：`成片项目/ceo_mindread_ep01/scripts/sr_takes.py`（x2plus fp16 tile768/64 → 1080×1920）。
 - 词级卡拉OK：`studio/scripts/word_timestamps.py --in-place`（faster-whisper small；ASR 词面只当对齐标尺，
   文字用已知原文；台词=卡拉OK、心声=打字机、钩子/结束卡被相似度守卫拒绝=静态）。
 

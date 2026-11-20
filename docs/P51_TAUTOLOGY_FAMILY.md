@@ -21,7 +21,7 @@
 ## 1. 存在性证明：全仓有多少条活的恒真断言
 
 ⚠️ **扫描范围要选对。** 第一次扫 `rglob('test_*.py')` 得到 **180 条**，
-其中 177 条来自 `liaozhai_demo/acestep-env/`（一个 vendored venv）。
+其中 177 条来自 `成片项目/liaozhai_demo/acestep-env/`（一个 vendored venv）。
 **在错误的尺度上测等于没测。** 限定到本项目 `tests/`：
 
 ```

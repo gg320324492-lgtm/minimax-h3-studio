@@ -151,7 +151,7 @@ STUDIO = ROOT / 'studio'
 _NPX = shutil.which('npx') or shutil.which('npx.cmd')
 needs_node = pytest.mark.skipif(_NPX is None, reason='node/npx not on PATH')
 
-sys.path.insert(0, str(ROOT / 'tests'))
+sys.path.insert(0, str(ROOT / '测试'))
 # The renderer-side parse is IMPORTED, not copied. test_p26_scene_type_coverage
 # already pins it to the real file with `test_the_maps_are_the_real_ones`, and
 # `visual_qa.py` reads the same two maps the same way; a third implementation

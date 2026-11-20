@@ -2,7 +2,7 @@
 
 > 给执行 agent。本文件**自包含**。你只负责执行，**不做放行/退回裁定**。
 > 这是 P19（`d8b9f05`）记录但**明确超范围未修**的一条：
-> `ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
+> `成片项目/ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
 
 ---
 
@@ -172,7 +172,7 @@ select_takes.py:90  if _RANKER.signature_distance(a._sig, b._sig) < 1.0:   ← �
 - **不要顺手修 P18 留下的其余四项**（`contrast` 永久失败 /
   `--props` 不检查交付物 / `flicker` 缺失 / 总计划措辞）
 
-**本指令授权你修改**：`ceo_mindread_ep01/scripts/select_takes.py`、
+**本指令授权你修改**：`成片项目/ceo_mindread_ep01/scripts/select_takes.py`、
 `studio/scripts/rank_takes.py`、相关测试、新增文档。
 
 ---

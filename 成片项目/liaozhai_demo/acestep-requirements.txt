@@ -1,21 +1,21 @@
 # acestep-env 依赖清单
 #
-# 原环境 liaozhai_demo/acestep-env/ (6.7G, Python 3.12.10) 已于 2026-10-14 删除，
+# 原环境 成片项目/liaozhai_demo/acestep-env/ (6.7G, Python 3.12.10) 已于 2026-10-14 删除，
 # 删除前由 `pip list --format=freeze` 导出，作为唯一的重建依据 —— 仓库此前没有任何地方
 # 记录过这个环境是怎么建的（ACE-Step 官方的 `uv sync` 不会生成 acestep-env/，
 # 它是一次独立的手工 `python -m venv` + 装包）。
 #
-# 谁在用它：liaozhai_demo/scripts/bgm_acestep.py、third_lantern/scripts/bgm_acestep.py、
-#           water_renewal/scripts/generate_music.py 三处的 BGM 生成链
-# 它依赖的 ACE-Step 代码与权重：liaozhai_demo/ACE-Step-1.5/
+# 谁在用它：成片项目/liaozhai_demo/scripts/bgm_acestep.py、成片项目/third_lantern/scripts/bgm_acestep.py、
+#           成片项目/water_renewal/scripts/generate_music.py 三处的 BGM 生成链
+# 它依赖的 ACE-Step 代码与权重：成片项目/liaozhai_demo/ACE-Step-1.5/
 #   （checkpoints/ 9.7G 权重同样已于 2026-10-14 删除，重下见该目录 README
 #     `uv run acestep-download --all`）
 #
 # 重建步骤：
-#   py -3.12 -m venv liaozhai_demo/acestep-env
-#   liaozhai_demo/acestep-env/Scripts/python.exe -m pip install --upgrade pip
+#   py -3.12 -m venv 成片项目/liaozhai_demo/acestep-env
+#   成片项目/liaozhai_demo/acestep-env/Scripts/python.exe -m pip install --upgrade pip
 #   # torch 走 cu128 索引，默认 PyPI 源没有 +cu128 本地版本
-#   liaozhai_demo/acestep-env/Scripts/python.exe -m pip install -r liaozhai_demo/acestep-requirements.txt \
+#   成片项目/liaozhai_demo/acestep-env/Scripts/python.exe -m pip install -r 成片项目/liaozhai_demo/acestep-requirements.txt \
 #       --extra-index-url https://download.pytorch.org/whl/cu128
 #
 # 以下为 `pip list --format=freeze` 原样导出（122 个包）：

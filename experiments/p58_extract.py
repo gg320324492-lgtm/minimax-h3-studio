@@ -3,7 +3,7 @@
 Runs the built-in SDPose (wholebody + RT-DETR person boxes, exactly the
 official template's subgraph recipe) and Depth Anything 3 (base, mono mode)
 over the real clip `p58_real.mp4` (864x480x124 @ 24fps, cut from
-water_renewal/07_edit/WaterRenewal_1080p.mp4 t=169.0s).
+成片项目/water_renewal/07_edit/WaterRenewal_1080p.mp4 t=169.0s).
 
 The prompt is written directly in API form (the extraction graph has no
 subgraph wrapper to expand). VRAM is sampled once per second while the job

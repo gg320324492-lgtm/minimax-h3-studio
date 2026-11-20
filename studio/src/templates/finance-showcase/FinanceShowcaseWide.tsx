@@ -44,7 +44,7 @@ import {EnsureFonts} from '../common/EnsureFonts';
  * wiring is hard — it is that wiring would be wrong. Four measured facts:
  *
  *   1. NO PRODUCER. Of the 17 tracked .json files, exactly one has a top-level
- *      `audio`, and it is `piyao_2026/09_final/delivery_manifest.json`, where
+ *      `audio`, and it is `成片项目/piyao_2026/09_final/delivery_manifest.json`, where
  *      `audio` is the free-text string `"AAC 48kHz stereo, loudnorm -14 LUFS"`.
  *      Not a graph, not a `src`. Neither delivered showcase graph sets it.
  *   2. THE PYTHON MIRROR FORBIDS IT. `pipeline/schemas/showcase-v1.schema.json`

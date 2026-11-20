@@ -40,7 +40,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LOCKED = ROOT / 'studio' / 'scripts' / 'locked_fields.py'
-TEST = ROOT / 'tests' / 'test_locked_fields_wiring.py'
+TEST = ROOT / '测试' / 'test_locked_fields_wiring.py'
 
 
 def _is_crlf() -> bool:

@@ -18,7 +18,7 @@
 修后两个用例能正常收集。
 
 **2026-11-20 补记**：tests/ 改名为 测试/ 时，暴露出**相对路径引用**也被迁移影响
-（`ROOT / 'ceo_mindread_ep01' / 'scripts'` 这类不��� Minimimax-H3 前缀的写法，
+（`ROOT / 'ceo_mindread_ep01' / 'scripts'` 这类不带 Minimimax-H3 前缀的写法，
 前一轮只改了绝对路径，漏了这些）。已修 7 个文件（config/paths.py、
 测试/test_p20_one_ruler.py、测试/test_p0_regressions.py、
 测试/test_p16_reference_is_not_an_input_free_measurement.py、
@@ -72,7 +72,7 @@ take_ranker 改动前的备份——说明后续某次运行把它挪走了，�
 当前跑的是手动 PyTorch 实现，功能正常但推理慢。
 
 - 待办：`pip install flash-attn`（需与 torch 2.11.0+cu128 匹配，编译可能失败）
-- 影响面：仅 `water_renewal/scripts/generate_voice.py` 的重新生成旁白流程
+- 影响面：仅 `成片项目/water_renewal/scripts/generate_voice.py` 的重新生成旁白流程
 
 ## G-04 根目录成片项目联接 —— 已关闭
 
@@ -140,7 +140,7 @@ Remotion 认的浏览器位置是 `studio/node_modules/.remotion/chrome-headless
 | `experiments/_ref_analysis` | 151 MB |
 | `out/_legacy`（35 个历史杂散目录归拢处） | 43 MB |
 | ComfyUI `output/` + `input/` | 1.3 GB |
-| `ceo_mindread_ep01/_archive_20260910_rerun`（9 月重跑归档） | 398 MB |
+| `成片项目/ceo_mindread_ep01/_archive_20260910_rerun`（9 月重跑归档） | 398 MB |
 | `studio/node_modules`（pnpm 硬链接重建） | 1.1 GB → 240 MB |
 | **合计** | **约 13.5 GB** |
 

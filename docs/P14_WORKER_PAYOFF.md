@@ -179,7 +179,7 @@ bash 侧 wall 1981 / 1999 / 2190 ms ⇒ **进程启动 + 模块加载 ≈ 300–
 
 ### 4.1 决定性的一条：生产管线一天只渲一次
 
-`ceo_mindread_ep01/scripts/render_with_remotion.py:70` 是唯一的生产调用点：
+`成片项目/ceo_mindread_ep01/scripts/render_with_remotion.py:70` 是唯一的生产调用点：
 
 ```python
 if run(['node', STUDIO / 'bin' / 'render.mjs',

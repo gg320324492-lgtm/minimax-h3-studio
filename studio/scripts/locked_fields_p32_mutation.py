@@ -47,11 +47,11 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 LOCKED = ROOT / 'studio' / 'scripts' / 'locked_fields.py'
-WIRING = ROOT / 'tests' / 'test_locked_fields_wiring.py'
+WIRING = ROOT / '测试' / 'test_locked_fields_wiring.py'
 REPO = ROOT.as_posix()
 TARGETS = [
-    str(ROOT / 'tests' / 'test_locked_fields_wiring.py'),
-    str(ROOT / 'tests' / 'test_locked_fields.py'),
+    str(ROOT / '测试' / 'test_locked_fields_wiring.py'),
+    str(ROOT / '测试' / 'test_locked_fields.py'),
 ]
 
 

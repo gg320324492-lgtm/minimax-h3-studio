@@ -353,7 +353,7 @@ PRODUCTION_SUFFIXES = {'.py', '.ts', '.tsx', '.mjs', '.js'}
 #: The directories that hold THIS PROJECT's source, and nothing else.
 #:
 #: A blocklist was the first version and it was wrong twice over. It scanned
-#: 21,894 files / 341 MB across `liaozhai_demo/acestep-env`, a vendored virtual
+#: 21,894 files / 341 MB across `成片项目/liaozhai_demo/acestep-env`, a vendored virtual
 #: environment — 99 seconds for a test that should take milliseconds, and more
 #: importantly the wrong QUESTION. "Is there a caller?" has to be asked about
 #: the code this project owns; a vendored site-packages is not an answer either

@@ -208,7 +208,7 @@ def test_manifest_covers_every_experiments_script():
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
-        'mf', ROOT / 'tests' / 'test_manifest_freshness.py')
+        'mf', ROOT / '测试' / 'test_manifest_freshness.py')
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert mod.main() == 0, (
@@ -222,12 +222,12 @@ def test_local_prompts_are_not_tracked():
     import shutil as _sh
 
     git = _sh.which('git') or r'C:\Program Files\Git\cmd\git.exe'
-    out = subprocess.run([git, 'ls-files', 'ceo_mindread_ep01/00_project/h3_generation.json'],
+    out = subprocess.run([git, 'ls-files', '成片项目/ceo_mindread_ep01/00_project/h3_generation.json'],
                          cwd=ROOT, capture_output=True, text=True).stdout.strip()
     assert out == '', 'h3_generation.json (prompts + seeds) must stay local-only'
     src = (ROOT / '成片项目' / 'ceo_mindread_ep01' / 'scripts' / 'gen_keyframes_v3.py').read_text(encoding='utf-8')
     assert '<Picture 1>' not in src, (
         'gen_keyframes_v3.py still hardcodes prompts — they belong in the local JSON')
-    tracked = subprocess.run([git, 'ls-files', 'ceo_mindread_ep01/scripts/gen_keyframes_v3.py'],
+    tracked = subprocess.run([git, 'ls-files', '成片项目/ceo_mindread_ep01/scripts/gen_keyframes_v3.py'],
                              cwd=ROOT, capture_output=True, text=True).stdout.strip()
     assert tracked, 'gen_keyframes_v3.py must be tracked (P0.3 fix cannot live only on this machine)'

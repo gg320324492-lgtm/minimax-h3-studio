@@ -2,7 +2,7 @@
 
 完整成片为 3 分 18 秒，1920×1080，30 fps。制作使用本仓库的 Remotion 合成层，新增独立入口，不替换原有项目与模板。
 
-追加节奏加快版：整体提速 8%，时长约 3 分 3 秒。画面、配乐、旁白与字幕同步提速，声音保持音高；保留完整内容及片尾呼吁。单独输出到桌面“第二版成片/节奏加快版”。在原版导出完成后运行 `water_renewal/scripts/pace_version.py` 可复现。
+追加节奏加快版：整体提速 8%，时长约 3 分 3 秒。画面、配乐、旁白与字幕同步提速，声音保持音高；保留完整内容及片尾呼吁。单独输出到桌面“第二版成片/节奏加快版”。在原版导出完成后运行 `成片项目/water_renewal/scripts/pace_version.py` 可复现。
 
 Studio 的 `WaterRenewal` 展示最新加快版交付文件；`WaterRenewalEdit` 与单章预览保留可编辑的原始制作层。导出脚本先渲染制作层，再由加快版脚本统一调整节奏，确保预览、交付及字幕一致。
 
@@ -42,13 +42,13 @@ Studio 的 `WaterRenewal` 展示最新加快版交付文件；`WaterRenewalEdit`
 运行环境沿用本机工作室。制作步骤：
 
 ```powershell
-& 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' water_renewal/scripts/prepare_media.py
+& 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' 成片项目/water_renewal/scripts/prepare_media.py
 # 第 2 步要用 acestep-env（2026-10-14 已删除）。重建步骤见
-# liaozhai_demo/acestep-requirements.txt 的文件头；ACE-Step 权重同样已删，
+# 成片项目/liaozhai_demo/acestep-requirements.txt 的文件头；ACE-Step 权重同样已删，
 # 重下见 ACE-Step-1.5/README.md 的 `uv run acestep-download --all`。
-& 'E:/Minimax-H3/成片项目/liaozhai_demo/acestep-env/Scripts/python.exe' water_renewal/scripts/generate_music.py
-& 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' water_renewal/scripts/generate_voice_original.py
-& 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' water_renewal/scripts/finish_audio.py
+& 'E:/Minimax-H3/成片项目/liaozhai_demo/acestep-env/Scripts/python.exe' 成片项目/water_renewal/scripts/generate_music.py
+& 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' 成片项目/water_renewal/scripts/generate_voice_original.py
+& 'E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe' 成片项目/water_renewal/scripts/finish_audio.py
 ```
 
 在 `studio/` 目录运行：

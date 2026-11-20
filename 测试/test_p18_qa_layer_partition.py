@@ -113,6 +113,17 @@ PINNED_LAYERS: dict[str, list[str]] = {
 #: the start of the task, so a later change to a rule's decision logic has to be
 #: made deliberately rather than by editing the file this work touched.
 UNTOUCHED: dict[str, str] = {
+    # UPDATED 2026-11-20, deliberately and out loud, the way P19/P21/P22 did.
+    # The change to `qa_report.py` was ONE line, and it is not a rule's
+    # decision: the usage example in a docstring named the ComfyUI venv as
+    # `E:/ComfyUI/venv/...`, and ComfyUI moved to
+    # `E:/Minimax-H3/third_party/ComfyUI/` in the project relocation.
+    # Verified mechanically: with docstrings stripped, qa_report.py's AST is
+    # the same tree as before that change, and every function body is
+    # identical. No rule's decision logic moved; the pin is updated here
+    # rather than deleted, and the layer partition this file pins is
+    # untouched.
+
     # UPDATED BY P19, deliberately and out loud. The P18 value was
     # 9db0198e8db21bef696ead30114b1e242833cf2b39205880638fbded78565db3.
     # P19 changed `rule_duplicate`'s DECISION — its cut moves off the
@@ -150,7 +161,7 @@ UNTOUCHED: dict[str, str] = {
     'studio/scripts/visual_qa.py':
         'P22_RUNTIME_CHECKED',
     'studio/scripts/qa_report.py':
-        '9e7e4725fcfcbe201caa14cdfe8f5cb6ea4a51bf3ea3b6bfe831b99c79b41f38',
+        '3eb242e2f8161053000f03f3bf6c54ff19703cbac2f485b3a3ff351139324544',
 }
 
 

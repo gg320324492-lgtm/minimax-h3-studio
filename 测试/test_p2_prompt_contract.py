@@ -50,8 +50,8 @@ def test_generation_script_has_no_prompt_literals():
 
 
 def test_prompt_data_files_are_not_tracked():
-    for rel in ('ceo_mindread_ep01/00_project/h3_generation.json',
-                'ceo_mindread_ep01/00_project/shot_specs.json'):
+    for rel in ('成片项目/ceo_mindread_ep01/00_project/h3_generation.json',
+                '成片项目/ceo_mindread_ep01/00_project/shot_specs.json'):
         assert _git('ls-files', rel).strip() == '', (
             f'{rel} holds project prompts and must stay local-only')
 

@@ -620,17 +620,17 @@ def test_the_only_production_caller_of_the_showcase_gate_is_the_render_path():
     it would have been a false red. The first version searched for all five gate
     names and returned eleven "offenders", of which the honest ones were:
 
-      * `ceo_mindread_ep01|third_lantern|liaozhai_demo/scripts/qa_final.py` and
+      * `ceo_mindread_ep01|third_lantern|成片项目/liaozhai_demo/scripts/qa_final.py` and
         two of their `run_post_chain.sh` — real invocations (measured:
         `run_post_chain.sh:133` is `"$PY" scripts/qa_final.py` under
         `stage 6 "finalize + QA"`). They gate VIDEO FILES against a project's own
         CONFIG (`duration matches config`, <0.3s), for vertical short-form work.
         They are not showcase gates and they are not reachable from
         `pipeline/examples/`.
-      * `ceo_mindread_ep01/scripts/select_takes.py` and
+      * `成片项目/ceo_mindread_ep01/scripts/select_takes.py` and
         `studio/scripts/check_contract.py` — comment mentions only.
     """
-    skip_dirs = {'tests', 'out', 'node_modules', '.git', '__pycache__',
+    skip_dirs = {'测试', 'tests', 'out', 'node_modules', '.git', '__pycache__',
                  'acestep-env', 'ffmpeg-7.1.1-full_build',
                  # Session worktrees under .claude/worktrees/ are full repo
                  # COPIES, not production files. Both sweeps went red on
@@ -974,7 +974,7 @@ def test_the_frame_gate_is_not_wired_and_must_not_be():
     so. It is deliberately NOT written to survive that: a guard that outlived its
     reason would be the permanent-red gate all over again.
     """
-    skip_dirs = {'tests', 'out', 'node_modules', '.git', '__pycache__',
+    skip_dirs = {'测试', 'tests', 'out', 'node_modules', '.git', '__pycache__',
                  'acestep-env', 'ffmpeg-7.1.1-full_build',
                  # Session worktrees under .claude/worktrees/ are full repo
                  # COPIES, not production files. Both sweeps went red on

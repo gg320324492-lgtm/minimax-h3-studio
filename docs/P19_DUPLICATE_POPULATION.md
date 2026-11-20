@@ -45,7 +45,7 @@ existed.** That is verdict **B**, and it takes precedence over A.
 
 ### 1a. A fourth number, and a third value
 
-The "same" rule is also applied at `ceo_mindread_ep01/scripts/select_takes.py:90`
+The "same" rule is also applied at `成片项目/ceo_mindread_ep01/scripts/select_takes.py:90`
 with **`< 1.0`**, not 0.5. And `rank_takes.py:40-43` already carried a KNOWN
 LIMIT that contradicted the reuse it was being cited for:
 

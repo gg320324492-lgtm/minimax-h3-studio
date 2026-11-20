@@ -101,7 +101,7 @@ COLLECTIONS = {
 #
 # Source only. `docs/**` is a historical record (see the module docstring);
 # `studio/public/jobs/**` is gitignored staging; `out/**` is render output.
-SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', 'tests')
+SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', '测试')
 
 # ── the sentence shape. A citation is `NAME ... VERB ... NUMBER` or
 #    `NUMBER ... VERB ... NAME`, and the gap may not cross a comma or a

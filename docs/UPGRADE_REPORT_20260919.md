@@ -235,7 +235,7 @@ EP01 要抽 1455 张 PNG。若某次烧录中途失败，下次运行启动时�
 
 ### 4.5 EP01 交付路径端到端验证（真实母版，1455 帧全集）
 
-源：`ceo_mindread_ep01/07_edit/EP01_PICTURE_LOCK_720P.mp4`（768x1344 / 24fps / 1455 帧 / 60.625s）
+源：`成片项目/ceo_mindread_ep01/07_edit/EP01_PICTURE_LOCK_720P.mp4`（768x1344 / 24fps / 1455 帧 / 60.625s）
 
 > ⚠️ **本表数字经过一次修正。** 最初几轮跑出的接缝值（v1 = 6.567、v2 = 2.198）是用**交付空间**直接算边界位置的，而候选经过了 Lanczos 缩放（1536x2688 → 1080x1920），边界位置被整体缩放，导致测的是错误像素。修正后（边界位置按缩放因子换算）数字如下表。**以此表为准**，§4.9 的整集表与之同源。
 
@@ -594,17 +594,17 @@ if SAGE_ATTENTION3_IS_AVAILABLE: register_attention_function("sage3", attention3
 | `测试/run_remaining_experiments.sh` | 新增 | 把剩余 GPU 实验串行跑完，避免 GPU 空转 |
 | `flashvsr_upscale.py` | 新增 | FlashVSR 驱动（ComfyUI API，schema 自发现） |
 | `tools/flashvsr_setup.py` | 新增 | FlashVSR 安装器（默认 dry-run + venv 快照回滚） |
-| `ceo_mindread_ep01/scripts/run_post_chain.sh` | **重写** | 改用 v2；合并 SR+Lanczos 为单次编码；**默认不覆盖已交付母版**（`PROMOTE=1` 才替换） |
-| `ceo_mindread_ep01/scripts/gen_keyframes_v3.py` | 修补 | 产物定位改读 history；种子清单不再被覆盖 |
-| `ceo_mindread_ep01/scripts/comfy_utils.py` | **新增** | 抽出被复制 5 份的产物定位逻辑 |
-| `ceo_mindread_ep01/scripts/gen_reference{s,_sheets}.py`, `gen_office.py` | 修补 | 改用 history 定位；`find_latest_video()` 改为直接抛错 |
+| `成片项目/ceo_mindread_ep01/scripts/run_post_chain.sh` | **重写** | 改用 v2；合并 SR+Lanczos 为单次编码；**默认不覆盖已交付母版**（`PROMOTE=1` 才替换） |
+| `成片项目/ceo_mindread_ep01/scripts/gen_keyframes_v3.py` | 修补 | 产物定位改读 history；种子清单不再被覆盖 |
+| `成片项目/ceo_mindread_ep01/scripts/comfy_utils.py` | **新增** | 抽出被复制 5 份的产物定位逻辑 |
+| `成片项目/ceo_mindread_ep01/scripts/gen_reference{s,_sheets}.py`, `gen_office.py` | 修补 | 改用 history 定位；`find_latest_video()` 改为直接抛错 |
 | `generate_4.py`, `gen_lulu.py`, `gen_remaining.py`, `gen_round_a.py` | 修补 | 产物定位改读 history；mtime 猜测降级为带 WARN 的兜底 |
 | `测试/test_steps_ab.py` | 修补 | 同上；并补上缺失的 `COMFY_OUT` 定义 |
-| `ceo_mindread_ep01/scripts/qa_final.py` | 修补 | **假检查改为真检查**；无音轨不再崩；目录可用 `EP01_FINAL_DIR` 覆盖 |
-| `ceo_mindread_ep01/scripts/burn_subtitles_v2.py` | 修补 | 每次运行独立临时目录（不再卡死链）；`-map 1:a:0?`；补 `import shutil` |
-| `ceo_mindread_ep01/scripts/mix_audio_v4.py` | 修补 | 画面母版可用 `EP01_MASTER` 覆盖 |
-| `ceo_mindread_ep01/scripts/finalize.py` | 修补 | 输出目录可用 `EP01_FINAL_DIR`/`EP01_DESKTOP_DIR` 覆盖 |
-| `ceo_mindread_ep01/scripts/select_takes.py` | 修补 | 720p 母版锁 crf 18 → 12（`EP01_LOCK_CRF` 可覆盖） |
+| `成片项目/ceo_mindread_ep01/scripts/qa_final.py` | 修补 | **假检查改为真检查**；无音轨不再崩；目录可用 `EP01_FINAL_DIR` 覆盖 |
+| `成片项目/ceo_mindread_ep01/scripts/burn_subtitles_v2.py` | 修补 | 每次运行独立临时目录（不再卡死链）；`-map 1:a:0?`；补 `import shutil` |
+| `成片项目/ceo_mindread_ep01/scripts/mix_audio_v4.py` | 修补 | 画面母版可用 `EP01_MASTER` 覆盖 |
+| `成片项目/ceo_mindread_ep01/scripts/finalize.py` | 修补 | 输出目录可用 `EP01_FINAL_DIR`/`EP01_DESKTOP_DIR` 覆盖 |
+| `成片项目/ceo_mindread_ep01/scripts/select_takes.py` | 修补 | 720p 母版锁 crf 18 → 12（`EP01_LOCK_CRF` 可覆盖） |
 | 上述 13 个生产脚本 | 接线 | 统一走 `ffmpeg_env`（不再依赖 Octave 的 ffmpeg） |
 | `quality_compare.py`, `flicker_test.py`, `测试/compare_steps.py` | 修补 | 去掉 `-r 24` 重采样（不再改写帧率） |
 | `pipe_fast.py`, `pipe_4k_fast.py`, `upscale_x4v3.py`, `full_pipeline.py`, `upscale_to_4k.py` | 标记弃用 | 运行时打印缺陷清单并指向 v2 |
@@ -678,7 +678,7 @@ $PY 测试/rescore.py
 $PY 测试/compare_ep01_masters.py
 # 或指定候选：label=TILE:OVERLAP=path
 $PY 测试/compare_ep01_masters.py \
-    --cand "v1 已交付=256:16=ceo_mindread_ep01/07_edit/EP01_PICTURE_MASTER_1080P.mp4" \
+    --cand "v1 已交付=256:16=成片项目/ceo_mindread_ep01/07_edit/EP01_PICTURE_MASTER_1080P.mp4" \
     --cand "v2 新最优=768:64=测试/diag/bench/EP01_v2_t768o64.mp4"
 
 # 锐度：整体 vs 剔除接缝邻域（区分真细节与接缝能量）

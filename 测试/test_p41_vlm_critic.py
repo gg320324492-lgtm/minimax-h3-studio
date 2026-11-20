@@ -361,7 +361,12 @@ def test_the_python_formatter_matches_the_renderer_it_mirrors():
         return  # no node: skip rather than assert a number that was not measured
     check = ROOT / 'studio' / 'src' / 'templates' / 'finance-showcase' / 'charts' \
         / 'format_value_mirror.check.ts'
-    proc = subprocess.run([npx, 'tsx', str(check)], capture_output=True,
+    # 用 studio 本地安装的 tsx，避免 npx 去 registry 临时装包
+    # （npx 缓存一旦损坏会以 EPERM 失败，让这个对比检查变得不可靠）
+    local_tsx = ROOT / 'studio' / 'node_modules' / '.bin' / 'tsx.cmd'
+    cmd = ([str(local_tsx), str(check)] if local_tsx.exists()
+           else [npx, 'tsx', str(check)])
+    proc = subprocess.run(cmd, capture_output=True,
                           encoding='utf-8', errors='replace', timeout=600)
     assert proc.returncode == 0, f'the check script itself failed:\n{proc.stderr}'
 

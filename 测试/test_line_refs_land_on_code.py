@@ -140,7 +140,7 @@ ROOT = Path(__file__).resolve().parents[1]
 #: Directories whose source is held to this rule. Same set as P34's guard:
 #: `out/**` is a render artefact tree and `studio/public/jobs/**` is gitignored
 #: staging, so neither is source anyone maintains.
-SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', 'tests', 'tools')
+SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', '测试', 'tools')
 
 #: Extension alternation, LONGEST FIRST — P34 measured that `js|json` written in
 #: that order silently matches `foo.js` out of `foo.json`, because Python's `re`
@@ -416,7 +416,7 @@ def basename_index() -> dict[str, list[Path]]:
     from a rename.
     """
     idx: dict[str, list[Path]] = {}
-    for d in ('studio', 'pipeline', 'tests', 'tools'):
+    for d in ('studio', 'pipeline', '测试', 'tools'):
         base = ROOT / d
         if not base.exists():
             continue

@@ -5,7 +5,7 @@
 - Rewrites asset paths to public/-relative (jobs/<job>/...) and writes props.json.
 
 Usage:
-  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe ceo_mindread_ep01/scripts/stage_assets.py --job ep01_v3
+  E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe 成片项目/ceo_mindread_ep01/scripts/stage_assets.py --job ep01_v3
 """
 
 from __future__ import annotations

@@ -33,9 +33,9 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 LOCKED = ROOT / 'studio' / 'scripts' / 'locked_fields.py'
 REPO = ROOT.as_posix()          # embedded into the probe source below
 TARGETS = [
-    str(ROOT / 'tests' / 'test_brand_lock_wiring.py'),
-    str(ROOT / 'tests' / 'test_locked_fields.py'),
-    str(ROOT / 'tests' / 'test_locked_fields_wiring.py'),
+    str(ROOT / '测试' / 'test_brand_lock_wiring.py'),
+    str(ROOT / '测试' / 'test_locked_fields.py'),
+    str(ROOT / '测试' / 'test_locked_fields_wiring.py'),
 ]
 
 

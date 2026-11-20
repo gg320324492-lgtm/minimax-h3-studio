@@ -87,7 +87,7 @@ ROOT = Path(__file__).resolve().parents[1]
 #: Directories whose source comments are held to this rule. `out/**` is a render
 #: artefact tree and `studio/public/jobs/**` is gitignored staging, so neither is
 #: source anyone maintains.
-SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', 'tests')
+SOURCE_DIRS = ('studio/src', 'studio/scripts', 'pipeline', '测试')
 
 #: Extension alternation, LONGEST FIRST. Written as `js|json` this silently
 #: matches `foo.js` out of `foo.json` and every `.json` citation silently stops
@@ -295,7 +295,7 @@ def citations_in(text: str) -> list[tuple[str, str, str]]:
 
 def _basename_index() -> dict[str, list[Path]]:
     idx: dict[str, list[Path]] = {}
-    for d in ('studio', 'pipeline', 'tests', 'docs'):
+    for d in ('studio', 'pipeline', '测试', 'docs'):
         for p in (ROOT / d).rglob('*'):
             if p.is_file() and 'node_modules' not in p.parts:
                 idx.setdefault(p.name, []).append(p)

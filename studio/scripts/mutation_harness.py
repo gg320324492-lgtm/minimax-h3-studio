@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 GEOM = ROOT / 'studio' / 'scripts' / 'chart_geometry.py'
-TEST = ROOT / 'tests' / 'test_chart_geometry.py'
+TEST = ROOT / '测试' / 'test_chart_geometry.py'
 TOKENS = ROOT / 'studio' / 'src' / 'templates' \
     / 'finance-showcase' / 'design' / 'tokens.ts'
 

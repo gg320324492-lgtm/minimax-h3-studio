@@ -61,8 +61,8 @@
 
 指挥窗口实测：
 
-- `ceo_mindread_ep01/01_reference/` —— **19 MB**，含 `ceo` / `intern` / `office` 三个子目录
-- `ceo_mindread_ep01/scripts/gen_references.py` 与 `gen_reference_sheets.py` 存在
+- `成片项目/ceo_mindread_ep01/01_reference/` —— **19 MB**，含 `ceo` / `intern` / `office` 三个子目录
+- `成片项目/ceo_mindread_ep01/scripts/gen_references.py` 与 `gen_reference_sheets.py` 存在
 - ⚠️ **那是 EP01 那条独立管线，不是 showcase 的**
 
 **请核实**：这些参考素材**与总计划说的"参考片 24–40s"是同一部吗？**

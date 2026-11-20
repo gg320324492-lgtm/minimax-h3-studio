@@ -708,7 +708,7 @@ const resolved = useMemo(() => resolveScenes(doc, false), [doc]);   // ← 算�
 
 ### 参考素材不是同一部片 —— 而这里有一个陷阱
 
-- `ceo_mindread_ep01/01_reference/`（27 文件 / 4 mp4）经查是 **MiniMax-H3 的 R2V 工作流「生成」的真人角色图** —— **它是造视频的输入，不是要被分析的一部片**；
+- `成片项目/ceo_mindread_ep01/01_reference/`（27 文件 / 4 mp4）经查是 **MiniMax-H3 的 R2V 工作流「生成」的真人角色图** —— **它是造视频的输入，不是要被分析的一部片**；
 - **`experiments/_ref_analysis/` 名字与「参考分析」完全一致，而它里面确实有一份真的分析**：`cuts.txt` 含 87 个切点、总长 264.567s、抽了 11 帧（**1930×1080，不是 1920**）。**那部片是《鬼新娘》，一部 1950 年代手绘动画。**
   **⚠️ 任何「有没有参考分析」的粗扫都会在那个目录上永远绿灯**；
 - **有界检索确认**：仓库里**没有任何被跟踪的媒体文件**，**那部片不在磁盘上**。
@@ -1976,7 +1976,7 @@ P18 未决项 1 的处置。记录文档 `docs/P19_DUPLICATE_POPULATION.md`，�
 **一处偏离（已报备，且我认为处理得当）**：py-3.10 有 cv2 但**没有 pytest**，所以语料测量**在本机无法跑进 pytest**。它把测量放进普通函数 `measure_within_shot_distribution()`，用 3.10 脚本驱动（输出在 `out/p20_probe/measure_310.txt`），**在 3.12 套件里 skip 而不是撒谎**。**所以那些断言本身是验证过的，但 3.12 套件跑绿并不等于它们被跑到** —— **这个「skip 不等于通过」的诚实标注，正是本项目反复要求的东西**。
 
 **第三把尺子没有强行判等**：`visual_qa.rule_duplicate` 是第三份 `signature_distance`，但 P19 给它 `SIGNATURE_EQUAL = 0.0` 因为 `--frame-pair` 递给它的是**同一次渲染的两个相邻帧**（另一个总体，且语料证明不分离）。**这个差异被记录并附证据，而不是靠断言三者相等掩盖掉。**
-**记录未修（超范围）**：`ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
+**记录未修（超范围）**：`成片项目/ceo_mindread_ep01/scripts/select_takes.py:90` 对同一比较用 **1.0** 而非 0.5 ⇒ **三个调用点持有三个数字**。
 **这条本身就是一个「同一个问题三个答案」的实例，值得单列**，已写入 `docs/P19_DUPLICATE_POPULATION.md` §1a。
 
 ---
@@ -3279,7 +3279,7 @@ safetensors 头 124 tensors、`control_blocks_places=[0,5,…,45]` —— **10 �
 
 #### 实测数据
 
-**素材**：`water_renewal/07_edit/WaterRenewal_1080p.mp4` 真实纪录片
+**素材**：`成片项目/water_renewal/07_edit/WaterRenewal_1080p.mp4` 真实纪录片
 （4 人岸边作业、弯腰递物遮挡、带中文字幕）——**不是 P57 的火柴人，是真实难度**。
 
 **三个提取权重开工全缺**（SDPose wholebody 1.92 GB / RT-DETR v4-x 124 MB /
