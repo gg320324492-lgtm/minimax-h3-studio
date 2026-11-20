@@ -35,6 +35,22 @@
   （8233b99）跑同一套作基线，区分「路径迁移引起」与「原本就红」
 - 判定口径：只修前者，不动原本就红的用例
 
+## G-09 sr_takes.py 指向的 shot_manifest 不存在 —— 待办
+
+`成片项目/ceo_mindread_ep01/scripts/sr_takes.py:30` 读的是
+`EP01 / '00_project' / 'shot_manifest.json'`，但该文件实际位于
+`09_final/shot_manifest.json`（`09_final_v2/` 下另有一份）。
+
+**这不是目录迁移造成的**：该行自最初的提交 9e96377 起就是这样写的，
+`00_project/shot_manifest.json` 从未进过版本库（.gitignore 里也没有它），
+只在磁盘上存在过；`私有备份/shot_manifest.before_takeranker.json` 就是它被
+take_ranker 改动前的备份——说明后续某次运行把它挪走了，脚本没跟着改。
+
+- 现象：`python sr_takes.py --help` 直接 FileNotFoundError
+- 待办：确认 per-take SR 应该读 `09_final/shot_manifest.json` 还是
+  `09_final_v2/shot_manifest.json`，再改这一行
+- 影响面：只影响 EP01 的逐镜头超分，不影响其它工单
+
 ## G-02 本机网络出口受限 —— 已规避
 
 2026-11-20 实测：
