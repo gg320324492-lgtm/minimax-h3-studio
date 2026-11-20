@@ -30,6 +30,51 @@
 
 ---
 
+## G-01 测试套件 —— 已关闭（2026-11-20）
+
+**最终状态：789 passed / 12 skipped / 0 failed，10 分 34 秒。**
+
+这条缺口从 15 failed 一路降到 0，过程中揭出的问题分三类：
+
+1. **目录迁移的漏改**（绝大多数）——绝对路径改了，相对写法漏了：
+   `ROOT / 'tests' / 'x.py'`（引号带空格）、元组里的 `'tests'`、
+   `Minimax-H3	ests`（反斜杠）、`skip_dirs` 里的旧目录名。
+2. **静默 skip 的假绿**——`tests/test_visual_qa.py` 的 `from ffmpeg_env import`
+   包在 try/except 里，导入失败就 skip，于是"单独跑绿、全跑红"。补上路径后
+   那两条时长守卫从 skip 变成真跑并通过（38 passed 而非 36 passed + 5 skipped）。
+3. **一个环境问题**——`tests/test_p41_vlm_critic.py` 靠 `npx tsx` 从 registry
+   临时装包，陈旧的 npx 缓存会以 EPERM 失败。改用 studio 本地安装的 tsx。
+
+另有一处**文件真的丢了**并已找回：`productions/ceo_mindread_ep01/scripts/`
+下的 `gen_office.py` 与 `gen_references.py`——它们在本轮起点前被 git 跟踪、
+后来才被 .gitignore 排除，切分支时被 git 从磁盘删除且 git 也恢复不了
+（ignore 规则使其不再进入索引）。已从 8233b99 恢复并施加同样的路径修复。
+
+复现：`third_party/ComfyUI/venv/Scripts/python.exe -m pytest tests/ -q`
+（系统 python 没有 pytest；用 ComfyUI 的 venv）。
+
+## G-10 目录命名 —— 已关闭（2026-11-20 改回英文）
+
+本日一度把成片目录改成中文（成片项目/ 测试/ 脚本/ 私有备份/ 等），**当天已全部改回英文**：
+
+    productions/   6 个成片项目
+    tests/         测试套件
+    scripts/       ffmpeg_env.py、sr_pipeline_v2.py
+    H3_local_private/   私有备份
+    out/workflows/ out/logs/ out/studio_jobs/ out/tools/
+
+**为什么改回**：中文目录名在四处在持续制造问题，每一处都会静默出错——
+1. `git ls-files` 默认把非 ASCII 路径输出成八进制转义（`"æ..."`），
+   测试拿这个输出去开文件必然失败；
+2. `subprocess.run(..., text=True)` 按系统 locale（本机 GBK）解码 git 的 UTF-8 输出，
+   中文路径变乱码；
+3. 守护测试里的路径正则只认 `tests|studio|pipeline|docs|tools`，改名就得逐个改；
+4. 每一条绝对路径、每一个 manifest 条目都要跟着改，改漏一处就断。
+
+**结论**：本项目的目录名保持英文。中文只用在**文档正文与注释**里，不进路径。
+
+---
+
 ## G-01 测试套件存在失败项 —— 待验证
 
 目录归位后跑 `pytest tests/`，出现若干 E（error）与 F（failure）。
