@@ -140,7 +140,7 @@ def main():
     # ---- 5. Seed manifest ----
     print('\n[5] Seed reproducibility')
     sm = json.loads((PROJECT / '00_project/seed_manifest.json').read_text(encoding='utf-8'))
-    manifest = json.loads((PROJECT / '00_project/shot_manifest.json').read_text(encoding='utf-8'))
+    manifest = json.loads((PROJECT / '09_final/shot_manifest.json').read_text(encoding='utf-8'))
     missing = []
     mismatched = []
     for sid, sel in manifest['selections'].items():

@@ -120,7 +120,8 @@ def copy_final_assets():
         ('08_cover/EP01_DOUYIN_COVER.jpg', 'EP01_DOUYIN_COVER.jpg'),
         ('06_subtitles/EP01.ass', 'EP01.ass'),
         ('06_subtitles/EP01.srt', 'EP01.srt'),
-        ('00_project/shot_manifest.json', 'shot_manifest.json'),
+        # shot_manifest.json is written directly to 09_final/ by select_takes.py
+        # (authoritative location, where every consumer reads it) — nothing to copy.
         ('00_project/seed_manifest.json', 'seed_manifest.json'),
         ('00_project/timeline.json', 'timeline.json'),
     ]
@@ -173,7 +174,7 @@ def generate_render_report():
     as_ = [s for s in d['streams'] if s['codec_type'] == 'audio'][0]
 
     sm = json.loads((PROJECT / '00_project/seed_manifest.json').read_text(encoding='utf-8'))
-    manifest = json.loads((PROJECT / '00_project/shot_manifest.json').read_text(encoding='utf-8'))
+    manifest = json.loads((PROJECT / '09_final/shot_manifest.json').read_text(encoding='utf-8'))
     total_takes = sum(len([k for k in v if k.startswith('seed_')]) for v in sm.get('shots', {}).values())
 
     report = f'''# 《总裁突然听见实习生的心声》EP01 - Final Render Report (v3 FixAll)

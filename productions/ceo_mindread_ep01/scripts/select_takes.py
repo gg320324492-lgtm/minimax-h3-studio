@@ -204,9 +204,13 @@ def main():
         'selections': selections,
         'total_duration_s': sum(s['duration_s'] for s in selections.values()),
     }
-    with open(PROJECT / '00_project/shot_manifest.json', 'w', encoding='utf-8') as f:
+    # Authoritative location is 09_final/ (where every consumer reads it, incl.
+    # sr_takes/qa_final/finalize); finalize.copy_final_assets() no longer copies
+    # it out of 00_project.
+    (PROJECT / '09_final').mkdir(parents=True, exist_ok=True)
+    with open(PROJECT / '09_final/shot_manifest.json', 'w', encoding='utf-8') as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
-    log(f'\nWritten: 00_project/shot_manifest.json')
+    log(f'\nWritten: 09_final/shot_manifest.json')
     log(f'Total duration: {manifest["total_duration_s"]:.2f}s')
 
     # Concatenate into rough cut

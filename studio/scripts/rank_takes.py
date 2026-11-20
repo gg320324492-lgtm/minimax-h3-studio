@@ -140,7 +140,7 @@ def main() -> int:
     proj = ROOT / args.project
     raw_root = proj / '03_video_raw'
     out_root = proj / '04_video_selected'
-    manifest_path = proj / '00_project' / 'shot_manifest.json'
+    manifest_path = proj / '09_final' / 'shot_manifest.json'
     if not raw_root.exists():
         print(f'no raw dir: {raw_root}', file=sys.stderr)
         return 1
