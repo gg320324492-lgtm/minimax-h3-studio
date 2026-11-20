@@ -15,7 +15,7 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
 _prepend_ffmpeg()
 
-PROJECT = Path(r'E:/promo_video')
+PROJECT = Path(r'E:/Minimax-H3/productions/water_renewal')
 OUT = PROJECT / 'assets' / 'narration'
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +57,7 @@ def main():
 
     manifest = []
     for slug, text in LINES:
-        wav = Path(f'C:/Users/pc/AppData/Local/Temp/kokoro_{slug}.wav')
+        wav = Path(f'E:/Minimax-H3/out/tmp/kokoro_{slug}.wav')
         m4a = OUT / f'{slug}.m4a'
         t0 = time.time()
         chunks = []

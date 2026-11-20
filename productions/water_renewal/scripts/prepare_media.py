@@ -23,6 +23,6 @@ def work(a):
         if a['id']=='A03':vf+=',tpad=stop_mode=clone:stop_duration=0.25'
         subprocess.run([FFMPEG,'-v','error','-y','-i',str(p),'-vf',vf,'-an','-c:v','libx264','-preset','fast','-crf','18','-pix_fmt','yuv420p','-colorspace','bt709','-color_primaries','bt709','-color_trc','bt709','-movflags','+faststart',str(o)],check=True)
 with ThreadPoolExecutor(4) as pool:list(pool.map(work,assets))
-for name,src in [('micro.mp4','E:/promo_video/assets/h3/H3A_1080.mp4'),('interface.mp4','E:/promo_video/assets/h3/H3B_1080.mp4')]:
+for name,src in [('micro.mp4','E:/Minimax-H3/productions/water_renewal/01_reference/h3/H3A_1080.mp4'),('interface.mp4','E:/Minimax-H3/productions/water_renewal/01_reference/h3/H3B_1080.mp4')]:
     shutil.copy2(src,OUT/name)
 print('Prepared',len(assets),'source assets + clean mechanism animations',flush=True)

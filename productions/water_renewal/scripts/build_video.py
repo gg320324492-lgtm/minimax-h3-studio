@@ -21,8 +21,8 @@ if r'E:\Minimax-H3' not in sys.path:
 from ffmpeg_env import prepend_to_path as _p  # noqa: E402
 _p()
 
-SRC = Path(r'C:/Users/pc/Desktop/黑臭水体治理宣传视频')
-ROOT = Path(r'E:/promo_video')
+SRC = Path(r'E:/Minimax-H3/productions/water_renewal')
+ROOT = Path(r'E:/Minimax-H3/productions/water_renewal')
 A = ROOT / 'assets'
 W = ROOT / 'work' / 'build'
 SC = W / 'scenes'

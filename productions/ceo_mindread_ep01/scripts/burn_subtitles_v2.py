@@ -123,7 +123,7 @@ def main():
     # files in one go and tripped the sandbox bulk-delete guard
     # (SAFE_DELETE_BULK_CONFIRM_REQUIRED), wedging the whole chain until someone
     # cleaned it by hand. A per-run dir needs no startup deletion at all.
-    TMP = Path('C:/Users/pc/AppData/Local/Temp') / f'sub_burn_v2_{time.strftime("%Y%m%d_%H%M%S")}'
+    TMP = Path('E:/Minimax-H3/out/tmp') / f'sub_burn_v2_{time.strftime("%Y%m%d_%H%M%S")}'
 
     if not input_video.exists():
         print(f'ERROR: {input_video} not found')

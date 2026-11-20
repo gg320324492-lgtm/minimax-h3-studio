@@ -100,14 +100,14 @@ if [ "$PROMOTE" = "1" ]; then
   fi
   export EP01_MASTER="$MASTER"
   export EP01_FINAL_DIR="09_final"
-  export EP01_DESKTOP_DIR="C:/Users/pc/Desktop/MiniMax-H3-Outputs/EP01_CEO_Mindread/09_final"
+  export EP01_DESKTOP_DIR="E:/Minimax-H3/out/deliveries/EP01_CEO_Mindread/09_final"
 else
   # Point the rest of the chain at the v2 picture, and give this run its own
   # output directory. Without these two exports the later stages would keep
   # reading the OLD master and would overwrite the existing delivery.
   export EP01_MASTER="$SR_OUT"
-  export EP01_FINAL_DIR="09_final_v2"
-  export EP01_DESKTOP_DIR="C:/Users/pc/Desktop/MiniMax-H3-Outputs/EP01_CEO_Mindread/09_final_v2"
+  export EP01_FINAL_DIR="09_final"
+  export EP01_DESKTOP_DIR="E:/Minimax-H3/out/deliveries/EP01_CEO_Mindread/09_final"
   echo "  master     : $SR_OUT (delivered master untouched)"
   echo "  final dir  : $EP01_FINAL_DIR"
   echo "  set PROMOTE=1 to replace the delivered master and 09_final/ instead"

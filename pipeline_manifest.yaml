@@ -213,6 +213,7 @@ deprecated:
   artifacts:
     - path: productions/ceo_mindread_ep01/09_final_v2/
       reason: 与 09_final/ 三个 mp4 md5 全同、非硬链接，~89MB 纯冗余；时间戳反而更早
+      status: deleted_2026-11-20
     - path: productions/ceo_mindread_ep01/00_project/seed_manifest_v1_20steps.json
       reason: 与当前 seed_manifest.json md5 全同，内容写的是 4step —— 文件名误导
 

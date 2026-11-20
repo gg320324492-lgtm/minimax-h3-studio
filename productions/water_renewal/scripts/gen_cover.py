@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import gen_h3_clips as g  # reuse graph builder + server helpers
 
 g.W, g.H = 1280, 736      # 0.9MP 16:9 (per workflow size table)
-OUT = Path(r'E:/promo_video/assets/cover')
+OUT = Path(r'E:/Minimax-H3/productions/water_renewal/01_reference/cover')
 OUT.mkdir(parents=True, exist_ok=True)
 
 PROMPT = ("Cinematic environmental documentary shot, elevated view of a narrow urban river in China: "

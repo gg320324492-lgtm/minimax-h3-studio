@@ -18,7 +18,7 @@ import urllib.request
 from pathlib import Path
 
 SERVER = 'http://127.0.0.1:8188'
-PROJECT = Path(r'E:/promo_video')
+PROJECT = Path(r'E:/Minimax-H3/productions/water_renewal')
 OUT_DIR = PROJECT / 'assets' / 'h3'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

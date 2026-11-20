@@ -73,6 +73,25 @@ take_ranker 改动前的备份——说明后续某次运行把它挪走了，�
   `09_final_v2/shot_manifest.json`，再改这一行
 - 影响面：只影响 EP01 的逐镜头超分，不影响其它工单
 
+## G-11 water_renewal 脚本的子目录结构需逐个适配 —— 待办
+
+2026-11-20 把 `from_e_root/黑臭水体治理宣传片剪辑` 并入 `productions/water_renewal/` 时，
+这批脚本的根路径已全部重映射到项目内（不再指向已不存在的 `E:/promo_video`、
+也不再写 C 盘桌面），但**脚本内部期待的子目录结构仍是旧的**，需要逐文件适配：
+
+| 脚本 | 仍期待 | 当前实际 |
+|---|---|---|
+| `build_video.py` | `A=ROOT/'assets'`、`W=ROOT/'work'/'build'`、`OUT=ROOT/'output'` | `01_reference/`、`07_edit/`、`09_final/` |
+| `gen_h3_clips.py` | `PROJECT/'assets'/'h3'` | `01_reference/h3_clips/` |
+| `gen_narration.py` | `OUT=PROJECT/'assets'/'narration'` | `05_audio/narration/` |
+| `gen_cover.py` | `OUT=.../assets/cover` | `01_reference/cover/` |
+
+- 之所以不在本轮直接改：这几条路径各自对应哪一版产物需要按成片实际内容判断，
+  猜错会让脚本把素材写到错误的目录——属于"修复任务"，按约定登记为缺口。
+- 影响面：只影响 water_renewal 的重跑（成片已交付，`09_final/` 在位）。
+
+---
+
 ## G-02 本机网络出口受限 —— 已规避
 
 2026-11-20 实测：

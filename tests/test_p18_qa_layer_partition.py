@@ -113,6 +113,19 @@ PINNED_LAYERS: dict[str, list[str]] = {
 #: the start of the task, so a later change to a rule's decision logic has to be
 #: made deliberately rather than by editing the file this work touched.
 UNTOUCHED: dict[str, str] = {
+    # UPDATED 2026-11-20 (second time today), deliberately and out loud, the
+    # way P19/P21/P22 did. Two lines changed in `qa_report.py`, and neither is
+    # a rule's decision:
+    #   1) a docstring usage example naming the ComfyUI venv, which moved
+    #      from E:/ComfyUI/ to E:/Minimax-H3/third_party/ComfyUI/;
+    #   2) one module-level `sys.path.insert(0, str(ROOT / 'scripts'))`, added
+    #      because ffmpeg_env.py moved into scripts/ and the import would
+    #      otherwise fail with ModuleNotFoundError.
+    # Verified mechanically: both function bodies are byte-identical to before
+    # (2 functions, none added, none removed), so no rule's decision logic
+    # moved and the layer partition this file pins is untouched. The pin is
+    # updated here rather than deleted.
+
     # UPDATED 2026-11-20, deliberately and out loud, the way P19/P21/P22 did.
     # The change to `qa_report.py` was ONE line, and it is not a rule's
     # decision: the usage example in a docstring named the ComfyUI venv as
@@ -161,7 +174,7 @@ UNTOUCHED: dict[str, str] = {
     'studio/scripts/visual_qa.py':
         'P22_RUNTIME_CHECKED',
     'studio/scripts/qa_report.py':
-        '3eb242e2f8161053000f03f3bf6c54ff19703cbac2f485b3a3ff351139324544',
+        '1d7972b99083fabcdd22ede671acfe75f64408ad5225a942408c2081e3238f30',
 }
 
 

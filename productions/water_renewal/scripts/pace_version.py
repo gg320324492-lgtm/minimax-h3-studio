@@ -11,7 +11,7 @@ from ffmpeg_env import FFMPEG, FFPROBE
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / '07_edit/WaterRenewal_1080p.mp4'
-FINAL = Path(r'C:\Users\pc\Desktop\设计短片\黑臭水体治理宣传视频\第二版成片\节奏加快版')
+FINAL = Path(r'E:\Minimax-H3\productions\water_renewal\第二版成片\节奏加快版')
 FINAL.mkdir(parents=True, exist_ok=True)
 RATE = 1.08
 FRAMES = 5500

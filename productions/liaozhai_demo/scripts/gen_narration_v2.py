@@ -4,7 +4,7 @@
 娘子 = Serena (young female). Per-line speed fitted to the shot slot with
 gentle ffmpeg atempo (clamped 0.85-1.15) after measuring raw duration.
 
-Run with the dedicated venv: E:/tts/qwen3tts-venv/Scripts/python.exe
+Run with the dedicated venv: E:/Minimax-H3/third_party/tts/venv/Scripts/python.exe
 """
 import json
 import subprocess
@@ -13,8 +13,8 @@ from pathlib import Path
 
 PROJECT = Path(r'E:/Minimax-H3/productions/liaozhai_demo')
 OUT = PROJECT / '05_audio' / 'NARR_V2'
-MODEL_DIR = r'E:/tts/models/Qwen3-TTS-1.7B-CustomVoice'
-TOKENIZER_DIR = r'E:/tts/models/Qwen3-TTS-Tokenizer-12Hz'
+MODEL_DIR = r'E:/Minimax-H3/third_party/tts/models/Qwen3-TTS-1.7B-CustomVoice'
+TOKENIZER_DIR = r'E:/Minimax-H3/third_party/tts/models/Qwen3-TTS-Tokenizer-12Hz'
 
 NARR_INSTRUCT = ('用低沉苍老的嗓音，像老评书艺人讲鬼故事，吐字铿锵，语速缓慢，'
                  '抑扬顿挫，营造悬疑惊悚的氛围')

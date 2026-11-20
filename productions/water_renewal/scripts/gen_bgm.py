@@ -221,5 +221,5 @@ mix[i0:] *= np.linspace(1, 0, N - i0)[:, None] ** 1.3
 
 # normalize to about -6 dBFS peak
 peak = np.max(np.abs(mix)); mix *= (0.5 / peak)
-wavfile.write(r'E:/promo_video/assets/bgm_score.wav', SR, (mix * 32767).astype(np.int16))
+wavfile.write(r'E:/Minimax-H3/productions/water_renewal/01_reference/bgm_score.wav', SR, (mix * 32767).astype(np.int16))
 print('BGM written: 122s, peak scaled', round(float(peak), 3))

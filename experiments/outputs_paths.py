@@ -1,12 +1,12 @@
 """Standard output path constants for all video projects.
 
 All new video generation tasks should use these paths.
-Place all videos under C:/Users/pc/Desktop/MiniMax-H3-Outputs/
+Place all videos under E:/Minimax-H3/out/deliveries/
 """
 from pathlib import Path
 
 # Master output directory on desktop
-OUTPUTS_ROOT = Path(r'C:/Users/pc/Desktop/MiniMax-H3-Outputs')
+OUTPUTS_ROOT = Path(r'E:/Minimax-H3/out/deliveries')
 
 # Standard subfolder structure
 SUBFOLDERS = {

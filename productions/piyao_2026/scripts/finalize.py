@@ -16,7 +16,7 @@ prepend_to_path()
 
 PROJECT = Path(r'E:/Minimax-H3/productions/piyao_2026')
 FINAL = PROJECT / '09_final'
-DESKTOP = Path(r'C:/Users/pc/Desktop/MiniMax-H3-Outputs/piyao_2026/09_final')
+DESKTOP = Path(r'E:/Minimax-H3/out/deliveries/piyao_2026/09_final')
 SRC = PROJECT / '07_edit/PIYAO_WITH_SUBTITLES.mp4'
 NAME = '它只是换了一个地名_参赛版_1080P.mp4'
 

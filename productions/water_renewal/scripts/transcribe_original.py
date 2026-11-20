@@ -5,7 +5,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'scripts'))
 from ffmpeg_env import FFMPEG
 from faster_whisper import WhisperModel
 out=Path(__file__).resolve().parents[1]/'01_reference'
-src=next(Path(r'C:\Users\pc\Desktop\设计短片\黑臭水体治理宣传视频').glob('成片*.mp4'))
+src=next(Path(r'E:\Minimax-H3\productions\water_renewal').glob('成片*.mp4'))
 subprocess.run([FFMPEG,'-v','error','-y','-i',str(src),'-vn','-ar','16000','-ac','1',str(out/'original_audio.wav')],check=True)
 modelpath=next(Path(r'C:\Users\pc\.cache\huggingface\hub\models--Systran--faster-whisper-small\snapshots').iterdir())
 model=WhisperModel(str(modelpath),device='cpu',compute_type='int8')

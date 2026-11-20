@@ -122,7 +122,7 @@ def main():
     tl = json.loads((PROJECT / '00_project/timeline.json').read_text(encoding='utf-8'))
     src = PROJECT / '07_edit/LZ_WITH_AUDIO.mp4'
     dst = PROJECT / '07_edit/LZ_WITH_SUBTITLES.mp4'
-    TMP = Path('C:/Users/pc/AppData/Local/Temp') / f'lz_subs_{time.strftime("%Y%m%d_%H%M%S")}'
+    TMP = Path('E:/Minimax-H3/out/tmp') / f'lz_subs_{time.strftime("%Y%m%d_%H%M%S")}'
 
     if not src.exists():
         print(f'ERROR: {src} not found')

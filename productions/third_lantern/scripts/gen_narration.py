@@ -5,7 +5,7 @@
 - 小满 (child): VoiceDesign model, described as a 8-10 y.o. Chinese boy,
   clear soft timid voice.
 
-Run with E:/tts/qwen3tts-venv/Scripts/python.exe
+Run with E:/Minimax-H3/third_party/tts/venv/Scripts/python.exe
 """
 import json
 import subprocess
@@ -14,8 +14,8 @@ from pathlib import Path
 
 PROJECT = Path(r'E:/Minimax-H3/productions/third_lantern')
 OUT = PROJECT / '05_audio' / 'NARR'
-CUSTOM_DIR = r'E:/tts/models/Qwen3-TTS-1.7B-CustomVoice'
-DESIGN_DIR = r'E:/tts/models/Qwen3-TTS-1.7B-VoiceDesign'
+CUSTOM_DIR = r'E:/Minimax-H3/third_party/tts/models/Qwen3-TTS-1.7B-CustomVoice'
+DESIGN_DIR = r'E:/Minimax-H3/third_party/tts/models/Qwen3-TTS-1.7B-VoiceDesign'
 
 NARR_INSTRUCT = ('年轻女子，声音安静低缓，清冷中带着隐忍的哀伤，像在心里讲一件藏了很多年的事，'
                  '语速缓慢，吐字轻，悬念处微微压低')

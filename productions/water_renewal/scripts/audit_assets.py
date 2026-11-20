@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'scripts'))
 from ffmpeg_env import FFMPEG, FFPROBE
-ROOT=Path(r'C:\Users\pc\Desktop\设计短片\黑臭水体治理宣传视频')
+ROOT=Path(r'E:\Minimax-H3\productions\water_renewal')
 OUT=Path(__file__).resolve().parents[1]/'01_reference'
 OUT.mkdir(parents=True,exist_ok=True)
 FONT=ImageFont.truetype('C:/Windows/Fonts/msyh.ttc',18)

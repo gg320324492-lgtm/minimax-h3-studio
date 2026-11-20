@@ -90,9 +90,9 @@ def mix():
  music*=duck[:,None]
  # Authentic river and bubble textures add place without masking the narrator.
  ambient=np.zeros_like(music)
- river=norm(load(Path('E:/promo_video/assets/amb_river.wav')),-37)
+ river=norm(load(Path('E:/Minimax-H3/productions/water_renewal/01_reference/amb_river.wav')),-37)
  for t in [0,8,12,20,85,116,123,165,177]:place(ambient,fade(river,.6,.8),t)
- bubbles=norm(load(Path('E:/promo_video/assets/amb_bubble.wav')),-32)
+ bubbles=norm(load(Path('E:/Minimax-H3/productions/water_renewal/01_reference/amb_bubble.wav')),-32)
  place(ambient,fade(bubbles[:12*SR],.8,1),74)
  place(ambient,fade(bubbles[:4*SR],.5,.8),158)
  ambient*=np.maximum(.55,duck)[:,None]

@@ -4,7 +4,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'scripts'))
 from ffmpeg_env import FFMPEG,FFPROBE
 ROOT=Path(__file__).resolve().parents[1]
-FINAL=Path(r'C:\Users\pc\Desktop\设计短片\黑臭水体治理宣传视频\第二版成片')
+FINAL=Path(r'E:\Minimax-H3\productions\water_renewal\第二版成片')
 FINAL.mkdir(parents=True,exist_ok=True)
 src=ROOT/'07_edit/WaterRenewal_1080p.mp4'
 master=FINAL/'让水体重新呼吸_成片2_全面升级_高清版.mp4'
