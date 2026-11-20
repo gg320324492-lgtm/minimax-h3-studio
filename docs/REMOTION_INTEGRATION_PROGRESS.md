@@ -172,7 +172,7 @@
 - 归档（不删）：4 个 `.pre-v2.bak` + `09_final.pre-v2.bak`（233MB 旧交付备份）→ `productions/ceo_mindread_ep01/_archive_prev2/`；`_archive_20260910_rerun/`（407MB v1 交付存档）保留原位。
 - 保留：`logs/`（活跃管线日志）、`09_final*/` 现行交付。
 - 2026-09-30：**仓库转公开**（隐私/凭据/IP 四类审计通过）。出库：4 个 Mixkit 派生音频（本地保留，gitignore）+ 12 个 vendor 技能目录（可重装）。当前公开内容 = 模板代码 + 契约 + 文档 + CC0/自研音频；H3 prompt/种子/剧本按用户决策一并公开。
-- 2026-09-30：**仓库转公开前完成历史净化**（用户决策：prompt/种子/剧本/timeline 只留本地）。git filter-repo 从全部历史清除 37 个敏感文件（workflows JSON、各项目 seed_manifest/story/dialogue/shots/timeline、prompt 型生成脚本）；本地文件备份于 `E:/H3_local_private/repo_backup/` 并已恢复为 gitignore 的未跟踪状态；强制推送重写后的历史（e817623），远端树验证 0 敏感路径。同轮：仓库转 PUBLIC + About/topics（remotion/comfyui/text-to-video/ai-video/douyin/real-esrgan）。
+- 2026-09-30：**仓库转公开前完成历史净化**（用户决策：prompt/种子/剧本/timeline 只留本地）。git filter-repo 从全部历史清除 37 个敏感文件（workflows JSON、各项目 seed_manifest/story/dialogue/shots/timeline、prompt 型生成脚本）；本地文件备份于 `E:/私有备份/repo_backup/` 并已恢复为 gitignore 的未跟踪状态；强制推送重写后的历史（e817623），远端树验证 0 敏感路径。同轮：仓库转 PUBLIC + About/topics（remotion/comfyui/text-to-video/ai-video/douyin/real-esrgan）。
 
 ---
 
@@ -196,7 +196,7 @@
 | 数据报告 28s | 14.1s（2× 实时），母带一轮过，qa 10/10 |
 | 逐片段超分 | ~3.5 fps，VRAM 3.6GB |
 
-**仓库状态**：公开 `gg320324492-lgtm/minimax-h3-studio`；历史已净化（37 敏感文件全历史清除）；本地生产内容（prompt/种子/剧本/timeline/生成scripts/Mixkit 音频）gitignore + 备份于 `E:/H3_local_private/`。
+**仓库状态**：公开 `gg320324492-lgtm/minimax-h3-studio`；历史已净化（37 敏感文件全历史清除）；本地生产内容（prompt/种子/剧本/timeline/生成scripts/Mixkit 音频）gitignore + 备份于 `E:/私有备份/`。
 
 **已知遗留（供下阶段参考）**
 1. 合成 BGM 兜底版质量有天花板（真实素材已可经代理获取并导入）
@@ -209,9 +209,9 @@
 
 ## 仓库整理（2026-10-14）
 
-- **私有内容备份迁入仓库目录**：`E:\H3_local_private\` → `H3_local_private/`（14MB，51 个文件）。用户决策，为与项目其余内容同处一个目录。同步更新 `config/paths.py`（改为 `ROOT / 'H3_local_private'`，不再写死绝对路径）、`pipeline_manifest.yaml`、`config/local.example.yaml`。
-- **新增 `.gitignore` 规则 `/H3_local_private/`**：必须整目录忽略。备份里的路径深度与既有那些逐条规则不匹配（如 `productions/ceo_mindread_ep01/scripts/build_timeline.py` 是锚定仓库根的规则，匹配不到 `H3_local_private/repo_backup/ceo_mindread_ep01/scripts/build_timeline.py`）。公开仓库泄露过一次，这条不要删。
-- **上方「阶段封版（2026-09-30）」两处 `E:/H3_local_private/` 保持原样**：那是当日的准确记录，不是当前路径。
+- **私有内容备份迁入仓库目录**：`E:\私有备份\` → `私有备份/`（14MB，51 个文件）。用户决策，为与项目其余内容同处一个目录。同步更新 `config/paths.py`（改为 `ROOT / '私有备份'`，不再写死绝对路径）、`pipeline_manifest.yaml`、`config/local.example.yaml`。
+- **新增 `.gitignore` 规则 `/私有备份/`**：必须整目录忽略。备份里的路径深度与既有那些逐条规则不匹配（如 `productions/ceo_mindread_ep01/scripts/build_timeline.py` 是锚定仓库根的规则，匹配不到 `私有备份/repo_backup/ceo_mindread_ep01/scripts/build_timeline.py`）。公开仓库泄露过一次，这条不要删。
+- **上方「阶段封版（2026-09-30）」两处 `E:/私有备份/` 保持原样**：那是当日的准确记录，不是当前路径。
 - E 盘根目录清理：项目散落产物 8 组（`out/`、`tmp/`、`tmp_p52/`、`p4{2,3}_probe/`、`p15_scratch/`、`P29work/`、`p38probe_graph.json`）并入 `out/`；另清腾讯视频 HLS 缓存 8.8G、QQ音乐缓存 1.3G。项目内清 Remotion 泄漏的 webpack bundle 10G、重复 chrome-headless-shell 270M、`tools/ffmpeg.zip` 170M、ACE-Step 权重 9.7G。项目体积 41G → 20G。
 
 ### 历史二次净化：Mixkit 音频出库

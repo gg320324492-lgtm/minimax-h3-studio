@@ -86,10 +86,10 @@ STUDIO = ROOT / 'studio'
 STUDIO_PUBLIC = STUDIO / 'public'
 STUDIO_JOBS = STUDIO_PUBLIC / 'jobs'
 
-#: Local-only content (never committed; backed up in H3_local_private/ inside
-#: the repo since 2026-10-14, E:/H3_local_private before that)
+#: Local-only content (never committed; backed up in 私有备份/ inside
+#: the repo since 2026-10-14, E:/私有备份 before that)
 LOCAL_PRIVATE_BACKUP = _resolve('local_private_backup', 'H3_LOCAL_BACKUP',
-                                ROOT / 'H3_local_private')
+                                ROOT / '私有备份')
 
 
 def ffmpeg_available() -> bool:

@@ -40,7 +40,7 @@
 ### 第 0 步：**先造回滚点，再动手**
 
 1. `E:\Minimax-H3\third_party\ComfyUI` 里 `git tag local-pre-upgrade-0.34`（或记录 `12d52794`）；
-2. `venv\Scripts\python.exe -m pip freeze > E:\Minimax-H3\out\p55\pip_freeze_0.34.txt`
+2. `venv\Scripts\python.exe -m pip freeze > E:\Minimax-H3\out\工单_P55\pip_freeze_0.34.txt`
    （⚠️ 输出目录先建好；**写到 E 盘**）；
 3. 记录 `custom_nodes/` 清单（当前只有 `ComfyUI-FlashVSR_Ultra_Fast`）；
 4. **跑一次升级前的基线生成**（见第 2 步的 r2v）——**没有基线，后面的"一致"无从判定**。
@@ -97,7 +97,7 @@ warning/error（区分"已知噪声"与"新出现的"）。
 
 ```bash
 cd /e/ComfyUI && git checkout local-pre-upgrade-0.34   # 或 12d52794
-venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.txt
+venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/工单_P55/pip_freeze_0.34.txt
 ```
 
 **回滚触发条件（任一）**：③ 生成结果改变且定位不到原因；② 任一工作流跑不起来且修复超过一次尝试；
@@ -114,7 +114,7 @@ venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.
 3. ⚠️ **五条高频复发**：先证明被测对象存在再测量；**外推等于没测**；
    **写数字要么实测要么标注未测**；CRLF 用字节计数验；**别把长跑命令管道进 `tail`**；
 4. ⚠️ **磁盘**：模型文件已就位，本项主要新增的是输出视频（每条约几十 MB），
-   **放 `E:\out\p55\`，跑完留证据、删大文件**；
+   **放 `E:\out\工单_P55\`，跑完留证据、删大文件**；
    ⚠️ **`studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删**；
 5. ⚠️ **不要并发跑两个生成任务**（一块 GPU）；
 6. ⚠️ **GBK 控制台会把非 ASCII 显示成替换字符——读非 ASCII 用字节判断**；

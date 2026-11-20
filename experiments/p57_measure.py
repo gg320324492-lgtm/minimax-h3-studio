@@ -1,7 +1,7 @@
 """P57: consolidate every run's measurements into one table.
 
-Reads out/p57/run_<label>.json (written by p57_runner) and ffprobes the moved
-video at out/p57/runs/<label>.mp4. Prints a Markdown-ready table with the
+Reads out/工单_P57/run_<label>.json (written by p57_runner) and ffprobes the moved
+video at out/工单_P57/runs/<label>.mp4. Prints a Markdown-ready table with the
 three numbers the report needs per run: status, end-to-end seconds, VRAM peak
 MiB, and the ffprobe spec (17k+5 frames / 24fps / audio track).
 """
@@ -9,7 +9,7 @@ import json
 import subprocess
 from pathlib import Path
 
-OUT = Path(r"E:\Minimax-H3\out\p57")
+OUT = Path(r"E:\Minimax-H3\out\工单_P57")
 LABELS = ["pose_s1", "pose_s0", "canny_s1", "depth_s1", "hed_s1", "mlsd_s1"]
 
 

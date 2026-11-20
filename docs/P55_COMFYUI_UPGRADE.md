@@ -14,9 +14,9 @@
 | 项 | 值 |
 |---|---|
 | git tag | `local-pre-upgrade-0.34`（指向 `12d52794` = v0.34.0） |
-| pip freeze | `E:\Minimax-H3\out\p55\pip_freeze_0.34.txt`（192 行） |
-| custom_nodes 清单 | `E:\Minimax-H3\out\p55\custom_nodes_0.34.txt`（仅 `ComfyUI-FlashVSR_Ultra_Fast`） |
-| r2v 基线视频 | `E:\Minimax-H3\from_e_root\out\p55\baseline_r2v_034.mp4`（prompt_id `d32451db`，270.0 s） |
+| pip freeze | `E:\Minimax-H3\out\工单_P55\pip_freeze_0.34.txt`（192 行） |
+| custom_nodes 清单 | `E:\Minimax-H3\out\工单_P55\custom_nodes_0.34.txt`（仅 `ComfyUI-FlashVSR_Ultra_Fast`） |
+| r2v 基线视频 | `E:\Minimax-H3\from_e_root\out\工单_P55\baseline_r2v_034.mp4`（prompt_id `d32451db`，270.0 s） |
 
 基线规格（ffprobe 实测，`probe_baseline_self.json`）：
 **h264 864×480 @ 24 fps，124 帧（= 7×17+5 ✓ 17k+5 帧格），aac 立体声 32 kHz**。
@@ -56,7 +56,7 @@
 - v0.43.2：同样的 cu130 提示 + **新增一条** `On windows we are currently forcing
   single GPU mode ... use: --cuda-device all`——信息性提示（本机本来就单卡），非错误。
 - 两个版本启动日志里均无 error / traceback / failed（日志全文在
-  `E:\Minimax-H3\from_e_root\out\p55\comfy_v034_startup.log` / `comfy_v0432_startup.log`）。
+  `E:\Minimax-H3\from_e_root\out\工单_P55\comfy_v034_startup.log` / `comfy_v0432_startup.log`）。
 
 ### 3.2 工作流加载与规格
 
@@ -94,7 +94,7 @@
 - **排除非确定性**（关键对照实验）：v0.43.2 下同 seed 重启服务器重跑第二次，
   视频流、音频流 md5 与第一次**逐字节一致**（`compare_r2v_repeat.json`）。
   ⇒ v0.43.2 自身完全确定；差异是**确定性的版本行为变化**。
-- 源码层定位（`git diff 12d52794 v0.43.2`，diff 全文存 `E:\Minimax-H3\from_e_root\out\p55\diff_*.txt`）：
+- 源码层定位（`git diff 12d52794 v0.43.2`，diff 全文存 `E:\Minimax-H3\from_e_root\out\工单_P55\diff_*.txt`）：
   v0.43.2 把 H3 的数值路径大面积 **comfy-kitchen 化**——
   - `comfy/ops.py`（+377 行）：int8/nvfp4 量化权重的线性层与 dequant 移向 kitchen 实现；
     H3 扩散模型是 `int8_convrot` 量化、文本编码器是 `nvfp4_awq` 量化，两者 dequant 路径都在其中；
@@ -138,7 +138,7 @@
 
 ```bash
 cd /e/ComfyUI && git checkout local-pre-upgrade-0.34   # → v0.34.0
-venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.txt
+venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/工单_P55/pip_freeze_0.34.txt
 ```
 
 - 回滚后 `pip freeze` 与升级前快照**逐行一致**（唯一差异是升级期间新增的
@@ -172,7 +172,7 @@ venv/Scripts/python.exe -m pip install -r E:/Minimax-H3/out/p55/pip_freeze_0.34.
 
 ## 六、证据文件清单
 
-均在 `E:\Minimax-H3\from_e_root\out\p55\`（执行时按当期工单写在 `E:\Minimax-H3\from_e_root\out\p55\`；
+均在 `E:\Minimax-H3\from_e_root\out\工单_P55\`（执行时按当期工单写在 `E:\Minimax-H3\from_e_root\out\工单_P55\`；
 执行结束后按用户 2026-11-04 的整理指令把 `E:\out` 等项目相关目录统一挪入
 `E:\Minimax-H3\from_e_root\`，下文路径已按新位置书写。大文件按工单要求留证据，
 mp4 合计仅约 6 MB，全部保留）：

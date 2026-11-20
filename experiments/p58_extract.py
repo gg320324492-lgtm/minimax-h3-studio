@@ -12,8 +12,8 @@ extraction stage's own peak and time — the work order asks for both routes'
 extraction cost before any generation runs.
 
 Usage: python p58_extract.py <pose|depth>
-Writes out/p58/extract_<route>.json (run record) and moves the produced
-control video to out/p58/controls/p58_<route>_real.mp4, then copies it into
+Writes out/工单_P58/extract_<route>.json (run record) and moves the produced
+control video to out/工单_P58/controls/p58_<route>_real.mp4, then copies it into
 E:\\Minimax-H3\third_party\ComfyUI\\input\\ for the generation stage.
 """
 import json
@@ -27,7 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from bench import api  # noqa: E402
 
-OUT = Path(r"E:\Minimax-H3\out\p58")
+OUT = Path(r"E:\Minimax-H3\out\工单_P58")
 COMFY_OUTPUT = Path(r"E:\Minimax-H3\third_party\ComfyUI\output")
 COMFY_INPUT = Path(r"E:\Minimax-H3\third_party\ComfyUI\input")
 CLIP = "p58_real.mp4"

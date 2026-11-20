@@ -20,7 +20,7 @@ run, so a 6-step Flex cannot win it on speed). All six renders met spec
 (1344×768, 124 frames, h264 + stereo AAC), none froze, and VLM-verified
 instruction-following hit counts are in §4. Whether the quality and the
 licensing terms justify a switch is the user's call; three frames per video
-are in `E:\Minimax-H3\out\p56\compare\` for eyeballing.
+are in `E:\Minimax-H3\out\工单_P56\compare\` for eyeballing.
 
 ## 1. What ran
 
@@ -90,7 +90,7 @@ consistent with the scripted whip pan and roar.
 
 ## 4. Instruction following (P45 instrument, `qwen2.5vl:7b` over local
 ollama; closed yes/no questions on 5 sampled frames each; an element hits if
-any frame answers yes; raw answers kept in `out/p56/measure_*.json`)
+any frame answers yes; raw answers kept in `out/工单_P56/measure_*.json`)
 
 Five sampled frames per render (f000/f029/f062/f094/f123), four closed
 questions each. `Y/n` = element hit, n of 5 frames answered yes.
@@ -112,7 +112,7 @@ reference-guided composition simply dropped that element on both sides.
 
 ## 5. Frame grabs for the user's own eyes (quality is not decidable here)
 
-`E:\Minimax-H3\out\p56\compare\{scene}_{A|B}_f{000,062,123}.png` — first,
+`E:\Minimax-H3\out\工单_P56\compare\{scene}_{A|B}_f{000,062,123}.png` — first,
 middle and last sampled frame of each render, 18 PNGs.
 
 Caveat added on review (§9, measured): for **fl2v** the f000/f123 grabs are
@@ -132,9 +132,9 @@ proper review** — this task measured feasibility and speed only.
 - **Precondition check**: the work order asks to confirm P55 by reading
   `docs/P55_COMFYUI_UPGRADE.md`. That file does not exist on disk or in
   git (only `WORKORDER_P55_COMFYUI_UPGRADE.md` and the evidence under
-  `from_e_root/out/p55/`). The precondition was instead confirmed from
+  `from_e_root/out/工单_P55/`). The precondition was instead confirmed from
   evidence: `E:\Minimax-H3\third_party\ComfyUI` reports `comfyui_version 0.43.2`, and
-  `from_e_root/out/p55/new_baseline_r2v_0432.mp4` matches the recorded
+  `from_e_root/out/工单_P55/new_baseline_r2v_0432.mp4` matches the recorded
   md5 `d5e83c59…`. The missing P55 report itself is a gap its owner
   should close.
 - **r2v baseline state**: the local r2v workflow ships with its turbo branch
@@ -155,15 +155,15 @@ proper review** — this task measured feasibility and speed only.
   (~5.6 GB) before the no-C-drive rule arrived; the sibling session moved
   it to `E:\Minimax-H3\third_party\ollama\models` (OLLAMA_MODELS), the pull
   was redone to E:, and this task's temp-frame directory was moved to
-  `out/p56/` as well. The ollama *program* itself (3.1 GB, winget) is still
+  `out/工单_P56/` as well. The ollama *program* itself (3.1 GB, winget) is still
   under `C:\Users\pc\AppData\Local\Programs\Ollama` — reported, left for
   the user to rule on.
-- Videos live in `E:\Minimax-H3\out\p56\{scene}_{side}.mp4` (~28 MB total,
+- Videos live in `E:\Minimax-H3\out\工单_P56\{scene}_{side}.mp4` (~28 MB total,
   kept — the work order's cleanup rule asks to drop large files at the end;
   28 MB is small enough to keep until the ruling).
 - Per-run runner logs (seed pin, prompt ids, elapsed, outputs) are in the
   session transcript; the machine-readable measurement files are
-  `E:\Minimax-H3\out\p56\measure_{scene}_{side}.json`.
+  `E:\Minimax-H3\out\工单_P56\measure_{scene}_{side}.json`.
 
 ## 8. The ruling (arrived 2026-11-04, after this report was committed)
 

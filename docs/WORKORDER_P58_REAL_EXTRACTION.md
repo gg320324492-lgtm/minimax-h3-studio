@@ -15,7 +15,7 @@
 | 权重 | `models/model_patches/minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors`（8.38 GB，SHA256 `cd48bdc1…` 已双重核验） |
 | P57 工作流 | `E:\Minimax-H3\workflows\video_minimax_h3_fun_controlnet_union.json`（官方模板落盘副本） |
 | GPU | RTX 5090 32GB；P57 实测控制生成显存峰值 31.4–31.8 GB——**生成时不要并发任何 GPU 任务** |
-| 输出 | 全部放 `E:\Minimax-H3\out\p58\`（**新规矩：不在 E 根建目录、不在 C 盘产生数据**） |
+| 输出 | 全部放 `E:\Minimax-H3\out\工单_P58\`（**新规矩：不在 E 根建目录、不在 C 盘产生数据**） |
 | 报告 | `E:\Minimax-H3\docs\P58_REAL_EXTRACTION_CHAIN.md` |
 
 **⚠️ 本项目工作树里有不属于你的在制工作**（`studio/src/Root.tsx`、
@@ -54,7 +54,7 @@
 真实视频 → [SDPose / Depth Anything 3 提取] → 控制视频 → [P57 工作流的控制生成] → 输出
 ```
 
-- 每路先**单独验证提取质量**：抽 3 帧控制图放 `out\p58\extract\`，
+- 每路先**单独验证提取质量**：抽 3 帧控制图放 `out\工单_P58\extract\`，
   **肉眼 + 数值**（骨架点数量/深度图梯度分布）报告提取是否可用——
   **提取烂了后面全白测，这一步不合格就停下来报告**；
 - 控制视频规格对齐 P57 工作流的输入要求（864×480×124 或模板原生值）。
@@ -67,7 +67,7 @@
 | 真实控制 vs 合成控制（同 seed） | **本项核心**：真实素材的提取噪声会不会让控制失效或劣化画质 |
 | 无控制分支的纯 H3 直出（同 prompt 同 seed） | 画质基线——控制分支会不会拉低画质 |
 
-每格实测：耗时、显存峰值、ffprobe 规格、逐帧 PSNR/像素差、抽 3 帧放 `out\p58\compare\`。
+每格实测：耗时、显存峰值、ffprobe 规格、逐帧 PSNR/像素差、抽 3 帧放 `out\工单_P58\compare\`。
 
 ### 第 3 步：回答三个裁定问题（**给数据，不裁定**）
 
@@ -85,7 +85,7 @@
 2. **贴原始输出**（提取帧、PSNR、显存、耗时），不贴结论句；
 3. **外推等于没测**；**写数字要么实测要么标注未测**；
 4. **一块 GPU 串行**；提取节点若需 CPU 推理也要报告耗时；
-5. **磁盘**：`out\p58\` 收尾留证据删大文件；
+5. **磁盘**：`out\工单_P58\` 收尾留证据删大文件；
    ⚠️ `studio/.remotion/water-renewal-bundle`（1.5 GB）不是你的，别删；
 6. ⚠️ GBK 控制台读非 ASCII 用字节判断；写中文报告用 `read_bytes`/`write_bytes`
    （`tests/test_markdown_text_is_intact.py` 守全仓 U+FFFD）；
@@ -101,7 +101,7 @@
 - `docs/UPGRADE_PROGRESS.md`——账本指挥窗口写
 - `DiagOutputDir`——禁止触碰
 - `workflows/video_minimax_h3_fun_controlnet_union.json`——原件不改，
-  需要变体就在 `out\p58\` 或 `workflows/` 用新文件名
+  需要变体就在 `out\工单_P58\` 或 `workflows/` 用新文件名
 
 **本指令授权你**：下载提取模型权重到 `E:\Minimax-H3\third_party\ComfyUI\models\`（核 SHA256）、
 新增 `workflows/` 落盘副本、新增 `experiments/p58_*.py`、写报告。

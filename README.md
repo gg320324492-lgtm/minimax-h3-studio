@@ -37,7 +37,7 @@
 | `docs/` | 全部报告与方案文档（管线升级史 / Remotion 融合方案 / 动效调研 / 缺口清单） |
 | `experiments/` | 一次性实验脚本与基准残留（SR 调参/管道变体/分析 dump），非生产依赖 |
 | `tests/` | 守护测试套件（用 `third_party/ComfyUI/venv` 的 python 跑：`python -m pytest tests/ -q`） |
-| `H3_local_private/` | 私有备份（Mixkit 授权音频、含 prompt/种子的脚本），**整体 gitignore，不得入库** |
+| `私有备份/` | 私有备份（Mixkit 授权音频、含 prompt/种子的脚本），**整体 gitignore，不得入库** |
 
 ## 项目模板规范（四个项目共用）
 

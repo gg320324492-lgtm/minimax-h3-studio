@@ -2,7 +2,7 @@
 
 > 工单：`docs/WORKORDER_P58_REAL_EXTRACTION.md`（2026-11-04）
 > 前置：P57（Union 2.0 合成信号下控制确认生效）。
-> **本报告只给裁定数据，不裁定。** 对比帧在 `out/p58/compare/`，供肉眼裁定。
+> **本报告只给裁定数据，不裁定。** 对比帧在 `out/工单_P58/compare/`，供肉眼裁定。
 > 所有数字均为实测；未测的项目明确标注。生效性判读以像素差为主，
 > 肉眼观察仅作旁证并标注（P57 已实测 VLM body_orientation 与肉眼矛盾，
 > 本项**未调用 VLM**）。
@@ -39,10 +39,10 @@
 按工单优先级取第 1 顺位：`productions/water_renewal/07_edit/WaterRenewal_1080p.mp4`
 （1920×1080@30fps，198.06s，495,113,808 B，只读未动；真实纪录片实拍，非合成）。
 
-镜头选择过程落盘：`out/p58/water_scan_2s.jpg`（全片每 2s 总览）、`out/p58/scan_w*.jpg`（候选窗口细扫）、`out/p58/check_shot_169_174.jpg`（边界确认）。
+镜头选择过程落盘：`out/工单_P58/water_scan_2s.jpg`（全片每 2s 总览）、`out/工单_P58/scan_w*.jpg`（候选窗口细扫）、`out/工单_P58/check_shot_169_174.jpg`（边界确认）。
 **选定 t=169.0–174.17s**：4 人在岸边栽种作业（弯腰、递物、遮挡、烧录中文字幕俱全）——比 P57 火柴人难得多，正是"真实提取噪声"该有的难度。
 
-切片规格（与 P57 控制视频完全对齐）：`p58_real.mp4` 864×480@24fps ×124 帧 h264（`out/p58/work/real_clip.mp4` 存档）。
+切片规格（与 P57 控制视频完全对齐）：`p58_real.mp4` 864×480@24fps ×124 帧 h264（`out/工单_P58/work/real_clip.mp4` 存档）。
 
 ## 3. 提取质量门槛（先证明提取，再跑生成）
 
@@ -50,7 +50,7 @@
 **max_detections 2**；SDPose batch 16；绘制 body+hands+face+feet、stick 4、
 face_point 2、score 0.5；DA3 mono、resolution 504、v2_style。
 
-### 数值（`out/p58/extract_metrics.json`）
+### 数值（`out/工单_P58/extract_metrics.json`）
 
 | 指标 | Pose（SDPose） | Depth（DA3 base） |
 |---|---|---|
@@ -63,7 +63,7 @@ face_point 2、score 0.5；DA3 mono、resolution 504、v2_style。
 | 梯度（Sobel） | — | mean 1.82 / p95 6.0（有结构、不碎） |
 | 时序 MAD（对源 RGB 2.36） | — | 1.77（同量级→深度跟得上运动，非冻结非噪声） |
 
-### 肉眼（`out/p58/extract/*_f{030,062,093}_pair.png`，源|控制并排）
+### 肉眼（`out/工单_P58/extract/*_f{030,062,093}_pair.png`，源|控制并排）
 
 - **Pose**：被检出者骨架与真人姿态吻合（白衣人双腿开立/手臂伸展的骨架正确）。局限如实记录：**模板 max_detections=2，4 人只出 2 副骨架**；第二副常为上半身残段（遮挡所致）。
 - **Depth**：近亮远暗排序正确、人物呈近景亮块、结构平滑；**烧录字幕框被当作近景平面**（底部白矩形）——真实素材特有伪影，裁定时应知悉。
@@ -83,7 +83,7 @@ face_point 2、score 0.5；DA3 mono、resolution 504、v2_style。
 | pose_e2e_s1（一体图） | 356.1s | 31,544 |
 | depth_e2e_s1（一体图） | 248.7s | 31,545 |
 
-逐帧比对（124 帧，`out/p58/compare_metrics.json`）：
+逐帧比对（124 帧，`out/工单_P58/compare_metrics.json`）：
 
 | 对照 | MAD mean（min–max） | PSNR mean（min–max） | 判读 |
 |---|---|---|---|
@@ -104,8 +104,8 @@ face_point 2、score 0.5；DA3 mono、resolution 504、v2_style。
 
 ### 肉眼裁定材料
 
-- `out/p58/compare/{pose,depth}_f{030,062,093}_quad_src_ctrl_gen_baseline.png`：**源|控制|s1 生成|s0 基线** 四联。
-- `out/p58/compare/*_effectiveness_*.png`、`*_real_vs_synth_*.png`、`*_e2e_vs_two_stage_*.png`：两两并排。
+- `out/工单_P58/compare/{pose,depth}_f{030,062,093}_quad_src_ctrl_gen_baseline.png`：**源|控制|s1 生成|s0 基线** 四联。
+- `out/工单_P58/compare/*_effectiveness_*.png`、`*_real_vs_synth_*.png`、`*_e2e_vs_two_stage_*.png`：两两并排。
 - 肉眼旁证（本项未调用 VLM；P57 实测 VLM 不可信）：f093 pose 四联中，s1 生成人物**双臂外展**与提取骨架（白衣人手臂伸展）吻合，s0 基线手臂下垂朝向不同；f062 depth s1 人物呈背面视角与真实深度图最近亮块（背面白衣人）一致。
 
 ## 5. 显存与耗时（生产可用性硬数字）
@@ -124,8 +124,8 @@ face_point 2、score 0.5；DA3 mono、resolution 504、v2_style。
 
 ## 7. 磁盘纪律与改动文件
 
-- 一切新文件均在 `E:\Minimax-H3\` 内（`out/p58/` 共 63 MB 证据）或 `E:\Minimax-H3\third_party\ComfyUI\models/`（工单授权的权重 2.6 GB）；未在 E 根建目录、未在 C 盘产生数据。
-- 收尾清理：`E:\Minimax-H3\third_party\ComfyUI\output\p58\`（8 个中间 mp4）已删；`out/p58/` 保留全部裁定证据（extract/compare/runs/controls + 全部 JSON 记录）；`E:\Minimax-H3\third_party\ComfyUI\input\` 保留 `p58_real.mp4` 与两个控制 mp4 供复现。
+- 一切新文件均在 `E:\Minimax-H3\` 内（`out/工单_P58/` 共 63 MB 证据）或 `E:\Minimax-H3\third_party\ComfyUI\models/`（工单授权的权重 2.6 GB）；未在 E 根建目录、未在 C 盘产生数据。
+- 收尾清理：`E:\Minimax-H3\third_party\ComfyUI\output\p58\`（8 个中间 mp4）已删；`out/工单_P58/` 保留全部裁定证据（extract/compare/runs/controls + 全部 JSON 记录）；`E:\Minimax-H3\third_party\ComfyUI\input\` 保留 `p58_real.mp4` 与两个控制 mp4 供复现。
 - 在制工作（`studio/src/Root.tsx`、`intro_video/`、`studio/public/audio/intro/`、`studio/src/templates/model-intro/`）未碰；`workflows/video_minimax_h3_fun_controlnet_union.json` 原件未动（新变体 `workflows/video_p58_*.json`，该目录本被 gitignore，不入库）；P57 脚本与报告未改。
 
 新增文件（提交内容）：
@@ -151,9 +151,9 @@ cd /e/ComfyUI && venv/Scripts/python.exe main.py --port 8188
 python experiments/p58_extract.py pose && python experiments/p58_extract.py depth
 python experiments/p58_measure_extract.py
 # 生成 4+2 轮（脚本 p58_build_workflows.py 生成 workflows/video_p58_*.json
-# 与 out/p58/api_p58_*_e2e_s1.json，再逐个 p58_runner.py 提交）
+# 与 out/工单_P58/api_p58_*_e2e_s1.json，再逐个 p58_runner.py 提交）
 python experiments/p58_build_workflows.py
 python experiments/p58_measure.py
 ```
 
-seed 固定 1086599926715797（模板自带值）；P57 产物（合成控制臂、pose_s0 基线交叉验证）位于 `out/p57/runs/`。
+seed 固定 1086599926715797（模板自带值）；P57 产物（合成控制臂、pose_s0 基线交叉验证）位于 `out/工单_P57/runs/`。

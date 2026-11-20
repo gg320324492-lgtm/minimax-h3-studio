@@ -167,7 +167,7 @@ probe_liaozhai.py  docstring 第一行：
 
 有界搜索（`find E:/ -maxdepth 4`，排除 node_modules / conda / MATLAB /
 DockerData / ComfyUI / Minimax-H3 / QQMusicCache）：**60 个 mp4/mov/webm，全部是
-本项目自己的产出**（`promo_video` 的微纳米气泡宣传片 v2–v10、`H3_local_private`
+本项目自己的产出**（`promo_video` 的微纳米气泡宣传片 v2–v10、`私有备份`
 的 EP01 分镜、`LivePortrait` 的合成 AI/LivePortrait）。另查了
 `C:/Users/pc/{Downloads,Desktop,Videos,Documents,Music,Pictures}`：
 `Desktop/设计短片/` 下是 **Codex 生成的 PNG 图像**，不是视频。

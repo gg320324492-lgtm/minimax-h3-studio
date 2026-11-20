@@ -14,7 +14,7 @@ Two independent readings, as the work order requires:
      the humanoid is doing / where its arms are. Different answers on the two
      sides = the control changed the content, not just the pixels.
 
-Frames for both videos are extracted at the same indices into out/p57/compare/.
+Frames for both videos are extracted at the same indices into out/工单_P57/compare/.
 """
 import json
 import subprocess

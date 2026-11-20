@@ -15,8 +15,8 @@
     productions/   6 个成片项目
     tests/         测试套件
     scripts/       ffmpeg_env.py、sr_pipeline_v2.py
-    H3_local_private/   私有备份
-    out/workflows/ out/logs/ out/studio_jobs/ out/tools/
+    私有备份/   私有备份
+    out/工作流/ out/日志/ out/渲染素材/ out/工具/
 
 **为什么改回**：中文目录名在四处在持续制造问题，每一处都会静默出错——
 1. `git ls-files` 默认把非 ASCII 路径输出成八进制转义（`"æ..."`），
@@ -101,7 +101,7 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
   depth cue、visual acceptance 可复现、schema 严格性、渲染入口守卫等。
 
 待决策：账务类是否裁掉。裁掉后 789 用例约降到 350；可能漏掉个别真护产出的
-（判定脚本 out/tools/classify_tests.py 可重跑，删除前逐个过一遍更稳）。
+（判定脚本 out/工具/classify_tests.py 可重跑，删除前逐个过一遍更稳）。
 
 ---
 
@@ -139,21 +139,21 @@ tests/test_p0_regressions.py 与 tests/test_p20_one_ruler.py 复跑通过。
 - 仍在的两条必要联接：`studio/public/jobs`（studio 的 staticFile 依赖）
   与 `.remotion/chrome-headless-shell`（Remotion 按此路径找浏览器）
 
-## G-05 H3_local_private/repo_backup 仍是旧路径 —— 已规避
+## G-05 私有备份/repo_backup 仍是旧路径 —— 已规避
 
-`H3_local_private/repo_backup/` 里的备份脚本仍写 `E:\Minimax-H3` 与旧目录名。
+`私有备份/repo_backup/` 里的备份脚本仍写 `E:\Minimax-H3` 与旧目录名。
 该目录整体被 `.gitignore` 忽略（历史上因路径深度不匹配差点泄露到公开仓库），是**只读备份**。
 
 - 待办：若要把备份升级为当前结构，需要单独一轮操作（不急）
 
 ## G-06 Remotion 每次渲染会重新拷贝 jobs —— 已规避
 
-`studio/public/jobs` 现在是联接 → `out/studio_jobs/`（911M）。
+`studio/public/jobs` 现在是联接 → `out/渲染素材/`（911M）。
 Remotion 打包时会把 `public/` 整目录拷进 `studio/.remotion/*-bundle/`
 （实测上次打包产出 1.5G 的 jobs 拷贝，本轮已清掉）。
 
 - 代价：每次渲染前会多出一次 1.5G 的临时拷贝
-- 已缓解：`out/studio_jobs/` 里 5 个 `ep01_*` 的视频已用 NTFS 硬链接去重（320MB 零占用），
+- 已缓解：`out/渲染素材/` 里 5 个 `ep01_*` 的视频已用 NTFS 硬链接去重（320MB 零占用），
   且 3 个 `PREMIXED.mp4` 已剥离无用视频轨（375MB → 8.4MB）
 - 待办：若渲染变慢，可考虑把 `public/jobs` 改回实体目录、只把归档产物放 out/
 

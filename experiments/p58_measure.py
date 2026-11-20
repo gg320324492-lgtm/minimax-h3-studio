@@ -18,7 +18,7 @@ Pairs (same seed 1086599926715797, same prompt, same 864x480x124, same
   4. e2e vs two-stage : <route>_e2e_s1 vs <route>_real_s1   (mp4 roundtrip)
 
 For every pair: per-frame MAD and PSNR over the full 124 frames, plus the
-3 gate frames (f30/f62/f93) written to out/p58/compare/ as side-by-side
+3 gate frames (f30/f62/f93) written to out/工单_P58/compare/ as side-by-side
 strips for the human ruling.
 """
 import hashlib

@@ -81,7 +81,7 @@ model-intro 的真实需求，或自造一条含人物 + 对白 + 运镜的 prom
 | **帧数/规格** | ffprobe：17k+5 帧格、24fps、分辨率、音轨存在 |
 | **指令遵循** | prompt 里放 **2–3 个可判定的元素**（一个数字、一句字幕、一个动作），用 P45 的 VLM 仪器（`studio/scripts/vlm_critic.py`，qwen2.5vl:7b）读画面验证——**A/B 各自命中几个** |
 | **画面稳定性** | 相邻帧差/冻结段（本项目的现有仪器 `ab_field.frame_ink` / P49 守卫的测法） |
-| **画质** | ⚠️ **"哪个更好看"不可判定——你不裁定**。把 A/B 各抽 3 帧放到 `E:\out\p56\compare\`（命名规范：`{场景}_{A或B}_f{帧号}.png`），**供用户肉眼裁定** |
+| **画质** | ⚠️ **"哪个更好看"不可判定——你不裁定**。把 A/B 各抽 3 帧放到 `E:\out\工单_P56\compare\`（命名规范：`{场景}_{A或B}_f{帧号}.png`），**供用户肉眼裁定** |
 
 ### 第 4 步：给裁定数据（**不裁定**）
 
@@ -103,7 +103,7 @@ model-intro 的真实需求，或自造一条含人物 + 对白 + 运镜的 prom
 3. **贴原始输出**（耗时、ffprobe、VLM 原始回答），不贴结论句；
 4. ⚠️ **一块 GPU 串行跑**；**外推等于没测**（每条都实测计时）；
 5. ⚠️ **下载校验**：LoRA 文件落盘后核大小（1.96 GB 级）再加载，防止网络截断；
-6. ⚠️ **磁盘**：视频放 `E:\out\p56\`，收尾删大文件留表格与对比帧；
+6. ⚠️ **磁盘**：视频放 `E:\out\工单_P56\`，收尾删大文件留表格与对比帧；
 7. ⚠️ `tests/test_markdown_text_is_intact.py` 守 U+FFFD——中文报告用 `read_bytes`/`write_bytes`；
 8. ⚠️ GBK 控制台读非 ASCII 用字节判断。
 
@@ -122,7 +122,7 @@ model-intro 的真实需求，或自造一条含人物 + 对白 + 运镜的 prom
 **本指令授权你修改**：`E:\Minimax-H3\third_party\ComfyUI\models\loras\`（新增两个 LoRA 文件）、
 `workflows/`（**新增**对比工作流，不改原件）、
 `E:\Minimax-H3\docs\P56_PIKA_FLEX_COMPARISON.md`、
-必要的测量脚本（放 `E:\Minimax-H3\out\p56\` 或 studio/scripts/，说明是否值得留）。
+必要的测量脚本（放 `E:\Minimax-H3\out\工单_P56\` 或 studio/scripts/，说明是否值得留）。
 
 ---
 

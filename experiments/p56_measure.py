@@ -6,7 +6,7 @@ Per video:
   - adjacent-frame diff (pixels differing >8, the ab_field threshold) over
     evenly sampled frames, with the pct distribution and any frozen runs
   - three comparison frames (first / middle / last sampled) copied to
-    out/p56/compare/{scene}_{side}_f{NNN}.png for the user's own eyes
+    out/工单_P56/compare/{scene}_{side}_f{NNN}.png for the user's own eyes
   - four closed VLM questions per frame (subtitle words MEET and MAKER, the
     numeral 7, the roar) via studio/scripts/vlm_critic.py — an element counts
     as hit if any frame answers yes; --skip-vlm drops this leg
@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(Path(r'E:\Minimax-H3\studio\scripts')))
 from vlm_critic import ask_vlm, parse_verdict  # noqa: E402
 
-OUT56 = Path(r'E:\Minimax-H3\out\p56')
+OUT56 = Path(r'E:\Minimax-H3\out\工单_P56')
 COMPARE = OUT56 / 'compare'
 N_SAMPLES = 31
 DIFF_THRESHOLD = 8  # ab_field's per-pixel delta threshold

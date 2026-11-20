@@ -3,7 +3,7 @@ measure end-to-end time and VRAM peak.
 
 Same harness p57_runner.py used (bench.api + a 1 Hz nvidia-smi sampler in a
 background thread, idle baseline recorded before submit), with two additions:
-  * the input may be an API-format prompt file (out/p58/api_*.json) as well
+  * the input may be an API-format prompt file (out/工单_P58/api_*.json) as well
     as a UI workflow (converted through p56_runner.to_prompt, the path P55/P56
     proved against the live 0.43.2 server);
   * outputs move to E:\\Minimax-H3\\out\\p58\\runs\\<label>.mp4 and the record
@@ -24,7 +24,7 @@ from p56_runner import to_prompt  # noqa: E402
 from bench import api  # noqa: E402
 
 SEED = 1086599926715797  # template's own RandomNoise value, pinned for every run
-OUT = Path(r"E:\Minimax-H3\out\p58")
+OUT = Path(r"E:\Minimax-H3\out\工单_P58")
 COMFY_OUTPUT = Path(r"E:\Minimax-H3\third_party\ComfyUI\output")
 
 

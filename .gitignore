@@ -7,7 +7,7 @@
 *.safetensors
 *.pth
 *.log
-out/logs/
+out/日志/
 work_frames/
 upscale_frames/
 upscale_frames_2k/
@@ -70,7 +70,7 @@ studio/public/audio/sfx_coin.m4a
 
 # ===== 本地生产内容（不公开）=====
 # H3 workflow JSON（含 prompt+采样参数）/ 种子 / 剧本 / 时间线
-out/workflows/
+out/工作流/
 **/00_project/timeline.json
 **/00_project/timeline_v2.json
 **/00_project/timeline_v2.words.json
@@ -95,10 +95,10 @@ productions/piyao_2026/scripts/gen_clips.py
 productions/piyao_2026/scripts/build_timeline.py
 productions/third_lantern/scripts/gen_clips.py
 productions/third_lantern/scripts/build_timeline.py
-# 备份在 H3_local_private/（原 H3_local_private/、再原 E:/，2026-10-14 迁入仓库目录，2026-11-20 改名）
+# 备份在 私有备份/（原 H3_local_private/、再原 E:/，2026-10-14 迁入仓库目录，2026-11-20 定名）
 # 整目录忽略：备份里的文件路径深度与上面那些逐条规则不匹配，靠它们挡不住。
 # 公开仓库泄露过一次（2026-09-30），这条不要删。
-/H3_local_private/
+/私有备份/
 productions/ceo_mindread_ep01/_archive_*/
 productions/ceo_mindread_ep01/00_project/environment_report.md
 config/local.yaml

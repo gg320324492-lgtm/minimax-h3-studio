@@ -78,7 +78,7 @@ Comfy-Org/workflow_templates@main 拉取，与 0.43.2 内置模板库同源）
 - 显存采样方法：`nvidia-smi --query-gpu=memory.used` 每 1 s 采样取最大值
   （含桌面进程 ~2–3 GB 背景占用；pose_s1 冷启动基线 5327 MiB，其余各条基线
   27 GB 上下为前一条权重未卸载所致——"高于基线"列因此不可横向比，
-  **绝对峰值列才是答案**）。原始采样序列存 `out/p57/run_<label>.json`。
+  **绝对峰值列才是答案**）。原始采样序列存 `out/工单_P57/run_<label>.json`。
 
 ## 三、第 2 问：一条 5 秒片多慢
 
@@ -145,16 +145,16 @@ arms 字段残缺未答出。工单要求的"像素差 + VLM 读画面对比"中
 
 ## 六、对比帧目录（供用户肉眼裁定）
 
-`E:\Minimax-H3\out\p57\compare\`——18 张 PNG（f030/f062/f093 × 6 条运行），
+`E:\Minimax-H3\out\工单_P57\compare\`——18 张 PNG（f030/f062/f093 × 6 条运行），
 命名 `{控制路}_scale{值}_f{帧号}.png`：
 pose_scale1.0_* / pose_scale0.0_*（生效性 A/B 对）+ canny/depth/hed/mlsd_scale1.0_*（五路画质）。
-生成视频原件（各 ~1.4 MB，h264+AAC）存 `out/p57/runs/`；控制输入视频存
-`out/p57/controls/`；逐条原始测量（含 1 s 间隔显存采样序列）存 `out/p57/run_*.json`；
-生效性原始数据 `out/p57/control_effectiveness.json`；汇总 `out/p57/summary.json`。
+生成视频原件（各 ~1.4 MB，h264+AAC）存 `out/工单_P57/runs/`；控制输入视频存
+`out/工单_P57/controls/`；逐条原始测量（含 1 s 间隔显存采样序列）存 `out/工单_P57/run_*.json`；
+生效性原始数据 `out/工单_P57/control_effectiveness.json`；汇总 `out/工单_P57/summary.json`。
 
 ## 七、磁盘纪律
 
-- 全部输出落在 `E:\Minimax-H3\out\p57\`（共 21 MB），**未在 E 盘根目录建任何
+- 全部输出落在 `E:\Minimax-H3\out\工单_P57\`（共 21 MB），**未在 E 盘根目录建任何
   文件夹、未在 C 盘产生数据**（下载落 `E:\Minimax-H3\third_party\ComfyUI\models\model_patches`，aria2c
   控制文件同目录且已清除；SHA256/日志全在项目内）。
 - 大文件处置：8.38 GB 权重是交付物保留；`E:\Minimax-H3\third_party\ComfyUI\output\p57\` 的六条原件
@@ -171,7 +171,7 @@ pose_scale1.0_* / pose_scale0.0_*（生效性 A/B 对）+ canny/depth/hed/mlsd_s
 - `E:\Minimax-H3\third_party\ComfyUI\models\model_patches\minimax_h3_fun_controlnet_union_2.0_pruned_bf16.safetensors`（权重）
 - `E:\Minimax-H3\workflows\video_minimax_h3_fun_controlnet_union.json`（官方模板第一份落盘副本；gitignored）
 - `E:\Minimax-H3\workflows\video_p57_{pose_s1,pose_s0,canny_s1,depth_s1,hed_s1,mlsd_s1}.json`（实验变体；gitignored）
-- `E:\Minimax-H3\out\p57\**`（证据；gitignored）
+- `E:\Minimax-H3\out\工单_P57\**`（证据；gitignored）
 - `experiments/p57_control_assets.py`（控制视频生成器）
 - `experiments/p57_build_workflows.py`（模板→变体构建器）
 - `experiments/p57_runner.py`（API 提交 + 计时 + 显存采样）

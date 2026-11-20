@@ -15,7 +15,7 @@
 
 ## 1. 为什么不能只搜文件名
 
-第一版审计只扫 `out/workflows/*.json`，得出"37 GB 未被引用"的结论——**这是误报**。
+第一版审计只扫 `out/工作流/*.json`，得出"37 GB 未被引用"的结论——**这是误报**。
 ComfyUI 的加载节点按「目录 + 下拉选项」取模型：
 
 | 模型目录 | 加载节点 |
@@ -114,7 +114,7 @@ ComfyUI 的加载节点按「目录 + 下拉选项」取模型：
 python -I out/工具scripts/gen_model_inventory.py
 
 # 查某个模型被谁引用
-grep -rn "minimax_h3_ref2va" out/workflows/ scripts/ productions/ experiments/ docs/
+grep -rn "minimax_h3_ref2va" out/工作流/ scripts/ productions/ experiments/ docs/
 ```
 
 审计脚本：`out/工具scripts/gen_model_inventory.py`。

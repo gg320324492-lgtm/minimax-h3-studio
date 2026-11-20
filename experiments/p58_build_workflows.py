@@ -15,7 +15,7 @@ Lightning-LoRA off, Union 2.0 pack, fp16 video VAE — all unchanged):
      baseline the work order asks for (verified, not assumed: the s0 outputs
      are byte-compared against P57's pose_s0.mp4 in p58_measure.py).
 
-  B. end-to-end API prompts (out/p58/api_p58_<route>_e2e_s1.json)
+  B. end-to-end API prompts (out/工单_P58/api_p58_<route>_e2e_s1.json)
      the same converted P57 prompt, but the control side is replaced by the
      live extraction chain (LoadVideo p58_real.mp4 -> GetVideoComponents ->
      SDPose(+RT-DETR) / DA3 -> Apply.control_video), no intermediate mp4.

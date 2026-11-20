@@ -11,8 +11,8 @@ real clip itself, frame by frame, and measures:
            depth map that tracks the scene's motion should have temporal MAD
            of the same order as the footage; a frozen or noisy map will not.
 
-Writes out/p58/extract_metrics.json and the 3 gate frames (f30/f62/f93) for
-each route into out/p58/extract/, plus a source-vs-control side-by-side per
+Writes out/工单_P58/extract_metrics.json and the 3 gate frames (f30/f62/f93) for
+each route into out/工单_P58/extract/, plus a source-vs-control side-by-side per
 frame for the eyeball half of the gate.
 """
 import json
