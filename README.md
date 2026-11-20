@@ -28,14 +28,16 @@
 
 | 目录/文件 | 内容 |
 |---|---|
-| `ceo_mindread_ep01/` `liaozhai_demo/` `piyao_2026/` `third_lantern/` | 四个生产项目（竖屏短剧/复古动画/辟谣 PSA/国风 2K） |
+| `productions/` | 六个生产项目：`ceo_mindread_ep01/` `liaozhai_demo/` `piyao_2026/` `third_lantern/` `water_renewal/` `intro_video/`（竖屏短剧 / 复古动画 / 辟谣 PSA / 国风 2K / 黑臭水体治理 / 片头） |
 | `studio/` | Remotion 合成层（模板/契约/渲染桥/音频），见 [studio/README.md](studio/README.md) |
-| `workflows/` | ComfyUI H3 工作流 JSON（r2v 角色一致 / fl2va 首末帧 / t2v 走 Pika Flex `video_p56_t2v_B_flex.json` / 归档备份） |
-| `docs/` | 全部报告与方案文档（管线升级史 / Remotion 融合方案 / 动效调研） |
+| `scripts/` | ⚠️ 仓库级系统模块：`ffmpeg_env.py`（ffmpeg 解析器）/ `sr_pipeline_v2.py`（Real-ESRGAN 超分引擎），**被多项目生产链引用，勿移动** |
+| `tools/` | 自带 ffmpeg-7.1.1-full_build（PATH 上有 Octave 的 4.2.11 陷阱，一律经 `ffmpeg_env.py` 解析）+ `check_c_drive.py`（C 盘零写入守卫） |
+| `out/` | 生成输出与工单证据：`workflows/`（ComfyUI H3 工作流 JSON）/ `logs/` / `studio_jobs/`（渲染素材）/ `tools/`（一次性运维脚本）+ 按工单命名的目录（p55/p56/p57/p58…），整体 gitignore |
+| `third_party/` | 外部工具实体（不入库）：`ComfyUI/`（含 122GB 模型与 venv）/ `tts/` / `claude-skills/` / `chrome-headless-shell/` / 各缓存目录 |
+| `docs/` | 全部报告与方案文档（管线升级史 / Remotion 融合方案 / 动效调研 / 缺口清单） |
 | `experiments/` | 一次性实验脚本与基准残留（SR 调参/管道变体/分析 dump），非生产依赖 |
-| `ffmpeg_env.py` `sr_pipeline_v2.py` | ⚠️ 根级系统模块：ffmpeg 解析器 / Real-ESRGAN 超分引擎，**被多项目生产链引用，勿移动** |
-| `tools/ffmpeg-7.1.1-full_build/` | 自带 ffmpeg/ffprobe（PATH 上有 Octave 的 4.2.11 陷阱，一律经 `ffmpeg_env.py` 解析） |
-| `preview/` `upscale_frames*/` `work_frames/` `logs/` `tests/` | 工作 scratch（gitignore） |
+| `tests/` | 守护测试套件（用 `third_party/ComfyUI/venv` 的 python 跑：`python -m pytest tests/ -q`） |
+| `H3_local_private/` | 私有备份（Mixkit 授权音频、含 prompt/种子的脚本），**整体 gitignore，不得入库** |
 
 ## 项目模板规范（四个项目共用）
 
@@ -54,6 +56,18 @@
 
 ## 核心约定（铁律）
 
+0. **本项目的任何文件都不得写入 C 盘**（用户 2026-11-20 加严）。C 盘对本项目只有读权限。
+   - 下载、缓存、临时文件、模型、数据集、日志、安装包、解压产物、渲染中间件——
+     一律落到 E 盘项目内；
+   - 靠环境变量保证（用户级，已设好）：`HF_HOME` `HUGGINGFACE_HUB_CACHE` `XDG_CACHE_HOME`
+     `PIP_CACHE_DIR` `npm_config_cache` `UV_CACHE_DIR` `TEMP` `TMP` `MPLCONFIGDIR`
+     `COMFYUI_HOME` `OLLAMA_MODELS` 全部指向 `E:\Minimax-H3\third_party\` 之下；
+   - 装新工具前先确认它的默认落盘位置；默认进 `%LOCALAPPDATA%` / `%USERPROFILE%` 的，先改配置再装；
+   - **收工前跑 `python tools/check_c_drive.py`**：校验环境变量仍指向 E 盘，并比对本项目在
+     C 盘的占用与基线 `tools/.c_drive_baseline.json`，有新增就报错；
+   - 唯一例外：Claude Code 框架自身的 `C:\Users\pc\.claude\`（记忆与会话记录）——
+     框架管理，不归项目控制；
+   - 发现已在 C 盘落了文件，**当场迁走**，不要留着。
 1. **ffmpeg 一律走 `ffmpeg_env.py` 解析**——PATH 上的 `ffmpeg` 是 Octave 附带的 4.2.11。
 2. **H3 帧长必须 17k+5**（22/56/124/141/192/226…）；生成长度≠呈现长度，用 timeline v2 的 `trimBefore` 裁。
 3. **timeline JSON 是唯一数据源**；zod schema 在 `studio/src/schemas/`，改 schema 必须 `pnpm exec tsx bin/export-schema.ts` 并提交导出物。
@@ -90,6 +104,8 @@ E:/Minimax-H3/third_party/ComfyUI/venv/Scripts/python.exe studio/scripts/check_c
 | [docs/UPGRADE_REPORT_20260919.md](docs/UPGRADE_REPORT_20260919.md) | 超分管线升级证据（SR 基准） |
 | [docs/OPTIMAL_PIPELINE_REPORT.md](docs/OPTIMAL_PIPELINE_REPORT.md) / [docs/TEST_REPORT_20260910.md](docs/TEST_REPORT_20260910.md) | 早期管线选型与测试 |
 | [studio/BENCHMARK_20260929.md](studio/BENCHMARK_20260929.md) | Remotion 渲染基准（并发/编码定稿依据） |
+| [docs/GAP_BACKLOG_20261120.md](docs/GAP_BACKLOG_20261120.md) | **缺口清单**（G-01~G-10：目录归位与清理的遗留项） |
+| [docs/COMFYUI_MODEL_INVENTORY.md](docs/COMFYUI_MODEL_INVENTORY.md) | ComfyUI 模型清单（99GB 逐项用途与引用来源，删模型的依据） |
 
 ## 许可注意
 

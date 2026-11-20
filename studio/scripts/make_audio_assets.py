@@ -25,6 +25,7 @@ import numpy as np
 
 ROOT = Path(r'E:\Minimax-H3')
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'scripts'))
 from ffmpeg_env import FFMPEG  # noqa: E402
 
 OUT_DIR = Path(__file__).resolve().parent.parent / 'public' / 'audio'

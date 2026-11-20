@@ -11,6 +11,7 @@ from pathlib import Path
 
 if r'E:\Minimax-H3' not in sys.path:
     sys.path.insert(0, r'E:\Minimax-H3')
+    sys.path.insert(0, r'E:\Minimax-H3\scripts')
 from ffmpeg_env import prepend_to_path as _prepend_ffmpeg  # noqa: E402
 _prepend_ffmpeg()
 

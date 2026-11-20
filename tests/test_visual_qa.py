@@ -41,6 +41,9 @@ from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'studio' / 'scripts' / 'visual_qa.py'
+# ffmpeg_env 住在仓库的 scripts/ 下；不显式加进来，下面的 import 会失败并
+# 让本文件的时长守卫直接 skip——绿得没有意义。
+sys.path.insert(0, str(ROOT / 'scripts'))
 sys.path.insert(0, str(SCRIPT.parent))
 import visual_qa as vqa  # noqa: E402
 

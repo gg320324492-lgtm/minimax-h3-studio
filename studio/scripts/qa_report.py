@@ -27,6 +27,7 @@ from pathlib import Path
 
 ROOT = Path(r'E:\Minimax-H3')
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'scripts'))
 from ffmpeg_env import FFMPEG, FFPROBE  # noqa: E402
 
 sys.path.insert(0, str(ROOT / 'studio' / 'src'))
