@@ -420,7 +420,12 @@ def audio_mix():
     cmd = ['ffmpeg', '-y', '-loglevel', 'error']
     cmd += ['-i', str(A / 'bgm_score.wav')]                      # 0
     for m in man:                                                 # 1..12
-        cmd += ['-i', m['file']]
+        # narration wavs live in the current tree (gen_narration.py writes here);
+        # the manifest's legacy file paths point to the removed E:/promo_video root
+        narr = ROOT / '05_audio' / 'narration' / f"{m['slug']}.wav"
+        if not narr.exists():
+            narr = Path(m['file'])
+        cmd += ['-i', str(narr)]
     cmd += ['-stream_loop', '-1', '-i', str(A / 'amb_river.wav')]  # 13
     cmd += ['-i', str(A / 'amb_bubble.wav')]                      # 14
     fc = []

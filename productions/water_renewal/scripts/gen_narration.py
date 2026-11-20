@@ -60,7 +60,7 @@ def main():
     tmpdir.mkdir(parents=True, exist_ok=True)
     for slug, text in LINES:
         wav = tmpdir / f'kokoro_{slug}.wav'
-        m4a = OUT / f'{slug}.m4a'
+        final = OUT / f'{slug}.wav'   # build_video.py / finish_audio.py consume wav
         t0 = time.time()
         chunks = []
         for _gs, _ps, a in pipeline(text, voice=VOICE, speed=SPEED):
@@ -72,10 +72,10 @@ def main():
         subprocess.run([
             'ffmpeg', '-y', '-loglevel', 'error', '-i', str(wav),
             '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',
-            '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', '192k', str(m4a),
+            '-ar', '48000', '-ac', '2', '-c:a', 'pcm_s16le', str(final),
         ], check=True)
-        d = dur_of(m4a)
-        manifest.append({'slug': slug, 'text': text, 'file': str(m4a), 'duration': round(d, 3)})
+        d = dur_of(final)
+        manifest.append({'slug': slug, 'text': text, 'file': str(final), 'duration': round(d, 3)})
         print(f'  {slug}: {d:.2f}s  {text[:18]}...  ({time.time()-t0:.1f}s)', flush=True)
 
     (PROJECT / '01_reference' / 'narration_manifest.json').write_text(
